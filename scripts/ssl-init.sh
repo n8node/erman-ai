@@ -55,8 +55,20 @@ $COMPOSE up -d --build nginx
 
 sleep 3
 echo ""
+echo ">>> nginx config test:"
+$COMPOSE exec nginx nginx -t
+
+echo ""
 echo ">>> Health check:"
-curl -sf "https://$DOMAIN/health" && echo "" || echo "WARNING: https health check failed"
+if curl -sf "https://$DOMAIN/health"; then
+  echo ""
+else
+  echo "WARNING: https health check failed"
+  echo "--- nginx logs ---"
+  $COMPOSE logs --tail 40 nginx
+  echo "--- ssl files ---"
+  ls -la nginx/ssl/ || true
+fi
 curl -sfI "http://$DOMAIN/health" | head -1 || true
 
 echo ""
