@@ -39,7 +39,10 @@ fi
 cd "$PROJECT_DIR"
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+if ! git pull --ff-only origin "$BRANCH" 2>/dev/null; then
+  echo ">>> Local changes detected — resetting to origin/${BRANCH} (server deploy mode)"
+  git reset --hard "origin/${BRANCH}"
+fi
 
 if [ ! -f .env ]; then
   echo ">>> Creating .env with generated secrets..."
