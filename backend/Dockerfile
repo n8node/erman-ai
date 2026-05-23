@@ -8,8 +8,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server && \
-    CGO_ENABLED=0 GOOS=linux go build -o /go/bin/goose github.com/pressly/goose/v3/cmd/goose
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOBIN=/go/bin go install github.com/pressly/goose/v3/cmd/goose
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
