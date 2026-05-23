@@ -10,11 +10,11 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-# shellcheck disable=SC1091
-source .env
+# shellcheck source=lib/env.sh
+source "$(dirname "$0")/lib/env.sh"
 
-DOMAIN="${DOMAIN:-erman.ai}"
-EMAIL="${CERTBOT_EMAIL:-hello@erman.ai}"
+DOMAIN="$(env_get DOMAIN erman.ai)"
+EMAIL="$(env_get CERTBOT_EMAIL hello@erman.ai)"
 COMPOSE="docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml"
 
 echo "=== SSL init for $DOMAIN ==="
@@ -29,7 +29,7 @@ if ! command -v certbot >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p nginx/ssl
+mkdir -p nginx/ssl certbot-webroot
 
 echo ">>> Stopping nginx (free port 80 for certbot)..."
 $COMPOSE stop nginx
@@ -65,4 +65,4 @@ echo "  https://$DOMAIN/"
 echo "  https://$DOMAIN/dashboard"
 echo ""
 echo "Auto-renewal cron (optional):"
-echo "  0 3 * * * certbot renew --quiet --deploy-hook /opt/erman-ai/scripts/ssl-deploy-hook.sh"
+echo "  0 3 * * * /opt/erman-ai/scripts/ssl-renew.sh >> /var/log/erman-ai-ssl-renew.log 2>&1"

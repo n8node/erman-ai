@@ -2,10 +2,10 @@
 set -euo pipefail
 
 cd /opt/erman-ai
-# shellcheck disable=SC1091
-source .env
+# shellcheck source=lib/env.sh
+source /opt/erman-ai/scripts/lib/env.sh
 
-DOMAIN="${DOMAIN:-erman.ai}"
+DOMAIN="$(env_get DOMAIN erman.ai)"
 COMPOSE="docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml"
 
 cp "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" nginx/ssl/fullchain.pem
