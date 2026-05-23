@@ -10,6 +10,7 @@ services:
       - wordpress
     volumes:
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./certbot-webroot:/var/www/certbot
     restart: unless-stopped
 
   backend:

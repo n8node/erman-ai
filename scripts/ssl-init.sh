@@ -1,27 +1,68 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+# Obtain Let's Encrypt certificate and start nginx with HTTPS.
+# Run on server: cd /opt/erman-ai && bash scripts/ssl-init.sh
+set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
+if [[ ! -f .env ]]; then
+  echo "ERROR: .env not found"
+  exit 1
+fi
+
+# shellcheck disable=SC1091
 source .env
 
 DOMAIN="${DOMAIN:-erman.ai}"
 EMAIL="${CERTBOT_EMAIL:-hello@erman.ai}"
+COMPOSE="docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml"
 
-echo "=== Requesting SSL certificate for $DOMAIN ==="
+echo "=== SSL init for $DOMAIN ==="
 
-docker compose -f docker-compose.yml -f docker-compose.prod.yml stop nginx
+if command -v apt-get >/dev/null 2>&1; then
+  DEBIAN_FRONTEND=noninteractive apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot
+fi
 
+if ! command -v certbot >/dev/null 2>&1; then
+  echo "ERROR: certbot not installed. Run: apt install certbot"
+  exit 1
+fi
+
+mkdir -p nginx/ssl
+
+echo ">>> Stopping nginx (free port 80 for certbot)..."
+$COMPOSE stop nginx
+
+echo ">>> Requesting certificate..."
 certbot certonly --standalone \
   -d "$DOMAIN" \
   -d "www.$DOMAIN" \
   --email "$EMAIL" \
   --agree-tos \
   --no-eff-email \
-  --non-interactive
+  --non-interactive \
+  --preferred-challenges http
 
-mkdir -p nginx/ssl
+echo ">>> Installing certificate to nginx/ssl/"
 cp "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" nginx/ssl/fullchain.pem
 cp "/etc/letsencrypt/live/$DOMAIN/privkey.pem" nginx/ssl/privkey.pem
+chmod 644 nginx/ssl/fullchain.pem
+chmod 600 nginx/ssl/privkey.pem
 
-docker compose -f docker-compose.yml -f docker-compose.prod.yml start nginx
+echo ">>> Starting nginx with HTTPS..."
+$COMPOSE up -d --build nginx
 
-echo "=== SSL configured! Uncomment HTTPS block in nginx/conf.d/default.conf ==="
+sleep 3
+echo ""
+echo ">>> Health check:"
+curl -sf "https://$DOMAIN/health" && echo "" || echo "WARNING: https health check failed"
+curl -sfI "http://$DOMAIN/health" | head -1 || true
+
+echo ""
+echo "=== SSL ready ==="
+echo "  https://$DOMAIN/"
+echo "  https://$DOMAIN/dashboard"
+echo ""
+echo "Auto-renewal cron (optional):"
+echo "  0 3 * * * certbot renew --quiet --deploy-hook /opt/erman-ai/scripts/ssl-deploy-hook.sh"

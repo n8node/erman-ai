@@ -38,6 +38,9 @@ wordpress/uploads/
 # Artifacts (PDF/DOCX — stored in MinIO)
 artifacts/
 
+certbot-webroot/*
+!certbot-webroot/.gitkeep
+
 # Backups
 backups/*.sql.gz
 backups/*.tar.gz

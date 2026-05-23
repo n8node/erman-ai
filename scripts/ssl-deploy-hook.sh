@@ -1,12 +1,18 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-source /opt/erman-ai/.env
+cd /opt/erman-ai
+# shellcheck disable=SC1091
+source .env
+
 DOMAIN="${DOMAIN:-erman.ai}"
+COMPOSE="docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml"
 
-cp "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" /opt/erman-ai/nginx/ssl/fullchain.pem
-cp "/etc/letsencrypt/live/$DOMAIN/privkey.pem" /opt/erman-ai/nginx/ssl/privkey.pem
+cp "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" nginx/ssl/fullchain.pem
+cp "/etc/letsencrypt/live/$DOMAIN/privkey.pem" nginx/ssl/privkey.pem
+chmod 644 nginx/ssl/fullchain.pem
+chmod 600 nginx/ssl/privkey.pem
 
-docker compose -f /opt/erman-ai/docker-compose.yml \
-  -f /opt/erman-ai/docker-compose.prod.yml \
-  exec nginx nginx -s reload
+$COMPOSE exec nginx nginx -s reload
+
+echo "SSL certificates renewed and nginx reloaded"
