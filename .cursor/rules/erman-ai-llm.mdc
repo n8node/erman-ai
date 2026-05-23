@@ -1,0 +1,162 @@
+---
+description: Erman AI — LLM провайдер, приватность, воркеры, usage_log
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Erman AI — LLM и воркеры
+
+## LLM провайдер
+
+**Единственный провайдер: OpenRouter (`https://openrouter.ai/api/v1`)**
+Никаких прямых обращений к OpenAI, Anthropic, Google API — только через OpenRouter.
+
+### Модели
+
+| Назначение | Модель | Reasoning |
+|-----------|--------|-----------|
+| Extraction / структура / JSON | `google/gemini-flash-1.5-8b` | низкий |
+| AI Strategy Generator | `anthropic/claude-sonnet-4-5` | высокий |
+| Proposal Generator | `anthropic/claude-sonnet-4-5` | высокий |
+| Embeddings | `openai/text-embedding-3-small` | — |
+
+Изменяются через `.env`: `OPENROUTER_MODEL_FAST`, `OPENROUTER_MODEL_SMART`, `OPENROUTER_MODEL_EMBED`.
+Суперадмин может override модель для конкретного пользователя в admin UI (фича Business плана).
+
+### Правила LLM-вызовов
+
+1. **Все вызовы — через `internal/service/llm.go`**. Прямых HTTP-запросов к OpenRouter из handler'ов нет.
+2. **Каждый вызов → запись в `usage_log`** (user_id, run_id, model, prompt_tokens, completion_tokens, cost_usd).
+3. **Стоимость считается по openrouter ценам** — хранится в конфиге/env, не захардкожена.
+4. **Timeout:** стратегия/КП — 120 секунд. Превышение → статус `error` в run.
+5. **Retry:** 1 повторная попытка при сетевой ошибке. При ошибке модели — сразу `error`.
+
+### Структурированный вывод (JSON Schema)
+
+Для Strategy и Proposal:
+- Промпт требует ответа в JSON с чётко определённой схемой
+- Backend валидирует JSON перед сохранением
+- Если JSON невалидный — `error` статус, сообщение пользователю
+- **Не использовать умную модель для extraction JSON-структуры** — только для creative generation
+
+---
+
+## Архитектура воркеров
+
+### Схема обработки асинхронных инструментов
+
+```
+HTTP Handler                    Worker                    Storage
+────────────                    ──────                    ───────
+POST /tools/strategy/run
+  → валидация input
+  → check лимита
+  → создать tool_run (pending)
+  → отправить в очередь  ──→  получить из очереди
+  ← вернуть {run_id}         → изменить статус (processing)
+                              → вызвать LLM (120s timeout)
+GET /runs/:id (polling)        → записать usage_log
+  ← {status: "processing"}    → сохранить output в tool_run
+                              → загрузить PDF в MinIO
+                              → изменить статус (done)
+GET /runs/:id (polling)
+  ← {status: "done",
+     output: {...},
+     artifact_url: "..."}
+```
+
+### Dev-окружение: inline воркеры
+
+В `ENVIRONMENT=development` воркеры работают inline в goroutine (без NATS):
+```go
+if config.Environment == "development" {
+    go worker.ProcessStrategyRun(runID)
+}
+```
+
+### Production: NATS JetStream
+
+```go
+// Публикация
+js.Publish("runs.strategy", runID)
+
+// Подписка (воркер)
+js.Subscribe("runs.strategy", func(msg *nats.Msg) {
+    processStrategyRun(string(msg.Data))
+    msg.Ack()
+}, nats.Durable("strategy-worker"))
+```
+
+### Конкурентность воркеров
+
+```bash
+WORKER_STRATEGY_CONCURRENCY=3   # параллельных генераций стратегий
+WORKER_PROPOSAL_CONCURRENCY=3   # параллельных генераций КП
+```
+
+---
+
+## Приватность данных
+
+### Принципы
+
+1. **Input/Output пользователя** — только его. Суперадмин видит только метаданные (tool_slug, status, tokens_used, created_at) без содержимого.
+2. **usage_log** — только агрегированные данные (токены, модель, стоимость). Промпты не логируются.
+3. **Артефакты (PDF/DOCX)** — хранятся с подписанными URL, недоступны по прямой ссылке.
+4. **GDPR-совместимость**: пользователь может запросить удаление своих данных.
+   - `DELETE /api/v1/me` → удаляет пользователя и все его tool_runs и usage_log.
+
+### Retention
+
+| Данные | Free | Pro | Business |
+|--------|------|-----|----------|
+| История запусков | 90 дней | 12 месяцев | 24 месяца |
+| Артефакты (PDF) | 24 часа | 30 дней | 90 дней |
+| usage_log | 90 дней | 12 месяцев | 12 месяцев |
+
+Автоматическая очистка — cron-задача в backend.
+
+---
+
+## Лимиты и rate limiting
+
+### Per-user rate limiting
+
+- **Auth endpoints:** 10 запросов/минуту
+- **Tool runs:** по лимиту тарифного плана (monthly counter)
+- **API (с API-ключом):** 60 запросов/минуту для Pro, 200 для Business
+
+### Проверка лимита инструмента (backend)
+
+```go
+func (s *ToolService) CheckAndIncrementLimit(ctx context.Context, userID, toolSlug string) error {
+    plan := s.GetUserPlan(ctx, userID)
+    limit := plan.ToolLimits[toolSlug]
+    if limit == -1 {
+        return nil // unlimited
+    }
+
+    count := s.GetMonthlyCount(ctx, userID, toolSlug)
+    if count >= limit {
+        return ErrToolLimitExceeded
+    }
+
+    s.IncrementCounter(ctx, userID, toolSlug)
+    return nil
+}
+```
+
+Счётчик инкрементируется **перед** запуском. Возврат — только при явной отмене (не при ошибке LLM).
+
+---
+
+## Правила LLM (критические)
+
+1. **Все LLM — только через OpenRouter.** Прямые API запрещены.
+2. **Каждый вызов → usage_log.** Без исключений.
+3. **Strategy и Proposal — только умная модель** (`OPENROUTER_MODEL_SMART`). Дешёвая ломает качество.
+4. **Промпты — в отдельных файлах** `internal/prompts/strategy.go`, `internal/prompts/proposal.go`.
+   Не inline в коде сервисов.
+5. **Язык ответа LLM** определяется настройкой профиля пользователя (передаётся в промпт).
+6. **Timeout 120s** — жёсткий лимит. Пользователь получает ошибку, а не зависший run.
+7. **Промпты не логируются** (privacy). Только метаданные вызова.

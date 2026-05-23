@@ -1,0 +1,95 @@
+---
+description: Erman AI — backlog, product directives, замороженные решения
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Erman AI — Backlog и директивы продукта
+
+## Frozen — не менять без явного запроса
+
+1. **Онбординг (первый запуск)** — показывает статичный walkthrough инструментов.
+   НЕ заменять на real-time данные.
+
+2. **Calculator формулы** — коэффициент экономии 70% (`monthly_savings = total × 0.7`)
+   конфигурируемый через env `AUTOMATION_SAVINGS_RATE=0.7`. НЕ менять логику без запроса.
+
+3. **Язык по умолчанию** — русский (`defaultLocale: 'ru'`). НЕ переключать на EN по умолчанию.
+
+---
+
+## Deferred — не приоритизировать без команды
+
+4. **Платёжный шлюз** — интеграция с ЮKassa / Stripe отложена.
+   Текущая модель: ручное выставление счётов, смена тарифа через суперадмина.
+
+5. **OAuth** — авторизация через Google/GitHub отложена на Фазу 6+.
+
+6. **White-label** — API для партнёров (брендирование под их домен) отложено.
+
+7. **Embeddings / семантический поиск** по истории запусков — отложено.
+
+---
+
+## Required engineering work
+
+8. **PDF-экспорт Calculator** — использовать `chromedp` (HTML→PDF) или `gofpdf`.
+   Шаблон: `internal/templates/calculator-report.html`. Поддерживать RU и EN шаблоны.
+
+9. **DOCX-экспорт Proposal** — библиотека `unioffice` или `go-docx`.
+   Шаблон документа в `internal/templates/proposal-template.docx`.
+
+10. **Polling UI** — компонент `<RunStatusPoller runId={id} onComplete={...} />`
+    с авто-refresh каждые 3 секунды. Показывать spinner + progress text.
+    НЕ использовать fake progress bar.
+
+11. **Tool limit badge** — в карточке каждого инструмента на дашборде показывать
+    `X / Y запусков осталось` из реального API (`GET /api/v1/tools`).
+    НЕ хардкодить в frontend.
+
+12. **Admin stats page** — дашборд суперадмина с метриками:
+    - Всего пользователей / активных за 30 дней
+    - Запусков по инструментам (bar chart по дням)
+    - LLM расход (₽ и токены) по дням
+    - Топ-10 пользователей по расходу
+
+---
+
+## Roadmap (будущие инструменты)
+
+Каждый новый инструмент добавляется через:
+1. Новая запись в таблице `tools` (или конфиг)
+2. Новый endpoint `POST /api/v1/tools/{slug}/run`
+3. Новая страница в dashboard `/dashboard/tools/{slug}`
+4. Обновление feature flags в тарифных планах
+
+### Планируемые инструменты (приоритет — по запросу)
+
+| Slug | Название | Тип | Описание |
+|------|----------|-----|----------|
+| `job-description` | AI Job Description | async | Генератор описания вакансий с требованиями и задачами |
+| `process-map` | Process Mapper | async | Визуализация бизнес-процесса из описания в BPMN/текст |
+| `competitor-analysis` | Competitor Analysis | async | Анализ конкурентов по URL или описанию рынка |
+| `email-sequence` | Email Sequence | async | Генератор email-цепочки для продаж/онбординга |
+| `sop-generator` | SOP Generator | async | Генератор стандартных операционных процедур |
+| `roi-report` | Full ROI Report | async | Расширенный отчёт (Calculator + стратегия + риски в PDF) |
+
+---
+
+## Tech Debt (известный)
+
+- Calculator API не имеет идемпотентности — повторный запрос создаёт новый run.
+  Добавить `idempotency_key` в заголовки запроса.
+- Артефакты в dev-окружении хранятся локально в `/tmp/artifacts/` — не персистентны между рестартами.
+  Для dev MinIO можно включить через `STORAGE_BACKEND=minio` в .env.
+- PDF-шаблоны не локализованы — нужны отдельные `.html` файлы для RU и EN.
+
+---
+
+## Принципы расширения платформы
+
+1. **Новый инструмент = новый tool_slug** в `tool_runs`. Единая схема истории.
+2. **Синхронный инструмент**: нет LLM → handler считает и возвращает результат напрямую.
+3. **Асинхронный инструмент**: есть LLM → воркер, polling, usage_log обязателен.
+4. **Каждый инструмент имеет feature flag** — можно выключить без деплоя.
+5. **Экспорт PDF/DOCX** — отдельный endpoint, не включён в основной run (требует план Pro+).

@@ -1,0 +1,418 @@
+---
+description: Erman AI — полные правила разработки (архитектура, стек, принципы)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Erman AI — Personal Cabinet Platform
+
+## Обзор проекта
+
+Erman AI — личный кабинет пользователя, совмещающий клиентский портал и платформу автоматизации бизнес-процессов.
+Пользователи получают доступ к набору AI-инструментов — часть бесплатно, часть по подписке.
+
+Ключевой принцип: **инструменты должны давать измеримую ценность за один сеанс.**
+Пользователь открыл → ввёл данные → получил готовый результат (PDF, стратегию, КП).
+
+### Инструменты платформы
+
+1. **Automation Calculator** — веб-калькулятор ROI: помогает оценить, оправдана ли автоматизация
+   конкретного процесса. Вход: параметры процесса (часы/месяц, FTE, стоимость ошибки).
+   Выход: экономия, срок окупаемости, рекомендация. Результат экспортируется в PDF.
+
+2. **AI Strategy Generator** — генерирует персонализированную стратегию внедрения AI для бизнеса.
+   Вход: отрасль, размер компании, цели, текущий стек. Выход: структурированный документ-стратегия
+   с roadmap, приоритетами, рисками. Генерируется через LLM (OpenRouter).
+
+3. **Proposal Generator** — формирует коммерческое предложение на основе результатов калькулятора.
+   Вход: результаты Automation Calculator + данные клиента. Выход: готовое КП в PDF/DOCX.
+
+4. *(Зарезервировано)* — дополнительные инструменты добавляются через систему feature flags.
+
+### Стек
+
+- **Backend:** Go 1.23+
+- **Frontend:** Next.js 15+ (App Router), TypeScript, Tailwind CSS
+- **Database:** PostgreSQL 16+ (основная БД)
+- **LLM Provider:** OpenRouter (все LLM-запросы только через OpenRouter)
+- **Reverse Proxy:** Nginx (внутри Docker)
+- **Контейнеризация:** Docker + Docker Compose
+- **Очереди (production):** NATS JetStream
+- **Кэш (production):** DragonflyDB
+- **Object Storage (production):** MinIO (PDF/DOCX артефакты)
+
+---
+
+## Структура проекта
+
+```
+erman-ai/
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── .env.example
+├── .env
+├── .gitignore
+├── Makefile
+├── nginx/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── conf.d/
+│   │   └── default.conf
+│   └── ssl/
+│       └── .gitkeep
+├── backend/
+│   ├── Dockerfile
+│   ├── Dockerfile.dev
+│   ├── .air.toml
+│   ├── go.mod
+│   ├── go.sum
+│   ├── cmd/
+│   │   └── server/
+│   │       └── main.go
+│   ├── internal/
+│   │   ├── config/
+│   │   │   └── config.go
+│   │   ├── server/
+│   │   │   └── server.go
+│   │   ├── middleware/
+│   │   │   ├── logging.go
+│   │   │   ├── cors.go
+│   │   │   └── auth.go
+│   │   ├── handler/
+│   │   │   ├── health.go
+│   │   │   ├── auth.go
+│   │   │   ├── tools.go
+│   │   │   ├── calculator.go
+│   │   │   ├── strategy.go
+│   │   │   └── proposal.go
+│   │   ├── service/
+│   │   │   ├── auth.go
+│   │   │   ├── calculator.go
+│   │   │   ├── strategy.go
+│   │   │   ├── proposal.go
+│   │   │   └── llm.go
+│   │   ├── repository/
+│   │   │   ├── postgres.go
+│   │   │   ├── user.go
+│   │   │   ├── tool_run.go
+│   │   │   └── api_key.go
+│   │   └── model/
+│   │       ├── user.go
+│   │       ├── tool.go
+│   │       └── billing.go
+│   └── migrations/
+│       ├── 001_init.up.sql
+│       ├── 001_init.down.sql
+│       ├── 002_tools.up.sql
+│       └── 002_tools.down.sql
+├── frontend/
+│   ├── Dockerfile
+│   ├── Dockerfile.dev
+│   ├── next.config.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── tailwind.config.ts
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx
+│       │   ├── page.tsx
+│       │   └── dashboard/
+│       │       ├── layout.tsx
+│       │       ├── page.tsx
+│       │       ├── tools/
+│       │       │   ├── calculator/
+│       │       │   ├── strategy/
+│       │       │   └── proposal/
+│       │       ├── billing/
+│       │       ├── settings/
+│       │       └── admin/
+│       ├── components/
+│       │   ├── ui/          (shadcn/ui)
+│       │   ├── layout/
+│       │   ├── tools/
+│       │   └── dashboard/
+│       └── lib/
+│           ├── api.ts
+│           ├── auth.ts
+│           └── utils.ts
+├── wordpress/
+│   └── Dockerfile
+├── scripts/
+│   ├── deploy.sh
+│   ├── backup.sh
+│   ├── setup.sh
+│   └── ssl-init.sh
+└── backups/
+    └── .gitkeep
+```
+
+---
+
+## Фундаментальные архитектурные принципы
+
+### 1. Tool Run — базовая единица работы
+
+Каждый запуск инструмента фиксируется как `ToolRun`:
+
+```go
+// internal/model/tool.go
+
+type ToolRun struct {
+    ID         string          `json:"id"`
+    UserID     string          `json:"user_id"`
+    ToolSlug   string          `json:"tool_slug"`   // calculator, strategy, proposal
+    PlanTier   string          `json:"plan_tier"`   // free, pro, business
+    Input      json.RawMessage `json:"input"`       // входные параметры (JSONB)
+    Output     json.RawMessage `json:"output"`      // результат (JSONB)
+    ArtifactURL *string        `json:"artifact_url"` // ссылка на PDF/DOCX если есть
+    TokensUsed  int64          `json:"tokens_used"` // LLM токены (0 для calculator)
+    Status     RunStatus       `json:"status"`      // pending, processing, done, error
+    CreatedAt  time.Time       `json:"created_at"`
+    UpdatedAt  time.Time       `json:"updated_at"`
+}
+
+type RunStatus string
+const (
+    RunStatusPending    RunStatus = "pending"
+    RunStatusProcessing RunStatus = "processing"
+    RunStatusDone       RunStatus = "done"
+    RunStatusError      RunStatus = "error"
+)
+```
+
+### 2. LLM через воркеры
+
+- Синхронные LLM-вызовы ЗАПРЕЩЕНЫ в HTTP-handlers (кроме малых, <3 сек).
+- Strategy и Proposal генерируются асинхронно через очередь воркеров.
+- Статус отслеживается через polling `GET /api/v1/runs/:id`.
+- Каждый LLM-вызов пишет запись в `usage_log` (модель, токены, стоимость).
+
+### 3. Feature Flags для инструментов
+
+Каждый инструмент имеет конфигурацию доступа:
+```go
+type ToolConfig struct {
+    Slug        string   `json:"slug"`
+    Name        string   `json:"name"`
+    FreeRuns    int      `json:"free_runs"`    // бесплатных запусков/месяц (-1 = unlimited)
+    RequiresPlan string  `json:"requires_plan"` // "" = доступен всем, "pro" = только Pro+
+    Enabled     bool     `json:"enabled"`
+}
+```
+
+### 4. PDF/DOCX артефакты
+
+- Генерируются на backend (Go: унифицированная библиотека gofpdf или chromedp для HTML→PDF).
+- Сохраняются в MinIO (production) или локальную папку (dev).
+- Ссылка на скачивание — подписанный URL с TTL 24h.
+- Пользователь может скачать из истории своих запусков.
+
+### 5. SGR для LLM-инструментов
+
+Правило (из Mnemoniqa опыта, применимо здесь):
+- **Extraction/структурированный вывод** → дешёвая быстрая модель (Gemini Flash, Haiku) + `response_format` JSON Schema.
+- **Генерация стратегии/КП** → умная модель (Sonnet, GPT-4.1), развёрнутый reasoning.
+- Никогда не использовать дорогую модель там, где нужна только структура.
+
+---
+
+## API Endpoints
+
+```
+# Auth
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+POST   /api/v1/auth/logout
+GET    /api/v1/auth/me
+PUT    /api/v1/auth/me
+POST   /api/v1/auth/change-password
+
+# API Keys
+GET    /api/v1/api-keys
+POST   /api/v1/api-keys
+DELETE /api/v1/api-keys/:id
+
+# Tools
+GET    /api/v1/tools                        # Список доступных инструментов с лимитами
+GET    /api/v1/tools/:slug                  # Конфигурация конкретного инструмента
+
+# Tool Runs (общий)
+GET    /api/v1/runs                         # История запусков текущего пользователя
+GET    /api/v1/runs/:id                     # Статус и результат запуска
+DELETE /api/v1/runs/:id                     # Удалить из истории
+
+# Calculator (синхронный — нет LLM)
+POST   /api/v1/tools/calculator/run         # Считает мгновенно, возвращает результат
+POST   /api/v1/tools/calculator/export      # Экспорт результата в PDF
+
+# AI Strategy Generator (асинхронный)
+POST   /api/v1/tools/strategy/run           # Создаёт run, возвращает run_id
+GET    /api/v1/runs/:id                     # Polling статуса
+
+# Proposal Generator (асинхронный)
+POST   /api/v1/tools/proposal/run           # Создаёт run, возвращает run_id
+
+# Billing
+GET    /api/v1/billing/plan                 # Текущий тариф и лимиты
+GET    /api/v1/billing/usage                # Потребление за период
+GET    /api/v1/billing/history              # История платежей
+
+# Admin (суперадмин)
+GET    /api/v1/admin/users
+GET    /api/v1/admin/users/:id
+PATCH  /api/v1/admin/users/:id
+GET    /api/v1/admin/runs                   # Все запуски всех пользователей
+GET    /api/v1/admin/stats                  # Общая статистика платформы
+GET    /api/v1/admin/usage-log              # LLM usage log
+PATCH  /api/v1/admin/tools/:slug            # Включить/выключить инструмент
+
+# System
+GET    /health
+```
+
+---
+
+## Схема роутинга
+
+```
+https://erman.ai/                        → WordPress (лендинг, блог, кейсы)
+https://erman.ai/pricing                 → WordPress
+https://erman.ai/blog                    → WordPress
+https://erman.ai/wp-admin/              → WordPress
+https://erman.ai/dashboard              → Next.js (basePath=/dashboard)
+https://erman.ai/dashboard/...          → Next.js
+https://erman.ai/api/v1/...             → Go backend
+https://erman.ai/health                 → Go backend
+```
+
+---
+
+## Next.js Frontend
+
+- App Router, TypeScript strict, Tailwind CSS, shadcn/ui
+- `nuqs` для URL state, `zustand` если нужен клиентский стейт
+- `react-hook-form` + `zod`, `lucide-react`
+- Server Components по умолчанию, `"use client"` = исключение
+- **Светлая тема по умолчанию.** Лаконичный дизайн. Без декора.
+- Ориентир: Stripe Dashboard, Linear, Notion
+
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = { basePath: '/dashboard', output: 'standalone' }
+```
+
+---
+
+## Docker
+
+### Development: nginx + backend + frontend + wordpress + postgres + mysql
+### Production: + nats + dragonfly + minio, replicas, resource limits
+
+Nginx конфиг:
+- `/api/` → backend:8080 (timeout 120s, body 50M)
+- `/dashboard` → frontend:3000 (websocket upgrade)
+- `/_next/` → frontend (cache 365d)
+- `/wp-admin/`, `/wp-content/`, `/wp-includes/`, `/wp-json/`, `/wp-login.php` → wordpress
+- `/` → wordpress (всё остальное)
+
+---
+
+## Переменные окружения
+
+```bash
+# PostgreSQL
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=erman_ai
+POSTGRES_USER=erman_ai
+POSTGRES_PASSWORD=
+
+# MySQL (WordPress)
+WP_DB_NAME=wordpress
+WP_DB_USER=wordpress
+WP_DB_PASSWORD=
+WP_DB_ROOT_PASSWORD=
+
+# OpenRouter
+OPENROUTER_API_KEY=
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL_FAST=google/gemini-flash-1.5-8b       # extraction, структура
+OPENROUTER_MODEL_SMART=anthropic/claude-sonnet-4-5     # strategy, proposal
+OPENROUTER_MODEL_EMBED=openai/text-embedding-3-small
+
+# Backend
+SERVER_PORT=8080
+JWT_SECRET=
+API_KEY_SALT=
+ENVIRONMENT=development
+LOG_LEVEL=info
+
+# Frontend
+NEXT_PUBLIC_API_URL=/api/v1
+NEXT_PUBLIC_APP_NAME=Erman AI
+
+# Workers
+WORKER_STRATEGY_CONCURRENCY=3
+WORKER_PROPOSAL_CONCURRENCY=3
+
+# Production (NATS, DragonflyDB, MinIO — раскомментировать в prod)
+# NATS_URL=nats://nats:4222
+# DRAGONFLY_URL=redis://dragonfly:6379
+# MINIO_ENDPOINT=minio:9000
+# MINIO_ACCESS_KEY=
+# MINIO_SECRET_KEY=
+# MINIO_BUCKET=erman-ai-artifacts
+
+# Domain & SSL
+DOMAIN=erman.ai
+CERTBOT_EMAIL=hello@erman.ai
+```
+
+---
+
+## Правила разработки
+
+- Conventional commits на английском. Ветки: main, develop, feat/xxx, fix/xxx.
+- `.env` НИКОГДА в git.
+- API-ключи: SHA-256 + salt. Пароли: bcrypt cost 12.
+- Rate limiting: 100/min auth, 10/min unauth.
+- SQL: только параметризованные запросы (pgx).
+- Тесты: `testing` + `testify/assert`, покрытие >70% service layer.
+- Все LLM-вызовы → `usage_log` (токены, модель, стоимость, run_id).
+- Все запуски инструментов → `tool_runs` таблица.
+
+---
+
+## Порядок разработки
+
+### Фаза 1: Скелет (Docker Compose, health, WordPress лендинг)
+### Фаза 2: Аутентификация (JWT, API-ключи, фронтенд auth)
+### Фаза 3: Automation Calculator (синхронный, без LLM, PDF-экспорт)
+### Фаза 4: AI Strategy Generator (асинхронный, LLM, streaming UI)
+### Фаза 5: Proposal Generator (асинхронный, LLM, PDF/DOCX)
+### Фаза 6: Биллинг и тарифные планы
+### Фаза 7: Admin панель
+### Фаза 8: Production (NATS, MinIO, SSL, мониторинг)
+
+---
+
+## Критические правила (НИКОГДА не нарушай)
+
+1. **Nginx ВСЕГДА внутри Docker.**
+2. **PostgreSQL и MySQL порты НЕ наружу** в production.
+3. **Все LLM — только через OpenRouter.**
+4. **Фоновые LLM — через воркеры.** Handler НЕ вызывает LLM синхронно для Strategy/Proposal.
+5. **Каждый LLM-вызов → usage_log** (токены, модель, стоимость, run_id).
+6. **Каждый запуск инструмента → tool_runs** (input, output, статус).
+7. **Секреты — только env.** Ничего в коде.
+8. **SQL — только pgx с параметризацией.**
+9. **Фронтенд — Server Components по умолчанию.**
+10. **Роутинг: `/` → WordPress, `/dashboard` → Next.js, `/api` → Go.**
+11. **Next.js basePath = "/dashboard".**
+12. **Светлая тема по умолчанию. Минимализм.**
+13. **Calculator — синхронный, без LLM.** Формулы считаются на backend в Go.
+14. **Strategy и Proposal — асинхронные.** Всегда через очередь, polling через run_id.
+15. **PDF-артефакты** хранятся в MinIO (prod) или локально (dev), НЕ в базе.
+16. **Feature flags** контролируют доступ к инструментам. Проверка на backend, не только на frontend.
+17. **Суперадмин** создаётся только через CLI seed-команду.
+18. **WordPress лендинг** — для маркетинга. Dashboard — для работы. Не смешивать.

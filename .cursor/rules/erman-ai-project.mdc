@@ -1,0 +1,298 @@
+---
+description: Erman AI — описание продукта, пользовательские роли, биллинг, инструменты
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Erman AI — Описание продукта
+
+## Миссия
+
+Erman AI — платформа для автоматизации бизнес-процессов с AI.
+Пользователи получают личный кабинет с набором готовых инструментов:
+калькуляторы, генераторы стратегий, шаблоны КП — всё на базе AI.
+
+Аналогия: если Stripe = платежи по API, то Erman AI = AI-инструменты в браузере для бизнеса.
+
+---
+
+## Целевая аудитория
+
+### Первичная
+
+- **Собственники малого и среднего бизнеса** — хотят понять, стоит ли внедрять AI/автоматизацию,
+  и получить конкретный план. Не технари. Хотят цифры и документ.
+- **Руководители и операционные директора** — принимают решение о внедрении. Нужно обоснование,
+  ROI-расчёт, стратегия для презентации совету.
+- **Продажники B2B (в т.ч. агентств)** — используют Proposal Generator для быстрой генерации КП
+  под конкретного клиента.
+
+### Вторичная
+
+- **Консалтинговые агентства** — white-label использование инструментов для клиентов.
+- **Партнёры Erman AI** — получают доступ к платформе для своих клиентов по специальным тарифам.
+
+---
+
+## Пользовательские роли
+
+### 1. Суперадмин (владелец платформы)
+
+Полный контроль. Доступ через `/dashboard/admin`.
+
+**Возможности:**
+- Управление пользователями: просмотр, блокировка, удаление, смена тарифа, сброс пароля
+- Управление тарифными планами: создание, редактирование, лимиты по инструментам
+- Управление инструментами: включение/выключение, настройка лимитов free/paid
+- Финансовая аналитика: MRR, количество платящих пользователей, ARPU
+- Статистика платформы: количество запусков по инструментам, LLM-расход, топ пользователей
+- Операционный мониторинг: очереди воркеров, здоровье БД, баланс OpenRouter
+- LLM usage log: кто, какая модель, сколько токенов, стоимость
+- Системные настройки: дефолтные модели, rate limits
+
+### 2. Пользователь (клиент)
+
+Создаёт аккаунт, пользуется инструментами. Доступ через `/dashboard`.
+
+**Возможности:**
+- Регистрация / логин (email + пароль; в будущем OAuth Google)
+- Главная дашборда: доступные инструменты, история запусков, потребление
+- Использование инструментов:
+  - Запуск инструмента с вводом параметров
+  - Просмотр результата в интерфейсе
+  - Экспорт в PDF/DOCX
+  - История всех своих запусков (с возможностью скачать артефакт повторно)
+- API-ключи: генерация, просмотр (маскированные), отзыв — для programmatic доступа
+- Биллинг:
+  - Текущий тариф и лимиты (сколько запусков осталось)
+  - История платежей
+  - Кнопка апгрейда плана
+- Настройки профиля: email, пароль, язык интерфейса (EN/RU)
+
+---
+
+## Биллинг и тарификация
+
+### Модель: подписка с лимитами по инструментам
+
+Пользователь выбирает тариф, который определяет:
+- Сколько бесплатных запусков каждого инструмента в месяц
+- Доступ к продвинутым инструментам
+
+### Тарифные планы
+
+```go
+type Plan struct {
+    ID            string          `json:"id"`
+    Name          string          `json:"name"`          // "Free", "Pro", "Business"
+    Slug          string          `json:"slug"`          // "free", "pro", "business"
+    PriceMonthlyRUB int           `json:"price_monthly_rub"`
+    PriceYearlyRUB  int           `json:"price_yearly_rub"`
+
+    // Лимиты по инструментам (запусков/месяц; -1 = unlimited)
+    ToolLimits    map[string]int  `json:"tool_limits"`
+    // Пример:
+    // {"calculator": -1, "strategy": 3, "proposal": 1}   // Free
+    // {"calculator": -1, "strategy": 30, "proposal": 10} // Pro
+
+    // Фичи
+    ExportPDF     bool  `json:"export_pdf"`
+    ExportDOCX    bool  `json:"export_docx"`
+    APIAccess     bool  `json:"api_access"`
+    PriorityQueue bool  `json:"priority_queue"`
+    WhiteLabel    bool  `json:"white_label"`
+
+    // Поддержка
+    SupportLevel  string `json:"support_level"` // "community", "email", "priority"
+
+    IsPublic    bool `json:"is_public"`
+    IsArchived  bool `json:"is_archived"`
+}
+```
+
+### Предполагаемые тарифы (MVP)
+
+| Тариф | Цена | Calculator | Strategy | Proposal | PDF | API |
+|-------|------|-----------|----------|----------|-----|-----|
+| Free | 0₽ | Безлимит | 3/мес | 1/мес | ✗ | ✗ |
+| Pro | 2 900₽/мес | Безлимит | 30/мес | 10/мес | ✓ | ✓ |
+| Business | 9 900₽/мес | Безлимит | Безлимит | Безлимит | ✓ | ✓ |
+
+> Тарифы управляются суперадмином и могут быть изменены без деплоя.
+
+---
+
+## Инструменты — подробное описание
+
+### 1. Automation Calculator (`tool_slug: "calculator"`)
+
+**Цель:** помочь бизнесу быстро понять, оправдана ли автоматизация конкретного процесса.
+
+**Входные параметры:**
+```typescript
+interface CalculatorInput {
+  process_name: string          // Название процесса ("Обработка заявок")
+  hours_per_month: number       // Часов в месяц на процесс
+  hourly_rate_rub: number       // Стоимость часа сотрудника (₽)
+  employees_count: number       // Количество сотрудников на процессе
+  error_rate_pct: number        // % ошибок (0-100)
+  error_cost_rub: number        // Стоимость одной ошибки (₽)
+  automation_cost_rub: number   // Предполагаемая стоимость автоматизации (₽)
+  monthly_support_rub: number   // Ежемесячная поддержка (₽)
+}
+```
+
+**Вычисления (на backend, без LLM):**
+- `current_monthly_cost = hours_per_month × hourly_rate_rub × employees_count`
+- `error_monthly_cost = (error_rate_pct/100) × (hours_per_month × employees_count) × error_cost_rub`
+- `total_current_cost = current_monthly_cost + error_monthly_cost`
+- `monthly_savings = total_current_cost × 0.7` (70% экономия от автоматизации — конфигурируемо)
+- `net_monthly_savings = monthly_savings - monthly_support_rub`
+- `payback_months = automation_cost_rub / net_monthly_savings`
+- `recommendation`: "Автоматизировать" / "Рассмотреть" / "Не рекомендуется"
+  (payback < 12 мес = Автоматизировать; 12-24 = Рассмотреть; >24 = Не рекомендуется)
+
+**Вывод:**
+```typescript
+interface CalculatorOutput {
+  current_monthly_cost: number
+  error_monthly_cost: number
+  total_current_cost: number
+  monthly_savings: number
+  net_monthly_savings: number
+  payback_months: number
+  annual_savings: number
+  recommendation: "automate" | "consider" | "not_recommended"
+  recommendation_text: string
+}
+```
+
+**Синхронный** — результат мгновенный. PDF-экспорт требует плана Pro+.
+
+---
+
+### 2. AI Strategy Generator (`tool_slug: "strategy"`)
+
+**Цель:** создать персонализированную стратегию внедрения AI для конкретного бизнеса.
+
+**Входные параметры:**
+```typescript
+interface StrategyInput {
+  company_name: string
+  industry: string              // "Розничная торговля", "Финансы", "Производство", ...
+  company_size: "1-10" | "11-50" | "51-200" | "201-1000" | "1000+"
+  annual_revenue_range: string  // "до 10M", "10-100M", "100M-1B", "1B+"
+  current_ai_level: "none" | "exploring" | "piloting" | "scaling"
+  main_goals: string[]          // ["снизить расходы", "ускорить процессы", ...]
+  pain_points: string           // Свободный текст: главные проблемы
+  budget_range: string          // "до 500K", "500K-5M", "5M+"
+  timeline: "3months" | "6months" | "1year" | "2years"
+  existing_tools: string        // Текущий IT-стек
+}
+```
+
+**LLM Prompt (system):**
+Модель генерирует структурированный документ:
+1. Executive Summary (2-3 абзаца)
+2. Текущая ситуация и диагностика
+3. Рекомендуемые AI-решения (топ-3 с обоснованием)
+4. Roadmap внедрения (по кварталам)
+5. Ключевые риски и митигация
+6. Метрики успеха (KPI)
+7. Следующие шаги (конкретные действия на ближайшие 30 дней)
+
+**Асинхронный** — через воркер. Время генерации: 30-90 секунд.
+Результат доступен в истории. PDF/DOCX — для плана Pro+.
+
+---
+
+### 3. Proposal Generator (`tool_slug: "proposal"`)
+
+**Цель:** сформировать готовое коммерческое предложение для клиента.
+
+**Входные параметры:**
+```typescript
+interface ProposalInput {
+  // Данные клиента
+  client_company: string
+  client_contact: string
+  client_industry: string
+  client_problem: string        // Описание проблемы клиента
+
+  // Данные о решении
+  solution_name: string         // "Автоматизация обработки заявок"
+  solution_description: string  // Что именно предлагается
+  deliverables: string[]        // Что получит клиент
+
+  // Финансовые параметры (из Calculator или вручную)
+  project_cost_rub: number
+  timeline_weeks: number
+  payment_schedule: string      // "50% предоплата, 50% по завершению"
+
+  // Бренд отправителя
+  sender_company: string
+  sender_contact: string
+  sender_phone: string
+  sender_email: string
+
+  // Опционально: результаты калькулятора
+  calculator_run_id?: string
+}
+```
+
+**LLM Prompt (system):**
+Генерирует профессиональное КП с разделами:
+1. Обращение к клиенту
+2. Понимание задачи
+3. Предлагаемое решение
+4. Scope of Work (что входит / что не входит)
+5. Сроки и этапы
+6. Стоимость и условия оплаты
+7. Почему мы (конкурентные преимущества)
+8. Следующий шаг
+
+**Асинхронный.** Выход: PDF и DOCX (для редактирования).
+
+---
+
+## База данных — ключевые таблицы
+
+```sql
+-- Пользователи
+users (id, email, password_hash, role, plan_id, created_at, last_active_at, is_blocked)
+
+-- API ключи
+api_keys (id, user_id, key_hash, name, last_used_at, created_at, revoked_at)
+
+-- Тарифные планы
+plans (id, slug, name, price_monthly_rub, price_yearly_rub, tool_limits jsonb,
+       features jsonb, support_level, is_public, is_archived)
+
+-- История платежей
+subscriptions (id, user_id, plan_id, started_at, expires_at, amount_rub, status)
+
+-- Запуски инструментов
+tool_runs (id, user_id, tool_slug, plan_tier, input jsonb, output jsonb,
+           artifact_url, tokens_used, model_used, status, error_msg,
+           created_at, updated_at, completed_at)
+
+-- LLM usage log
+usage_log (id, user_id, run_id, model, prompt_tokens, completion_tokens,
+           total_tokens, cost_usd, created_at)
+
+-- Счётчик запусков (для лимитов)
+tool_usage_counters (user_id, tool_slug, period_month, runs_count,
+                     PRIMARY KEY (user_id, tool_slug, period_month))
+```
+
+---
+
+## Критические правила продукта
+
+1. **Calculator всегда бесплатен** по количеству запусков. PDF-экспорт — платный.
+2. **Лимиты сбрасываются в начале каждого календарного месяца** (UTC).
+3. **История запусков** хранится 90 дней для Free, 12 месяцев для Pro+.
+4. **Артефакты (PDF/DOCX)** доступны 24 часа по ссылке. Повторное скачивание — из истории.
+5. **Суперадмин может override лимиты** для конкретного пользователя вручную.
+6. **Язык генерации** (EN/RU) берётся из настроек профиля пользователя.
+7. **Данные пользователя** (input/output) — только для него. Суперадмин видит только метаданные.

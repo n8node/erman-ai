@@ -1,0 +1,432 @@
+---
+description: Erman AI — деплой, CI/CD, серверная инфраструктура, Git
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Erman AI — Деплой и инфраструктура
+
+## Git и GitHub
+
+### Репозиторий
+
+- Один моно-репо: `github.com/{username}/erman-ai`
+- Ветки: `main` (production), `develop` (staging), `feat/*`, `fix/*`
+- Защита `main`: merge только через PR
+- `.env` и секреты НИКОГДА не попадают в git
+
+### Коммиты
+
+Conventional commits на английском:
+```
+feat: add automation calculator endpoint
+fix: strategy worker timeout handling
+refactor: extract llm service
+docs: update API documentation
+chore: update dependencies
+deploy: production release v0.1.0
+```
+
+### .gitignore
+
+```gitignore
+# Environment
+.env
+.env.local
+.env.production
+
+# Go
+/backend/tmp/
+/backend/server
+
+# Node
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SSL
+nginx/ssl/*.pem
+nginx/ssl/*.key
+
+# WordPress uploads
+wordpress/uploads/
+
+# Logs
+*.log
+
+# Artifacts (PDF/DOCX — хранятся в MinIO)
+artifacts/
+
+# Backups
+backups/*.sql.gz
+backups/*.tar.gz
+```
+
+---
+
+## Серверные требования
+
+### Минимум для MVP
+
+- **VPS:** 4 vCPU, 8 GB RAM, 80 GB SSD
+- **OS:** Ubuntu 24.04 LTS
+- **Docker:** 27+ с Docker Compose v2
+- **Домен:** `erman.ai` с DNS A-записью на IP сервера
+
+### Подготовка сервера
+
+```bash
+# 1. Обновить систему
+sudo apt update && sudo apt upgrade -y
+
+# 2. Установить Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+
+# 3. Установить зависимости
+sudo apt install docker-compose-plugin make git -y
+
+# 4. Настроить firewall
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+
+# 5. Создать пользователя для деплоя
+sudo adduser deploy
+sudo usermod -aG docker deploy
+sudo usermod -aG sudo deploy
+
+# 6. SSH ключ (с локальной машины)
+ssh-copy-id deploy@{server_ip}
+```
+
+---
+
+## Деплой
+
+### Первый деплой
+
+```bash
+# На сервере:
+cd /opt
+git clone git@github.com:{username}/erman-ai.git
+cd erman-ai
+
+# Создать .env
+cp .env.example .env
+nano .env
+# Заполнить обязательно:
+# POSTGRES_PASSWORD (openssl rand -base64 32)
+# WP_DB_PASSWORD (openssl rand -base64 32)
+# WP_DB_ROOT_PASSWORD (openssl rand -base64 32)
+# JWT_SECRET (openssl rand -base64 64)
+# API_KEY_SALT (openssl rand -base64 32)
+# OPENROUTER_API_KEY
+# ENVIRONMENT=production
+# DOMAIN=erman.ai
+
+# Запустить по HTTP
+make prod
+
+# SSL — только после настройки DNS
+chmod +x scripts/ssl-init.sh
+./scripts/ssl-init.sh
+
+# Применить миграции
+make migrate
+
+# Создать суперадмина
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec backend \
+  ./server --seed-admin --email=admin@erman.ai --password=CHANGE_ME
+
+# Проверить
+curl https://erman.ai/health
+```
+
+### Последующие деплои
+
+```bash
+cd /opt/erman-ai
+git pull origin main
+make prod
+# Если новые миграции:
+make migrate
+```
+
+### scripts/deploy.sh
+
+```bash
+#!/bin/bash
+set -e
+
+SERVER="deploy@{server_ip}"
+PROJECT_DIR="/opt/erman-ai"
+BRANCH="${1:-main}"
+
+echo "=== Deploying branch: $BRANCH ==="
+
+git push origin $BRANCH
+
+ssh $SERVER << EOF
+  set -e
+  cd $PROJECT_DIR
+
+  echo ">>> Pulling latest code..."
+  git fetch origin
+  git checkout $BRANCH
+  git pull origin $BRANCH
+
+  echo ">>> Building and starting containers..."
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+  echo ">>> Running migrations..."
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T backend \
+    goose -dir ./migrations postgres "\$DATABASE_URL" up
+
+  echo ">>> Cleaning old images..."
+  docker image prune -f
+
+  echo ">>> Health check..."
+  sleep 5
+  curl -sf https://erman.ai/health || echo "WARNING: Health check failed!"
+
+  echo ">>> Done!"
+EOF
+
+echo "=== Deploy complete ==="
+```
+
+---
+
+## Makefile
+
+```makefile
+.PHONY: dev prod down migrate migrate-down test lint logs logs-prod \
+        psql wp-cli deploy backup-db backup-wp status ssl-renew
+
+# Development
+dev:
+	docker compose up --build
+
+prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+down:
+	docker compose down
+
+# Migrations
+migrate:
+	docker compose exec backend goose -dir ./migrations postgres "$$DATABASE_URL" up
+
+migrate-down:
+	docker compose exec backend goose -dir ./migrations postgres "$$DATABASE_URL" down
+
+# Testing
+test:
+	cd backend && go test ./...
+
+lint:
+	cd backend && golangci-lint run
+	cd frontend && npm run lint
+
+# Logs
+logs:
+	docker compose logs -f
+
+logs-prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+
+# DB access
+psql:
+	docker compose exec postgres psql -U erman_ai erman_ai
+
+# WordPress CLI
+wp-cli:
+	docker compose exec wordpress wp --allow-root $(filter-out $@,$(MAKECMDGOALS))
+
+# Deploy
+deploy:
+	./scripts/deploy.sh main
+
+deploy-dev:
+	./scripts/deploy.sh develop
+
+# SSL
+ssl-renew:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml exec nginx \
+	  certbot renew
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml exec nginx \
+	  nginx -s reload
+
+# Backups
+backup-db:
+	docker compose exec postgres pg_dump -U erman_ai erman_ai \
+	  | gzip > backups/pg_$(shell date +%Y%m%d_%H%M%S).sql.gz
+
+backup-wp:
+	docker compose exec mysql mysqldump -u wordpress -p wordpress \
+	  | gzip > backups/wp_$(shell date +%Y%m%d_%H%M%S).sql.gz
+
+# Status
+status:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+```
+
+---
+
+## SSL и домен
+
+### DNS записи
+
+```
+A     erman.ai      → {server_ip}
+A     www.erman.ai  → {server_ip}
+```
+
+### ssl-init.sh
+
+```bash
+#!/bin/bash
+set -e
+
+source .env
+
+DOMAIN="${DOMAIN:-erman.ai}"
+EMAIL="${CERTBOT_EMAIL:-hello@erman.ai}"
+
+echo "=== Requesting SSL certificate for $DOMAIN ==="
+
+# Остановить nginx чтобы освободить :80
+docker compose -f docker-compose.yml -f docker-compose.prod.yml stop nginx
+
+# Запросить сертификат
+certbot certonly --standalone \
+  -d "$DOMAIN" \
+  -d "www.$DOMAIN" \
+  --email "$EMAIL" \
+  --agree-tos \
+  --no-eff-email \
+  --non-interactive
+
+# Скопировать в nginx/ssl/
+mkdir -p nginx/ssl
+cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem nginx/ssl/fullchain.pem
+cp /etc/letsencrypt/live/$DOMAIN/privkey.pem nginx/ssl/privkey.pem
+
+# Запустить nginx
+docker compose -f docker-compose.yml -f docker-compose.prod.yml start nginx
+
+echo "=== SSL configured! Now uncomment HTTPS block in nginx/conf.d/default.conf ==="
+```
+
+### ssl-deploy-hook.sh (для автопродления)
+
+```bash
+#!/bin/bash
+source /opt/erman-ai/.env
+DOMAIN="${DOMAIN:-erman.ai}"
+cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem /opt/erman-ai/nginx/ssl/fullchain.pem
+cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /opt/erman-ai/nginx/ssl/privkey.pem
+docker compose -f /opt/erman-ai/docker-compose.yml \
+  -f /opt/erman-ai/docker-compose.prod.yml \
+  exec nginx nginx -s reload
+```
+
+Cron:
+```bash
+0 3 * * * certbot renew --quiet --deploy-hook "/opt/erman-ai/scripts/ssl-deploy-hook.sh" \
+  >> /var/log/certbot-renew.log 2>&1
+```
+
+---
+
+## Бэкапы
+
+### scripts/backup.sh
+
+```bash
+#!/bin/bash
+set -e
+
+BACKUP_DIR="/opt/erman-ai/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+RETENTION_DAYS=30
+
+mkdir -p $BACKUP_DIR
+
+# PostgreSQL
+docker compose -f /opt/erman-ai/docker-compose.yml \
+  -f /opt/erman-ai/docker-compose.prod.yml \
+  exec -T postgres pg_dump -U erman_ai erman_ai \
+  | gzip > $BACKUP_DIR/pg_$DATE.sql.gz
+
+# MySQL (WordPress)
+docker compose -f /opt/erman-ai/docker-compose.yml \
+  -f /opt/erman-ai/docker-compose.prod.yml \
+  exec -T mysql mysqldump -u wordpress -p$WP_DB_PASSWORD wordpress \
+  | gzip > $BACKUP_DIR/wp_$DATE.sql.gz
+
+# Удалить старые
+find $BACKUP_DIR -type f -mtime +$RETENTION_DAYS -delete
+
+echo "Backup completed: $DATE"
+```
+
+Cron:
+```bash
+0 4 * * * /opt/erman-ai/scripts/backup.sh >> /var/log/erman-ai-backup.log 2>&1
+```
+
+---
+
+## Мониторинг
+
+### Health endpoint
+
+`GET /health` → расширенный ответ:
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "uptime_seconds": 86400,
+  "postgres": "ok",
+  "workers": {
+    "strategy_queue": 0,
+    "proposal_queue": 0,
+    "errors_24h": 0
+  }
+}
+```
+
+### UptimeRobot / Hetrixtools
+
+- Проверка `https://erman.ai/health` каждые 5 минут
+- Уведомление в Telegram при даунтайме
+
+---
+
+## Правила деплоя
+
+1. **Деплой ТОЛЬКО из ветки `main`.** Develop — для staging.
+2. **Перед деплоем — `git pull` на сервере, НЕ копирование файлов.**
+3. **`.env` создаётся вручную на сервере, НЕ пушится в git.**
+4. **Миграции запускаются ПОСЛЕ старта контейнеров.**
+5. **SSL:** `scripts/ssl-init.sh`; продление — `certbot renew` с `ssl-deploy-hook.sh`.
+6. **Бэкапы БД** — ежедневно, хранятся 30 дней.
+7. **Суперадмин** — только через CLI, НЕ через форму регистрации.
+8. **После деплоя** — проверить `/health`.
+9. **Логи Docker** — json-file, max 10MB × 3 файла.
+10. **DNS должен указывать на сервер** ДО запуска ssl-init.sh.

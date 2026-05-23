@@ -1,0 +1,9 @@
+-- +goose Down
+DROP TABLE IF EXISTS tool_usage_counters;
+DROP TABLE IF EXISTS usage_log;
+DROP TABLE IF EXISTS tool_runs;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS api_keys;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS tools;
+DROP TABLE IF EXISTS plans;
