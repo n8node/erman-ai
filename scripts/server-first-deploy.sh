@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # First deploy on a fresh Ubuntu VPS. Run as root or user with sudo + docker.
-# Usage: curl -fsSL ... | bash   OR   bash scripts/server-first-deploy.sh
+# Usage (make NOT required):
+#   cd /opt/erman-ai && bash scripts/server-first-deploy.sh
 set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/opt/erman-ai}"
@@ -11,6 +12,12 @@ DOMAIN="${DOMAIN:-erman.ai}"
 echo "=== Erman AI — first deploy ==="
 echo "Project: $PROJECT_DIR"
 echo "Domain:  $DOMAIN ($(getent hosts "$DOMAIN" 2>/dev/null | awk '{print $1}' || echo 'DNS?'))"
+
+if command -v apt-get >/dev/null 2>&1; then
+  echo ">>> Installing system packages (git, curl, openssl, make)..."
+  DEBIAN_FRONTEND=noninteractive apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git curl openssl make ca-certificates
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo ">>> Installing Docker..."
@@ -58,25 +65,30 @@ fi
 
 chmod +x scripts/*.sh 2>/dev/null || true
 
+if [ ! -f .env ]; then
+  echo "ERROR: .env was not created — aborting before docker compose"
+  exit 1
+fi
+
+COMPOSE="docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml"
+
 echo ">>> Building and starting containers (this may take 10–15 min)..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+$COMPOSE up --build -d
 
 echo ">>> Waiting for postgres..."
 for i in $(seq 1 30); do
-  if docker compose exec -T postgres pg_isready -U erman_ai -d erman_ai >/dev/null 2>&1; then
+  if $COMPOSE exec -T postgres pg_isready -U erman_ai -d erman_ai >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
 
 echo ">>> Running migrations..."
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T backend \
-  goose -dir ./migrations postgres "$(
-    grep '^DATABASE_URL=' .env | cut -d= -f2-
-  )" up
+DB_URL=$(grep '^DATABASE_URL=' .env | cut -d= -f2-)
+$COMPOSE exec -T backend goose -dir ./migrations postgres "$DB_URL" up
 
 echo ">>> Container status:"
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+$COMPOSE ps
 
 echo ""
 echo ">>> Health check (HTTP):"
