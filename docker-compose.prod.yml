@@ -12,10 +12,6 @@ services:
           memory: 256M
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    volumes: []
     environment:
       ENVIRONMENT: production
     logging:
@@ -30,10 +26,6 @@ services:
           memory: 512M
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    volumes: []
     logging:
       driver: json-file
       options:

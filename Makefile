@@ -5,7 +5,7 @@ first-deploy:
 	bash scripts/server-first-deploy.sh
 
 dev:
-	docker compose up --build
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 prod:
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
