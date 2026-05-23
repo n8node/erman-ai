@@ -1,5 +1,8 @@
 .PHONY: dev prod down migrate migrate-down test lint logs logs-prod \
-        psql wp-cli deploy deploy-dev backup-db backup-wp status ssl-renew setup
+        psql wp-cli deploy deploy-dev backup-db backup-wp status ssl-renew setup first-deploy
+
+first-deploy:
+	bash scripts/server-first-deploy.sh
 
 dev:
 	docker compose up --build

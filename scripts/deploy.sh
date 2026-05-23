@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-SERVER="deploy@YOUR_SERVER_IP"
+SERVER="${DEPLOY_SERVER:-deploy@185.77.231.245}"
 PROJECT_DIR="/opt/erman-ai"
 BRANCH="${1:-main}"
 
@@ -30,7 +30,7 @@ ssh "$SERVER" << EOF
 
   echo ">>> Health check..."
   sleep 5
-  curl -sf https://erman.ai/health || echo "WARNING: Health check failed!"
+  curl -sf http://127.0.0.1/health || curl -sf https://erman.ai/health || echo "WARNING: Health check failed!"
 
   echo ">>> Done!"
 EOF

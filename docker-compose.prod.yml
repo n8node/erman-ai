@@ -15,6 +15,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    volumes: []
+    environment:
+      ENVIRONMENT: production
     logging:
       driver: json-file
       options:
@@ -30,6 +33,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    volumes: []
     logging:
       driver: json-file
       options:
