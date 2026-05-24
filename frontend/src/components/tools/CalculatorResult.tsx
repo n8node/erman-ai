@@ -10,6 +10,7 @@ import {
   shareRun,
 } from "@/lib/api";
 import { LeadForm } from "./LeadForm";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -93,10 +94,10 @@ export function CalculatorResult({ runId, input, output }: Props) {
       </h2>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label={t("metrics.netBenefit")} value={formatRub(output.net_benefit_monthly)} large />
-        <Metric label={t("metrics.payback")} value={formatPayback(output.payback_months, t)} large />
-        <Metric label={t("metrics.fte")} value={output.fte.toFixed(2)} sub={t("metrics.fteHint")} />
-        <Metric label={t("metrics.roi")} value={`${output.roi_horizon_pct.toFixed(1)}%`} />
+        <Metric label={t("metrics.netBenefit")} value={formatRub(output.net_benefit_monthly)} large tooltipKey="calculator.result.net_benefit" />
+        <Metric label={t("metrics.payback")} value={formatPayback(output.payback_months, t)} large tooltipKey="calculator.result.payback" />
+        <Metric label={t("metrics.fte")} value={output.fte.toFixed(2)} sub={t("metrics.fteHint")} tooltipKey="calculator.wizard.fte" />
+        <Metric label={t("metrics.roi")} value={`${output.roi_horizon_pct.toFixed(1)}%`} tooltipKey="calculator.result.roi" />
       </div>
 
       <div className={cn("rounded-lg border px-4 py-3 text-sm", recClass)}>
@@ -121,7 +122,12 @@ export function CalculatorResult({ runId, input, output }: Props) {
               <tbody>
                 {output.kpi_rows.map((row) => (
                   <tr key={row.key} className="border-b border-border last:border-0">
-                    <td className="px-3 py-2.5 font-medium">{row.label}</td>
+                    <td className="px-3 py-2.5 font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        {row.label}
+                        <HelpTooltip tooltipKey={`calculator.kpi.${row.key}`} />
+                      </span>
+                    </td>
                     <td className="px-3 py-2.5 text-text2">{row.before}</td>
                     <td className="px-3 py-2.5">{row.after}</td>
                     <td className="px-3 py-2.5">
@@ -141,9 +147,18 @@ export function CalculatorResult({ runId, input, output }: Props) {
 
       {showDetails && (
         <div className="grid gap-2 sm:grid-cols-3 text-sm text-text2 border-t border-border pt-4">
-          <div>TCO: {formatRub(output.tco_horizon)}</div>
-          <div>NPV: {formatRub(output.npv)}</div>
-          <div>Hm: {Math.round(output.hours_saved_month)} {t("wizard.hoursMonth")}</div>
+          <div className="inline-flex items-center gap-1">
+            TCO: {formatRub(output.tco_horizon)}
+            <HelpTooltip tooltipKey="calculator.result.tco" />
+          </div>
+          <div className="inline-flex items-center gap-1">
+            NPV: {formatRub(output.npv)}
+            <HelpTooltip tooltipKey="calculator.result.npv" />
+          </div>
+          <div className="inline-flex items-center gap-1">
+            Hm: {Math.round(output.hours_saved_month)} {t("wizard.hoursMonth")}
+            <HelpTooltip tooltipKey="calculator.wizard.hm_preview" />
+          </div>
         </div>
       )}
 
@@ -178,10 +193,19 @@ export function CalculatorResult({ runId, input, output }: Props) {
   );
 }
 
-function Metric({ label, value, sub, large }: { label: string; value: string; sub?: string; large?: boolean }) {
+function Metric({ label, value, sub, large, tooltipKey }: { label: string; value: string; sub?: string; large?: boolean; tooltipKey?: string }) {
   return (
     <div className="rounded-lg border border-border bg-bg2 p-4">
-      <p className="text-[10px] uppercase tracking-wider text-text3">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-text3">
+        {tooltipKey ? (
+          <span className="inline-flex items-center gap-1 normal-case">
+            <span className="uppercase tracking-wider">{label}</span>
+            <HelpTooltip tooltipKey={tooltipKey} />
+          </span>
+        ) : (
+          label
+        )}
+      </p>
       <p className={cn("mt-2 font-medium", large ? "text-xl" : "text-lg")}>{value}</p>
       {sub && <p className="mt-1 text-[10px] text-text3">{sub}</p>}
     </div>
