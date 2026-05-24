@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { register } from "@/lib/api";
@@ -9,6 +9,8 @@ import { register } from "@/lib/api";
 export function RegisterForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referral = searchParams.get("ref") || undefined;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -28,8 +30,8 @@ export function RegisterForm() {
     }
     setLoading(true);
     try {
-      await register(email, password);
-      router.push("/");
+      const user = await register(email, password, referral);
+      router.push(user.onboarding_completed ? "/" : "/onboarding");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("registerFailed"));
@@ -40,6 +42,11 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {referral === "erman" && (
+        <div className="rounded-md border border-accent bg-accent-bg px-3 py-2 text-sm text-accent">
+          {t("ermanReferral")}
+        </div>
+      )}
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}

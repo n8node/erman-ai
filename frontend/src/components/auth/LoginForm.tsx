@@ -19,8 +19,8 @@ export function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
-      router.push("/");
+      const user = await login(email, password);
+      router.push(user.onboarding_completed ? "/" : "/onboarding");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loginFailed"));

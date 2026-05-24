@@ -19,21 +19,25 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{pool: pool}
 }
 
-func (r *UserRepository) Create(ctx context.Context, email, passwordHash string, planID *string, role string) (*model.User, error) {
+const userColumns = `id, email, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at`
+
+func (r *UserRepository) Create(ctx context.Context, email, passwordHash string, planID *string, role, segment string, onboardingDone bool) (*model.User, error) {
 	if role == "" {
 		role = "user"
 	}
+	if segment == "" {
+		segment = model.AccountSegmentPartner
+	}
 	const q = `
-		INSERT INTO users (email, password_hash, role, plan_id)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, role, plan_id, locale, is_blocked, created_at, updated_at, last_active_at
-	`
-	return r.scanUser(r.pool.QueryRow(ctx, q, email, passwordHash, role, planID))
+		INSERT INTO users (email, password_hash, role, plan_id, account_segment, onboarding_completed)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING ` + userColumns
+	return r.scanUser(r.pool.QueryRow(ctx, q, email, passwordHash, role, planID, segment, onboardingDone))
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, string, error) {
 	const q = `
-		SELECT id, email, password_hash, role, plan_id, locale, is_blocked, created_at, updated_at, last_active_at
+		SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at
 		FROM users WHERE email = $1
 	`
 	var hash string
@@ -46,10 +50,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*model.User, error) {
-	const q = `
-		SELECT id, email, password_hash, role, plan_id, locale, is_blocked, created_at, updated_at, last_active_at
-		FROM users WHERE id = $1
-	`
+	const q = `SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at FROM users WHERE id = $1`
 	var hash string
 	row := r.pool.QueryRow(ctx, q, id)
 	u, err := r.scanUserRow(row, &hash)
@@ -63,9 +64,16 @@ func (r *UserRepository) UpdateProfile(ctx context.Context, id, email, locale st
 	const q = `
 		UPDATE users SET email = $2, locale = $3, updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, email, role, plan_id, locale, is_blocked, created_at, updated_at, last_active_at
-	`
+		RETURNING ` + userColumns
 	return r.scanUser(r.pool.QueryRow(ctx, q, id, email, locale))
+}
+
+func (r *UserRepository) CompleteOnboarding(ctx context.Context, id, segment string) (*model.User, error) {
+	const q = `
+		UPDATE users SET account_segment = $2, onboarding_completed = true, updated_at = NOW()
+		WHERE id = $1
+		RETURNING ` + userColumns
+	return r.scanUser(r.pool.QueryRow(ctx, q, id, segment))
 }
 
 func (r *UserRepository) UpdatePassword(ctx context.Context, id, passwordHash string) error {
@@ -93,7 +101,8 @@ func (r *UserRepository) GetPlanIDBySlug(ctx context.Context, slug string) (*str
 func (r *UserRepository) scanUser(row pgx.Row) (*model.User, error) {
 	var u model.User
 	err := row.Scan(
-		&u.ID, &u.Email, &u.Role, &u.PlanID, &u.Locale, &u.IsBlocked,
+		&u.ID, &u.Email, &u.Role, &u.PlanID, &u.Locale,
+		&u.AccountSegment, &u.OnboardingCompleted, &u.IsBlocked,
 		&u.CreatedAt, &u.UpdatedAt, &u.LastActiveAt,
 	)
 	return &u, err
@@ -102,7 +111,8 @@ func (r *UserRepository) scanUser(row pgx.Row) (*model.User, error) {
 func (r *UserRepository) scanUserRow(row pgx.Row, hash *string) (*model.User, error) {
 	var u model.User
 	err := row.Scan(
-		&u.ID, &u.Email, hash, &u.Role, &u.PlanID, &u.Locale, &u.IsBlocked,
+		&u.ID, &u.Email, hash, &u.Role, &u.PlanID, &u.Locale,
+		&u.AccountSegment, &u.OnboardingCompleted, &u.IsBlocked,
 		&u.CreatedAt, &u.UpdatedAt, &u.LastActiveAt,
 	)
 	return &u, err
@@ -115,12 +125,6 @@ func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 		return false, nil
 	}
 	return err == nil, err
-}
-
-func (r *UserRepository) CountByRole(ctx context.Context, role string) (int, error) {
-	var n int
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE role = $1`, role).Scan(&n)
-	return n, err
 }
 
 func (r *UserRepository) GetPasswordHashByID(ctx context.Context, id string) (string, error) {

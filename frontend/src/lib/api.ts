@@ -4,7 +4,62 @@ export type User = {
   role: string;
   plan_id: string | null;
   locale: string;
+  account_segment: "partner" | "direct_lead";
+  onboarding_completed: boolean;
   is_blocked: boolean;
+  created_at: string;
+};
+
+export type CalculatorInput = {
+  process_name: string;
+  hours_per_month: number;
+  hourly_rate_rub: number;
+  employees_count: number;
+  error_rate_pct: number;
+  error_cost_rub: number;
+  automation_cost_rub: number;
+  monthly_support_rub: number;
+};
+
+export type CalculatorOutput = {
+  current_monthly_cost: number;
+  error_monthly_cost: number;
+  total_current_cost: number;
+  monthly_savings: number;
+  net_monthly_savings: number;
+  payback_months: number;
+  annual_savings: number;
+  recommendation: "automate" | "consider" | "not_recommended";
+  recommendation_text: string;
+};
+
+export type CalculatorRunResult = {
+  run_id: string;
+  input: CalculatorInput;
+  output: CalculatorOutput;
+};
+
+export type BillingPlan = {
+  plan_slug: string;
+  plan_name: string;
+  features: Record<string, unknown>;
+  tool_limits: Record<string, number>;
+  usage: {
+    share_report_used: number;
+    share_report_limit: number;
+  };
+};
+
+export type ShareResult = {
+  token: string;
+  expires_at: string;
+  url: string;
+};
+
+export type PublicReport = {
+  process_name: string;
+  input: CalculatorInput;
+  output: CalculatorOutput;
   created_at: string;
 };
 
@@ -24,6 +79,16 @@ export async function apiFetch<T>(
     },
   });
 
+  if (init?.headers && (init.headers as Record<string, string>)["Accept"] === "application/pdf") {
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(
+        typeof data.error === "string" ? data.error : "request failed"
+      );
+    }
+    return res.blob() as Promise<T>;
+  }
+
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
@@ -42,10 +107,21 @@ export async function login(email: string, password: string) {
   });
 }
 
-export async function register(email: string, password: string) {
+export async function register(
+  email: string,
+  password: string,
+  referral?: string
+) {
   return apiFetch<User>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, referral }),
+  });
+}
+
+export async function completeOnboarding(segment: "partner" | "direct_lead") {
+  return apiFetch<User>("/auth/onboarding", {
+    method: "POST",
+    body: JSON.stringify({ segment }),
   });
 }
 
@@ -71,4 +147,53 @@ export async function changePassword(
       new_password: newPassword,
     }),
   });
+}
+
+export async function runCalculator(input: CalculatorInput) {
+  return apiFetch<CalculatorRunResult>("/tools/calculator/run", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function exportCalculatorPDF(runId: string) {
+  const res = await fetch(`${clientBase()}/tools/calculator/export`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof data.error === "string" ? data.error : "export failed"
+    );
+  }
+  return res.blob();
+}
+
+export async function shareRun(runId: string) {
+  return apiFetch<ShareResult>(`/runs/${runId}/share`, { method: "POST" });
+}
+
+export async function getBillingPlan() {
+  return apiFetch<BillingPlan>("/billing/plan");
+}
+
+export async function submitLead(payload: {
+  run_id: string;
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  message?: string;
+}) {
+  return apiFetch<{ status: string; message: string }>("/leads", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchPublicReport(token: string) {
+  return apiFetch<PublicReport>(`/shared/${token}`);
 }

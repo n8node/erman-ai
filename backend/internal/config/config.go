@@ -32,6 +32,7 @@ type Config struct {
 	WorkerProposalConcurrency int `env:"WORKER_PROPOSAL_CONCURRENCY" envDefault:"3"`
 
 	StorageBackend string `env:"STORAGE_BACKEND" envDefault:"local"`
+	Domain         string `env:"DOMAIN" envDefault:"erman.ai"`
 
 	startedAt time.Time
 }
@@ -65,4 +66,11 @@ func getEnv(key, fallback string) string {
 
 func (c *Config) UptimeSeconds() int64 {
 	return int64(time.Since(c.startedAt).Seconds())
+}
+
+func (c *Config) PublicBaseURL() string {
+	if c.Environment == "development" {
+		return "http://localhost"
+	}
+	return "https://" + c.Domain
 }

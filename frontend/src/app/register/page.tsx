@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
@@ -15,7 +16,9 @@ export default async function RegisterPage() {
         </div>
         <h1 className="text-base font-medium">{t("registerTitle")}</h1>
         <p className="mt-1 mb-6 text-sm text-text2">{t("registerSubtitle")}</p>
-        <RegisterForm />
+        <Suspense fallback={null}>
+          <RegisterForm />
+        </Suspense>
       </div>
     </main>
   );

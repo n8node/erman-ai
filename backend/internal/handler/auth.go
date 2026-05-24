@@ -22,8 +22,13 @@ func NewAuthHandler(auth *service.AuthService, mw *middleware.Auth, cfg *config.
 }
 
 type credentialsRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Referral   string `json:"referral"`
+}
+
+type onboardingRequest struct {
+	Segment string `json:"segment"`
 }
 
 type updateMeRequest struct {
@@ -43,7 +48,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.auth.Register(r.Context(), req.Email, req.Password)
+	result, err := h.auth.Register(r.Context(), req.Email, req.Password, req.Referral)
 	if err != nil {
 		h.writeAuthError(w, err)
 		return
@@ -134,6 +139,28 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+func (h *AuthHandler) Onboarding(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req onboardingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	user, err := h.auth.CompleteOnboarding(r.Context(), userID, req.Segment)
+	if err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, userResponse(user))
+}
+
 func (h *AuthHandler) writeAuthError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrEmailTaken):
@@ -155,12 +182,14 @@ func (h *AuthHandler) secureCookies() bool {
 
 func userResponse(u *model.User) map[string]any {
 	return map[string]any{
-		"id":         u.ID,
-		"email":      u.Email,
-		"role":       u.Role,
-		"plan_id":    u.PlanID,
-		"locale":     u.Locale,
-		"is_blocked": u.IsBlocked,
-		"created_at": u.CreatedAt,
+		"id":                    u.ID,
+		"email":                 u.Email,
+		"role":                  u.Role,
+		"plan_id":               u.PlanID,
+		"locale":                u.Locale,
+		"account_segment":       u.AccountSegment,
+		"onboarding_completed":  u.OnboardingCompleted,
+		"is_blocked":            u.IsBlocked,
+		"created_at":            u.CreatedAt,
 	}
 }

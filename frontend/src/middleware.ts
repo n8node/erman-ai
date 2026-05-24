@@ -3,10 +3,16 @@ import type { NextRequest } from "next/server";
 
 const publicPaths = ["/login", "/register"];
 
+function isPublicPath(pathname: string) {
+  if (publicPaths.includes(pathname)) return true;
+  if (pathname.startsWith("/share/")) return true;
+  return false;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("access_token");
-  const isPublic = publicPaths.includes(pathname);
+  const isPublic = isPublicPath(pathname);
 
   if (!token && !isPublic) {
     const url = request.nextUrl.clone();

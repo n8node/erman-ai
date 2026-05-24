@@ -25,8 +25,23 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	authRL := middleware.NewRateLimiter(10, time.Minute)
 
 	userRepo := repository.NewUserRepository(db.Pool)
+	runRepo := repository.NewToolRunRepository(db.Pool)
+	planRepo := repository.NewPlanRepository(db.Pool)
+	sharedRepo := repository.NewSharedReportRepository(db.Pool)
+	leadRepo := repository.NewLeadRepository(db.Pool)
+
 	authSvc := service.NewAuthService(userRepo, authMW)
+	billingSvc := service.NewBillingService(planRepo, runRepo)
+	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
+	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
+	leadSvc := service.NewLeadService(leadRepo, runRepo)
+
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
+	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
+	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
+	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
+	billingHandler := handler.NewBillingHandler(billingSvc, planRepo, runRepo)
+	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc)
 
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -39,6 +54,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", health.ServeHTTP)
+		api.Get("/shared/{token}", shareHandler.GetPublic)
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)
@@ -51,7 +67,21 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				protected.Get("/me", authHandler.Me)
 				protected.Put("/me", authHandler.UpdateMe)
 				protected.Post("/change-password", authHandler.ChangePassword)
+				protected.Post("/onboarding", authHandler.Onboarding)
 			})
+		})
+
+		api.Group(func(protected chi.Router) {
+			protected.Use(authMW.Required)
+
+			protected.Get("/tools", toolsHandler.List)
+			protected.Post("/tools/calculator/run", calcHandler.Run)
+			protected.Post("/tools/calculator/export", calcHandler.Export)
+
+			protected.Post("/runs/{id}/share", shareHandler.Create)
+			protected.Post("/leads", leadHandler.Create)
+
+			protected.Get("/billing/plan", billingHandler.Plan)
 		})
 	})
 

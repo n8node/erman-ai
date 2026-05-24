@@ -39,7 +39,7 @@ type AuthResult struct {
 	User  *model.User
 }
 
-func (s *AuthService) Register(ctx context.Context, email, password string) (*AuthResult, error) {
+func (s *AuthService) Register(ctx context.Context, email, password, referral string) (*AuthResult, error) {
 	email = normalizeEmail(email)
 	if err := validateCredentials(email, password); err != nil {
 		return nil, err
@@ -63,7 +63,14 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*Au
 		return nil, err
 	}
 
-	user, err := s.users.Create(ctx, email, string(hash), planID, "user")
+	segment := model.AccountSegmentPartner
+	onboardingDone := false
+	if referral == "erman" {
+		segment = model.AccountSegmentDirectLead
+		onboardingDone = true
+	}
+
+	user, err := s.users.Create(ctx, email, string(hash), planID, "user", segment, onboardingDone)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +155,13 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID, currentPasswor
 	return s.users.UpdatePassword(ctx, userID, string(newHash))
 }
 
+func (s *AuthService) CompleteOnboarding(ctx context.Context, userID, segment string) (*model.User, error) {
+	if segment != model.AccountSegmentPartner && segment != model.AccountSegmentDirectLead {
+		return nil, ErrInvalidInput
+	}
+	return s.users.CompleteOnboarding(ctx, userID, segment)
+}
+
 func (s *AuthService) SeedAdmin(ctx context.Context, email, password string) (*model.User, error) {
 	email = normalizeEmail(email)
 	if err := validateCredentials(email, password); err != nil {
@@ -182,7 +196,7 @@ func (s *AuthService) SeedAdmin(ctx context.Context, email, password string) (*m
 		return s.users.GetByID(ctx, u.ID)
 	}
 
-	return s.users.Create(ctx, email, string(hash), planID, "superadmin")
+	return s.users.Create(ctx, email, string(hash), planID, "superadmin", model.AccountSegmentPartner, true)
 }
 
 func normalizeEmail(email string) string {

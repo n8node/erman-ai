@@ -19,7 +19,17 @@
     "loginFailed": "Sign in failed",
     "registerFailed": "Registration failed",
     "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters"
+    "passwordTooShort": "Password must be at least 8 characters",
+    "ermanReferral": "Registration via Erman AI invitation"
+  },
+  "onboarding": {
+    "title": "Who are you?",
+    "subtitle": "This helps us tailor the experience",
+    "partnerTitle": "I'm an integrator or consultant",
+    "partnerDesc": "I work with clients, share reports and create proposals",
+    "directTitle": "I'm evaluating automation for my business",
+    "directDesc": "I need ROI estimates and consultation from Erman AI",
+    "failed": "Could not save your choice"
   },
   "nav": {
     "tools": "Tools",
@@ -75,5 +85,66 @@
   },
   "stub": {
     "comingSoon": "This section will be available in upcoming phases."
+  },
+  "calculator": {
+    "title": "Automation Calculator",
+    "subtitle": "Estimate ROI for automating your process",
+    "sections": {
+      "process": "Process parameters",
+      "errors": "Error parameters",
+      "automation": "Automation cost"
+    },
+    "fields": {
+      "processName": "Process name",
+      "hoursPerMonth": "Hours per month",
+      "employees": "Employees",
+      "hourlyRate": "Hourly rate, RUB",
+      "errorRate": "Error rate, %",
+      "errorCost": "Cost per error, RUB",
+      "automationCost": "Implementation cost, RUB",
+      "monthlySupport": "Monthly support, RUB"
+    },
+    "calculate": "Calculate",
+    "calculating": "Calculating…",
+    "calcFailed": "Calculation failed",
+    "resultTitle": "Result",
+    "metrics": {
+      "currentCost": "Current cost",
+      "monthlySavings": "Monthly savings",
+      "payback": "Payback",
+      "months": "mo"
+    },
+    "shareWithClient": "Share with client",
+    "shareProOnly": "Public links require Pro plan or higher",
+    "sharing": "Creating link…",
+    "shareFailed": "Could not create share link",
+    "shareReady": "Client link:",
+    "exportPdf": "Export PDF",
+    "pdfProOnly": "PDF export requires Pro plan or higher",
+    "exporting": "Exporting…",
+    "pdfFailed": "PDF export failed",
+    "createProposal": "Create proposal",
+    "lead": {
+      "title": "Request Erman AI consultation",
+      "subtitle": "We'll contact you with a tailored offer",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "message": "Message",
+      "submit": "Submit request",
+      "sending": "Sending…",
+      "success": "Request sent. We'll be in touch soon.",
+      "failed": "Could not submit request"
+    },
+    "share": {
+      "loading": "Loading report…",
+      "notFound": "Report not found or link expired",
+      "disclaimer": "Process automation ROI estimate",
+      "currentCost": "Current cost",
+      "savings": "Monthly savings",
+      "payback": "Payback",
+      "months": "mo"
+    }
   }
 }
