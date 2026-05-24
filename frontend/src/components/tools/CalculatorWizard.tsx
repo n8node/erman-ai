@@ -369,15 +369,25 @@ export function CalculatorWizard() {
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3 rounded-xl border border-border bg-bg p-6 space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium">{t("wizard.hmLabel")}</label>
+              <label className="mb-1.5 block text-xs font-medium">
+                <LabelWithHelp
+                  label={t("wizard.hmLabel")}
+                  tooltipKey="calculator.wizard.hm_label"
+                />
+              </label>
               <input type="number" min={0} className={fieldClass} value={Math.round(hmPreview * 100) / 100} onChange={(e) => patch({ hours_saved_month: Number(e.target.value), hm_mode: "direct" })} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t("fields.ch")} hint={t("hints.ch")} type="number" value={input.hourly_cost_loaded} onChange={(v) => patch({ hourly_cost_loaded: v })} />
-              <Field label={t("fields.om")} hint={t("hints.om")} type="number" value={input.monthly_solution_cost} onChange={(v) => patch({ monthly_solution_cost: v })} />
-              <Field label={t("fields.capex")} hint={t("hints.capex")} type="number" value={input.capex} onChange={(v) => patch({ capex: v })} />
+              <Field label={t("fields.ch")} hint={t("hints.ch")} tooltipKey="calculator.wizard.ch" type="number" value={input.hourly_cost_loaded} onChange={(v) => patch({ hourly_cost_loaded: v })} />
+              <Field label={t("fields.om")} hint={t("hints.om")} tooltipKey="calculator.wizard.om" type="number" value={input.monthly_solution_cost} onChange={(v) => patch({ monthly_solution_cost: v })} />
+              <Field label={t("fields.capex")} hint={t("hints.capex")} tooltipKey="calculator.wizard.capex" type="number" value={input.capex} onChange={(v) => patch({ capex: v })} />
               <div>
-                <label className="mb-1.5 block text-xs font-medium">{t("fields.horizon")}</label>
+                <label className="mb-1.5 block text-xs font-medium">
+                  <LabelWithHelp
+                    label={t("fields.horizon")}
+                    tooltipKey="calculator.wizard.horizon"
+                  />
+                </label>
                 <select className={fieldClass} value={input.horizon_months} onChange={(e) => patch({ horizon_months: Number(e.target.value) })}>
                   <option value={12}>12</option>
                   <option value={24}>24</option>
@@ -392,9 +402,9 @@ export function CalculatorWizard() {
 
             {showExpert && (
               <div className="grid gap-4 sm:grid-cols-2 border-t border-border pt-4">
-                <Field label={t("fields.sm")} type="number" value={input.other_benefit_monthly} onChange={(v) => patch({ other_benefit_monthly: v })} />
-                <Field label={t("fields.utilization")} type="number" value={input.utilization} onChange={(v) => patch({ utilization: v })} step={0.01} />
-                <Field label={t("fields.discount")} type="number" value={input.discount_rate_annual} onChange={(v) => patch({ discount_rate_annual: v })} step={0.01} />
+                <Field label={t("fields.sm")} tooltipKey="calculator.wizard.sm" type="number" value={input.other_benefit_monthly} onChange={(v) => patch({ other_benefit_monthly: v })} />
+                <Field label={t("fields.utilization")} tooltipKey="calculator.wizard.utilization" type="number" value={input.utilization} onChange={(v) => patch({ utilization: v })} step={0.01} />
+                <Field label={t("fields.discount")} tooltipKey="calculator.wizard.discount" type="number" value={input.discount_rate_annual} onChange={(v) => patch({ discount_rate_annual: v })} step={0.01} />
               </div>
             )}
 
@@ -412,7 +422,7 @@ export function CalculatorWizard() {
             <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("wizard.preview")}</p>
             <PreviewRow label={t("metrics.netBenefit")} value={formatRub(financePreview.net_benefit_monthly)} />
             <PreviewRow label={t("metrics.payback")} value={formatPayback(financePreview.payback_months, t)} />
-            <PreviewRow label={t("metrics.fte")} value={financePreview.fte.toFixed(2)} />
+            <PreviewRow label={t("metrics.fte")} value={financePreview.fte.toFixed(2)} tooltipKey="calculator.wizard.fte" />
             <PreviewRow label={t("metrics.roi")} value={`${financePreview.roi_horizon_pct.toFixed(1)}%`} />
           </div>
         </div>
@@ -471,20 +481,35 @@ function ModeButton({ active, onClick, label }: { active: boolean; onClick: () =
   );
 }
 
-function Field({ label, hint, value, onChange, type = "text", step }: { label: string; hint?: string; value: number; onChange: (v: number) => void; type?: string; step?: number }) {
+function Field({ label, hint, tooltipKey, value, onChange, type = "text", step }: { label: string; hint?: string; tooltipKey?: string; value: number; onChange: (v: number) => void; type?: string; step?: number }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-medium">{label}</label>
+      <label className="mb-1.5 block text-xs font-medium">
+        {tooltipKey ? (
+          <LabelWithHelp label={label} tooltipKey={tooltipKey} />
+        ) : (
+          label
+        )}
+      </label>
       <input type={type} min={0} step={step} className={fieldClass} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       {hint && <p className="mt-1 text-[10px] text-text3">{hint}</p>}
     </div>
   );
 }
 
-function PreviewRow({ label, value }: { label: string; value: string }) {
+function PreviewRow({ label, value, tooltipKey }: { label: string; value: string; tooltipKey?: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase text-text3">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-text3">
+        {tooltipKey ? (
+          <span className="inline-flex items-center gap-1 normal-case">
+            <span className="uppercase tracking-wider">{label}</span>
+            <HelpTooltip tooltipKey={tooltipKey} />
+          </span>
+        ) : (
+          label
+        )}
+      </p>
       <p className="text-lg font-medium">{value}</p>
     </div>
   );
