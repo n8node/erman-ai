@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { subscribeStrategyStream } from "@/lib/api";
+import { getRun, subscribeStrategyStream } from "@/lib/api";
 import type { StrategyStreamPhase } from "@/lib/api-strategy";
 import { cn } from "@/lib/utils";
 
 const PREP_PHASES = ["profile", "processes", "data", "priorities", "roadmap"] as const;
+const POLL_MS = 3000;
 
 type PhaseState = "pending" | "active" | "done";
 
@@ -23,9 +24,11 @@ export function StrategyStreamView({ runId, onComplete, onError }: Props) {
   );
   const [generating, setGenerating] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [usingFallback, setUsingFallback] = useState(false);
   const streamRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   const onErrorRef = useRef(onError);
+  const pollingRef = useRef(false);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -33,27 +36,86 @@ export function StrategyStreamView({ runId, onComplete, onError }: Props) {
   }, [onComplete, onError]);
 
   useEffect(() => {
-    const unsub = subscribeStrategyStream(runId, {
-      onPhase: (data: StrategyStreamPhase) => {
-        if (data.id === "generating") {
-          setGenerating(data.status === "active");
-          return;
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    function applyPhase(data: StrategyStreamPhase) {
+      if (data.id === "generating") {
+        setGenerating(data.status === "active");
+        return;
+      }
+      if (!PREP_PHASES.includes(data.id as (typeof PREP_PHASES)[number])) return;
+      const idx = PREP_PHASES.indexOf(data.id as (typeof PREP_PHASES)[number]);
+      setPhases((prev) => {
+        const next = { ...prev };
+        for (let i = 0; i < idx; i++) {
+          next[PREP_PHASES[i]] = "done";
         }
-        if (!PREP_PHASES.includes(data.id as (typeof PREP_PHASES)[number])) return;
-        setPhases((prev) => ({
-          ...prev,
-          [data.id]: data.status === "done" ? "done" : "active",
-        }));
-      },
+        next[data.id] = data.status === "done" ? "done" : "active";
+        return next;
+      });
+    }
+
+    async function pollStatus() {
+      try {
+        const run = await getRun(runId);
+        if (cancelled) return;
+        if (run.status === "processing") {
+          setGenerating(true);
+          setPhases((prev) => {
+            const next = { ...prev };
+            for (const p of PREP_PHASES) {
+              if (next[p] !== "done") {
+                next[p] = "done";
+                break;
+              }
+            }
+            return next;
+          });
+        }
+        if (run.status === "done") {
+          if (pollTimer) clearInterval(pollTimer);
+          onCompleteRef.current();
+        } else if (run.status === "error") {
+          if (pollTimer) clearInterval(pollTimer);
+          onErrorRef.current(run.error_msg || t("pollFailed"));
+        }
+      } catch {
+        /* retry on next tick */
+      }
+    }
+
+    function startPolling() {
+      if (pollingRef.current) return;
+      pollingRef.current = true;
+      setUsingFallback(true);
+      void pollStatus();
+      pollTimer = setInterval(pollStatus, POLL_MS);
+    }
+
+    const unsub = subscribeStrategyStream(runId, {
+      onPhase: applyPhase,
       onChunk: (delta) => {
         setGenerating(true);
         setStreamText((prev) => prev + delta);
       },
-      onDone: () => onCompleteRef.current(),
-      onError: (msg) => onErrorRef.current(msg),
+      onDone: () => {
+        if (pollTimer) clearInterval(pollTimer);
+        onCompleteRef.current();
+      },
+      onError: () => startPolling(),
     });
-    return unsub;
-  }, [runId]);
+
+    const safetyTimer = setTimeout(startPolling, 8000);
+
+    return () => {
+      cancelled = true;
+      unsub();
+      if (pollTimer) clearInterval(pollTimer);
+      clearTimeout(safetyTimer);
+      pollingRef.current = false;
+    };
+  }, [runId, t]);
 
   useEffect(() => {
     streamRef.current?.scrollTo({ top: streamRef.current.scrollHeight, behavior: "smooth" });
@@ -63,23 +125,22 @@ export function StrategyStreamView({ runId, onComplete, onError }: Props) {
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-bg p-6 space-y-4">
         <p className="text-sm font-medium text-text">{t("prepTitle")}</p>
+        {usingFallback && (
+          <p className="text-xs text-text2">{t("fallbackHint")}</p>
+        )}
         <div className="space-y-3">
           {PREP_PHASES.map((id) => (
-            <PrepStep
-              key={id}
-              label={t(`phases.${id}`)}
-              state={phases[id] ?? "pending"}
-            />
+            <PrepStep key={id} label={t(`phases.${id}`)} state={phases[id] ?? "pending"} />
           ))}
           <PrepStep
             label={t("phases.generating")}
-            state={generating ? (streamText ? "done" : "active") : "pending"}
+            state={generating ? (streamText && !usingFallback ? "done" : "active") : "pending"}
             accent="ai"
           />
         </div>
       </div>
 
-      {(generating || streamText) && (
+      {(generating || streamText) && !usingFallback && (
         <div className="rounded-xl border border-border bg-bg p-4">
           <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-text3">
             {t("liveOutput")}

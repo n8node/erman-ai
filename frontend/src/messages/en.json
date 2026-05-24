@@ -659,7 +659,9 @@
         "priorities": "Prioritizing AI initiatives",
         "roadmap": "Building roadmap & budget",
         "generating": "Generating strategy"
-      }
+      },
+      "fallbackHint": "Stream unavailable — checking generation status…",
+      "pollFailed": "Generation failed"
     },
     "errors": {
       "startFailed": "Could not start generation",
