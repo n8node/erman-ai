@@ -29,6 +29,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	planRepo := repository.NewPlanRepository(db.Pool)
 	sharedRepo := repository.NewSharedReportRepository(db.Pool)
 	leadRepo := repository.NewLeadRepository(db.Pool)
+	proposalReqRepo := repository.NewProposalRequestRepository(db.Pool)
 	tooltipRepo := repository.NewTooltipRepository(db.Pool)
 
 	authSvc := service.NewAuthService(userRepo, authMW)
@@ -36,6 +37,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
+	proposalReqSvc := service.NewProposalRequestService(proposalReqRepo, runRepo, userRepo)
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)
 	planSvc := service.NewPlanService(planRepo)
@@ -49,6 +51,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
+	proposalReqHandler := handler.NewProposalRequestHandler(proposalReqSvc)
 	billingHandler := handler.NewBillingHandler(billingSvc, planRepo, runRepo)
 	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc)
 
@@ -87,6 +90,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Get("/tools", toolsHandler.List)
 			protected.Post("/tools/calculator/run", calcHandler.Run)
 			protected.Post("/tools/calculator/export", calcHandler.Export)
+			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
 
 			protected.Get("/runs", runsHandler.List)
 			protected.Get("/runs/{id}", runsHandler.Get)
@@ -115,6 +119,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Patch("/users/{id}", adminUserHandler.UpdatePlan)
 			admin.Delete("/users/{id}", adminUserHandler.Delete)
 			admin.Post("/users/{id}/impersonate", adminUserHandler.Impersonate)
+			admin.Get("/proposal-requests", proposalReqHandler.ListAdmin)
+			admin.Patch("/proposal-requests/{id}", proposalReqHandler.UpdateStatus)
 		})
 	})
 

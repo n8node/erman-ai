@@ -90,7 +90,8 @@
     "nav": {
       "users": "Users",
       "plans": "Plans",
-      "tooltips": "Tooltips"
+      "tooltips": "Tooltips",
+      "proposalRequests": "Proposal requests"
     },
     "users": {
       "title": "Users",
@@ -178,6 +179,31 @@
       "saving": "Saving…",
       "textRu": "Text (RU)",
       "textEn": "Text (EN)"
+    },
+    "proposalRequests": {
+      "title": "Proposal requests",
+      "subtitle": "Partners request a commercial proposal from Erman AI based on a calculator run",
+      "loading": "Loading…",
+      "loadFailed": "Could not load requests",
+      "saveFailed": "Could not update status",
+      "statusUpdated": "Status updated",
+      "empty": "No proposal requests yet",
+      "colDate": "Date",
+      "colUser": "User",
+      "colProcess": "Process",
+      "colBenefit": "Net benefit / mo",
+      "colPayback": "Payback",
+      "colStatus": "Status",
+      "colRun": "Run",
+      "openRun": "Open",
+      "pagination": "Page {page} of {total} · {count} total",
+      "prev": "Previous",
+      "next": "Next",
+      "status": {
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done"
+      }
     }
   },
   "stub": {
@@ -292,6 +318,7 @@
       "change": "Change"
     },
     "shareWithClient": "Share with client",
+    "publicLink": "Public link",
     "shareProOnly": "Public links require Pro plan or higher",
     "sharing": "Creating link…",
     "shareFailed": "Could not create share link",
@@ -301,6 +328,11 @@
     "exporting": "Exporting…",
     "pdfFailed": "PDF export failed",
     "createProposal": "Create proposal",
+    "requestProposal": "Request proposal from Erman AI",
+    "proposalRequesting": "Sending request…",
+    "proposalRequestSent": "Request sent",
+    "proposalRequestSuccess": "Proposal request sent. The Erman AI team will contact you.",
+    "proposalRequestFailed": "Could not send proposal request",
     "history": {
       "title": "Calculation history",
       "subtitle": "Saved Automation Calculator runs",

@@ -241,6 +241,16 @@ export async function submitLead(payload: {
   });
 }
 
+export async function submitProposalRequest(runId: string) {
+  return apiFetch<{ id: string; status: string; created_at: string }>(
+    "/tools/calculator/proposal-request",
+    {
+      method: "POST",
+      body: JSON.stringify({ run_id: runId }),
+    }
+  );
+}
+
 export async function fetchPublicReport(token: string) {
   return apiFetch<PublicReport>(`/shared/${token}`);
 }
@@ -406,4 +416,47 @@ export async function impersonateAdminUser(userId: string) {
   return apiFetch<User>(`/admin/users/${userId}/impersonate`, {
     method: "POST",
   });
+}
+
+export type AdminProposalRequestRow = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  run_id: string;
+  process_name: string;
+  net_benefit_monthly?: number | null;
+  payback_months?: number | null;
+  recommendation?: string | null;
+  status: "new" | "in_progress" | "done";
+  created_at: string;
+  updated_at: string;
+};
+
+export async function fetchAdminProposalRequests(params?: {
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiFetch<{
+    items: AdminProposalRequestRow[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(`/admin/proposal-requests${qs ? `?${qs}` : ""}`);
+}
+
+export async function updateAdminProposalRequestStatus(
+  id: string,
+  status: AdminProposalRequestRow["status"]
+) {
+  return apiFetch<{ id: string; status: string }>(
+    `/admin/proposal-requests/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }
+  );
 }

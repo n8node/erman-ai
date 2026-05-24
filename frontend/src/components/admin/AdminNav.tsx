@@ -12,6 +12,7 @@ export function AdminNav() {
   const links = [
     { href: "/admin/users", label: t("users") },
     { href: "/admin/plans", label: t("plans") },
+    { href: "/admin/proposal-requests", label: t("proposalRequests") },
     { href: "/admin/tooltips", label: t("tooltips") },
   ];
 

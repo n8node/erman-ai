@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { CalculatorInput, CalculatorOutput, User } from "@/lib/api";
@@ -8,6 +7,7 @@ import {
   exportCalculatorPDF,
   getBillingPlan,
   shareRun,
+  submitProposalRequest,
 } from "@/lib/api";
 import { LeadForm } from "./LeadForm";
 import { CalculatorReportView } from "./CalculatorReportView";
@@ -26,6 +26,8 @@ export function CalculatorResult({ runId, input, output }: Props) {
   const [actionError, setActionError] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [loadingProposal, setLoadingProposal] = useState(false);
+  const [proposalDone, setProposalDone] = useState(false);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/me`, {
@@ -73,6 +75,19 @@ export function CalculatorResult({ runId, input, output }: Props) {
     }
   }
 
+  async function handleProposalRequest() {
+    setActionError("");
+    setLoadingProposal(true);
+    try {
+      await submitProposalRequest(runId);
+      setProposalDone(true);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : t("proposalRequestFailed"));
+    } finally {
+      setLoadingProposal(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border bg-bg p-6 space-y-6">
       <CalculatorReportView
@@ -88,15 +103,26 @@ export function CalculatorResult({ runId, input, output }: Props) {
       {isPartner && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
           <button type="button" onClick={handleShare} disabled={loadingShare || !canShare} className="rounded-lg bg-text px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-            {loadingShare ? t("sharing") : t("shareWithClient")}
+            {loadingShare ? t("sharing") : t("publicLink")}
           </button>
           <button type="button" onClick={handlePdf} disabled={loadingPdf || !canPdf} className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-50">
             {loadingPdf ? t("exporting") : t("exportPdf")}
           </button>
-          <Link href={`/tools/proposal?calculator_run_id=${runId}`} className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2">
-            {t("createProposal")}
-          </Link>
+          <button
+            type="button"
+            onClick={handleProposalRequest}
+            disabled={loadingProposal || proposalDone}
+            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-50"
+          >
+            {loadingProposal ? t("proposalRequesting") : proposalDone ? t("proposalRequestSent") : t("requestProposal")}
+          </button>
           {!canShare && <p className="w-full text-xs text-text3">{t("shareProOnly")}</p>}
+        </div>
+      )}
+
+      {proposalDone && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {t("proposalRequestSuccess")}
         </div>
       )}
 

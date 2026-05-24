@@ -90,7 +90,8 @@
     "nav": {
       "users": "Пользователи",
       "plans": "Тарифы",
-      "tooltips": "Тултипы"
+      "tooltips": "Тултипы",
+      "proposalRequests": "Запросы на КП"
     },
     "users": {
       "title": "Пользователи",
@@ -178,6 +179,31 @@
       "saving": "Сохранение…",
       "textRu": "Текст (RU)",
       "textEn": "Текст (EN)"
+    },
+    "proposalRequests": {
+      "title": "Запросы на КП",
+      "subtitle": "Партнёры запрашивают коммерческое предложение от Erman AI по расчёту калькулятора",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить запросы",
+      "saveFailed": "Не удалось обновить статус",
+      "statusUpdated": "Статус обновлён",
+      "empty": "Пока нет запросов на КП",
+      "colDate": "Дата",
+      "colUser": "Пользователь",
+      "colProcess": "Процесс",
+      "colBenefit": "B_m / мес",
+      "colPayback": "Окупаемость",
+      "colStatus": "Статус",
+      "colRun": "Расчёт",
+      "openRun": "Открыть",
+      "pagination": "Страница {page} из {total} · всего {count}",
+      "prev": "Назад",
+      "next": "Далее",
+      "status": {
+        "new": "Новый",
+        "in_progress": "В работе",
+        "done": "Готово"
+      }
     }
   },
   "stub": {
@@ -292,6 +318,7 @@
       "change": "Изменение"
     },
     "shareWithClient": "Поделиться с клиентом",
+    "publicLink": "Публичная ссылка",
     "shareProOnly": "Публичная ссылка доступна на тарифе Pro и выше",
     "sharing": "Создание ссылки…",
     "shareFailed": "Не удалось создать ссылку",
@@ -301,6 +328,11 @@
     "exporting": "Экспорт…",
     "pdfFailed": "Не удалось экспортировать PDF",
     "createProposal": "Создать КП",
+    "requestProposal": "Запросить КП от Erman AI",
+    "proposalRequesting": "Отправка запроса…",
+    "proposalRequestSent": "Запрос отправлен",
+    "proposalRequestSuccess": "Запрос на КП отправлен. Команда Erman AI свяжется с вами.",
+    "proposalRequestFailed": "Не удалось отправить запрос на КП",
     "history": {
       "title": "История расчётов",
       "subtitle": "Сохранённые расчёты Automation Calculator",
