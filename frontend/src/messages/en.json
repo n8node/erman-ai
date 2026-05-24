@@ -672,7 +672,17 @@
         "generating": "Generating strategy"
       },
       "fallbackHint": "Stream unavailable — checking generation status…",
-      "pollFailed": "Generation failed"
+      "pollFailed": "Generation failed",
+      "longRunningHint": "Consulting reports use multiple LLM passes — typically 5–12 minutes. You can keep this tab open.",
+      "llmPassesTitle": "LLM passes",
+      "activePass": "Now: {pass}",
+      "passes": {
+        "context": "Context & executive summary",
+        "analysis": "Processes & priorities",
+        "plan": "Roadmap & budget",
+        "governance": "Governance & diagrams",
+        "pass_expand": "Report expansion"
+      }
     },
     "errors": {
       "startFailed": "Could not start generation",

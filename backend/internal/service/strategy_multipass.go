@@ -55,7 +55,8 @@ func (s *StrategyService) generateStrategyOutput(
 
 	if mode == model.StrategyReportConsulting {
 		var merged model.StrategyOutput
-		for _, pass := range consultingPasses {
+		for i, pass := range consultingPasses {
+			s.publishPhase(runID, pass.id, "active")
 			system := baseSystemPrompt + "\n\n" + pass.promptSuffix
 			req := LLMCompletionRequest{
 				Provider:     settings.Provider,
@@ -75,6 +76,8 @@ func (s *StrategyService) generateStrategyOutput(
 			if err := mergeStrategyJSON(&merged, result.Content); err != nil {
 				return nil, usage, fmt.Errorf("pass %s parse: %w", pass.id, err)
 			}
+			s.publishPhase(runID, pass.id, "done")
+			s.logger.Info("strategy pass complete", "run_id", runID, "pass", pass.id, "index", i+1, "total", len(consultingPasses))
 		}
 		if err := s.postValidateAndExpand(ctx, runID, &merged, input, baseSystemPrompt, settings, apiKey, baseURL, mode, &usage); err != nil {
 			return nil, usage, err
@@ -140,6 +143,7 @@ func (s *StrategyService) postValidateAndExpand(
 	if len(thin) == 0 && needsVolumeExpansion(output, mode) {
 		thin = []string{"executive_summary", "current_situation", "process_analysis", "ai_use_cases"}
 	}
+	s.publishPhase(runID, "pass_expand", "active")
 	draft, _ := json.Marshal(output)
 	expandPrompt := fmt.Sprintf(prompts.StrategyExpandPrompt, strings.Join(thin, ", "), string(draft))
 	req := LLMCompletionRequest{
@@ -155,11 +159,13 @@ func (s *StrategyService) postValidateAndExpand(
 	result, err := s.streamWithRetry(ctx, runID, req)
 	if err != nil {
 		s.logger.Warn("strategy expansion pass failed, using draft", "run_id", runID, "error", err)
+		s.publishPhase(runID, "pass_expand", "done")
 		return nil
 	}
 	usage.add(result)
 	if err := mergeStrategyJSON(output, result.Content); err != nil {
 		s.logger.Warn("strategy expansion parse failed", "run_id", runID, "error", err)
 	}
+	s.publishPhase(runID, "pass_expand", "done")
 	return nil
 }

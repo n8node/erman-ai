@@ -204,52 +204,79 @@ export type StrategyStreamHandlers = {
   onPhase: (data: import("./api-strategy").StrategyStreamPhase) => void;
   onChunk: (delta: string) => void;
   onDone: () => void;
-  onError: (message: string) => void;
+  /** Terminal run failure from backend */
+  onRunError: (message: string) => void;
+  /** SSE disconnected — generation may still continue */
+  onStreamLost?: () => void;
 };
 
 export function subscribeStrategyStream(runId: string, handlers: StrategyStreamHandlers): () => void {
   const url = `${clientBase()}/runs/${runId}/stream`;
-  const es = new EventSource(url);
+  let closed = false;
+  let finished = false;
+  let es: EventSource | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  es.addEventListener("phase", (ev) => {
-    try {
-      handlers.onPhase(JSON.parse((ev as MessageEvent).data));
-    } catch {
-      /* ignore */
-    }
-  });
+  function cleanupES() {
+    es?.close();
+    es = null;
+  }
 
-  es.addEventListener("chunk", (ev) => {
-    try {
-      const data = JSON.parse((ev as MessageEvent).data) as { delta?: string };
-      if (data.delta) handlers.onChunk(data.delta);
-    } catch {
-      /* ignore */
-    }
-  });
+  function connect() {
+    if (closed || finished) return;
+    cleanupES();
+    es = new EventSource(url);
 
-  es.addEventListener("done", () => {
-    handlers.onDone();
-    es.close();
-  });
+    es.addEventListener("phase", (ev) => {
+      try {
+        handlers.onPhase(JSON.parse((ev as MessageEvent).data));
+      } catch {
+        /* ignore */
+      }
+    });
 
-  es.addEventListener("run_error", (ev) => {
-    try {
-      const data = JSON.parse((ev as MessageEvent).data) as { message?: string };
-      handlers.onError(data.message || "Generation failed");
-    } catch {
-      handlers.onError("Generation failed");
-    }
-    es.close();
-  });
+    es.addEventListener("chunk", (ev) => {
+      try {
+        const data = JSON.parse((ev as MessageEvent).data) as { delta?: string };
+        if (data.delta) handlers.onChunk(data.delta);
+      } catch {
+        /* ignore */
+      }
+    });
 
-  es.onerror = () => {
-    if (es.readyState === EventSource.CLOSED) return;
-    handlers.onError("Connection lost");
-    es.close();
+    es.addEventListener("done", () => {
+      finished = true;
+      cleanupES();
+      handlers.onDone();
+    });
+
+    es.addEventListener("run_error", (ev) => {
+      finished = true;
+      cleanupES();
+      try {
+        const data = JSON.parse((ev as MessageEvent).data) as { message?: string };
+        handlers.onRunError(data.message || "Generation failed");
+      } catch {
+        handlers.onRunError("Generation failed");
+      }
+    });
+
+    es.onerror = () => {
+      if (closed || finished) return;
+      cleanupES();
+      handlers.onStreamLost?.();
+      reconnectTimer = setTimeout(connect, 3000);
+    };
+  }
+
+  connect();
+
+  return () => {
+    closed = true;
+    finished = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    cleanupES();
   };
-
-  return () => es.close();
 }
 
 export type { StrategyInput, StrategyOutput } from "./api-strategy";

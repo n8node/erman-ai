@@ -13,7 +13,10 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
-const strategyRunTimeout = 360 * time.Second
+const (
+	strategyRunTimeoutStandard   = 420 * time.Second
+	strategyRunTimeoutConsulting = 900 * time.Second
+)
 
 var strategyPrepPhases = []struct {
 	ID    string
@@ -178,7 +181,21 @@ func (s *StrategyService) loadCalculatorContext(ctx context.Context, userID, run
 }
 
 func (s *StrategyService) processRun(runID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), strategyRunTimeout)
+	run, err := s.runs.GetByID(context.Background(), runID)
+	if err != nil {
+		return
+	}
+	var input model.StrategyInput
+	if err := json.Unmarshal(run.Input, &input); err != nil {
+		_ = s.runs.UpdateRunError(context.Background(), runID, "invalid input data")
+		return
+	}
+	timeout := strategyRunTimeoutStandard
+	if normalizeReportMode(input.ReportMode) == model.StrategyReportConsulting {
+		timeout = strategyRunTimeoutConsulting
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	defer func() {
 		time.AfterFunc(5*time.Minute, func() { s.streams.Cleanup(runID) })
@@ -186,17 +203,6 @@ func (s *StrategyService) processRun(runID string) {
 
 	if err := s.runs.UpdateStatus(ctx, runID, model.RunStatusProcessing); err != nil {
 		s.logger.Error("strategy run status update failed", "run_id", runID, "error", err)
-		return
-	}
-
-	run, err := s.runs.GetByID(ctx, runID)
-	if err != nil {
-		return
-	}
-
-	var input model.StrategyInput
-	if err := json.Unmarshal(run.Input, &input); err != nil {
-		s.failRun(ctx, runID, "invalid input data")
 		return
 	}
 
@@ -251,6 +257,7 @@ func (s *StrategyService) processRun(runID string) {
 
 	if err := s.runs.UpdateRunDone(ctx, runID, outJSON, int64(usage.TotalTokens), usage.Model); err != nil {
 		s.logger.Error("strategy run save failed", "run_id", runID, "error", err)
+		s.failRun(context.Background(), runID, "failed to save strategy output")
 		return
 	}
 

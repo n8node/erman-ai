@@ -672,7 +672,17 @@
         "generating": "Генерация стратегии"
       },
       "fallbackHint": "Поток недоступен — проверяем статус генерации…",
-      "pollFailed": "Генерация не удалась"
+      "pollFailed": "Генерация не удалась",
+      "longRunningHint": "Consulting-отчёт генерируется в несколько проходов — обычно 5–12 минут. Страницу можно не закрывать.",
+      "llmPassesTitle": "Проходы LLM",
+      "activePass": "Сейчас: {pass}",
+      "passes": {
+        "context": "Контекст и executive summary",
+        "analysis": "Процессы и приоритеты",
+        "plan": "Roadmap и бюджет",
+        "governance": "Governance и диаграммы",
+        "pass_expand": "Расширение отчёта"
+      }
     },
     "errors": {
       "startFailed": "Не удалось запустить генерацию",
