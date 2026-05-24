@@ -270,6 +270,22 @@ export async function exportCalculatorPDF(runId: string) {
   return res.blob();
 }
 
+export async function exportStrategyPDF(runId: string) {
+  const res = await fetch(`${clientBase()}/tools/strategy/export`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof data.error === "string" ? data.error : "export failed"
+    );
+  }
+  return res.blob();
+}
+
 export async function shareRun(runId: string) {
   return apiFetch<ShareResult>(`/runs/${runId}/share`, { method: "POST" });
 }

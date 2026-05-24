@@ -341,6 +341,29 @@ function StrategyWizardInner() {
                 <textarea rows={3} className={fieldClass} value={input.existing_tools} onChange={(e) => patch({ existing_tools: e.target.value })} />
               </Field>
 
+              <SectionLabel>{t("form.reportModeSection")}</SectionLabel>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(["consulting", "standard"] as const).map((mode) => (
+                  <label
+                    key={mode}
+                    className={cn(
+                      "cursor-pointer rounded-lg border p-4 transition-colors",
+                      input.report_mode === mode ? "border-ai bg-ai-bg/40" : "border-border hover:border-border2"
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="report_mode"
+                      className="sr-only"
+                      checked={input.report_mode === mode}
+                      onChange={() => patch({ report_mode: mode })}
+                    />
+                    <p className="text-sm font-medium text-text">{t(`reportMode.${mode}.title`)}</p>
+                    <p className="mt-1 text-xs text-text2">{t(`reportMode.${mode}.desc`)}</p>
+                  </label>
+                ))}
+              </div>
+
               {calcRuns.length > 0 && (
                 <div>
                   <SectionLabel>{t("form.calculatorRuns")}</SectionLabel>

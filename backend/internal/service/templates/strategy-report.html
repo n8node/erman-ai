@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="{{.LangAttr}}">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{.Labels.Title}} — {{.CompanyName}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, sans-serif; font-size: 12px; line-height: 1.55; color: #1a1a1a; background: #fff; padding: 28px; }
+    .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: #1a1a1a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: #5f5e5a; margin-bottom: 20px; font-size: 13px; }
+    .section { margin-bottom: 24px; page-break-inside: avoid; }
+    .section-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #888780; margin-bottom: 8px; }
+    .prose { color: #5f5e5a; white-space: pre-wrap; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+    th, td { border: 1px solid #e8e7e3; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f8f8f7; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #888780; }
+    .bar-row { margin-bottom: 8px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
+    .bar-track { height: 8px; background: #f3f2ef; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #185fa5; border-radius: 4px; }
+    .card { border: 1px solid #e8e7e3; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .card-title { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+    .totals { display: flex; gap: 16px; margin-top: 12px; }
+    .total-box { flex: 1; background: #e6f1fb; border-radius: 8px; padding: 10px 12px; }
+    .total-label { font-size: 9px; text-transform: uppercase; color: #185fa5; }
+    .total-value { font-size: 16px; font-weight: 600; color: #185fa5; margin-top: 4px; }
+    .roadmap-item { border-left: 3px solid #534ab7; padding-left: 12px; margin-bottom: 12px; }
+    .risk-high { background: #fcebeb; }
+    .risk-medium { background: #faeeda; }
+    .risk-low { background: #f8f8f7; }
+    .diagram-block { border: 1px solid #e8e7e3; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 10px; white-space: pre-wrap; color: #5f5e5a; }
+    .footer { margin-top: 32px; font-size: 10px; color: #888780; border-top: 1px solid #e8e7e3; padding-top: 12px; }
+    ul { padding-left: 18px; }
+    li { margin-bottom: 4px; color: #5f5e5a; }
+  </style>
+</head>
+<body>
+  <div class="brand"><div class="brand-mark">E</div><span>Erman AI</span></div>
+  <h1>{{.Labels.Title}}</h1>
+  <p class="subtitle">{{.CompanyName}} — {{.BusinessDescription}}</p>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.ExecutiveSummary}}</div>
+    <div class="prose">{{.ExecutiveSummary}}</div>
+  </div>
+
+  {{if .ShowROI}}
+  <div class="section">
+    <div class="section-label">{{.Labels.ROI}}</div>
+    {{range .ROIRows}}
+    <div class="bar-row">
+      <div class="bar-label"><span>{{.Process}}</span><span>{{.NetBenefit}}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width: {{.BarPct}}%"></div></div>
+    </div>
+    {{end}}
+    <table>
+      <thead><tr><th>{{.Labels.Process}}</th><th>{{.Labels.NetBenefit}}</th><th>{{.Labels.Payback}}</th><th>{{.Labels.NPV}}</th><th>{{.Labels.Recommendation}}</th></tr></thead>
+      <tbody>
+        {{range .ROIRows}}
+        <tr><td>{{.Process}}</td><td>{{.NetBenefit}}</td><td>{{.Payback}}</td><td>{{.NPV}}</td><td>{{.Recommendation}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+    <div class="totals">
+      <div class="total-box"><div class="total-label">{{.Labels.TotalMonthly}}</div><div class="total-value">{{.TotalBenefit}}</div></div>
+      <div class="total-box"><div class="total-label">{{.Labels.TotalNPV}}</div><div class="total-value">{{.TotalNPV}}</div></div>
+    </div>
+  </div>
+  {{end}}
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Solutions}}</div>
+    {{range .Solutions}}
+    <div class="card">
+      <div class="card-title">#{{.Priority}} {{.Title}}</div>
+      <div class="prose">{{.Description}}</div>
+      <p style="margin-top:6px;font-size:10px;color:#888780">{{.Rationale}}</p>
+    </div>
+    {{end}}
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Roadmap}}</div>
+    {{range .Roadmap}}
+    <div class="roadmap-item">
+      <strong>{{.Phase}}</strong> <span style="color:#888780">({{.Quarter}})</span>
+      <ul>{{range .Initiatives}}<li>{{.}}</li>{{end}}</ul>
+    </div>
+    {{end}}
+  </div>
+
+  {{if .ShowMaturity}}
+  <div class="section">
+    <div class="section-label">{{.Labels.Maturity}}</div>
+    <table>
+      <thead><tr><th>{{.Labels.Criterion}}</th><th>{{.Labels.Current}}</th><th>{{.Labels.Target}}</th><th>{{.Labels.Gap}}</th></tr></thead>
+      <tbody>{{range .Maturity}}<tr><td>{{.Criterion}}</td><td>{{.CurrentLevel}}</td><td>{{.TargetLevel}}</td><td>{{.Gap}}</td></tr>{{end}}</tbody>
+    </table>
+  </div>
+  {{end}}
+
+  {{if .ShowPriority}}
+  <div class="section">
+    <div class="section-label">{{.Labels.PriorityMatrix}}</div>
+    <table>
+      <thead><tr><th>#</th><th>{{.Labels.UseCase}}</th><th>{{.Labels.Impact}}</th><th>{{.Labels.Effort}}</th><th>{{.Labels.Score}}</th></tr></thead>
+      <tbody>{{range .Priority}}<tr><td>{{.Priority}}</td><td>{{.UseCase}}</td><td>{{.Impact}}</td><td>{{.Effort}}</td><td>{{.Score}}</td></tr>{{end}}</tbody>
+    </table>
+  </div>
+  {{end}}
+
+  {{if .BudgetSummary}}
+  <div class="section">
+    <div class="section-label">{{.Labels.Budget}}</div>
+    <div class="prose">{{.BudgetSummary}}</div>
+    {{if .BudgetLines}}<table><thead><tr><th>Category</th><th>Amount</th><th>Notes</th></tr></thead><tbody>{{range .BudgetLines}}<tr><td>{{.Category}}</td><td>{{.AmountRange}}</td><td>{{.Notes}}</td></tr>{{end}}</tbody></table>{{end}}
+  </div>
+  {{end}}
+
+  {{if .ShowBudgetPhases}}
+  <div class="section">
+    <div class="section-label">{{.Labels.BudgetPhases}}</div>
+    <table>
+      <thead><tr><th>Phase</th><th>CAPEX</th><th>OPEX/mo</th><th>Cumulative</th></tr></thead>
+      <tbody>{{range .BudgetPhases}}<tr><td>{{.Phase}}</td><td>{{.CapexRub}}</td><td>{{.OpexMonthlyRub}}</td><td>{{.CumulativeRub}}</td></tr>{{end}}</tbody>
+    </table>
+  </div>
+  {{end}}
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Metrics}}</div>
+    <table>
+      <thead><tr><th>Metric</th><th>Target</th><th>Timeframe</th></tr></thead>
+      <tbody>{{range .Metrics}}<tr><td>{{.Metric}}</td><td>{{.Target}}</td><td>{{.Timeframe}}</td></tr>{{end}}</tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Risks}}</div>
+    {{range .Risks}}
+    <div class="card risk-{{.Severity}}"><div class="card-title">{{.Risk}}</div><div class="prose">{{.Mitigation}}</div></div>
+    {{end}}
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Next30}}</div>
+    <ol>{{range .Next30}}<li>{{.}}</li>{{end}}</ol>
+  </div>
+
+  {{if .ShowDiagrams}}
+  <div class="section">
+    <div class="section-label">{{.Labels.Diagrams}}</div>
+    {{range .Diagrams}}
+    <div class="diagram-block"><strong>{{.Title}}</strong> ({{.Type}})
+{{.Mermaid}}</div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <div class="footer">{{.Labels.Disclaimer}}</div>
+</body>
+</html>

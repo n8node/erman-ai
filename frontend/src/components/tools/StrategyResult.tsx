@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download, Lock } from "lucide-react";
+import { exportStrategyPDF, getBillingPlan } from "@/lib/api";
 import type { StrategyInput, StrategyOutput } from "@/lib/api-strategy";
+import {
+  StrategyMermaidDiagram,
+  StrategyPriorityMatrix,
+  StrategyROIBarChart,
+} from "./StrategyVisuals";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,24 +30,85 @@ function Prose({ children }: { children: React.ReactNode }) {
 
 export function StrategyResult({ input, output, runId }: Props) {
   const t = useTranslations("strategy.result");
+  const [canPdf, setCanPdf] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
+  useEffect(() => {
+    getBillingPlan()
+      .then((plan) => setCanPdf(Boolean(plan?.features?.export_pdf)))
+      .catch(() => undefined);
+  }, []);
+
+  async function handlePdf() {
+    setPdfError("");
+    setLoadingPdf(true);
+    try {
+      const blob = await exportStrategyPDF(runId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "strategy-report.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : t("pdfFailed"));
+    } finally {
+      setLoadingPdf(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-bg p-6">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("company")}</p>
-        <h2 className="mt-1 text-base font-medium">{input.company_name}</h2>
-        <p className="mt-1 text-sm text-text2">{input.business_description}</p>
-        {(input.calculator_contexts?.length ?? 0) > 0 && (
-          <p className="mt-2 text-xs text-accent">
-            {t("linkedCalculators", { count: input.calculator_contexts!.length })}
-          </p>
-        )}
-        <p className="mt-2 text-xs text-text3">Run: {runId.slice(0, 8)}…</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("company")}</p>
+            <h2 className="mt-1 text-base font-medium">{input.company_name}</h2>
+            <p className="mt-1 text-sm text-text2">{input.business_description}</p>
+            {(input.calculator_contexts?.length ?? 0) > 0 && (
+              <p className="mt-2 text-xs text-accent">
+                {t("linkedCalculators", { count: input.calculator_contexts!.length })}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={canPdf ? handlePdf : undefined}
+            disabled={!canPdf || loadingPdf}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium",
+              canPdf
+                ? "border-border2 text-text hover:bg-bg2"
+                : "border-border text-text3 cursor-not-allowed"
+            )}
+          >
+            {canPdf ? <Download className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+            {loadingPdf ? t("pdfLoading") : canPdf ? t("exportPdf") : t("exportPdfLocked")}
+          </button>
+        </div>
+        {pdfError && <p className="mt-2 text-xs text-red-700">{pdfError}</p>}
       </div>
 
       <Section title={t("executiveSummary")}>
         <Prose>{output.executive_summary}</Prose>
       </Section>
+
+      {output.roi_summary && output.roi_summary.lines.length > 0 && (
+        <Section title={t("roiSummary")}>
+          <StrategyROIBarChart summary={output.roi_summary} />
+          <DataTable
+            headers={[t("processCol"), t("netBenefitCol"), t("paybackCol"), t("npvCol"), t("recCol")]}
+            rows={output.roi_summary.lines.map((l) => [
+              l.process_name,
+              formatRub(l.net_benefit_monthly_rub),
+              l.payback_months > 0 ? `${l.payback_months.toFixed(1)} ${t("months")}` : "—",
+              formatRub(l.npv_rub),
+              l.recommendation,
+            ])}
+          />
+        </Section>
+      )}
 
       <Section title={t("solutions")}>
         <div className="space-y-4">
@@ -58,6 +125,12 @@ export function StrategyResult({ input, output, runId }: Props) {
         </div>
       </Section>
 
+      {(output.priority_matrix?.length ?? 0) > 0 && (
+        <Section title={t("priorityMatrix")}>
+          <StrategyPriorityMatrix rows={output.priority_matrix!} />
+        </Section>
+      )}
+
       <Section title={t("roadmap")}>
         <div className="space-y-3">
           {output.roadmap?.map((phase, i) => (
@@ -73,6 +146,16 @@ export function StrategyResult({ input, output, runId }: Props) {
           ))}
         </div>
       </Section>
+
+      {(output.diagrams?.length ?? 0) > 0 && (
+        <Section title={t("diagrams")}>
+          <div className="space-y-4">
+            {output.diagrams!.map((d, i) => (
+              <StrategyMermaidDiagram key={`${d.title}-${i}`} diagram={d} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section title={t("next30")}>
         <ol className="list-decimal space-y-2 pl-5 text-sm text-text2">
@@ -104,6 +187,14 @@ export function StrategyResult({ input, output, runId }: Props) {
                   </div>
                 ))}
               </div>
+            </Accordion>
+          )}
+          {(output.maturity_matrix?.length ?? 0) > 0 && (
+            <Accordion title={t("maturityMatrix")}>
+              <DataTable
+                headers={[t("criterionCol"), t("currentCol"), t("targetLevelCol"), t("gapCol")]}
+                rows={output.maturity_matrix!.map((r) => [r.criterion, r.current_level, r.target_level, r.gap])}
+              />
             </Accordion>
           )}
           {output.data_and_infrastructure && (
@@ -142,6 +233,22 @@ export function StrategyResult({ input, output, runId }: Props) {
               </div>
             </Accordion>
           )}
+          {(output.tech_stack?.length ?? 0) > 0 && (
+            <Accordion title={t("techStack")}>
+              <DataTable
+                headers={[t("layerCol"), t("toolCol"), t("roleCol"), t("statusCol")]}
+                rows={output.tech_stack!.map((r) => [r.layer, r.tool, r.role, r.status])}
+              />
+            </Accordion>
+          )}
+          {(output.stakeholder_plan?.length ?? 0) > 0 && (
+            <Accordion title={t("stakeholders")}>
+              <DataTable
+                headers={[t("roleCol"), t("respCol"), t("involvementCol")]}
+                rows={output.stakeholder_plan!.map((r) => [r.role, r.responsibility, r.involvement])}
+              />
+            </Accordion>
+          )}
           {output.team_and_training && (
             <Accordion title={t("teamAndTraining")}>
               <Prose>{output.team_and_training}</Prose>
@@ -166,18 +273,19 @@ export function StrategyResult({ input, output, runId }: Props) {
             <Accordion title={t("budgetOverview")}>
               <Prose>{output.budget_overview.summary}</Prose>
               {(output.budget_overview.lines?.length ?? 0) > 0 && (
-                <table className="mt-3 w-full text-left text-xs">
-                  <tbody>
-                    {output.budget_overview.lines.map((line) => (
-                      <tr key={line.category} className="border-b border-border">
-                        <td className="py-2 pr-4 font-medium text-text">{line.category}</td>
-                        <td className="py-2 pr-4 text-text2">{line.amount_range}</td>
-                        <td className="py-2 text-text3">{line.notes}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <DataTable
+                  headers={[t("categoryCol"), t("amountCol"), t("notesCol")]}
+                  rows={output.budget_overview.lines.map((l) => [l.category, l.amount_range, l.notes])}
+                />
               )}
+            </Accordion>
+          )}
+          {(output.budget_phases?.length ?? 0) > 0 && (
+            <Accordion title={t("budgetPhases")}>
+              <DataTable
+                headers={[t("phaseCol"), "CAPEX", "OPEX/mo", t("cumulativeCol")]}
+                rows={output.budget_phases!.map((p) => [p.phase, p.capex_rub, p.opex_monthly_rub, p.cumulative_rub])}
+              />
             </Accordion>
           )}
           <Accordion title={t("metrics")}>
@@ -200,6 +308,35 @@ export function StrategyResult({ input, output, runId }: Props) {
           </Accordion>
         </div>
       </div>
+    </div>
+  );
+}
+
+function formatRub(n: number) {
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n) + " ₽";
+}
+
+function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="mt-2 w-full text-left text-xs">
+        <thead>
+          <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text3">
+            {headers.map((h) => (
+              <th key={h} className="pb-2 pr-3 font-medium">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-border">
+              {row.map((cell, j) => (
+                <td key={j} className="py-2 pr-3 text-text2 align-top">{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -576,6 +576,7 @@
       "existingTools": "Current IT stack",
       "calculatorRuns": "Calculator ROI runs",
       "calculatorRunsHint": "Select up to {max} processes — strategy will use their ROI",
+      "reportModeSection": "Report format",
       "select": "Select…",
       "next": "Next",
       "back": "Back"
@@ -648,6 +649,16 @@
       "1year": "1 year",
       "2years": "2 years"
     },
+    "reportMode": {
+      "consulting": {
+        "title": "Consulting report",
+        "desc": "Extended report: 4 LLM passes, tables, diagrams, ≥18K characters"
+      },
+      "standard": {
+        "title": "Standard",
+        "desc": "Single pass — faster and cheaper, basic tables"
+      }
+    },
     "stream": {
       "prepTitle": "Preparing strategy",
       "liveOutput": "Document generation",
@@ -691,7 +702,39 @@
       "next30": "Next 30 days",
       "metricCol": "Metric",
       "targetCol": "Target",
-      "timeCol": "Timeframe"
+      "timeCol": "Timeframe",
+      "roiSummary": "ROI from calculator",
+      "priorityMatrix": "Priority matrix",
+      "maturityMatrix": "Maturity matrix",
+      "techStack": "Technology stack",
+      "stakeholders": "Stakeholders",
+      "budgetPhases": "Budget by phase",
+      "diagrams": "Diagrams",
+      "exportPdf": "Export PDF",
+      "exportPdfLocked": "PDF — Pro+",
+      "pdfLoading": "Generating PDF…",
+      "pdfFailed": "PDF export failed",
+      "processCol": "Process",
+      "netBenefitCol": "Benefit/mo",
+      "paybackCol": "Payback",
+      "npvCol": "NPV",
+      "recCol": "Recommendation",
+      "months": "mo",
+      "criterionCol": "Criterion",
+      "currentCol": "Current",
+      "targetLevelCol": "Target",
+      "gapCol": "Gap",
+      "layerCol": "Layer",
+      "toolCol": "Tool",
+      "roleCol": "Role",
+      "statusCol": "Status",
+      "respCol": "Responsibility",
+      "involvementCol": "Involvement",
+      "categoryCol": "Category",
+      "amountCol": "Amount",
+      "notesCol": "Notes",
+      "phaseCol": "Phase",
+      "cumulativeCol": "Cumulative"
     },
     "history": {
       "title": "Strategy history",

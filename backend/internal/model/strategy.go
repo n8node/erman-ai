@@ -1,6 +1,10 @@
 package model
 
-const MaxStrategyCalculatorRuns = 10
+const (
+	MaxStrategyCalculatorRuns = 10
+	StrategyReportStandard    = "standard"
+	StrategyReportConsulting  = "consulting"
+)
 
 type CalculatorRunContext struct {
 	RunID              string  `json:"run_id"`
@@ -35,6 +39,7 @@ type StrategyInput struct {
 	// Deprecated: use calculator_run_ids.
 	CalculatorRunID     *string                `json:"calculator_run_id,omitempty"`
 	CalculatorContexts  []CalculatorRunContext `json:"calculator_contexts,omitempty"`
+	ReportMode          string                 `json:"report_mode,omitempty"` // standard | consulting
 	Locale              string                 `json:"locale"`
 }
 
@@ -94,6 +99,64 @@ type StrategyBudgetOverview struct {
 	Lines   []StrategyBudgetLine `json:"lines"`
 }
 
+type StrategyROILine struct {
+	RunID             string  `json:"run_id"`
+	ProcessName       string  `json:"process_name"`
+	NetBenefitMonthly float64 `json:"net_benefit_monthly_rub"`
+	PaybackMonths     float64 `json:"payback_months"`
+	ROIHorizonPct     float64 `json:"roi_horizon_pct"`
+	NPV               float64 `json:"npv_rub"`
+	Capex             float64 `json:"capex_rub"`
+	Recommendation    string  `json:"recommendation"`
+}
+
+type StrategyROISummary struct {
+	Lines               []StrategyROILine `json:"lines"`
+	TotalMonthlyBenefit float64           `json:"total_monthly_benefit_rub"`
+	TotalNPV            float64           `json:"total_npv_rub"`
+}
+
+type StrategyMaturityRow struct {
+	Criterion    string `json:"criterion"`
+	CurrentLevel string `json:"current_level"`
+	TargetLevel  string `json:"target_level"`
+	Gap          string `json:"gap"`
+}
+
+type StrategyPriorityRow struct {
+	UseCase  string  `json:"use_case"`
+	Impact   int     `json:"impact"`
+	Effort   int     `json:"effort"`
+	Score    float64 `json:"score"`
+	Priority int     `json:"priority"`
+}
+
+type StrategyTechStackRow struct {
+	Layer  string `json:"layer"`
+	Tool   string `json:"tool"`
+	Role   string `json:"role"`
+	Status string `json:"status"`
+}
+
+type StrategyStakeholderRow struct {
+	Role           string `json:"role"`
+	Responsibility string `json:"responsibility"`
+	Involvement    string `json:"involvement"`
+}
+
+type StrategyBudgetPhase struct {
+	Phase          string `json:"phase"`
+	CapexRub       string `json:"capex_rub"`
+	OpexMonthlyRub string `json:"opex_monthly_rub"`
+	CumulativeRub  string `json:"cumulative_rub"`
+}
+
+type StrategyDiagram struct {
+	Type    string `json:"type"`
+	Title   string `json:"title"`
+	Mermaid string `json:"mermaid"`
+}
+
 type StrategyOutput struct {
 	ExecutiveSummary       string                        `json:"executive_summary"`
 	CurrentSituation       string                        `json:"current_situation"`
@@ -112,5 +175,12 @@ type StrategyOutput struct {
 	StrategyAdjustmentPlan string                        `json:"strategy_adjustment_plan"`
 	Risks                  []StrategyRisk                `json:"risks"`
 	Roadmap                []StrategyRoadmapPhase          `json:"roadmap"`
-	Next30Days             []string                      `json:"next_30_days"`
+	Next30Days             []string                        `json:"next_30_days"`
+	ROISummary             *StrategyROISummary             `json:"roi_summary,omitempty"`
+	MaturityMatrix         []StrategyMaturityRow           `json:"maturity_matrix,omitempty"`
+	PriorityMatrix         []StrategyPriorityRow           `json:"priority_matrix,omitempty"`
+	TechStack              []StrategyTechStackRow          `json:"tech_stack,omitempty"`
+	StakeholderPlan        []StrategyStakeholderRow        `json:"stakeholder_plan,omitempty"`
+	BudgetPhases           []StrategyBudgetPhase           `json:"budget_phases,omitempty"`
+	Diagrams               []StrategyDiagram               `json:"diagrams,omitempty"`
 }

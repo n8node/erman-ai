@@ -17,10 +17,11 @@ import (
 type StrategyHandler struct {
 	strategy *service.StrategyService
 	auth     *service.AuthService
+	billing  *service.BillingService
 }
 
-func NewStrategyHandler(strategy *service.StrategyService, auth *service.AuthService) *StrategyHandler {
-	return &StrategyHandler{strategy: strategy, auth: auth}
+func NewStrategyHandler(strategy *service.StrategyService, auth *service.AuthService, billing *service.BillingService) *StrategyHandler {
+	return &StrategyHandler{strategy: strategy, auth: auth, billing: billing}
 }
 
 func (h *StrategyHandler) Run(w http.ResponseWriter, r *http.Request) {
@@ -132,4 +133,64 @@ func (h *StrategyHandler) Stream(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func (h *StrategyHandler) Export(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	if err := h.billing.CanExportPDF(r.Context(), userID); err != nil {
+		if errors.Is(err, service.ErrFeatureNotAvailable) {
+			writeError(w, http.StatusPaymentRequired, "pdf export requires pro plan")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "billing check failed")
+		return
+	}
+
+	var req exportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RunID == "" {
+		writeError(w, http.StatusBadRequest, "run_id required")
+		return
+	}
+
+	user, err := h.auth.GetMe(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	run, err := h.strategy.GetRunForUser(r.Context(), req.RunID, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "run not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "run lookup failed")
+		return
+	}
+	if run.ToolSlug != "strategy" || run.Status != model.RunStatusDone {
+		writeError(w, http.StatusBadRequest, "strategy run not ready")
+		return
+	}
+
+	in, out, err := service.ParseStrategyRun(run)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "invalid run data")
+		return
+	}
+
+	pdfBytes, err := service.GenerateStrategyPDF(in, out, user.Locale)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "pdf generation failed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `attachment; filename="strategy-report.pdf"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(pdfBytes)
 }

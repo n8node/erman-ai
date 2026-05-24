@@ -57,7 +57,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
 	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
 	strategyLLMHandler := handler.NewStrategyLLMSettingsHandler(strategyLLMSvc)
-	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc)
+	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc, billingSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
@@ -104,6 +104,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/calculator/export", calcHandler.Export)
 			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
 			protected.Post("/tools/strategy/run", strategyHandler.Run)
+			protected.Post("/tools/strategy/export", strategyHandler.Export)
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
 			protected.Get("/runs", runsHandler.List)

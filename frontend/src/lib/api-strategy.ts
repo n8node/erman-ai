@@ -29,6 +29,7 @@ export type StrategyInput = {
   existing_tools: string;
   calculator_run_ids?: string[];
   calculator_contexts?: CalculatorRunContext[];
+  report_mode?: "standard" | "consulting";
 };
 
 export type StrategySolution = {
@@ -82,6 +83,64 @@ export type StrategyBudgetLine = {
   notes: string;
 };
 
+export type StrategyROILine = {
+  run_id: string;
+  process_name: string;
+  net_benefit_monthly_rub: number;
+  payback_months: number;
+  roi_horizon_pct: number;
+  npv_rub: number;
+  capex_rub: number;
+  recommendation: string;
+};
+
+export type StrategyROISummary = {
+  lines: StrategyROILine[];
+  total_monthly_benefit_rub: number;
+  total_npv_rub: number;
+};
+
+export type StrategyMaturityRow = {
+  criterion: string;
+  current_level: string;
+  target_level: string;
+  gap: string;
+};
+
+export type StrategyPriorityRow = {
+  use_case: string;
+  impact: number;
+  effort: number;
+  score: number;
+  priority: number;
+};
+
+export type StrategyTechStackRow = {
+  layer: string;
+  tool: string;
+  role: string;
+  status: string;
+};
+
+export type StrategyStakeholderRow = {
+  role: string;
+  responsibility: string;
+  involvement: string;
+};
+
+export type StrategyBudgetPhase = {
+  phase: string;
+  capex_rub: string;
+  opex_monthly_rub: string;
+  cumulative_rub: string;
+};
+
+export type StrategyDiagram = {
+  type: string;
+  title: string;
+  mermaid: string;
+};
+
 export type StrategyOutput = {
   executive_summary: string;
   current_situation: string;
@@ -104,6 +163,13 @@ export type StrategyOutput = {
   risks: StrategyRisk[];
   roadmap: StrategyRoadmapPhase[];
   next_30_days: string[];
+  roi_summary?: StrategyROISummary;
+  maturity_matrix?: StrategyMaturityRow[];
+  priority_matrix?: StrategyPriorityRow[];
+  tech_stack?: StrategyTechStackRow[];
+  stakeholder_plan?: StrategyStakeholderRow[];
+  budget_phases?: StrategyBudgetPhase[];
+  diagrams?: StrategyDiagram[];
 };
 
 export type StrategyRunStart = {
@@ -135,6 +201,7 @@ export const DEFAULT_STRATEGY_INPUT: StrategyInput = {
   timeline: "1year",
   existing_tools: "",
   calculator_run_ids: [],
+  report_mode: "consulting",
 };
 
 export const STRATEGY_GOAL_OPTIONS = [

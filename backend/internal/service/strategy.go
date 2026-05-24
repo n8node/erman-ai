@@ -13,7 +13,7 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
-const strategyRunTimeout = 180 * time.Second
+const strategyRunTimeout = 360 * time.Second
 
 var strategyPrepPhases = []struct {
 	ID    string
@@ -104,6 +104,11 @@ func normalizeStrategyInput(input *model.StrategyInput) {
 	}
 	input.CalculatorRunIDs = uniqueStringsLimit(ids, model.MaxStrategyCalculatorRuns)
 	input.CalculatorRunID = nil
+	if strings.TrimSpace(input.ReportMode) == "" {
+		input.ReportMode = model.StrategyReportConsulting
+	} else {
+		input.ReportMode = normalizeReportMode(input.ReportMode)
+	}
 }
 
 func uniqueStringsLimit(items []string, max int) []string {
@@ -222,26 +227,19 @@ func (s *StrategyService) processRun(runID string) {
 	}
 
 	userPayload, _ := json.Marshal(input)
-	llmReq := LLMCompletionRequest{
-		Provider:     provider,
-		Model:        settings.ActiveModel(),
-		SystemPrompt: s.llmCfg.ResolvedSystemPrompt(settings),
-		UserPrompt:   string(userPayload),
-		Temperature:  settings.Temperature,
-		MaxTokens:    settings.MaxTokens,
-		APIKey:       apiKey,
-		BaseURL:      s.llm.BaseURL(provider),
-	}
+	_ = userPayload
+	llmReqBase := s.llmCfg.ResolvedSystemPrompt(settings)
 
-	result, err := s.streamWithRetry(ctx, runID, llmReq)
+	output, usage, err := s.generateStrategyOutput(ctx, runID, input, llmReqBase, settings, apiKey, s.llm.BaseURL(provider))
 	if err != nil {
 		s.failRun(ctx, runID, err.Error())
 		return
 	}
 
-	output, err := parseStrategyOutput(result.Content)
-	if err != nil {
-		s.failRun(ctx, runID, "invalid strategy json: "+err.Error())
+	output.ROISummary = buildStrategyROISummary(input.CalculatorContexts)
+
+	if strings.TrimSpace(output.ExecutiveSummary) == "" || len(output.RecommendedSolutions) == 0 {
+		s.failRun(ctx, runID, "invalid strategy output: missing required sections")
 		return
 	}
 
@@ -251,12 +249,12 @@ func (s *StrategyService) processRun(runID string) {
 		return
 	}
 
-	if err := s.runs.UpdateRunDone(ctx, runID, outJSON, int64(result.TotalTokens), result.Model); err != nil {
+	if err := s.runs.UpdateRunDone(ctx, runID, outJSON, int64(usage.TotalTokens), usage.Model); err != nil {
 		s.logger.Error("strategy run save failed", "run_id", runID, "error", err)
 		return
 	}
 
-	_ = s.usageLog.Create(ctx, run.UserID, runID, result.Model, result.PromptTokens, result.CompletionTokens, 0)
+	_ = s.usageLog.Create(ctx, run.UserID, runID, usage.Model, usage.PromptTokens, usage.CompletionTokens, 0)
 
 	s.streams.Publish(runID, StrategyStreamEvent{
 		Type: StrategyEventDone,
@@ -297,6 +295,10 @@ func (s *StrategyService) failRun(ctx context.Context, runID, msg string) {
 		Type: StrategyEventRunError,
 		Data: strategyEventData(map[string]string{"message": msg}),
 	})
+}
+
+func (s *StrategyService) GetRunForUser(ctx context.Context, runID, userID string) (*model.ToolRun, error) {
+	return s.runs.GetByIDForUser(ctx, runID, userID)
 }
 
 func (s *StrategyService) CanStreamRun(ctx context.Context, runID, userID string) error {
@@ -347,6 +349,9 @@ func validateStrategyInput(in model.StrategyInput) error {
 		return ErrInvalidInput
 	}
 	if len(in.CalculatorRunIDs) > model.MaxStrategyCalculatorRuns {
+		return ErrInvalidInput
+	}
+	if in.ReportMode != "" && in.ReportMode != model.StrategyReportStandard && in.ReportMode != model.StrategyReportConsulting {
 		return ErrInvalidInput
 	}
 	return nil

@@ -576,6 +576,7 @@
       "existingTools": "Текущий IT-стек",
       "calculatorRuns": "Расчёты ROI из калькулятора",
       "calculatorRunsHint": "Выберите до {max} процессов — стратегия учтёт их ROI",
+      "reportModeSection": "Формат отчёта",
       "select": "Выберите…",
       "next": "Далее",
       "back": "Назад"
@@ -648,6 +649,16 @@
       "1year": "1 год",
       "2years": "2 года"
     },
+    "reportMode": {
+      "consulting": {
+        "title": "Consulting report",
+        "desc": "Расширенный отчёт: 4 прохода LLM, таблицы, диаграммы, ≥18K символов"
+      },
+      "standard": {
+        "title": "Standard",
+        "desc": "Один проход — быстрее и дешевле, базовые таблицы"
+      }
+    },
     "stream": {
       "prepTitle": "Подготовка стратегии",
       "liveOutput": "Генерация документа",
@@ -691,7 +702,39 @@
       "next30": "Следующие 30 дней",
       "metricCol": "Метрика",
       "targetCol": "Цель",
-      "timeCol": "Срок"
+      "timeCol": "Срок",
+      "roiSummary": "ROI из калькулятора",
+      "priorityMatrix": "Матрица приоритетов",
+      "maturityMatrix": "Матрица зрелости",
+      "techStack": "IT-стек",
+      "stakeholders": "Стейкхолдеры",
+      "budgetPhases": "Бюджет по фазам",
+      "diagrams": "Диаграммы",
+      "exportPdf": "Экспорт в PDF",
+      "exportPdfLocked": "PDF — Pro+",
+      "pdfLoading": "Генерация PDF…",
+      "pdfFailed": "Не удалось экспортировать PDF",
+      "processCol": "Процесс",
+      "netBenefitCol": "Выгода/мес",
+      "paybackCol": "Окупаемость",
+      "npvCol": "NPV",
+      "recCol": "Рекомендация",
+      "months": "мес",
+      "criterionCol": "Критерий",
+      "currentCol": "Текущий",
+      "targetLevelCol": "Целевой",
+      "gapCol": "Gap",
+      "layerCol": "Слой",
+      "toolCol": "Инструмент",
+      "roleCol": "Роль",
+      "statusCol": "Статус",
+      "respCol": "Ответственность",
+      "involvementCol": "Вовлечённость",
+      "categoryCol": "Категория",
+      "amountCol": "Сумма",
+      "notesCol": "Комментарий",
+      "phaseCol": "Фаза",
+      "cumulativeCol": "Накопительно"
     },
     "history": {
       "title": "История стратегий",
