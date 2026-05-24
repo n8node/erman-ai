@@ -10,6 +10,7 @@ type Props = {
   processName: string;
   output: CalculatorOutput;
   withTooltips?: boolean;
+  showHeader?: boolean;
 };
 
 function formatRub(n: number) {
@@ -26,6 +27,7 @@ export function CalculatorReportView({
   processName,
   output,
   withTooltips = true,
+  showHeader = true,
 }: Props) {
   const t = useTranslations("calculator");
   const [showDetails, setShowDetails] = useState(false);
@@ -39,9 +41,11 @@ export function CalculatorReportView({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
-        {t("resultTitle")} — {processName}
-      </h2>
+      {showHeader && (
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("resultTitle")} — {processName}
+        </h2>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric

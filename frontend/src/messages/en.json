@@ -243,7 +243,10 @@
       "after": "After",
       "change": "Change",
       "months": "mo",
-      "readOnlyNote": "Read-only report. Calculation parameters cannot be edited."
+      "readOnlyNote": "Read-only report. Calculation parameters cannot be edited.",
+      "inputsTitle": "Calculation inputs",
+      "calculationMode": "Hours savings method",
+      "reportTitle": "Calculation result"
     }
   }
 }
