@@ -12,7 +12,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server
 RUN CGO_ENABLED=0 GOOS=linux GOBIN=/go/bin go install github.com/pressly/goose/v3/cmd/goose
 
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata chromium nss freetype harfbuzz font-noto ttf-freefont
+ENV CHROME_PATH=/usr/bin/chromium
 WORKDIR /app
 COPY --from=builder /server /app/server
 COPY --from=builder /go/bin/goose /usr/local/bin/goose
