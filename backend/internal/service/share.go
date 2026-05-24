@@ -87,7 +87,7 @@ func (s *ShareService) GetPublicReport(ctx context.Context, token string) (*Publ
 
 	showPlatformCta := true
 	if up, err := s.billing.GetUserPlan(ctx, sr.UserID); err == nil {
-		showPlatformCta = !s.billing.HasFeature(&up.Plan, "white_label")
+		showPlatformCta = !s.billing.HasFeature(&up.Plan, "hide_share_promo")
 	}
 
 	_ = s.shared.IncrementView(ctx, sr.ID)

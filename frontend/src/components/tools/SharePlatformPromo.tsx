@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 type Props = {
-  /** Controlled by API: false for white_label partners */
+  /** Controlled by API: false when plan has hide_share_promo */
   visible: boolean;
   registerHref?: string;
 };
 
 /**
  * Optional Erman AI promo on public share pages.
- * Kept in a dedicated component so white_label can hide it via show_platform_cta.
+ * Kept in a dedicated component; hidden when plan feature hide_share_promo is enabled.
  */
 export function SharePlatformPromo({
   visible,

@@ -150,6 +150,7 @@ func DefaultPlanFeatures() map[string]any {
 		"api_access":          false,
 		"priority_queue":      false,
 		"white_label":         false,
+		"hide_share_promo":    false,
 		"share_report":        false,
 		"share_report_limit":  float64(0),
 	}

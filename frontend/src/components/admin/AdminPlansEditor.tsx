@@ -22,6 +22,7 @@ const BOOL_FEATURES = [
   "api_access",
   "priority_queue",
   "white_label",
+  "hide_share_promo",
   "share_report",
 ] as const;
 

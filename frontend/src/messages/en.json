@@ -162,6 +162,7 @@
         "api_access": "API access",
         "priority_queue": "Priority queue",
         "white_label": "White-label",
+        "hide_share_promo": "Hide promo on share page",
         "share_report": "Public report links",
         "share_report_limit": "Share links limit / month"
       }

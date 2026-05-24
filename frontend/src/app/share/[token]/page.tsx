@@ -71,7 +71,7 @@ export default function PublicSharePage() {
 
           <div className="space-y-4 text-center">
             <p className="text-xs text-text3">{t("readOnlyNote")}</p>
-            <SharePlatformPromo visible={report.show_platform_cta} />
+            <SharePlatformPromo visible={report.show_platform_cta !== false} />
           </div>
         </div>
       </main>

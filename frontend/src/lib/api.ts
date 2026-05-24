@@ -88,7 +88,7 @@ export type PublicReport = {
   input: CalculatorInput;
   output: CalculatorOutput;
   created_at: string;
-  /** false when the sharing partner has white_label — hides Erman AI registration promo */
+  /** false when the sharing partner's plan has hide_share_promo */
   show_platform_cta: boolean;
 };
 

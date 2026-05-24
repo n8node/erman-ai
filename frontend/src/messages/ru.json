@@ -162,6 +162,7 @@
         "api_access": "API-доступ",
         "priority_queue": "Приоритетная очередь",
         "white_label": "White-label",
+        "hide_share_promo": "Скрыть промо на share-странице",
         "share_report": "Публичные ссылки на отчёт",
         "share_report_limit": "Лимит share-ссылок / мес"
       }
