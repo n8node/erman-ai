@@ -9,7 +9,10 @@ export function AdminNav() {
   const t = useTranslations("admin.nav");
   const pathname = usePathname();
 
-  const links = [{ href: "/admin/tooltips", label: t("tooltips") }];
+  const links = [
+    { href: "/admin/plans", label: t("plans") },
+    { href: "/admin/tooltips", label: t("tooltips") },
+  ];
 
   return (
     <nav className="flex gap-1 border-b border-border">

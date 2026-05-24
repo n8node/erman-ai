@@ -267,3 +267,57 @@ export async function bulkUpdateAdminTooltips(
     body: JSON.stringify({ items }),
   });
 }
+
+export type AdminPlan = {
+  id: string;
+  slug: string;
+  name: string;
+  price_monthly_rub: number;
+  price_yearly_rub: number;
+  tool_limits: Record<string, number>;
+  features: Record<string, unknown>;
+  support_level: string;
+  is_public: boolean;
+  is_archived: boolean;
+  user_count?: number;
+};
+
+export type AdminPlanMeta = {
+  tools: { slug: string; name: string; description: string; enabled: boolean }[];
+  default_features: Record<string, unknown>;
+  support_levels: string[];
+};
+
+export type PlanUpsertInput = {
+  slug?: string;
+  name: string;
+  price_monthly_rub: number;
+  price_yearly_rub: number;
+  tool_limits: Record<string, number>;
+  features: Record<string, unknown>;
+  support_level: string;
+  is_public: boolean;
+  is_archived: boolean;
+};
+
+export async function fetchAdminPlans() {
+  return apiFetch<{ items: AdminPlan[] }>("/admin/plans");
+}
+
+export async function fetchAdminPlansMeta() {
+  return apiFetch<AdminPlanMeta>("/admin/plans/meta");
+}
+
+export async function createAdminPlan(input: PlanUpsertInput & { slug: string }) {
+  return apiFetch<AdminPlan>("/admin/plans", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateAdminPlan(id: string, input: PlanUpsertInput) {
+  return apiFetch<AdminPlan>(`/admin/plans/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}

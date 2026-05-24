@@ -88,7 +88,53 @@
     "subtitle": "Erman AI platform management",
     "phaseNote": "Full admin dashboard arrives in Phase 7.",
     "nav": {
+      "plans": "Plans",
       "tooltips": "Tooltips"
+    },
+    "plans": {
+      "title": "Pricing plans",
+      "subtitle": "Create and edit plans, tool limits, and feature flags",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load plans",
+      "saveFailed": "Failed to save plan",
+      "saved": "Plan saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "create": "New plan",
+      "cancel": "Cancel",
+      "formCreate": "Create plan",
+      "formEdit": "Edit plan",
+      "fieldName": "Name",
+      "fieldSlug": "Slug",
+      "slugPlaceholder": "starter",
+      "slugHint": "Lowercase letters, numbers, underscore — immutable after create",
+      "slugRequired": "Slug is required for a new plan",
+      "fieldPriceMonthly": "Price / month, ₽",
+      "fieldPriceYearly": "Price / year, ₽",
+      "fieldSupport": "Support level",
+      "fieldPublic": "Public plan",
+      "fieldArchived": "Archived",
+      "sectionLimits": "Tool limits",
+      "sectionFeatures": "Features",
+      "limitsHint": "−1 = unlimited",
+      "month": "mo",
+      "badgePublic": "Public",
+      "badgeArchived": "Archived",
+      "usersCount": "{count} users",
+      "support": {
+        "community": "Community",
+        "email": "Email",
+        "priority": "Priority"
+      },
+      "features": {
+        "export_pdf": "PDF export",
+        "export_docx": "DOCX export",
+        "api_access": "API access",
+        "priority_queue": "Priority queue",
+        "white_label": "White-label",
+        "share_report": "Public report links",
+        "share_report_limit": "Share links limit / month"
+      }
     },
     "tooltips": {
       "title": "Tooltips",

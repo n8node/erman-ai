@@ -88,7 +88,53 @@
     "subtitle": "Управление платформой Erman AI",
     "phaseNote": "Полная админ-панель будет доступна в Фазе 7.",
     "nav": {
+      "plans": "Тарифы",
       "tooltips": "Тултипы"
+    },
+    "plans": {
+      "title": "Тарифные планы",
+      "subtitle": "Создание и редактирование тарифов, лимитов и функций",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить тарифы",
+      "saveFailed": "Не удалось сохранить тариф",
+      "saved": "Тариф сохранён",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "create": "Новый тариф",
+      "cancel": "Отмена",
+      "formCreate": "Создание тарифа",
+      "formEdit": "Редактирование тарифа",
+      "fieldName": "Название",
+      "fieldSlug": "Slug (идентификатор)",
+      "slugPlaceholder": "starter",
+      "slugHint": "Латиница, цифры и _ — после создания не меняется",
+      "slugRequired": "Укажите slug для нового тарифа",
+      "fieldPriceMonthly": "Цена / месяц, ₽",
+      "fieldPriceYearly": "Цена / год, ₽",
+      "fieldSupport": "Уровень поддержки",
+      "fieldPublic": "Публичный тариф",
+      "fieldArchived": "В архиве",
+      "sectionLimits": "Лимиты инструментов",
+      "sectionFeatures": "Функции",
+      "limitsHint": "−1 = безлимит",
+      "month": "мес",
+      "badgePublic": "Публичный",
+      "badgeArchived": "Архив",
+      "usersCount": "{count} пользователей",
+      "support": {
+        "community": "Community",
+        "email": "Email",
+        "priority": "Priority"
+      },
+      "features": {
+        "export_pdf": "Экспорт PDF",
+        "export_docx": "Экспорт DOCX",
+        "api_access": "API-доступ",
+        "priority_queue": "Приоритетная очередь",
+        "white_label": "White-label",
+        "share_report": "Публичные ссылки на отчёт",
+        "share_report_limit": "Лимит share-ссылок / мес"
+      }
     },
     "tooltips": {
       "title": "Тултипы",
