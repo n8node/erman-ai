@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
@@ -31,7 +32,17 @@ func NewProposalRequestService(
 	return &ProposalRequestService{requests: requests, runs: runs, users: users}
 }
 
-func (s *ProposalRequestService) Create(ctx context.Context, userID, runID string) (*model.ProposalRequest, error) {
+func (s *ProposalRequestService) Create(
+	ctx context.Context,
+	userID, runID, requesterName, telegram, businessNote string,
+) (*model.ProposalRequest, error) {
+	requesterName = strings.TrimSpace(requesterName)
+	telegram = strings.TrimSpace(telegram)
+	businessNote = strings.TrimSpace(businessNote)
+	if requesterName == "" || telegram == "" || businessNote == "" {
+		return nil, ErrInvalidInput
+	}
+
 	user, err := s.users.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -48,7 +59,7 @@ func (s *ProposalRequestService) Create(ctx context.Context, userID, runID strin
 		return nil, ErrInvalidInput
 	}
 
-	return s.requests.Create(ctx, userID, runID)
+	return s.requests.Create(ctx, userID, runID, requesterName, telegram, businessNote)
 }
 
 func (s *ProposalRequestService) ListAdmin(ctx context.Context, limit, offset int) (*ProposalRequestList, error) {
@@ -67,6 +78,10 @@ func (s *ProposalRequestService) ListAdmin(ctx context.Context, limit, offset in
 		return nil, err
 	}
 	return &ProposalRequestList{Items: items, Total: total, Limit: limit, Offset: offset}, nil
+}
+
+func (s *ProposalRequestService) GetAdminDetail(ctx context.Context, id string) (*repository.AdminProposalRequestDetail, error) {
+	return s.requests.GetAdminDetail(ctx, id)
 }
 
 func (s *ProposalRequestService) UpdateStatus(ctx context.Context, id, status string) (*model.ProposalRequest, error) {

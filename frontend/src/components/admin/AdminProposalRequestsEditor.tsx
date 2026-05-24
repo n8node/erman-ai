@@ -109,11 +109,13 @@ export function AdminProposalRequestsEditor() {
         <p className="text-sm text-text2">{t("empty")}</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-bg">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                 <th className="px-4 py-3">{t("colDate")}</th>
                 <th className="px-4 py-3">{t("colUser")}</th>
+                <th className="px-4 py-3">{t("colRequester")}</th>
+                <th className="px-4 py-3">{t("colTelegram")}</th>
                 <th className="px-4 py-3">{t("colProcess")}</th>
                 <th className="px-4 py-3">{t("colBenefit")}</th>
                 <th className="px-4 py-3">{t("colPayback")}</th>
@@ -126,6 +128,8 @@ export function AdminProposalRequestsEditor() {
                 <tr key={item.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3 text-text2">{formatDate(item.created_at)}</td>
                   <td className="px-4 py-3">{item.user_email}</td>
+                  <td className="px-4 py-3">{item.requester_name || "—"}</td>
+                  <td className="px-4 py-3 text-text2">{item.telegram || "—"}</td>
                   <td className="px-4 py-3 font-medium">{item.process_name || "—"}</td>
                   <td className="px-4 py-3">{formatRub(item.net_benefit_monthly)}</td>
                   <td className="px-4 py-3">{formatPayback(item.payback_months)}</td>
@@ -148,7 +152,7 @@ export function AdminProposalRequestsEditor() {
                   </td>
                   <td className="px-4 py-3">
                     <Link
-                      href={`/tools/calculator?run=${item.run_id}`}
+                      href={`/admin/proposal-requests/${item.id}`}
                       className="text-accent hover:underline"
                     >
                       {t("openRun")}

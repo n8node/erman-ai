@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { CalculatorInput, CalculatorOutput, User } from "@/lib/api";
 import {
   exportCalculatorPDF,
   getBillingPlan,
   shareRun,
-  submitProposalRequest,
 } from "@/lib/api";
 import { LeadForm } from "./LeadForm";
 import { CalculatorReportView } from "./CalculatorReportView";
+import { ProposalRequestModal } from "./ProposalRequestModal";
+import type { CalculatorInput, CalculatorOutput, User } from "@/lib/api";
 
 type Props = {
   runId: string;
@@ -26,7 +26,7 @@ export function CalculatorResult({ runId, input, output }: Props) {
   const [actionError, setActionError] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
-  const [loadingProposal, setLoadingProposal] = useState(false);
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [proposalDone, setProposalDone] = useState(false);
 
   useEffect(() => {
@@ -75,19 +75,6 @@ export function CalculatorResult({ runId, input, output }: Props) {
     }
   }
 
-  async function handleProposalRequest() {
-    setActionError("");
-    setLoadingProposal(true);
-    try {
-      await submitProposalRequest(runId);
-      setProposalDone(true);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : t("proposalRequestFailed"));
-    } finally {
-      setLoadingProposal(false);
-    }
-  }
-
   return (
     <div className="rounded-xl border border-border bg-bg p-6 space-y-6">
       <CalculatorReportView
@@ -110,15 +97,22 @@ export function CalculatorResult({ runId, input, output }: Props) {
           </button>
           <button
             type="button"
-            onClick={handleProposalRequest}
-            disabled={loadingProposal || proposalDone}
+            onClick={() => setProposalModalOpen(true)}
+            disabled={proposalDone}
             className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-50"
           >
-            {loadingProposal ? t("proposalRequesting") : proposalDone ? t("proposalRequestSent") : t("requestProposal")}
+            {proposalDone ? t("proposalRequestSent") : t("requestProposal")}
           </button>
           {!canShare && <p className="w-full text-xs text-text3">{t("shareProOnly")}</p>}
         </div>
       )}
+
+      <ProposalRequestModal
+        runId={runId}
+        open={proposalModalOpen}
+        onClose={() => setProposalModalOpen(false)}
+        onSuccess={() => setProposalDone(true)}
+      />
 
       {proposalDone && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">

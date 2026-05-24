@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { fetchPublicReport, type PublicReport } from "@/lib/api";
-import { CalculatorInputSummary } from "@/components/tools/CalculatorInputSummary";
-import { CalculatorReportView } from "@/components/tools/CalculatorReportView";
+import { CalculatorShareReport } from "@/components/tools/CalculatorShareReport";
 import { SharePlatformPromo } from "@/components/tools/SharePlatformPromo";
 import { TooltipProvider } from "@/components/ui/HelpTooltip";
 
@@ -52,20 +51,12 @@ export default function PublicSharePage() {
             </div>
             <p className="text-xs text-text3">{t("disclaimer")}</p>
 
-            <div className="mt-8 space-y-8">
-              <CalculatorInputSummary input={report.input} />
-
-              <div className="border-t border-border pt-8">
-                <h2 className="mb-6 text-[10px] font-medium uppercase tracking-wider text-text3">
-                  {t("reportTitle")}
-                </h2>
-                <CalculatorReportView
-                  processName={report.process_name}
-                  output={report.output}
-                  withTooltips
-                  showHeader={false}
-                />
-              </div>
+            <div className="mt-8">
+              <CalculatorShareReport
+                input={report.input}
+                output={report.output}
+                processName={report.process_name}
+              />
             </div>
           </div>
 

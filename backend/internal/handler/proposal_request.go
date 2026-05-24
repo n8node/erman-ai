@@ -21,7 +21,10 @@ func NewProposalRequestHandler(requests *service.ProposalRequestService) *Propos
 }
 
 type proposalRequestCreateBody struct {
-	RunID string `json:"run_id"`
+	RunID          string `json:"run_id"`
+	RequesterName  string `json:"requester_name"`
+	Telegram       string `json:"telegram"`
+	BusinessNote   string `json:"business_note"`
 }
 
 func (h *ProposalRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +40,14 @@ func (h *ProposalRequestHandler) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	created, err := h.requests.Create(r.Context(), userID, req.RunID)
+	created, err := h.requests.Create(
+		r.Context(),
+		userID,
+		req.RunID,
+		req.RequesterName,
+		req.Telegram,
+		req.BusinessNote,
+	)
 	if err != nil {
 		h.writeError(w, err)
 		return
@@ -55,6 +65,16 @@ func (h *ProposalRequestHandler) ListAdmin(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *ProposalRequestHandler) GetAdmin(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	detail, err := h.requests.GetAdminDetail(r.Context(), id)
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, detail)
 }
 
 type proposalRequestStatusBody struct {

@@ -120,6 +120,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Delete("/users/{id}", adminUserHandler.Delete)
 			admin.Post("/users/{id}/impersonate", adminUserHandler.Impersonate)
 			admin.Get("/proposal-requests", proposalReqHandler.ListAdmin)
+			admin.Get("/proposal-requests/{id}", proposalReqHandler.GetAdmin)
 			admin.Patch("/proposal-requests/{id}", proposalReqHandler.UpdateStatus)
 		})
 	})

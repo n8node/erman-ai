@@ -241,12 +241,17 @@ export async function submitLead(payload: {
   });
 }
 
-export async function submitProposalRequest(runId: string) {
+export async function submitProposalRequest(payload: {
+  run_id: string;
+  requester_name: string;
+  telegram: string;
+  business_note: string;
+}) {
   return apiFetch<{ id: string; status: string; created_at: string }>(
     "/tools/calculator/proposal-request",
     {
       method: "POST",
-      body: JSON.stringify({ run_id: runId }),
+      body: JSON.stringify(payload),
     }
   );
 }
@@ -423,6 +428,9 @@ export type AdminProposalRequestRow = {
   user_id: string;
   user_email: string;
   run_id: string;
+  requester_name: string;
+  telegram: string;
+  business_note: string;
   process_name: string;
   net_benefit_monthly?: number | null;
   payback_months?: number | null;
@@ -430,6 +438,11 @@ export type AdminProposalRequestRow = {
   status: "new" | "in_progress" | "done";
   created_at: string;
   updated_at: string;
+};
+
+export type AdminProposalRequestDetail = AdminProposalRequestRow & {
+  input: CalculatorInput;
+  output: CalculatorOutput;
 };
 
 export async function fetchAdminProposalRequests(params?: {
@@ -446,6 +459,10 @@ export async function fetchAdminProposalRequests(params?: {
     limit: number;
     offset: number;
   }>(`/admin/proposal-requests${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchAdminProposalRequest(id: string) {
+  return apiFetch<AdminProposalRequestDetail>(`/admin/proposal-requests/${id}`);
 }
 
 export async function updateAdminProposalRequestStatus(
