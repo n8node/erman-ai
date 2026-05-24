@@ -1,6 +1,10 @@
 import type { CalculatorInput } from "@/lib/api";
 import { resolveHoursSaved } from "@/lib/calculator";
 import { CALCULATOR_SECTORS, type CalculatorProcessTemplate } from "@/lib/calculator-templates";
+import {
+  DEFAULT_CALCULATOR_BUDGET_CONFIG,
+  type CalculatorBudgetConfig,
+} from "@/lib/calculator-budget-config";
 
 export type IntegrationLevel = "simple" | "standard" | "complex";
 
@@ -20,10 +24,6 @@ export type BudgetEstimate = {
   devHours: number;
 };
 
-const DEV_RATE_RUB = 4000;
-const AUDIT_BASE = 100_000;
-const TRAINING = 40_000;
-
 export function findTemplateById(id: string): CalculatorProcessTemplate | undefined {
   for (const sector of CALCULATOR_SECTORS) {
     const found = sector.templates.find((t) => t.id === id);
@@ -32,18 +32,18 @@ export function findTemplateById(id: string): CalculatorProcessTemplate | undefi
   return undefined;
 }
 
-function roundCapex(value: number) {
-  return Math.round(value / 50_000) * 50_000;
+function roundCapex(value: number, step: number) {
+  return Math.round(value / step) * step;
 }
 
-function roundOm(value: number) {
-  return Math.round(value / 1_000) * 1_000;
+function roundOm(value: number, step: number) {
+  return Math.round(value / step) * step;
 }
 
-function integrationMultiplier(level: IntegrationLevel) {
-  if (level === "simple") return 0.85;
-  if (level === "complex") return 1.35;
-  return 1;
+function integrationMultiplier(level: IntegrationLevel, cfg: CalculatorBudgetConfig) {
+  if (level === "simple") return cfg.integration_mult_simple;
+  if (level === "complex") return cfg.integration_mult_complex;
+  return cfg.integration_mult_standard;
 }
 
 function countUniqueExecutors(input: CalculatorInput) {
@@ -55,47 +55,65 @@ function countUniqueExecutors(input: CalculatorInput) {
   return roles.size || 1;
 }
 
-function complexityScore(input: CalculatorInput, hm: number) {
+function complexityScore(input: CalculatorInput, hm: number, cfg: CalculatorBudgetConfig) {
   const steps = input.process_steps?.length ?? 0;
   const units = input.units_per_month;
   let score = 0;
   if (steps <= 3) score += 1;
   else if (steps <= 6) score += 2;
   else score += 3;
-  if (units > 2000) score += 2;
-  else if (units > 500) score += 1;
-  if (hm > 200) score += 2;
-  else if (hm > 50) score += 1;
+  if (units > cfg.units_threshold_2000) score += 2;
+  else if (units > cfg.units_threshold_500) score += 1;
+  if (hm > cfg.hm_threshold_200) score += 2;
+  else if (hm > cfg.hm_threshold_50) score += 1;
   if (countUniqueExecutors(input) > 2) score += 1;
   return score;
 }
 
-function scoreToTier(score: number): IntegrationLevel {
-  if (score <= 3) return "simple";
-  if (score <= 6) return "standard";
+function scoreToTier(score: number, cfg: CalculatorBudgetConfig): IntegrationLevel {
+  if (score <= cfg.tier_simple_max) return "simple";
+  if (score <= cfg.tier_standard_max) return "standard";
   return "complex";
 }
 
-function integrationCost(executors: number) {
-  if (executors > 3) return 150_000;
-  if (executors > 2) return 80_000;
-  if (executors > 1) return 40_000;
+function integrationCost(executors: number, cfg: CalculatorBudgetConfig) {
+  if (executors > 3) return cfg.integration_cost_4plus_roles;
+  if (executors > 2) return cfg.integration_cost_3_roles;
+  if (executors > 1) return cfg.integration_cost_2_roles;
   return 0;
 }
 
-function devHoursForInput(input: CalculatorInput, hm: number) {
+function devHoursForInput(input: CalculatorInput, hm: number, cfg: CalculatorBudgetConfig) {
   const stepCount = input.process_steps?.length ?? 0;
   const units = input.units_per_month;
   const autoPct = input.automation_pct;
 
-  let hours = 20 + stepCount * 6;
-  if (units > 2000) hours += 40;
-  else if (units > 1000) hours += 30;
-  else if (units > 500) hours += 15;
-  if (autoPct > 70) hours += 15;
-  if (hm > 200) hours += 20;
-  else if (hm > 80) hours += 10;
+  let hours = cfg.dev_hours_base + stepCount * cfg.dev_hours_per_step;
+  if (units > cfg.units_threshold_2000) hours += cfg.dev_hours_units_2000;
+  else if (units > cfg.units_threshold_1000) hours += cfg.dev_hours_units_1000;
+  else if (units > cfg.units_threshold_500) hours += cfg.dev_hours_units_500;
+  if (autoPct > cfg.automation_pct_threshold) hours += cfg.dev_hours_automation_high;
+  if (hm > cfg.hm_threshold_200) hours += cfg.dev_hours_hm_200;
+  else if (hm > cfg.hm_threshold_80) hours += cfg.dev_hours_hm_80;
   return hours;
+}
+
+function integrationFactorLabel(
+  level: IntegrationLevel,
+  mult: number
+): { ru: string; en: string } {
+  if (mult === 1) return { ru: "", en: "" };
+  const pct = Math.round(Math.abs(mult - 1) * 100);
+  if (level === "complex") {
+    return {
+      ru: `Сложные интеграции (+${pct}%)`,
+      en: `Complex integrations (+${pct}%)`,
+    };
+  }
+  return {
+    ru: `Простой контур (−${pct}%)`,
+    en: `Simple scope (−${pct}%)`,
+  };
 }
 
 export function estimateImplementationBudget(
@@ -104,29 +122,32 @@ export function estimateImplementationBudget(
     hm?: number;
     integrationLevel?: IntegrationLevel;
     templateId?: string | null;
+    config?: CalculatorBudgetConfig;
   }
 ): BudgetEstimate {
+  const cfg = options?.config ?? DEFAULT_CALCULATOR_BUDGET_CONFIG;
   const hm = options?.hm ?? resolveHoursSaved(input);
-  const level = options?.integrationLevel ?? scoreToTier(complexityScore(input, hm));
-  const mult = integrationMultiplier(level);
+  const level = options?.integrationLevel ?? scoreToTier(complexityScore(input, hm, cfg), cfg);
+  const mult = integrationMultiplier(level, cfg);
 
-  const devHours = devHoursForInput(input, hm);
-  const devCost = devHours * DEV_RATE_RUB;
-  const integrations = integrationCost(countUniqueExecutors(input));
-  const subtotal = AUDIT_BASE + devCost + integrations + TRAINING;
-  const capex = roundCapex(Math.max(subtotal * mult, 150_000));
+  const devHours = devHoursForInput(input, hm, cfg);
+  const devCost = devHours * cfg.dev_rate_rub;
+  const integrations = integrationCost(countUniqueExecutors(input), cfg);
+  const subtotal = cfg.audit_base + devCost + integrations + cfg.training;
+  const capex = roundCapex(Math.max(subtotal * mult, cfg.capex_min), cfg.capex_round_step);
 
-  let om = 8_000;
+  let om = cfg.om_base;
   const units = input.units_per_month;
   const stepCount = input.process_steps?.length ?? 0;
-  if (units > 2000) om += 7_000;
-  else if (units > 500) om += 4_000;
-  if (stepCount > 5) om += 5_000;
-  else if (stepCount > 3) om += 3_000;
-  if (hm > 150) om += 3_000;
-  om = roundOm(om);
+  if (units > cfg.units_threshold_2000) om += cfg.om_units_2000;
+  else if (units > cfg.units_threshold_500) om += cfg.om_units_500;
+  if (stepCount > 5) om += cfg.om_steps_5;
+  else if (stepCount > 3) om += cfg.om_steps_3;
+  if (hm > cfg.hm_threshold_150) om += cfg.om_hm_150;
+  om = roundOm(om, cfg.om_round_step);
 
-  const score = complexityScore(input, hm);
+  const score = complexityScore(input, hm, cfg);
+  const factorLabels = integrationFactorLabel(level, mult);
 
   return {
     capex,
@@ -135,23 +156,23 @@ export function estimateImplementationBudget(
     complexityTier: level,
     devHours,
     lines: [
-      line("audit", "Аудит и управление проектом", "Discovery and project management", AUDIT_BASE),
+      line("audit", "Аудит и управление проектом", "Discovery and project management", cfg.audit_base),
       line(
         "dev",
-        `Разработка (~${devHours} ч × ${DEV_RATE_RUB.toLocaleString("ru-RU")} ₽)`,
-        `Development (~${devHours} h × ${DEV_RATE_RUB.toLocaleString("en-US")} RUB)`,
+        `Разработка (~${devHours} ч × ${cfg.dev_rate_rub.toLocaleString("ru-RU")} ₽)`,
+        `Development (~${devHours} h × ${cfg.dev_rate_rub.toLocaleString("en-US")} RUB)`,
         devCost
       ),
       ...(integrations > 0
         ? [line("integrations", "Интеграции и контуры", "Integrations and systems", integrations)]
         : []),
-      line("training", "Обучение и запуск", "Training and go-live", TRAINING),
+      line("training", "Обучение и запуск", "Training and go-live", cfg.training),
       ...(mult !== 1
         ? [
             line(
               "factor",
-              level === "complex" ? "Сложные интеграции (+35%)" : "Простой контур (−15%)",
-              level === "complex" ? "Complex integrations (+35%)" : "Simple scope (−15%)",
+              factorLabels.ru,
+              factorLabels.en,
               subtotal * (mult - 1)
             ),
           ]
@@ -168,6 +189,11 @@ export function formatEstimateRub(value: number, locale: string) {
   return new Intl.NumberFormat(locale === "en" ? "en-US" : "ru-RU").format(value) + " ₽";
 }
 
-export function defaultIntegrationLevel(input: CalculatorInput, hm: number): IntegrationLevel {
-  return scoreToTier(complexityScore(input, hm));
+export function defaultIntegrationLevel(
+  input: CalculatorInput,
+  hm: number,
+  config?: CalculatorBudgetConfig
+): IntegrationLevel {
+  const cfg = config ?? DEFAULT_CALCULATOR_BUDGET_CONFIG;
+  return scoreToTier(complexityScore(input, hm, cfg), cfg);
 }

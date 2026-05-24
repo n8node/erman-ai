@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useBudgetConfig } from "@/components/tools/BudgetConfigProvider";
 import {
   estimateImplementationBudget,
   formatEstimateRub,
@@ -36,11 +37,13 @@ export function BudgetEstimatePanel({
 }: Props) {
   const t = useTranslations("calculator.budgetEstimate");
   const locale = useLocale();
+  const { config } = useBudgetConfig();
 
   const estimate = estimateImplementationBudget(input, {
     hm,
     integrationLevel,
     templateId,
+    config,
   });
 
   const needsReapply = capexManuallyEdited || omManuallyEdited;

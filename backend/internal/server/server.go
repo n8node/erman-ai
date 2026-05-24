@@ -31,6 +31,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	leadRepo := repository.NewLeadRepository(db.Pool)
 	proposalReqRepo := repository.NewProposalRequestRepository(db.Pool)
 	tooltipRepo := repository.NewTooltipRepository(db.Pool)
+	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
 
 	authSvc := service.NewAuthService(userRepo, authMW)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
@@ -40,6 +41,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	proposalReqSvc := service.NewProposalRequestService(proposalReqRepo, runRepo, userRepo)
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)
+	budgetConfigSvc := service.NewCalculatorBudgetConfigService(budgetConfigRepo)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 
@@ -47,6 +49,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
 	runsHandler := handler.NewRunsHandler(runSvc)
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
+	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
@@ -88,6 +91,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Use(authMW.Required)
 
 			protected.Get("/tools", toolsHandler.List)
+			protected.Get("/tools/calculator/budget-config", budgetConfigHandler.GetPublic)
 			protected.Post("/tools/calculator/run", calcHandler.Run)
 			protected.Post("/tools/calculator/export", calcHandler.Export)
 			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
@@ -122,6 +126,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Get("/proposal-requests", proposalReqHandler.ListAdmin)
 			admin.Get("/proposal-requests/{id}", proposalReqHandler.GetAdmin)
 			admin.Patch("/proposal-requests/{id}", proposalReqHandler.UpdateStatus)
+			admin.Get("/calculator-budget", budgetConfigHandler.GetAdmin)
+			admin.Put("/calculator-budget", budgetConfigHandler.UpdateAdmin)
 		})
 	})
 

@@ -24,6 +24,7 @@ import {
 import { CalculatorResult } from "./CalculatorResult";
 import { CalculatorTemplatePicker } from "./CalculatorTemplatePicker";
 import { BudgetEstimatePanel } from "./BudgetEstimatePanel";
+import { useBudgetConfig } from "./BudgetConfigProvider";
 import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ export function CalculatorWizard() {
   const t = useTranslations("calculator");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { config: budgetConfig } = useBudgetConfig();
   const runIdParam = searchParams.get("run");
 
   const [step, setStep] = useState(1);
@@ -173,13 +175,14 @@ export function CalculatorWizard() {
   }
 
   function goToFinanceStep() {
-    const level = defaultIntegrationLevel(input, hmPreview);
+    const level = defaultIntegrationLevel(input, hmPreview, budgetConfig);
     setIntegrationLevel(level);
     if (!capexManuallyEdited && !omManuallyEdited) {
       const est = estimateImplementationBudget(input, {
         hm: hmPreview,
         integrationLevel: level,
         templateId: activeTemplateId,
+        config: budgetConfig,
       });
       setInput((prev) => ({
         ...prev,

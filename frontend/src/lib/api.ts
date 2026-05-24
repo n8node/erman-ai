@@ -315,6 +315,32 @@ export async function bulkUpdateAdminTooltips(
   });
 }
 
+export type { CalculatorBudgetConfig, CalculatorBudgetConfigRecord } from "./calculator-budget-config";
+
+export async function fetchCalculatorBudgetConfig() {
+  return apiFetch<import("./calculator-budget-config").CalculatorBudgetConfigRecord>(
+    "/tools/calculator/budget-config"
+  );
+}
+
+export async function fetchAdminCalculatorBudgetConfig() {
+  return apiFetch<import("./calculator-budget-config").CalculatorBudgetConfigRecord>(
+    "/admin/calculator-budget"
+  );
+}
+
+export async function updateAdminCalculatorBudgetConfig(
+  config: import("./calculator-budget-config").CalculatorBudgetConfig
+) {
+  return apiFetch<import("./calculator-budget-config").CalculatorBudgetConfigRecord>(
+    "/admin/calculator-budget",
+    {
+      method: "PUT",
+      body: JSON.stringify(config),
+    }
+  );
+}
+
 export type AdminPlan = {
   id: string;
   slug: string;
