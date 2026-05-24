@@ -380,17 +380,37 @@ export function CalculatorWizard() {
 
 function WizardStepper({ step, labels }: { step: number; labels: string[] }) {
   return (
-    <div className="flex items-center gap-2">
-      {labels.map((label, i) => {
-        const n = i + 1;
-        return (
-          <div key={label} className="flex items-center gap-2 flex-1">
-            <div className={cn("flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium", n <= step ? "bg-text text-white" : "bg-bg2 text-text3")}>{n}</div>
-            <span className={cn("hidden text-xs sm:inline", n === step ? "font-medium text-text" : "text-text3")}>{label}</span>
-            {i < labels.length - 1 && <div className="h-px flex-1 bg-border" />}
-          </div>
-        );
-      })}
+    <div className="flex justify-center">
+      <div className="flex items-center">
+        {labels.map((label, i) => {
+          const n = i + 1;
+          return (
+            <div key={label} className="flex items-center">
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium",
+                    n <= step ? "bg-text text-white" : "bg-bg2 text-text3"
+                  )}
+                >
+                  {n}
+                </div>
+                <span
+                  className={cn(
+                    "hidden text-xs sm:inline whitespace-nowrap",
+                    n === step ? "font-medium text-text" : "text-text3"
+                  )}
+                >
+                  {label}
+                </span>
+              </div>
+              {i < labels.length - 1 && (
+                <div className="mx-4 h-px w-12 bg-border sm:mx-6 sm:w-20" />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
