@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -24,9 +23,8 @@ type LLMService struct {
 func NewLLMService(cfg *config.Config) *LLMService {
 	return &LLMService{
 		cfg: cfg,
-		client: &http.Client{
-			Timeout: 60 * time.Second,
-		},
+		// No fixed timeout — callers pass context.WithTimeout (strategy: 120s).
+		client: &http.Client{Timeout: 0},
 	}
 }
 

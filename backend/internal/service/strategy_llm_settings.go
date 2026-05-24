@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -101,6 +102,9 @@ func (s *StrategyLLMSettingsService) TestConnection(ctx context.Context, provide
 			Message:  "api key not configured",
 		}, nil
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	models, err := s.llm.ListModels(ctx, provider, apiKey)
 	if err != nil {

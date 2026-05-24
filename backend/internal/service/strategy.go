@@ -139,7 +139,7 @@ func (s *StrategyService) processRun(runID string) {
 	}
 
 	userPayload, _ := json.Marshal(input)
-	result, err := s.llm.Complete(ctx, LLMCompletionRequest{
+	result, err := s.completeWithRetry(ctx, LLMCompletionRequest{
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
 		SystemPrompt: s.llmCfg.ResolvedSystemPrompt(settings),
@@ -179,6 +179,28 @@ func (s *StrategyService) failRun(ctx context.Context, runID, msg string) {
 		msg = msg[:500]
 	}
 	_ = s.runs.UpdateRunError(ctx, runID, msg)
+}
+
+func (s *StrategyService) completeWithRetry(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
+	result, err := s.llm.Complete(ctx, req)
+	if err == nil {
+		return result, nil
+	}
+	if !isRetryableLLMError(err) {
+		return nil, err
+	}
+	return s.llm.Complete(ctx, req)
+}
+
+func isRetryableLLMError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "timeout") ||
+		strings.Contains(msg, "deadline exceeded") ||
+		strings.Contains(msg, "connection reset") ||
+		strings.Contains(msg, "eof")
 }
 
 func validateStrategyInput(in model.StrategyInput) error {
