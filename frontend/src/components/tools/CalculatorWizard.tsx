@@ -174,14 +174,14 @@ export function CalculatorWizard() {
 
   if (loadingRun) {
     return (
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <p className="text-sm text-text2">{t("history.loadingRun")}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
@@ -235,31 +235,31 @@ export function CalculatorWizard() {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="pb-2 pr-2 normal-case">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-text3">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
                           {t("wizard.colOperation")}
                           <HelpTooltip tooltipKey="calculator.wizard.col_operation" />
                         </span>
                       </th>
                       <th className="pb-2 pr-2 normal-case">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-text3">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
                           {t("wizard.colExecutor")}
                           <HelpTooltip tooltipKey="calculator.wizard.col_executor" />
                         </span>
                       </th>
                       <th className="pb-2 pr-2 normal-case">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-text3">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
                           {t("wizard.colMinutes")}
                           <HelpTooltip tooltipKey="calculator.wizard.col_minutes" />
                         </span>
                       </th>
                       <th className="pb-2 pr-2 normal-case">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-text3">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
                           {t("wizard.colRate")}
                           <HelpTooltip tooltipKey="calculator.wizard.col_rate" />
                         </span>
                       </th>
                       <th className="pb-2 normal-case">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-text3">
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
                           {t("wizard.colCost")}
                           <HelpTooltip tooltipKey="calculator.wizard.col_cost" />
                         </span>
