@@ -14,10 +14,10 @@ down:
 	docker compose down
 
 migrate:
-	docker compose exec backend goose -dir ./migrations postgres "$$DATABASE_URL" up
+	docker compose exec -T backend sh -c 'goose -dir ./migrations postgres "$$DATABASE_URL" up'
 
 migrate-down:
-	docker compose exec backend goose -dir ./migrations postgres "$$DATABASE_URL" down
+	docker compose exec -T backend sh -c 'goose -dir ./migrations postgres "$$DATABASE_URL" down'
 
 test:
 	cd backend && go test ./...

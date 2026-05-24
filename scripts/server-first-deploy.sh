@@ -87,8 +87,7 @@ for i in $(seq 1 30); do
 done
 
 echo ">>> Running migrations..."
-DB_URL=$(grep '^DATABASE_URL=' .env | cut -d= -f2-)
-$COMPOSE exec -T backend goose -dir ./migrations postgres "$DB_URL" up
+$COMPOSE exec -T backend sh -c 'goose -dir ./migrations postgres "$DATABASE_URL" up'
 
 echo ">>> Container status:"
 $COMPOSE ps

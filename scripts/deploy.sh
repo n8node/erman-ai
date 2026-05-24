@@ -23,7 +23,7 @@ ssh "$SERVER" << EOF
 
   echo ">>> Running migrations..."
   docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T backend \
-    goose -dir ./migrations postgres "\$DATABASE_URL" up
+    sh -c 'goose -dir ./migrations postgres "$DATABASE_URL" up'
 
   echo ">>> Cleaning old images..."
   docker image prune -f
