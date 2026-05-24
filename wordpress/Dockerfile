@@ -5,4 +5,5 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     mv wp-cli.phar /usr/local/bin/wp
 
 COPY conf/forwarded-https.conf /etc/apache2/conf-available/forwarded-https.conf
+COPY conf/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 RUN a2enconf forwarded-https
