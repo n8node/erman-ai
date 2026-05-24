@@ -74,6 +74,8 @@ export type PublicReport = {
   input: CalculatorInput;
   output: CalculatorOutput;
   created_at: string;
+  /** false when the sharing partner has white_label — hides Erman AI registration promo */
+  show_platform_cta: boolean;
 };
 
 const clientBase = () =>

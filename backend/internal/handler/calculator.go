@@ -153,23 +153,24 @@ func (h *ShareHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ShareHandler) GetPublic(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
-	run, err := h.share.GetPublicReport(r.Context(), token)
+	payload, err := h.share.GetPublicReport(r.Context(), token)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "report not found or expired")
 		return
 	}
 
-	in, out, err := service.ParseCalculatorRun(run)
+	in, out, err := service.ParseCalculatorRun(payload.Run)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "invalid report data")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"process_name": in.ProcessName,
-		"input":        in,
-		"output":       out,
-		"created_at":   run.CreatedAt,
+		"process_name":      in.ProcessName,
+		"input":             in,
+		"output":            out,
+		"created_at":        payload.Run.CreatedAt,
+		"show_platform_cta": payload.ShowPlatformCta,
 	})
 }
 

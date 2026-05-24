@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { fetchPublicReport, type PublicReport } from "@/lib/api";
 import { CalculatorInputSummary } from "@/components/tools/CalculatorInputSummary";
 import { CalculatorReportView } from "@/components/tools/CalculatorReportView";
+import { SharePlatformPromo } from "@/components/tools/SharePlatformPromo";
 import { TooltipProvider } from "@/components/ui/HelpTooltip";
 
 export default function PublicSharePage() {
@@ -68,7 +69,10 @@ export default function PublicSharePage() {
             </div>
           </div>
 
-          <p className="text-center text-xs text-text3">{t("readOnlyNote")}</p>
+          <div className="space-y-4 text-center">
+            <p className="text-xs text-text3">{t("readOnlyNote")}</p>
+            <SharePlatformPromo visible={report.show_platform_cta} />
+          </div>
         </div>
       </main>
     </TooltipProvider>

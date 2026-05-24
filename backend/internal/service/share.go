@@ -63,7 +63,12 @@ func (s *ShareService) CreateShare(ctx context.Context, userID, runID, baseURL s
 	return &ShareResult{Token: sr.Token, ExpiresAt: sr.ExpiresAt, URL: url}, nil
 }
 
-func (s *ShareService) GetPublicReport(ctx context.Context, token string) (*model.ToolRun, error) {
+type PublicSharePayload struct {
+	Run             *model.ToolRun
+	ShowPlatformCta bool
+}
+
+func (s *ShareService) GetPublicReport(ctx context.Context, token string) (*PublicSharePayload, error) {
 	sr, err := s.shared.GetByToken(ctx, token)
 	if err != nil {
 		return nil, err
@@ -80,8 +85,13 @@ func (s *ShareService) GetPublicReport(ctx context.Context, token string) (*mode
 		return nil, err
 	}
 
+	showPlatformCta := true
+	if up, err := s.billing.GetUserPlan(ctx, sr.UserID); err == nil {
+		showPlatformCta = !s.billing.HasFeature(&up.Plan, "white_label")
+	}
+
 	_ = s.shared.IncrementView(ctx, sr.ID)
-	return run, nil
+	return &PublicSharePayload{Run: run, ShowPlatformCta: showPlatformCta}, nil
 }
 
 func (s *ShareService) generateShareToken(ctx context.Context) (string, error) {

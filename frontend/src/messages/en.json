@@ -246,7 +246,11 @@
       "readOnlyNote": "Read-only report. Calculation parameters cannot be edited.",
       "inputsTitle": "Calculation inputs",
       "calculationMode": "Hours savings method",
-      "reportTitle": "Calculation result"
+      "reportTitle": "Calculation result",
+      "platformPromo": {
+        "text": "Want to run the same calculation for your process?",
+        "link": "Sign up for Erman AI"
+      }
     }
   }
 }
