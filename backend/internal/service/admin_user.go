@@ -49,12 +49,12 @@ func (s *AdminUserService) List(ctx context.Context, search string, limit, offse
 	return &AdminUserList{Items: items, Total: total, Limit: limit, Offset: offset}, nil
 }
 
-func (s *AdminUserService) UpdatePlan(ctx context.Context, targetID, planID string) (*repository.AdminUserRow, error) {
+func (s *AdminUserService) UpdatePlan(ctx context.Context, actorID, targetID, planID string) (*repository.AdminUserRow, error) {
 	target, err := s.users.GetByID(ctx, targetID)
 	if err != nil {
 		return nil, err
 	}
-	if target.Role == "superadmin" {
+	if target.Role == "superadmin" && target.ID != actorID {
 		return nil, ErrCannotModifySuperadmin
 	}
 	if _, err := s.plans.GetByID(ctx, planID); err != nil {

@@ -6,6 +6,7 @@ import {
   deleteAdminUser,
   fetchAdminPlans,
   fetchAdminUsers,
+  fetchMe,
   impersonateAdminUser,
   updateAdminUserPlan,
   type AdminPlan,
@@ -35,18 +36,21 @@ export function AdminUsersEditor() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [usersRes, plansRes] = await Promise.all([
+      const [usersRes, plansRes, meRes] = await Promise.all([
         fetchAdminUsers({ q: query, limit: PAGE_SIZE, offset }),
         fetchAdminPlans(),
+        fetchMe().catch(() => null),
       ]);
       setUsers(usersRes.items);
       setTotal(usersRes.total);
       setPlans(plansRes.items.filter((p) => !p.is_archived));
+      setCurrentUserId(meRes?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
@@ -168,6 +172,8 @@ export function AdminUsersEditor() {
             <tbody>
               {users.map((user) => {
                 const isSuperadmin = user.role === "superadmin";
+                const isSelf = currentUserId === user.id;
+                const canEditPlan = !isSuperadmin || isSelf;
                 const disabled = busyId === user.id;
                 return (
                   <tr key={user.id} className="border-b border-border last:border-0">
@@ -180,9 +186,7 @@ export function AdminUsersEditor() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {isSuperadmin ? (
-                        <span className="text-text2">{user.plan_name ?? "—"}</span>
-                      ) : (
+                      {canEditPlan ? (
                         <select
                           disabled={disabled || plans.length === 0}
                           value={user.plan_id ?? ""}
@@ -198,6 +202,8 @@ export function AdminUsersEditor() {
                             </option>
                           ))}
                         </select>
+                      ) : (
+                        <span className="text-text2">{user.plan_name ?? "—"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-text2">{user.role}</td>

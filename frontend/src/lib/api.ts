@@ -158,6 +158,10 @@ export async function logout() {
   return apiFetch<{ status: string }>("/auth/logout", { method: "POST" });
 }
 
+export async function fetchMe() {
+  return apiFetch<User>("/auth/me");
+}
+
 export async function updateMe(email: string, locale: string) {
   return apiFetch<User>("/auth/me", {
     method: "PUT",

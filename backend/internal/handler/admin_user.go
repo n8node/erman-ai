@@ -41,6 +41,11 @@ func (h *AdminUserHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminUserHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
+	actorID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	id := chi.URLParam(r, "id")
 	var req updateUserPlanRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -52,7 +57,7 @@ func (h *AdminUserHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.users.UpdatePlan(r.Context(), id, req.PlanID)
+	user, err := h.users.UpdatePlan(r.Context(), actorID, id, req.PlanID)
 	if err != nil {
 		h.writeUserError(w, err)
 		return
