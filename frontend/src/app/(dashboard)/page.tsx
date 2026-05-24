@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { RecentCalculatorRuns } from "@/components/dashboard/RecentCalculatorRuns";
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
@@ -29,6 +30,8 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <RecentCalculatorRuns />
     </div>
   );
 }

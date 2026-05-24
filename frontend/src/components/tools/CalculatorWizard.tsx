@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { CalculatorInput, ProcessStep } from "@/lib/api";
-import { runCalculator } from "@/lib/api";
+import { getRun, runCalculator } from "@/lib/api";
+import {
+  clearCalculatorDraft,
+  loadCalculatorDraft,
+  saveCalculatorDraft,
+} from "@/lib/calculator-draft";
 import {
   defaultCalculatorInput,
   previewCalculator,
@@ -18,14 +24,67 @@ const fieldClass =
 
 export function CalculatorWizard() {
   const t = useTranslations("calculator");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const runIdParam = searchParams.get("run");
+
   const [step, setStep] = useState(1);
   const [input, setInput] = useState<CalculatorInput>(defaultCalculatorInput);
   const [showExpert, setShowExpert] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingRun, setLoadingRun] = useState(!!runIdParam);
   const [error, setError] = useState("");
+  const [draftBanner, setDraftBanner] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [result, setResult] = useState<Awaited<
     ReturnType<typeof runCalculator>
   > | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (runIdParam) {
+      setLoadingRun(true);
+      getRun(runIdParam)
+        .then((run) => {
+          if (run.input && run.output) {
+            setResult({
+              run_id: run.id,
+              input: run.input,
+              output: run.output,
+            });
+            setStep(3);
+          } else {
+            setError(t("history.legacyRun"));
+          }
+        })
+        .catch(() => setError(t("history.runNotFound")))
+        .finally(() => {
+          setLoadingRun(false);
+          setInitialized(true);
+        });
+      return;
+    }
+
+    const draft = loadCalculatorDraft();
+    if (draft) {
+      setInput(draft.input);
+      setStep(draft.step);
+      setShowExpert(draft.showExpert);
+      setDraftBanner(true);
+    }
+    setInitialized(true);
+  }, [runIdParam, t]);
+
+  useEffect(() => {
+    if (!initialized || runIdParam || step === 3) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveCalculatorDraft({ input, step: step as 1 | 2, showExpert });
+    }, 400);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, [input, step, showExpert, initialized, runIdParam]);
 
   function patch(partial: Partial<CalculatorInput>) {
     setInput((prev) => ({ ...prev, ...partial }));
@@ -75,13 +134,35 @@ export function CalculatorWizard() {
     };
     try {
       const data = await runCalculator(payload);
+      clearCalculatorDraft();
+      setDraftBanner(false);
       setResult(data);
       setStep(3);
+      router.replace(`/tools/calculator?run=${data.run_id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("calcFailed"));
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleNewCalculation() {
+    clearCalculatorDraft();
+    setDraftBanner(false);
+    setResult(null);
+    setInput(defaultCalculatorInput);
+    setStep(1);
+    setShowExpert(false);
+    setError("");
+    router.replace("/tools/calculator");
+  }
+
+  function dismissDraft() {
+    clearCalculatorDraft();
+    setDraftBanner(false);
+    setInput(defaultCalculatorInput);
+    setStep(1);
+    setShowExpert(false);
   }
 
   const totalMin = totalMinutesPerUnit(input.process_steps || []);
@@ -90,12 +171,33 @@ export function CalculatorWizard() {
     0
   );
 
+  if (loadingRun) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <p className="text-sm text-text2">{t("history.loadingRun")}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
       </div>
+
+      {draftBanner && step !== 3 && (
+        <div className="flex items-center justify-between rounded-lg border border-accent bg-accent-bg px-4 py-3 text-sm text-accent">
+          <span>{t("draft.restored")}</span>
+          <button type="button" onClick={dismissDraft} className="text-xs underline hover:no-underline">
+            {t("draft.discard")}
+          </button>
+        </div>
+      )}
+
+      {error && step !== 3 && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>
+      )}
 
       <WizardStepper step={step} labels={[t("wizard.step1"), t("wizard.step2"), t("wizard.step3")]} />
 
@@ -268,7 +370,7 @@ export function CalculatorWizard() {
 
       {step === 3 && result && (
         <div className="space-y-4">
-          <button type="button" onClick={() => { setStep(1); setResult(null); }} className="text-sm text-accent hover:underline">{t("wizard.recalculate")}</button>
+          <button type="button" onClick={handleNewCalculation} className="text-sm text-accent hover:underline">{t("wizard.recalculate")}</button>
           <CalculatorResult runId={result.run_id} input={result.input} output={result.output} />
         </div>
       )}

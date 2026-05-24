@@ -55,11 +55,27 @@ func (r *ToolRunRepository) ListByUser(ctx context.Context, userID string, limit
 	if limit <= 0 {
 		limit = 20
 	}
+	return r.ListByUserFiltered(ctx, userID, "", time.Time{}, limit, 0)
+}
+
+func (r *ToolRunRepository) ListByUserFiltered(ctx context.Context, userID, toolSlug string, since time.Time, limit, offset int) ([]model.ToolRun, error) {
+	if limit <= 0 {
+		limit = 20
+	}
 	const q = `
 		SELECT id, user_id, tool_slug, plan_tier, input, output, artifact_url, tokens_used, model_used, status, error_msg, created_at, updated_at, completed_at
-		FROM tool_runs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2
+		FROM tool_runs
+		WHERE user_id = $1
+		  AND ($2 = '' OR tool_slug = $2)
+		  AND ($3::timestamptz IS NULL OR created_at >= $3)
+		ORDER BY created_at DESC
+		LIMIT $4 OFFSET $5
 	`
-	rows, err := r.pool.Query(ctx, q, userID, limit)
+	var sinceArg any
+	if !since.IsZero() {
+		sinceArg = since
+	}
+	rows, err := r.pool.Query(ctx, q, userID, toolSlug, sinceArg, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +90,34 @@ func (r *ToolRunRepository) ListByUser(ctx context.Context, userID string, limit
 		runs = append(runs, *run)
 	}
 	return runs, rows.Err()
+}
+
+func (r *ToolRunRepository) CountByUserFiltered(ctx context.Context, userID, toolSlug string, since time.Time) (int, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM tool_runs
+		WHERE user_id = $1
+		  AND ($2 = '' OR tool_slug = $2)
+		  AND ($3::timestamptz IS NULL OR created_at >= $3)
+	`
+	var sinceArg any
+	if !since.IsZero() {
+		sinceArg = since
+	}
+	var count int
+	err := r.pool.QueryRow(ctx, q, userID, toolSlug, sinceArg).Scan(&count)
+	return count, err
+}
+
+func (r *ToolRunRepository) DeleteForUser(ctx context.Context, id, userID string) error {
+	tag, err := r.pool.Exec(ctx, `DELETE FROM tool_runs WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (r *ToolRunRepository) scan(row pgx.Row) (*model.ToolRun, error) {

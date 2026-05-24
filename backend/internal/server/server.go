@@ -35,9 +35,11 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
+	runSvc := service.NewRunService(runRepo, planRepo)
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
+	runsHandler := handler.NewRunsHandler(runSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
 	billingHandler := handler.NewBillingHandler(billingSvc, planRepo, runRepo)
@@ -78,6 +80,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/calculator/run", calcHandler.Run)
 			protected.Post("/tools/calculator/export", calcHandler.Export)
 
+			protected.Get("/runs", runsHandler.List)
+			protected.Get("/runs/{id}", runsHandler.Get)
+			protected.Delete("/runs/{id}", runsHandler.Delete)
 			protected.Post("/runs/{id}/share", shareHandler.Create)
 			protected.Post("/leads", leadHandler.Create)
 

@@ -25,6 +25,33 @@ export type CalculatorRunResult = {
   output: CalculatorOutput;
 };
 
+export type RunListItem = {
+  id: string;
+  tool_slug: string;
+  process_name?: string;
+  net_benefit_monthly?: number;
+  payback_months?: number;
+  roi_horizon_pct?: number;
+  recommendation?: "automate" | "consider" | "not_recommended" | "";
+  status: string;
+  created_at: string;
+};
+
+export type RunListResponse = {
+  items: RunListItem[];
+  total: number;
+};
+
+export type RunDetail = {
+  id: string;
+  tool_slug: string;
+  status: string;
+  input?: CalculatorInput;
+  output?: CalculatorOutput;
+  created_at: string;
+  artifact_url?: string | null;
+};
+
 export type BillingPlan = {
   plan_slug: string;
   plan_name: string;
@@ -182,4 +209,25 @@ export async function submitLead(payload: {
 
 export async function fetchPublicReport(token: string) {
   return apiFetch<PublicReport>(`/shared/${token}`);
+}
+
+export async function listRuns(params?: {
+  tool_slug?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.tool_slug) q.set("tool_slug", params.tool_slug);
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiFetch<RunListResponse>(`/runs${qs ? `?${qs}` : ""}`);
+}
+
+export async function getRun(id: string) {
+  return apiFetch<RunDetail>(`/runs/${id}`);
+}
+
+export async function deleteRun(id: string) {
+  return apiFetch<{ status: string }>(`/runs/${id}`, { method: "DELETE" });
 }

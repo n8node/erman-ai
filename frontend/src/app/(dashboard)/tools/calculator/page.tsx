@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { CalculatorWizard } from "@/components/tools/CalculatorWizard";
 
 export default function CalculatorPage() {
-  return <CalculatorWizard />;
+  return (
+    <Suspense fallback={null}>
+      <CalculatorWizard />
+    </Suspense>
+  );
 }

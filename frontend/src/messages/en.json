@@ -47,6 +47,11 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Choose a tool to get started",
+    "recentRuns": {
+      "title": "Recent calculations",
+      "viewAll": "Full history →",
+      "empty": "No calculations yet"
+    },
     "tools": {
       "calculator": {
         "name": "Automation Calculator",
@@ -89,6 +94,14 @@
   "calculator": {
     "title": "Automation Calculator",
     "subtitle": "Estimate automation ROI with the Erman AI financial model",
+    "subnav": {
+      "new": "New calculation",
+      "history": "History"
+    },
+    "draft": {
+      "restored": "Draft restored — continue where you left off",
+      "discard": "Discard"
+    },
     "wizard": {
       "step1": "Process",
       "step2": "Finance",
@@ -162,6 +175,33 @@
     "exporting": "Exporting…",
     "pdfFailed": "PDF export failed",
     "createProposal": "Create proposal",
+    "history": {
+      "title": "Calculation history",
+      "subtitle": "Saved Automation Calculator runs",
+      "loading": "Loading…",
+      "loadingRun": "Loading calculation…",
+      "loadFailed": "Could not load history",
+      "runNotFound": "Calculation not found or retention expired",
+      "legacyRun": "Legacy calculation format — please create a new one",
+      "empty": "No saved calculations yet",
+      "emptyAction": "Create first calculation →",
+      "colProcess": "Process",
+      "colBenefit": "B_m / month",
+      "colPayback": "Payback",
+      "colRoi": "ROI",
+      "colRec": "Recommendation",
+      "colDate": "Date",
+      "open": "Open",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this calculation from history?",
+      "deleteFailed": "Could not delete",
+      "showing": "Showing {count} of {total}",
+      "rec": {
+        "automate": "Automate",
+        "consider": "Consider",
+        "not_recommended": "Not recommended"
+      }
+    },
     "lead": {
       "title": "Request Erman AI consultation",
       "subtitle": "We'll contact you with a tailored offer",

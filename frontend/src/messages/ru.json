@@ -47,6 +47,11 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Выберите инструмент для работы",
+    "recentRuns": {
+      "title": "Последние расчёты",
+      "viewAll": "Вся история →",
+      "empty": "Пока нет расчётов"
+    },
     "tools": {
       "calculator": {
         "name": "Automation Calculator",
@@ -89,6 +94,14 @@
   "calculator": {
     "title": "Automation Calculator",
     "subtitle": "Оцените ROI автоматизации по финансовой модели Erman AI",
+    "subnav": {
+      "new": "Новый расчёт",
+      "history": "История"
+    },
+    "draft": {
+      "restored": "Восстановлен черновик — можно продолжить с того места, где остановились",
+      "discard": "Сбросить"
+    },
     "wizard": {
       "step1": "Процесс",
       "step2": "Финансы",
@@ -162,6 +175,33 @@
     "exporting": "Экспорт…",
     "pdfFailed": "Не удалось экспортировать PDF",
     "createProposal": "Создать КП",
+    "history": {
+      "title": "История расчётов",
+      "subtitle": "Сохранённые расчёты Automation Calculator",
+      "loading": "Загрузка…",
+      "loadingRun": "Загрузка расчёта…",
+      "loadFailed": "Не удалось загрузить историю",
+      "runNotFound": "Расчёт не найден или срок хранения истёк",
+      "legacyRun": "Старый формат расчёта — создайте новый",
+      "empty": "Пока нет сохранённых расчётов",
+      "emptyAction": "Создать первый расчёт →",
+      "colProcess": "Процесс",
+      "colBenefit": "B_m / мес",
+      "colPayback": "Окупаемость",
+      "colRoi": "ROI",
+      "colRec": "Рекомендация",
+      "colDate": "Дата",
+      "open": "Открыть",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить этот расчёт из истории?",
+      "deleteFailed": "Не удалось удалить",
+      "showing": "Показано {count} из {total}",
+      "rec": {
+        "automate": "Автоматизировать",
+        "consider": "Рассмотреть",
+        "not_recommended": "Не рекомендуется"
+      }
+    },
     "lead": {
       "title": "Запросить консультацию Erman AI",
       "subtitle": "Мы свяжемся с вами и подготовим предложение",
