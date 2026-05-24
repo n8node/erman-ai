@@ -89,7 +89,7 @@ export function BillingPlansView() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
@@ -111,7 +111,7 @@ export function BillingPlansView() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = current?.plan_id === plan.id;
           const isFree = plan.price_monthly_rub === 0;
@@ -121,20 +121,20 @@ export function BillingPlansView() {
             <article
               key={plan.id}
               className={cn(
-                "rounded-xl border bg-bg p-6",
+                "flex min-w-0 flex-col rounded-xl border bg-bg p-5 sm:p-6",
                 isCurrent ? "border-text shadow-sm" : "border-border"
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-medium">{plan.name}</h2>
                   {isCurrent && (
-                    <span className="mt-1 inline-block rounded bg-bg2 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text2">
+                    <span className="rounded bg-bg2 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text2">
                       {t("currentBadge")}
                     </span>
                   )}
                 </div>
-                <div className="text-right">
+                <div>
                   <p className="text-xl font-medium">
                     {isFree ? t("free") : formatRub(plan.price_monthly_rub)}
                   </p>
@@ -152,9 +152,9 @@ export function BillingPlansView() {
               <ul className="mt-5 space-y-2 text-sm text-text2">
                 {TOOL_KEYS.map((slug) =>
                   plan.tool_limits[slug] !== undefined ? (
-                    <li key={slug} className="flex justify-between gap-4">
-                      <span>{t(`tools.${slug}` as "tools.calculator")}</span>
-                      <span className="font-medium text-text">
+                    <li key={slug} className="flex justify-between gap-3">
+                      <span className="min-w-0">{t(`tools.${slug}` as "tools.calculator")}</span>
+                      <span className="shrink-0 font-medium text-text">
                         {formatLimit(plan.tool_limits[slug], t)}
                       </span>
                     </li>
@@ -162,7 +162,7 @@ export function BillingPlansView() {
                 )}
               </ul>
 
-              <ul className="mt-4 space-y-1.5 border-t border-border pt-4 text-sm">
+              <ul className="mt-4 flex-1 space-y-1.5 border-t border-border pt-4 text-sm">
                 {FEATURE_KEYS.map((key) => {
                   const enabled = Boolean(plan.features[key]);
                   return (
@@ -175,7 +175,7 @@ export function BillingPlansView() {
                     >
                       <span
                         className={cn(
-                          "inline-block h-1.5 w-1.5 rounded-full",
+                          "inline-block h-1.5 w-1.5 shrink-0 rounded-full",
                           enabled ? "bg-success" : "bg-border2"
                         )}
                       />
@@ -193,9 +193,7 @@ export function BillingPlansView() {
                   "mt-6 w-full rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50",
                   isCurrent
                     ? "border border-border2 bg-bg2 text-text2"
-                    : isFree
-                      ? "bg-text text-white"
-                      : "bg-text text-white"
+                    : "bg-text text-white"
                 )}
               >
                 {busyId === plan.id
