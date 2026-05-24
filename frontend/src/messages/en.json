@@ -92,7 +92,8 @@
       "plans": "Plans",
       "tooltips": "Tooltips",
       "proposalRequests": "Proposal requests",
-      "calculatorBudget": "Calculator rates"
+      "calculatorBudget": "Calculator rates",
+      "strategyLlm": "AI Strategy LLM"
     },
     "users": {
       "title": "Users",
@@ -236,6 +237,31 @@
         "hm_threshold_80": "Hm threshold 80",
         "hm_threshold_150": "Hm threshold 150",
         "hm_threshold_200": "Hm threshold 200"
+      }
+    },
+    "strategyLlm": {
+      "title": "AI Strategy — LLM",
+      "subtitle": "Provider, model, and system prompt for strategy generation. API keys are set in server .env.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load settings",
+      "saveFailed": "Could not save",
+      "saved": "LLM settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "providerSection": "Provider",
+      "modelsSection": "Models and parameters",
+      "promptSection": "System prompt",
+      "openrouterModel": "OpenRouter model",
+      "deepseekModel": "DeepSeek model",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Active model",
+      "resetPrompt": "Reset to default",
+      "keyMissing": "key not set",
+      "keyMissingHint": "Add the provider API key to server .env and restart the backend.",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
       }
     },
     "proposalRequests": {

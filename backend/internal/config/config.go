@@ -26,6 +26,10 @@ type Config struct {
 	OpenRouterModelSmart string `env:"OPENROUTER_MODEL_SMART" envDefault:"anthropic/claude-sonnet-4-5"`
 	OpenRouterModelEmbed string `env:"OPENROUTER_MODEL_EMBED" envDefault:"openai/text-embedding-3-small"`
 
+	DeepSeekAPIKey        string `env:"DEEPSEEK_API_KEY"`
+	DeepSeekBaseURL       string `env:"DEEPSEEK_BASE_URL" envDefault:"https://api.deepseek.com/v1"`
+	DeepSeekModelDefault  string `env:"DEEPSEEK_MODEL_DEFAULT" envDefault:"deepseek-chat"`
+
 	AutomationSavingsRate float64 `env:"AUTOMATION_SAVINGS_RATE" envDefault:"0.7"`
 
 	WorkerStrategyConcurrency int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`

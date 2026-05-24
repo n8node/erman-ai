@@ -341,6 +341,42 @@ export async function updateAdminCalculatorBudgetConfig(
   );
 }
 
+export type LLMProvider = "openrouter" | "deepseek";
+
+export type StrategyLLMSettings = {
+  provider: LLMProvider;
+  openrouter_model: string;
+  deepseek_model: string;
+  system_prompt: string;
+  temperature: number;
+  max_tokens: number;
+};
+
+export type LLMProviderStatus = {
+  id: LLMProvider;
+  configured: boolean;
+  default_model: string;
+  suggested_models: string[];
+};
+
+export type StrategyLLMAdminView = {
+  settings: StrategyLLMSettings;
+  providers: LLMProviderStatus[];
+  default_system_prompt: string;
+  updated_at?: string;
+};
+
+export async function fetchAdminStrategyLLMSettings() {
+  return apiFetch<StrategyLLMAdminView>("/admin/strategy-llm");
+}
+
+export async function updateAdminStrategyLLMSettings(settings: StrategyLLMSettings) {
+  return apiFetch<StrategyLLMAdminView>("/admin/strategy-llm", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
+}
+
 export type AdminPlan = {
   id: string;
   slug: string;

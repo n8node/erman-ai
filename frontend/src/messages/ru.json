@@ -92,7 +92,8 @@
       "plans": "Тарифы",
       "tooltips": "Тултипы",
       "proposalRequests": "Запросы на КП",
-      "calculatorBudget": "Ставки калькулятора"
+      "calculatorBudget": "Ставки калькулятора",
+      "strategyLlm": "AI Strategy LLM"
     },
     "users": {
       "title": "Пользователи",
@@ -236,6 +237,31 @@
         "hm_threshold_80": "Порог Hm 80",
         "hm_threshold_150": "Порог Hm 150",
         "hm_threshold_200": "Порог Hm 200"
+      }
+    },
+    "strategyLlm": {
+      "title": "AI Strategy — LLM",
+      "subtitle": "Провайдер, модель и системный промпт для генерации стратегий. API-ключи задаются в .env на сервере.",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить настройки",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Настройки LLM сохранены",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "providerSection": "Провайдер",
+      "modelsSection": "Модели и параметры",
+      "promptSection": "Системный промпт",
+      "openrouterModel": "Модель OpenRouter",
+      "deepseekModel": "Модель DeepSeek",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Активная модель",
+      "resetPrompt": "Сбросить к дефолту",
+      "keyMissing": "ключ не задан",
+      "keyMissingHint": "Добавьте API-ключ провайдера в .env на сервере и перезапустите backend.",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
       }
     },
     "proposalRequests": {

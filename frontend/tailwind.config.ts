@@ -15,6 +15,8 @@ const config: Config = {
         border2: "#d3d1c7",
         accent: "#185fa5",
         "accent-bg": "#e6f1fb",
+        ai: "#534ab7",
+        "ai-bg": "#eeedfe",
       },
       fontFamily: {
         sans: [

@@ -14,6 +14,7 @@ export function AdminNav() {
     { href: "/admin/plans", label: t("plans") },
     { href: "/admin/proposal-requests", label: t("proposalRequests") },
     { href: "/admin/calculator-budget", label: t("calculatorBudget") },
+    { href: "/admin/strategy-llm", label: t("strategyLlm") },
     { href: "/admin/tooltips", label: t("tooltips") },
   ];
 

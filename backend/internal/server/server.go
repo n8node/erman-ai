@@ -32,6 +32,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	proposalReqRepo := repository.NewProposalRequestRepository(db.Pool)
 	tooltipRepo := repository.NewTooltipRepository(db.Pool)
 	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
+	strategyLLMRepo := repository.NewStrategyLLMSettingsRepository(db.Pool)
 
 	authSvc := service.NewAuthService(userRepo, authMW)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
@@ -42,6 +43,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)
 	budgetConfigSvc := service.NewCalculatorBudgetConfigService(budgetConfigRepo)
+	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 
@@ -50,6 +52,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	runsHandler := handler.NewRunsHandler(runSvc)
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
 	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
+	strategyLLMHandler := handler.NewStrategyLLMSettingsHandler(strategyLLMSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
@@ -128,6 +131,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Patch("/proposal-requests/{id}", proposalReqHandler.UpdateStatus)
 			admin.Get("/calculator-budget", budgetConfigHandler.GetAdmin)
 			admin.Put("/calculator-budget", budgetConfigHandler.UpdateAdmin)
+			admin.Get("/strategy-llm", strategyLLMHandler.GetAdmin)
+			admin.Put("/strategy-llm", strategyLLMHandler.UpdateAdmin)
 		})
 	})
 
