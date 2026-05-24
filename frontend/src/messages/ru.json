@@ -551,22 +551,61 @@
     "generating": "Запуск…",
     "loadingRun": "Загрузка стратегии…",
     "newStrategy": "← Новая стратегия",
+    "formSteps": {
+      "company": "Компания",
+      "goals": "Цели и контекст"
+    },
     "form": {
       "companySection": "Компания",
       "goalsSection": "Цели",
+      "processesSection": "Ключевые процессы",
       "constraintsSection": "Ограничения",
       "companyName": "Название компании",
+      "businessDescription": "Чем занимается компания",
+      "businessDescriptionPlaceholder": "2–3 предложения: продукт, клиенты, модель",
       "industry": "Отрасль",
       "companySize": "Размер компании",
       "revenue": "Годовая выручка",
+      "marketPosition": "Позиция на рынке",
       "aiLevel": "Текущий уровень AI",
       "painPoints": "Главные проблемы и боли",
+      "dataMaturity": "Зрелость данных",
+      "changeReadiness": "Готовность к изменениям",
       "budget": "Бюджет на внедрение",
       "timeline": "Горизонт",
       "existingTools": "Текущий IT-стек",
-      "calculatorRun": "Привязать расчёт калькулятора",
-      "noCalculatorRun": "Без привязки",
-      "select": "Выберите…"
+      "calculatorRuns": "Расчёты ROI из калькулятора",
+      "calculatorRunsHint": "Выберите до {max} процессов — стратегия учтёт их ROI",
+      "select": "Выберите…",
+      "next": "Далее",
+      "back": "Назад"
+    },
+    "market": {
+      "local": "Локальный рынок",
+      "regional": "Региональный",
+      "national": "По всей стране",
+      "international": "Международный"
+    },
+    "processes": {
+      "sales": "Продажи",
+      "customer_support": "Поддержка клиентов",
+      "operations": "Операции",
+      "procurement": "Закупки",
+      "finance_accounting": "Финансы и учёт",
+      "hr": "HR",
+      "marketing": "Маркетинг",
+      "logistics": "Логистика",
+      "other": "Другое"
+    },
+    "dataMaturity": {
+      "none": "Нет аналитики",
+      "basic": "Excel / SQL",
+      "team": "Есть команда данных"
+    },
+    "changeReadiness": {
+      "low": "Низкая — есть сопротивление",
+      "medium": "Средняя",
+      "high": "Высокая — команда готова"
     },
     "industries": {
       "retail": "Розничная торговля",
@@ -609,10 +648,18 @@
       "1year": "1 год",
       "2years": "2 года"
     },
-    "poller": {
-      "title": "Генерируем стратегию…",
-      "hint": "Обычно занимает 30–90 секунд. Не закрывайте страницу.",
-      "failed": "Генерация не удалась"
+    "stream": {
+      "prepTitle": "Подготовка стратегии",
+      "liveOutput": "Генерация документа",
+      "waitingTokens": "Подключение к модели…",
+      "phases": {
+        "profile": "Анализ профиля компании",
+        "processes": "Оценка бизнес-процессов",
+        "data": "Анализ данных и IT",
+        "priorities": "Приоритизация AI-инициатив",
+        "roadmap": "Формирование roadmap и бюджета",
+        "generating": "Генерация стратегии"
+      }
     },
     "errors": {
       "startFailed": "Не удалось запустить генерацию",
@@ -620,9 +667,22 @@
     },
     "result": {
       "company": "Компания",
+      "linkedCalculators": "Привязано расчётов ROI: {count}",
       "executiveSummary": "Executive Summary",
       "currentSituation": "Текущая ситуация",
+      "goalsAndRationale": "Цели и обоснование",
+      "processAnalysis": "Анализ процессов",
+      "dataAndInfrastructure": "Данные и инфраструктура",
+      "aiUseCases": "Области применения AI",
       "solutions": "Рекомендуемые решения",
+      "implementationPlan": "План реализации",
+      "teamAndTraining": "Команда и обучение",
+      "architectureOverview": "Архитектура решений",
+      "dataGovernance": "Управление данными",
+      "ethicsAndCompliance": "Этика и compliance",
+      "budgetOverview": "Бюджет",
+      "strategyAdjustment": "Корректировка стратегии",
+      "fullReport": "Полный отчёт",
       "roadmap": "Roadmap",
       "risks": "Риски и митигация",
       "metrics": "KPI успеха",

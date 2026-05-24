@@ -200,6 +200,58 @@ export async function runStrategy(input: import("./api-strategy").StrategyInput)
   });
 }
 
+export type StrategyStreamHandlers = {
+  onPhase: (data: import("./api-strategy").StrategyStreamPhase) => void;
+  onChunk: (delta: string) => void;
+  onDone: () => void;
+  onError: (message: string) => void;
+};
+
+export function subscribeStrategyStream(runId: string, handlers: StrategyStreamHandlers): () => void {
+  const url = `${clientBase()}/runs/${runId}/stream`;
+  const es = new EventSource(url);
+
+  es.addEventListener("phase", (ev) => {
+    try {
+      handlers.onPhase(JSON.parse((ev as MessageEvent).data));
+    } catch {
+      /* ignore */
+    }
+  });
+
+  es.addEventListener("chunk", (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as { delta?: string };
+      if (data.delta) handlers.onChunk(data.delta);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  es.addEventListener("done", () => {
+    handlers.onDone();
+    es.close();
+  });
+
+  es.addEventListener("run_error", (ev) => {
+    try {
+      const data = JSON.parse((ev as MessageEvent).data) as { message?: string };
+      handlers.onError(data.message || "Generation failed");
+    } catch {
+      handlers.onError("Generation failed");
+    }
+    es.close();
+  });
+
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) return;
+    handlers.onError("Connection lost");
+    es.close();
+  };
+
+  return () => es.close();
+}
+
 export type { StrategyInput, StrategyOutput } from "./api-strategy";
 
 export async function exportCalculatorPDF(runId: string) {

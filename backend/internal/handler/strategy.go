@@ -3,12 +3,15 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
+	"github.com/go-chi/chi/v5"
 )
 
 type StrategyHandler struct {
@@ -58,4 +61,75 @@ func (h *StrategyHandler) Run(w http.ResponseWriter, r *http.Request) {
 		"run_id": run.ID,
 		"status": run.Status,
 	})
+}
+
+func (h *StrategyHandler) Stream(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	runID := chi.URLParam(r, "id")
+	if err := h.strategy.CanStreamRun(r.Context(), runID, userID); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "run not found")
+			return
+		}
+		writeError(w, http.StatusBadRequest, "invalid run")
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "streaming not supported")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	hub := h.strategy.StreamHub()
+	ch, replay, closed := hub.Subscribe(runID)
+	defer hub.Unsubscribe(runID, ch)
+
+	writeSSE := func(ev service.StrategyStreamEvent) {
+		fmt.Fprintf(w, "event: %s\n", ev.Type)
+		fmt.Fprintf(w, "data: %s\n\n", string(ev.Data))
+		flusher.Flush()
+	}
+
+	for _, ev := range replay {
+		writeSSE(ev)
+		if ev.Type == service.StrategyEventDone || ev.Type == service.StrategyEventRunError {
+			return
+		}
+	}
+	if closed {
+		return
+	}
+
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+
+	ctx := r.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-heartbeat.C:
+			fmt.Fprintf(w, ": heartbeat\n\n")
+			flusher.Flush()
+		case ev, open := <-ch:
+			if !open {
+				return
+			}
+			writeSSE(ev)
+			if ev.Type == service.StrategyEventDone || ev.Type == service.StrategyEventRunError {
+				return
+			}
+		}
+	}
 }

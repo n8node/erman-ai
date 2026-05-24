@@ -69,7 +69,7 @@ func DefaultStrategyLLMStoredConfig() StrategyLLMStoredConfig {
 			DeepSeekModel:   "deepseek-chat",
 			SystemPrompt:    "",
 			Temperature:     0.7,
-			MaxTokens:       8192,
+			MaxTokens:       16384,
 		},
 		OpenRouterModels: []string{},
 		DeepSeekModels:   []string{},

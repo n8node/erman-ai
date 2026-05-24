@@ -104,6 +104,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/calculator/export", calcHandler.Export)
 			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
 			protected.Post("/tools/strategy/run", strategyHandler.Run)
+			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
 			protected.Get("/runs", runsHandler.List)
 			protected.Get("/runs/{id}", runsHandler.Get)

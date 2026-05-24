@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -92,6 +93,23 @@ func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*L
 	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, openRouter)
 }
 
+// StreamComplete calls the chat API with stream=true and invokes onDelta for each content token.
+func (s *LLMService) StreamComplete(ctx context.Context, req LLMCompletionRequest, onDelta func(string)) (*LLMCompletionResult, error) {
+	apiKey := req.APIKey
+	baseURL := req.BaseURL
+	if apiKey == "" {
+		apiKey = s.ResolveKey(req.Provider, "", "")
+	}
+	if baseURL == "" {
+		baseURL = s.BaseURL(req.Provider)
+	}
+	if apiKey == "" {
+		return nil, errors.New("api key not configured")
+	}
+	openRouter := req.Provider != model.LLMProviderDeepSeek
+	return s.postChatCompletionStream(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, openRouter, onDelta)
+}
+
 type chatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -102,6 +120,24 @@ type chatCompletionRequest struct {
 	Messages    []chatMessage `json:"messages"`
 	Temperature float64       `json:"temperature"`
 	MaxTokens   int           `json:"max_tokens"`
+	Stream      bool          `json:"stream,omitempty"`
+}
+
+type streamChunkResponse struct {
+	Choices []struct {
+		Delta struct {
+			Content string `json:"content"`
+		} `json:"delta"`
+	} `json:"choices"`
+	Model string `json:"model"`
+	Usage *struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+	} `json:"usage"`
+	Error *struct {
+		Message string `json:"message"`
+	} `json:"error"`
 }
 
 type chatCompletionResponse struct {
@@ -249,5 +285,116 @@ func (s *LLMService) postChatCompletion(
 		PromptTokens:     parsed.Usage.PromptTokens,
 		CompletionTokens: parsed.Usage.CompletionTokens,
 		TotalTokens:      parsed.Usage.TotalTokens,
+	}, nil
+}
+
+func (s *LLMService) postChatCompletionStream(
+	ctx context.Context,
+	url, apiKey string,
+	req LLMCompletionRequest,
+	provider model.LLMProvider,
+	openRouterHeaders bool,
+	onDelta func(string),
+) (*LLMCompletionResult, error) {
+	body, err := json.Marshal(chatCompletionRequest{
+		Model: req.Model,
+		Messages: []chatMessage{
+			{Role: "system", Content: req.SystemPrompt},
+			{Role: "user", Content: req.UserPrompt},
+		},
+		Temperature: req.Temperature,
+		MaxTokens:   req.MaxTokens,
+		Stream:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	httpReq.Header.Set("Accept", "text/event-stream")
+	if openRouterHeaders {
+		httpReq.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
+		httpReq.Header.Set("X-Title", "Erman AI")
+	}
+
+	resp, err := s.client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("llm stream request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		raw, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, string(raw))
+	}
+
+	var content strings.Builder
+	modelUsed := req.Model
+	var promptTokens, completionTokens, totalTokens int
+
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		payload := strings.TrimPrefix(line, "data: ")
+		if payload == "[DONE]" {
+			break
+		}
+		var chunk streamChunkResponse
+		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
+			continue
+		}
+		if chunk.Error != nil {
+			return nil, fmt.Errorf("llm error: %s", chunk.Error.Message)
+		}
+		if chunk.Model != "" {
+			modelUsed = chunk.Model
+		}
+		if chunk.Usage != nil {
+			promptTokens = chunk.Usage.PromptTokens
+			completionTokens = chunk.Usage.CompletionTokens
+			totalTokens = chunk.Usage.TotalTokens
+		}
+		if len(chunk.Choices) == 0 {
+			continue
+		}
+		delta := chunk.Choices[0].Delta.Content
+		if delta == "" {
+			continue
+		}
+		content.WriteString(delta)
+		if onDelta != nil {
+			onDelta(delta)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("llm stream read error: %w", err)
+	}
+
+	full := content.String()
+	if strings.TrimSpace(full) == "" {
+		return nil, errors.New("llm returned empty stream")
+	}
+
+	if totalTokens == 0 {
+		totalTokens = len(full) / 4
+		completionTokens = totalTokens
+	}
+
+	return &LLMCompletionResult{
+		Content:          full,
+		Model:            modelUsed,
+		Provider:         provider,
+		PromptTokens:     promptTokens,
+		CompletionTokens: completionTokens,
+		TotalTokens:      totalTokens,
 	}, nil
 }

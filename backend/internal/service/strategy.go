@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -14,6 +13,19 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
+const strategyRunTimeout = 180 * time.Second
+
+var strategyPrepPhases = []struct {
+	ID    string
+	Delay time.Duration
+}{
+	{"profile", 1200 * time.Millisecond},
+	{"processes", 1400 * time.Millisecond},
+	{"data", 1200 * time.Millisecond},
+	{"priorities", 1400 * time.Millisecond},
+	{"roadmap", 1200 * time.Millisecond},
+}
+
 type StrategyService struct {
 	cfg      *config.Config
 	runs     *repository.ToolRunRepository
@@ -22,6 +34,7 @@ type StrategyService struct {
 	llm      *LLMService
 	llmCfg   *StrategyLLMSettingsService
 	usageLog *repository.UsageLogRepository
+	streams  *StrategyStreamHub
 	logger   *slog.Logger
 }
 
@@ -37,11 +50,17 @@ func NewStrategyService(
 ) *StrategyService {
 	return &StrategyService{
 		cfg: cfg, runs: runs, plans: plans, billing: billing,
-		llm: llm, llmCfg: llmCfg, usageLog: usageLog, logger: logger,
+		llm: llm, llmCfg: llmCfg, usageLog: usageLog,
+		streams: NewStrategyStreamHub(), logger: logger,
 	}
 }
 
+func (s *StrategyService) StreamHub() *StrategyStreamHub {
+	return s.streams
+}
+
 func (s *StrategyService) StartRun(ctx context.Context, userID string, input model.StrategyInput, locale string) (*model.ToolRun, error) {
+	normalizeStrategyInput(&input)
 	if err := validateStrategyInput(input); err != nil {
 		return nil, err
 	}
@@ -55,10 +74,8 @@ func (s *StrategyService) StartRun(ctx context.Context, userID string, input mod
 	}
 
 	input.Locale = locale
-	if input.CalculatorRunID != nil && *input.CalculatorRunID != "" {
-		if err := s.attachCalculatorContext(ctx, userID, &input, *input.CalculatorRunID); err != nil {
-			return nil, err
-		}
+	if err := s.attachCalculatorContexts(ctx, userID, &input); err != nil {
+		return nil, err
 	}
 
 	inJSON, err := json.Marshal(input)
@@ -80,34 +97,87 @@ func (s *StrategyService) StartRun(ctx context.Context, userID string, input mod
 	return run, nil
 }
 
-func (s *StrategyService) attachCalculatorContext(ctx context.Context, userID string, input *model.StrategyInput, runID string) error {
+func normalizeStrategyInput(input *model.StrategyInput) {
+	ids := append([]string(nil), input.CalculatorRunIDs...)
+	if input.CalculatorRunID != nil && strings.TrimSpace(*input.CalculatorRunID) != "" {
+		ids = append(ids, strings.TrimSpace(*input.CalculatorRunID))
+	}
+	input.CalculatorRunIDs = uniqueStringsLimit(ids, model.MaxStrategyCalculatorRuns)
+	input.CalculatorRunID = nil
+}
+
+func uniqueStringsLimit(items []string, max int) []string {
+	seen := make(map[string]struct{})
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		out = append(out, item)
+		if len(out) >= max {
+			break
+		}
+	}
+	return out
+}
+
+func (s *StrategyService) attachCalculatorContexts(ctx context.Context, userID string, input *model.StrategyInput) error {
+	if len(input.CalculatorRunIDs) == 0 {
+		return nil
+	}
+	contexts := make([]model.CalculatorRunContext, 0, len(input.CalculatorRunIDs))
+	for _, runID := range input.CalculatorRunIDs {
+		ctxItem, err := s.loadCalculatorContext(ctx, userID, runID)
+		if err != nil {
+			return err
+		}
+		contexts = append(contexts, ctxItem)
+	}
+	input.CalculatorContexts = contexts
+	return nil
+}
+
+func (s *StrategyService) loadCalculatorContext(ctx context.Context, userID, runID string) (model.CalculatorRunContext, error) {
 	run, err := s.runs.GetByIDForUser(ctx, runID, userID)
 	if err != nil {
-		return repository.ErrNotFound
+		return model.CalculatorRunContext{}, repository.ErrNotFound
 	}
 	if run.ToolSlug != "calculator" || run.Status != model.RunStatusDone {
-		return ErrInvalidInput
+		return model.CalculatorRunContext{}, ErrInvalidInput
 	}
 	var calcIn model.CalculatorInput
 	var calcOut model.CalculatorOutput
 	if err := json.Unmarshal(run.Input, &calcIn); err != nil {
-		return ErrInvalidInput
+		return model.CalculatorRunContext{}, ErrInvalidInput
 	}
 	if err := json.Unmarshal(run.Output, &calcOut); err != nil {
-		return ErrInvalidInput
+		return model.CalculatorRunContext{}, ErrInvalidInput
 	}
-	if input.PainPoints == "" {
-		input.PainPoints = fmt.Sprintf(
-			"Calculator context — process: %s; net benefit: %.0f RUB/mo; payback: %.1f months; recommendation: %s",
-			calcIn.ProcessName, calcOut.NetBenefitMonthly, calcOut.PaybackMonths, calcOut.Recommendation,
-		)
-	}
-	return nil
+	return model.CalculatorRunContext{
+		RunID:              runID,
+		ProcessName:        calcIn.ProcessName,
+		NetBenefitMonthly:  calcOut.NetBenefitMonthly,
+		PaybackMonths:      calcOut.PaybackMonths,
+		ROIHorizonPct:      calcOut.ROIHorizonPct,
+		NPV:                calcOut.NPV,
+		Capex:              calcIn.Capex,
+		MonthlySupport:     calcIn.MonthlySolutionCost,
+		Recommendation:     string(calcOut.Recommendation),
+		RecommendationText: calcOut.RecommendationText,
+	}, nil
 }
 
 func (s *StrategyService) processRun(runID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), strategyRunTimeout)
 	defer cancel()
+	defer func() {
+		time.AfterFunc(5*time.Minute, func() { s.streams.Cleanup(runID) })
+	}()
 
 	if err := s.runs.UpdateStatus(ctx, runID, model.RunStatusProcessing); err != nil {
 		s.logger.Error("strategy run status update failed", "run_id", runID, "error", err)
@@ -125,6 +195,19 @@ func (s *StrategyService) processRun(runID string) {
 		return
 	}
 
+	for _, phase := range strategyPrepPhases {
+		select {
+		case <-ctx.Done():
+			s.failRun(ctx, runID, ctx.Err().Error())
+			return
+		case <-time.After(phase.Delay):
+		}
+		s.publishPhase(runID, phase.ID, "active")
+		s.publishPhase(runID, phase.ID, "done")
+	}
+
+	s.publishPhase(runID, "generating", "active")
+
 	stored, err := s.llmCfg.GetStored(ctx)
 	if err != nil {
 		s.failRun(ctx, runID, "llm settings unavailable")
@@ -139,7 +222,7 @@ func (s *StrategyService) processRun(runID string) {
 	}
 
 	userPayload, _ := json.Marshal(input)
-	result, err := s.completeWithRetry(ctx, LLMCompletionRequest{
+	llmReq := LLMCompletionRequest{
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
 		SystemPrompt: s.llmCfg.ResolvedSystemPrompt(settings),
@@ -148,7 +231,9 @@ func (s *StrategyService) processRun(runID string) {
 		MaxTokens:    settings.MaxTokens,
 		APIKey:       apiKey,
 		BaseURL:      s.llm.BaseURL(provider),
-	})
+	}
+
+	result, err := s.streamWithRetry(ctx, runID, llmReq)
 	if err != nil {
 		s.failRun(ctx, runID, err.Error())
 		return
@@ -172,6 +257,35 @@ func (s *StrategyService) processRun(runID string) {
 	}
 
 	_ = s.usageLog.Create(ctx, run.UserID, runID, result.Model, result.PromptTokens, result.CompletionTokens, 0)
+
+	s.streams.Publish(runID, StrategyStreamEvent{
+		Type: StrategyEventDone,
+		Data: strategyEventData(map[string]string{"status": "done"}),
+	})
+}
+
+func (s *StrategyService) streamWithRetry(ctx context.Context, runID string, req LLMCompletionRequest) (*LLMCompletionResult, error) {
+	onDelta := func(delta string) {
+		s.streams.Publish(runID, StrategyStreamEvent{
+			Type: StrategyEventChunk,
+			Data: strategyEventData(map[string]string{"delta": delta}),
+		})
+	}
+	result, err := s.llm.StreamComplete(ctx, req, onDelta)
+	if err == nil {
+		return result, nil
+	}
+	if !isRetryableLLMError(err) {
+		return nil, err
+	}
+	return s.llm.StreamComplete(ctx, req, onDelta)
+}
+
+func (s *StrategyService) publishPhase(runID, id, status string) {
+	s.streams.Publish(runID, StrategyStreamEvent{
+		Type: StrategyEventPhase,
+		Data: strategyEventData(map[string]string{"id": id, "status": status}),
+	})
 }
 
 func (s *StrategyService) failRun(ctx context.Context, runID, msg string) {
@@ -179,32 +293,28 @@ func (s *StrategyService) failRun(ctx context.Context, runID, msg string) {
 		msg = msg[:500]
 	}
 	_ = s.runs.UpdateRunError(ctx, runID, msg)
+	s.streams.Publish(runID, StrategyStreamEvent{
+		Type: StrategyEventRunError,
+		Data: strategyEventData(map[string]string{"message": msg}),
+	})
 }
 
-func (s *StrategyService) completeWithRetry(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
-	result, err := s.llm.Complete(ctx, req)
-	if err == nil {
-		return result, nil
+func (s *StrategyService) CanStreamRun(ctx context.Context, runID, userID string) error {
+	run, err := s.runs.GetByIDForUser(ctx, runID, userID)
+	if err != nil {
+		return repository.ErrNotFound
 	}
-	if !isRetryableLLMError(err) {
-		return nil, err
+	if run.ToolSlug != "strategy" {
+		return ErrInvalidInput
 	}
-	return s.llm.Complete(ctx, req)
-}
-
-func isRetryableLLMError(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "timeout") ||
-		strings.Contains(msg, "deadline exceeded") ||
-		strings.Contains(msg, "connection reset") ||
-		strings.Contains(msg, "eof")
+	return nil
 }
 
 func validateStrategyInput(in model.StrategyInput) error {
 	if strings.TrimSpace(in.CompanyName) == "" {
+		return ErrInvalidInput
+	}
+	if strings.TrimSpace(in.BusinessDescription) == "" {
 		return ErrInvalidInput
 	}
 	if strings.TrimSpace(in.Industry) == "" {
@@ -218,6 +328,14 @@ func validateStrategyInput(in model.StrategyInput) error {
 	if !validLevel[in.CurrentAILevel] {
 		return ErrInvalidInput
 	}
+	validData := map[string]bool{"": true, "none": true, "basic": true, "team": true}
+	if !validData[in.DataMaturity] {
+		return ErrInvalidInput
+	}
+	validChange := map[string]bool{"": true, "low": true, "medium": true, "high": true}
+	if !validChange[in.ChangeReadiness] {
+		return ErrInvalidInput
+	}
 	if len(in.MainGoals) == 0 {
 		return ErrInvalidInput
 	}
@@ -226,6 +344,9 @@ func validateStrategyInput(in model.StrategyInput) error {
 	}
 	validTimeline := map[string]bool{"3months": true, "6months": true, "1year": true, "2years": true}
 	if !validTimeline[in.Timeline] {
+		return ErrInvalidInput
+	}
+	if len(in.CalculatorRunIDs) > model.MaxStrategyCalculatorRuns {
 		return ErrInvalidInput
 	}
 	return nil
@@ -263,4 +384,15 @@ func ParseStrategyRun(run *model.ToolRun) (model.StrategyInput, model.StrategyOu
 		}
 	}
 	return in, out, nil
+}
+
+func isRetryableLLMError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "timeout") ||
+		strings.Contains(msg, "deadline exceeded") ||
+		strings.Contains(msg, "connection reset") ||
+		strings.Contains(msg, "eof")
 }

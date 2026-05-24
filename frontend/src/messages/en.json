@@ -551,22 +551,61 @@
     "generating": "Starting…",
     "loadingRun": "Loading strategy…",
     "newStrategy": "← New strategy",
+    "formSteps": {
+      "company": "Company",
+      "goals": "Goals & context"
+    },
     "form": {
       "companySection": "Company",
       "goalsSection": "Goals",
+      "processesSection": "Key processes",
       "constraintsSection": "Constraints",
       "companyName": "Company name",
+      "businessDescription": "What the company does",
+      "businessDescriptionPlaceholder": "2–3 sentences: product, customers, model",
       "industry": "Industry",
       "companySize": "Company size",
       "revenue": "Annual revenue",
+      "marketPosition": "Market position",
       "aiLevel": "Current AI level",
       "painPoints": "Main pain points",
+      "dataMaturity": "Data maturity",
+      "changeReadiness": "Change readiness",
       "budget": "Implementation budget",
       "timeline": "Timeline",
       "existingTools": "Current IT stack",
-      "calculatorRun": "Link calculator run",
-      "noCalculatorRun": "No link",
-      "select": "Select…"
+      "calculatorRuns": "Calculator ROI runs",
+      "calculatorRunsHint": "Select up to {max} processes — strategy will use their ROI",
+      "select": "Select…",
+      "next": "Next",
+      "back": "Back"
+    },
+    "market": {
+      "local": "Local market",
+      "regional": "Regional",
+      "national": "National",
+      "international": "International"
+    },
+    "processes": {
+      "sales": "Sales",
+      "customer_support": "Customer support",
+      "operations": "Operations",
+      "procurement": "Procurement",
+      "finance_accounting": "Finance & accounting",
+      "hr": "HR",
+      "marketing": "Marketing",
+      "logistics": "Logistics",
+      "other": "Other"
+    },
+    "dataMaturity": {
+      "none": "No analytics",
+      "basic": "Excel / SQL",
+      "team": "Data team in place"
+    },
+    "changeReadiness": {
+      "low": "Low — resistance expected",
+      "medium": "Medium",
+      "high": "High — team is ready"
     },
     "industries": {
       "retail": "Retail",
@@ -609,10 +648,18 @@
       "1year": "1 year",
       "2years": "2 years"
     },
-    "poller": {
-      "title": "Generating strategy…",
-      "hint": "Usually takes 30–90 seconds. Please keep this page open.",
-      "failed": "Generation failed"
+    "stream": {
+      "prepTitle": "Preparing strategy",
+      "liveOutput": "Document generation",
+      "waitingTokens": "Connecting to model…",
+      "phases": {
+        "profile": "Analyzing company profile",
+        "processes": "Evaluating business processes",
+        "data": "Reviewing data & IT",
+        "priorities": "Prioritizing AI initiatives",
+        "roadmap": "Building roadmap & budget",
+        "generating": "Generating strategy"
+      }
     },
     "errors": {
       "startFailed": "Could not start generation",
@@ -620,9 +667,22 @@
     },
     "result": {
       "company": "Company",
+      "linkedCalculators": "Linked ROI runs: {count}",
       "executiveSummary": "Executive Summary",
       "currentSituation": "Current situation",
+      "goalsAndRationale": "Goals & rationale",
+      "processAnalysis": "Process analysis",
+      "dataAndInfrastructure": "Data & infrastructure",
+      "aiUseCases": "AI use cases",
       "solutions": "Recommended solutions",
+      "implementationPlan": "Implementation plan",
+      "teamAndTraining": "Team & training",
+      "architectureOverview": "Architecture overview",
+      "dataGovernance": "Data governance",
+      "ethicsAndCompliance": "Ethics & compliance",
+      "budgetOverview": "Budget",
+      "strategyAdjustment": "Strategy adjustment plan",
+      "fullReport": "Full report",
       "roadmap": "Roadmap",
       "risks": "Risks & mitigation",
       "metrics": "Success metrics",

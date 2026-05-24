@@ -71,7 +71,7 @@ func main() {
 		Addr:         srv.Addr(),
 		Handler:      srv.Handler(),
 		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 120 * time.Second,
+		WriteTimeout: 200 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
