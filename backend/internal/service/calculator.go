@@ -17,6 +17,7 @@ var (
 	ErrShareLimitExceeded  = errors.New("share report limit exceeded")
 	ErrPartnerOnly         = errors.New("partner accounts only")
 	ErrPaymentRequired     = errors.New("payment required")
+	ErrToolLimitExceeded   = errors.New("tool limit exceeded")
 )
 
 type BillingService struct {
@@ -96,6 +97,30 @@ func (s *BillingService) CanExportPDF(ctx context.Context, userID string) error 
 	}
 	if !s.HasFeature(&up.Plan, "export_pdf") {
 		return ErrFeatureNotAvailable
+	}
+	return nil
+}
+
+func (s *BillingService) CheckToolLimit(ctx context.Context, userID, toolSlug string) error {
+	up, err := s.plans.GetUserPlan(ctx, userID)
+	if err != nil {
+		return err
+	}
+	limit := -1
+	if up.Plan.ToolLimits != nil {
+		if v, ok := up.Plan.ToolLimits[toolSlug]; ok {
+			limit = v
+		}
+	}
+	if limit == -1 {
+		return nil
+	}
+	count, err := s.runs.GetUsageCount(ctx, userID, toolSlug)
+	if err != nil {
+		return err
+	}
+	if count >= limit {
+		return ErrToolLimitExceeded
 	}
 	return nil
 }

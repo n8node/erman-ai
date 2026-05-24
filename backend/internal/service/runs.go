@@ -100,6 +100,12 @@ func summarizeRun(run model.ToolRun) RunListItem {
 		CreatedAt: run.CreatedAt,
 	}
 	if run.ToolSlug != "calculator" {
+		if run.ToolSlug == "strategy" {
+			var input model.StrategyInput
+			if err := json.Unmarshal(run.Input, &input); err == nil {
+				item.ProcessName = input.CompanyName
+			}
+		}
 		return item
 	}
 	var input model.CalculatorInput

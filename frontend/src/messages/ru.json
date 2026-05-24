@@ -535,5 +535,117 @@
         "link": "Зарегистрируйтесь в Erman AI"
       }
     }
+  },
+  "strategy": {
+    "title": "AI Strategy",
+    "subtitle": "Персонализированная стратегия внедрения AI для вашего бизнеса",
+    "subnav": {
+      "new": "Новая стратегия",
+      "history": "История"
+    },
+    "limits": {
+      "unlimited": "Безлимит",
+      "remaining": "{left} / {total} запусков осталось"
+    },
+    "generate": "Сгенерировать стратегию",
+    "generating": "Запуск…",
+    "loadingRun": "Загрузка стратегии…",
+    "newStrategy": "← Новая стратегия",
+    "form": {
+      "companySection": "Компания",
+      "goalsSection": "Цели",
+      "constraintsSection": "Ограничения",
+      "companyName": "Название компании",
+      "industry": "Отрасль",
+      "companySize": "Размер компании",
+      "revenue": "Годовая выручка",
+      "aiLevel": "Текущий уровень AI",
+      "painPoints": "Главные проблемы и боли",
+      "budget": "Бюджет на внедрение",
+      "timeline": "Горизонт",
+      "existingTools": "Текущий IT-стек",
+      "calculatorRun": "Привязать расчёт калькулятора",
+      "noCalculatorRun": "Без привязки",
+      "select": "Выберите…"
+    },
+    "industries": {
+      "retail": "Розничная торговля",
+      "finance": "Финансы",
+      "manufacturing": "Производство",
+      "services": "Услуги",
+      "it": "IT",
+      "logistics": "Логистика",
+      "healthcare": "Медицина",
+      "other": "Другое"
+    },
+    "goals": {
+      "reduce_costs": "Снизить расходы",
+      "speed_processes": "Ускорить процессы",
+      "improve_quality": "Повысить качество",
+      "grow_sales": "Рост продаж",
+      "analytics": "Аналитика и данные",
+      "customer_service": "Клиентский сервис"
+    },
+    "aiLevels": {
+      "none": "Нет AI",
+      "exploring": "Изучаем возможности",
+      "piloting": "Пилотные проекты",
+      "scaling": "Масштабируем"
+    },
+    "revenue": {
+      "up10m": "до 10 млн ₽",
+      "10to100m": "10–100 млн ₽",
+      "100mto1b": "100 млн – 1 млрд ₽",
+      "1bplus": "1 млрд+ ₽"
+    },
+    "budget": {
+      "up500k": "до 500 тыс ₽",
+      "500kto5m": "500 тыс – 5 млн ₽",
+      "5mplus": "5 млн+ ₽"
+    },
+    "timelines": {
+      "3months": "3 месяца",
+      "6months": "6 месяцев",
+      "1year": "1 год",
+      "2years": "2 года"
+    },
+    "poller": {
+      "title": "Генерируем стратегию…",
+      "hint": "Обычно занимает 30–90 секунд. Не закрывайте страницу.",
+      "failed": "Генерация не удалась"
+    },
+    "errors": {
+      "startFailed": "Не удалось запустить генерацию",
+      "loadFailed": "Не удалось загрузить результат"
+    },
+    "result": {
+      "company": "Компания",
+      "executiveSummary": "Executive Summary",
+      "currentSituation": "Текущая ситуация",
+      "solutions": "Рекомендуемые решения",
+      "roadmap": "Roadmap",
+      "risks": "Риски и митигация",
+      "metrics": "KPI успеха",
+      "next30": "Следующие 30 дней",
+      "metricCol": "Метрика",
+      "targetCol": "Цель",
+      "timeCol": "Срок"
+    },
+    "history": {
+      "title": "История стратегий",
+      "subtitle": "Сохранённые генерации AI Strategy",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить историю",
+      "deleteFailed": "Не удалось удалить",
+      "deleteConfirm": "Удалить эту стратегию из истории?",
+      "empty": "Пока нет сохранённых стратегий",
+      "emptyAction": "Создать первую стратегию →",
+      "colCompany": "Компания",
+      "colStatus": "Статус",
+      "colDate": "Дата",
+      "colActions": "Действия",
+      "open": "Открыть",
+      "delete": "Удалить"
+    }
   }
 }

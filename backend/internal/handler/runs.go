@@ -67,7 +67,17 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		"tool_slug":    run.ToolSlug,
 		"status":       run.Status,
 		"created_at":   run.CreatedAt,
+		"updated_at":   run.UpdatedAt,
 		"artifact_url": run.ArtifactURL,
+	}
+	if run.ErrorMsg != nil {
+		resp["error_msg"] = *run.ErrorMsg
+	}
+	if run.ModelUsed != nil {
+		resp["model_used"] = *run.ModelUsed
+	}
+	if run.CompletedAt != nil {
+		resp["completed_at"] = run.CompletedAt
 	}
 
 	if run.ToolSlug == "calculator" {
@@ -78,6 +88,17 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := json.Unmarshal(run.Output, &output); err == nil {
 			resp["output"] = output
+		}
+	} else if run.ToolSlug == "strategy" {
+		var input model.StrategyInput
+		var output model.StrategyOutput
+		if err := json.Unmarshal(run.Input, &input); err == nil {
+			resp["input"] = input
+		}
+		if len(run.Output) > 0 {
+			if err := json.Unmarshal(run.Output, &output); err == nil {
+				resp["output"] = output
+			}
 		}
 	} else {
 		resp["input"] = json.RawMessage(run.Input)

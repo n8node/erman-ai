@@ -28,6 +28,62 @@ func (r *ToolRunRepository) Create(ctx context.Context, userID, toolSlug, planTi
 	return r.scan(r.pool.QueryRow(ctx, q, userID, toolSlug, planTier, input, output))
 }
 
+func (r *ToolRunRepository) CreatePending(ctx context.Context, userID, toolSlug, planTier string, input json.RawMessage) (*model.ToolRun, error) {
+	const q = `
+		INSERT INTO tool_runs (user_id, tool_slug, plan_tier, input, status)
+		VALUES ($1, $2, $3, $4, 'pending')
+		RETURNING id, user_id, tool_slug, plan_tier, input, output, artifact_url, tokens_used, model_used, status, error_msg, created_at, updated_at, completed_at
+	`
+	return r.scan(r.pool.QueryRow(ctx, q, userID, toolSlug, planTier, input))
+}
+
+func (r *ToolRunRepository) UpdateStatus(ctx context.Context, id string, status model.RunStatus) error {
+	const q = `
+		UPDATE tool_runs SET status = $2, updated_at = NOW() WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, string(status))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *ToolRunRepository) UpdateRunDone(ctx context.Context, id string, output json.RawMessage, tokens int64, modelUsed string) error {
+	const q = `
+		UPDATE tool_runs
+		SET status = 'done', output = $2, tokens_used = $3, model_used = $4,
+		    completed_at = NOW(), updated_at = NOW(), error_msg = NULL
+		WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, output, tokens, modelUsed)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (r *ToolRunRepository) UpdateRunError(ctx context.Context, id, errMsg string) error {
+	const q = `
+		UPDATE tool_runs
+		SET status = 'error', error_msg = $2, updated_at = NOW(), completed_at = NOW()
+		WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, errMsg)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *ToolRunRepository) GetByID(ctx context.Context, id string) (*model.ToolRun, error) {
 	const q = `
 		SELECT id, user_id, tool_slug, plan_tier, input, output, artifact_url, tokens_used, model_used, status, error_msg, created_at, updated_at, completed_at

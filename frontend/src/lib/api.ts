@@ -46,9 +46,13 @@ export type RunDetail = {
   id: string;
   tool_slug: string;
   status: string;
-  input?: CalculatorInput;
-  output?: CalculatorOutput;
+  input?: CalculatorInput | import("./api-strategy").StrategyInput;
+  output?: CalculatorOutput | import("./api-strategy").StrategyOutput;
   created_at: string;
+  updated_at?: string;
+  completed_at?: string;
+  error_msg?: string;
+  model_used?: string;
   artifact_url?: string | null;
 };
 
@@ -189,6 +193,15 @@ export async function runCalculator(input: CalculatorInput) {
   });
 }
 
+export async function runStrategy(input: import("./api-strategy").StrategyInput) {
+  return apiFetch<import("./api-strategy").StrategyRunStart>("/tools/strategy/run", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export type { StrategyInput, StrategyOutput } from "./api-strategy";
+
 export async function exportCalculatorPDF(runId: string) {
   const res = await fetch(`${clientBase()}/tools/calculator/export`, {
     method: "POST",
@@ -258,6 +271,18 @@ export async function submitProposalRequest(payload: {
 
 export async function fetchPublicReport(token: string) {
   return apiFetch<PublicReport>(`/shared/${token}`);
+}
+
+export type ToolListItem = {
+  slug: string;
+  name: string;
+  description: string;
+  runs_used: number;
+  runs_limit: number;
+};
+
+export async function fetchTools() {
+  return apiFetch<{ tools: ToolListItem[] }>("/tools");
 }
 
 export async function listRuns(params?: {

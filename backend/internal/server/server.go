@@ -34,6 +34,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
 	strategyLLMRepo := repository.NewStrategyLLMSettingsRepository(db.Pool)
 
+	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
+
 	authSvc := service.NewAuthService(userRepo, authMW)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
@@ -45,6 +47,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	budgetConfigSvc := service.NewCalculatorBudgetConfigService(budgetConfigRepo)
 	llmSvc := service.NewLLMService(cfg)
 	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg, llmSvc)
+	strategySvc := service.NewStrategyService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 
@@ -54,6 +57,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
 	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
 	strategyLLMHandler := handler.NewStrategyLLMSettingsHandler(strategyLLMSvc)
+	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
@@ -99,6 +103,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/calculator/run", calcHandler.Run)
 			protected.Post("/tools/calculator/export", calcHandler.Export)
 			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
+			protected.Post("/tools/strategy/run", strategyHandler.Run)
 
 			protected.Get("/runs", runsHandler.List)
 			protected.Get("/runs/{id}", runsHandler.Get)

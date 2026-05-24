@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { CalculatorInput, ProcessStep } from "@/lib/api";
+import type { CalculatorInput, CalculatorOutput, ProcessStep } from "@/lib/api";
 import { getRun, runCalculator } from "@/lib/api";
 import {
   clearCalculatorDraft,
@@ -64,8 +64,8 @@ export function CalculatorWizard() {
           if (run.input && run.output) {
             setResult({
               run_id: run.id,
-              input: run.input,
-              output: run.output,
+              input: run.input as CalculatorInput,
+              output: run.output as CalculatorOutput,
             });
             setStep(3);
           } else {
