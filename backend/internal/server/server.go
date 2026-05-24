@@ -29,6 +29,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	planRepo := repository.NewPlanRepository(db.Pool)
 	sharedRepo := repository.NewSharedReportRepository(db.Pool)
 	leadRepo := repository.NewLeadRepository(db.Pool)
+	tooltipRepo := repository.NewTooltipRepository(db.Pool)
 
 	authSvc := service.NewAuthService(userRepo, authMW)
 	billingSvc := service.NewBillingService(planRepo, runRepo)
@@ -36,10 +37,12 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
 	runSvc := service.NewRunService(runRepo, planRepo)
+	tooltipSvc := service.NewTooltipService(tooltipRepo)
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
 	runsHandler := handler.NewRunsHandler(runSvc)
+	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
 	billingHandler := handler.NewBillingHandler(billingSvc, planRepo, runRepo)
@@ -87,6 +90,15 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/leads", leadHandler.Create)
 
 			protected.Get("/billing/plan", billingHandler.Plan)
+			protected.Get("/tooltips", tooltipHandler.ListPublic)
+		})
+
+		api.Route("/admin", func(admin chi.Router) {
+			admin.Use(authMW.Required)
+			admin.Use(authMW.SuperAdmin)
+			admin.Get("/tooltips", tooltipHandler.ListAdmin)
+			admin.Put("/tooltips", tooltipHandler.BulkUpdateAdmin)
+			admin.Put("/tooltips/{key}", tooltipHandler.UpdateAdmin)
 		})
 	})
 

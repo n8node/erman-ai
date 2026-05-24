@@ -86,7 +86,22 @@
   "admin": {
     "title": "Superadmin panel",
     "subtitle": "Erman AI platform management",
-    "phaseNote": "Full admin dashboard arrives in Phase 7."
+    "phaseNote": "Full admin dashboard arrives in Phase 7.",
+    "nav": {
+      "tooltips": "Tooltips"
+    },
+    "tooltips": {
+      "title": "Tooltips",
+      "subtitle": "Help texts for calculator and other tools",
+      "loading": "Loading…",
+      "loadFailed": "Could not load tooltips",
+      "saveFailed": "Could not save",
+      "saved": "Changes saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "textRu": "Text (RU)",
+      "textEn": "Text (EN)"
+    }
   },
   "stub": {
     "comingSoon": "This section will be available in upcoming phases."

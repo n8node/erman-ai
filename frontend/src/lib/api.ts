@@ -231,3 +231,31 @@ export async function getRun(id: string) {
 export async function deleteRun(id: string) {
   return apiFetch<{ status: string }>(`/runs/${id}`, { method: "DELETE" });
 }
+
+export type AdminTooltip = {
+  key: string;
+  label: string;
+  text_ru: string;
+  text_en: string;
+  sort_order: number;
+  updated_at: string;
+};
+
+export async function fetchTooltips(prefix = "calculator") {
+  return apiFetch<{ tooltips: Record<string, string> }>(
+    `/tooltips?prefix=${encodeURIComponent(prefix)}`
+  );
+}
+
+export async function fetchAdminTooltips() {
+  return apiFetch<{ items: AdminTooltip[] }>("/admin/tooltips");
+}
+
+export async function bulkUpdateAdminTooltips(
+  items: Pick<AdminTooltip, "key" | "text_ru" | "text_en">[]
+) {
+  return apiFetch<{ items: AdminTooltip[] }>("/admin/tooltips", {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+}

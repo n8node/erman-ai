@@ -17,6 +17,7 @@ import {
   totalMinutesPerUnit,
 } from "@/lib/calculator";
 import { CalculatorResult } from "./CalculatorResult";
+import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
@@ -213,7 +214,7 @@ export function CalculatorWizard() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <ModeButton
               active={input.hm_mode === "process"}
               onClick={() => patch({ hm_mode: "process" })}
@@ -224,6 +225,7 @@ export function CalculatorWizard() {
               onClick={() => patch({ hm_mode: "direct" })}
               label={t("wizard.modeDirect")}
             />
+            <HelpTooltip tooltipKey="calculator.wizard.hm_mode_direct" />
           </div>
 
           {input.hm_mode === "process" ? (
@@ -232,11 +234,36 @@ export function CalculatorWizard() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text3">
-                      <th className="pb-2 pr-2">{t("wizard.colOperation")}</th>
-                      <th className="pb-2 pr-2">{t("wizard.colExecutor")}</th>
-                      <th className="pb-2 pr-2">{t("wizard.colMinutes")}</th>
-                      <th className="pb-2 pr-2">{t("wizard.colRate")}</th>
-                      <th className="pb-2">{t("wizard.colCost")}</th>
+                      <th className="pb-2 pr-2">
+                        <span className="inline-flex items-center gap-1">
+                          {t("wizard.colOperation")}
+                          <HelpTooltip tooltipKey="calculator.wizard.col_operation" />
+                        </span>
+                      </th>
+                      <th className="pb-2 pr-2">
+                        <span className="inline-flex items-center gap-1">
+                          {t("wizard.colExecutor")}
+                          <HelpTooltip tooltipKey="calculator.wizard.col_executor" />
+                        </span>
+                      </th>
+                      <th className="pb-2 pr-2">
+                        <span className="inline-flex items-center gap-1">
+                          {t("wizard.colMinutes")}
+                          <HelpTooltip tooltipKey="calculator.wizard.col_minutes" />
+                        </span>
+                      </th>
+                      <th className="pb-2 pr-2">
+                        <span className="inline-flex items-center gap-1">
+                          {t("wizard.colRate")}
+                          <HelpTooltip tooltipKey="calculator.wizard.col_rate" />
+                        </span>
+                      </th>
+                      <th className="pb-2">
+                        <span className="inline-flex items-center gap-1">
+                          {t("wizard.colCost")}
+                          <HelpTooltip tooltipKey="calculator.wizard.col_cost" />
+                        </span>
+                      </th>
                       <th className="pb-2 w-8" />
                     </tr>
                   </thead>
@@ -274,11 +301,21 @@ export function CalculatorWizard() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium">{t("wizard.unitsPerMonth")}</label>
+                  <label className="mb-1.5 block text-xs font-medium">
+                    <LabelWithHelp
+                      label={t("wizard.unitsPerMonth")}
+                      tooltipKey="calculator.wizard.units_per_month"
+                    />
+                  </label>
                   <input type="number" min={0} className={fieldClass} value={input.units_per_month} onChange={(e) => patch({ units_per_month: Number(e.target.value) })} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium">{t("wizard.automationPct")}</label>
+                  <label className="mb-1.5 block text-xs font-medium">
+                    <LabelWithHelp
+                      label={t("wizard.automationPct")}
+                      tooltipKey="calculator.wizard.automation_pct"
+                    />
+                  </label>
                   <input type="number" min={0} max={100} className={fieldClass} value={input.automation_pct} onChange={(e) => patch({ automation_pct: Number(e.target.value) })} />
                 </div>
               </div>
@@ -293,17 +330,30 @@ export function CalculatorWizard() {
 
           <div className="grid gap-4 sm:grid-cols-2 border-t border-border pt-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium">{t("wizard.errorRateBefore")}</label>
+              <label className="mb-1.5 block text-xs font-medium">
+                <LabelWithHelp
+                  label={t("wizard.errorRateBefore")}
+                  tooltipKey="calculator.wizard.error_rate_before"
+                />
+              </label>
               <input type="number" min={0} max={100} className={fieldClass} value={input.error_rate_before_pct} onChange={(e) => patch({ error_rate_before_pct: Number(e.target.value) })} />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium">{t("wizard.throughputBefore")}</label>
+              <label className="mb-1.5 block text-xs font-medium">
+                <LabelWithHelp
+                  label={t("wizard.throughputBefore")}
+                  tooltipKey="calculator.wizard.throughput_before"
+                />
+              </label>
               <input type="number" min={0} className={fieldClass} value={input.throughput_before_per_day} onChange={(e) => patch({ throughput_before_per_day: Number(e.target.value) })} />
             </div>
           </div>
 
           <div className="rounded-lg border border-accent bg-accent-bg px-4 py-3 text-sm">
-            <span className="font-medium text-accent">Hm:</span>{" "}
+            <span className="inline-flex items-center gap-1.5 font-medium text-accent">
+              Hm:
+              <HelpTooltip tooltipKey="calculator.wizard.hm_preview" />
+            </span>{" "}
             {Math.round(hmPreview)} {t("wizard.hoursMonth")}
           </div>
 
