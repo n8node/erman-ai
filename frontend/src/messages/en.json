@@ -1,8 +1,79 @@
 {
   "app": {
     "title": "Erman AI",
-    "tagline": "AI tools for your business",
-    "comingSoon": "Dashboard coming soon",
-    "dashboard": "Erman AI Dashboard — Coming soon"
+    "tagline": "AI tools for your business"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Sign in to your Erman AI dashboard",
+    "registerTitle": "Create account",
+    "registerSubtitle": "Register to access AI tools",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "login": "Sign in",
+    "register": "Register",
+    "loading": "Loading…",
+    "noAccount": "No account?",
+    "hasAccount": "Already have an account?",
+    "loginFailed": "Sign in failed",
+    "registerFailed": "Registration failed",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters"
+  },
+  "nav": {
+    "tools": "Tools",
+    "account": "Account",
+    "calculator": "Calculator",
+    "strategy": "AI Strategy",
+    "proposal": "Proposal",
+    "billing": "Billing",
+    "apiKeys": "API Keys",
+    "settings": "Settings",
+    "admin": "Admin",
+    "dashboard": "Dashboard",
+    "logout": "Log out"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Choose a tool to get started",
+    "tools": {
+      "calculator": {
+        "name": "Automation Calculator",
+        "description": "ROI calculator for process automation"
+      },
+      "strategy": {
+        "name": "AI Strategy",
+        "description": "AI adoption strategy for your business"
+      },
+      "proposal": {
+        "name": "Proposal Generator",
+        "description": "Commercial proposal generator"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Profile and account security",
+    "profileSection": "Profile",
+    "passwordSection": "Password",
+    "email": "Email",
+    "locale": "Interface language",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "saveProfile": "Save profile",
+    "savePassword": "Change password",
+    "saving": "Saving…",
+    "profileSaved": "Profile updated",
+    "passwordSaved": "Password changed",
+    "saveFailed": "Could not save"
+  },
+  "admin": {
+    "title": "Superadmin panel",
+    "subtitle": "Erman AI platform management",
+    "phaseNote": "Full admin dashboard arrives in Phase 7."
+  },
+  "stub": {
+    "comingSoon": "This section will be available in upcoming phases."
   }
 }

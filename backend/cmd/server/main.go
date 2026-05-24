@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,13 +13,20 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
+	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/server"
+	"github.com/erman-ai/erman-ai/internal/service"
 	"github.com/pressly/goose/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
+	seedAdmin := flag.Bool("seed-admin", false, "create or update superadmin user")
+	seedEmail := flag.String("email", "", "superadmin email address")
+	seedPassword := flag.String("password", "", "superadmin password")
+	flag.Parse()
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	cfg, err := config.Load()
@@ -41,6 +49,22 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	if *seedAdmin {
+		if *seedEmail == "" || *seedPassword == "" {
+			logger.Error("seed-admin requires --email and --password")
+			os.Exit(1)
+		}
+		authMW := middleware.NewAuth(cfg.JWTSecret)
+		authSvc := service.NewAuthService(repository.NewUserRepository(db.Pool), authMW)
+		user, err := authSvc.SeedAdmin(ctx, *seedEmail, *seedPassword)
+		if err != nil {
+			logger.Error("seed admin failed", "error", err)
+			os.Exit(1)
+		}
+		logger.Info("superadmin ready", "email", user.Email, "id", user.ID)
+		os.Exit(0)
+	}
 
 	srv := server.New(cfg, db, logger)
 	httpServer := &http.Server{

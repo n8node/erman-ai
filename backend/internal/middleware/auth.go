@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -58,17 +59,6 @@ func (a *Auth) Required(next http.Handler) http.Handler {
 	})
 }
 
-func (a *Auth) SuperAdmin(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role, _ := r.Context().Value(UserRoleKey).(string)
-		if role != "superadmin" {
-			http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (a *Auth) parse(token string) (*claims, error) {
 	parsed, err := jwt.ParseWithClaims(token, &claims{}, func(t *jwt.Token) (any, error) {
 		return a.jwtSecret, nil
@@ -81,6 +71,56 @@ func (a *Auth) parse(token string) (*claims, error) {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
 	return c, nil
+}
+
+func (a *Auth) SuperAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role, _ := r.Context().Value(UserRoleKey).(string)
+		if role != "superadmin" {
+			http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (a *Auth) IssueToken(userID, role string, ttl time.Duration) (string, error) {
+	now := time.Now()
+	c := &claims{
+		UserID: userID,
+		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString(a.jwtSecret)
+}
+
+const accessTokenCookie = "access_token"
+
+func (a *Auth) SetTokenCookie(w http.ResponseWriter, token string, secure bool) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     accessTokenCookie,
+		Value:    token,
+		Path:     "/",
+		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func (a *Auth) ClearTokenCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     accessTokenCookie,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 func extractToken(r *http.Request) string {

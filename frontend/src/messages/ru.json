@@ -1,8 +1,79 @@
 {
   "app": {
     "title": "Erman AI",
-    "tagline": "AI-инструменты для вашего бизнеса",
-    "comingSoon": "Личный кабинет скоро будет доступен",
-    "dashboard": "Erman AI Dashboard — Coming soon"
+    "tagline": "AI-инструменты для вашего бизнеса"
+  },
+  "auth": {
+    "loginTitle": "Вход",
+    "loginSubtitle": "Войдите в личный кабинет Erman AI",
+    "registerTitle": "Регистрация",
+    "registerSubtitle": "Создайте аккаунт для доступа к инструментам",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "login": "Войти",
+    "register": "Зарегистрироваться",
+    "loading": "Загрузка…",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "loginFailed": "Не удалось войти",
+    "registerFailed": "Не удалось зарегистрироваться",
+    "passwordMismatch": "Пароли не совпадают",
+    "passwordTooShort": "Пароль должен быть не короче 8 символов"
+  },
+  "nav": {
+    "tools": "Инструменты",
+    "account": "Аккаунт",
+    "calculator": "Calculator",
+    "strategy": "AI Strategy",
+    "proposal": "Proposal",
+    "billing": "Биллинг",
+    "apiKeys": "API Keys",
+    "settings": "Настройки",
+    "admin": "Админ",
+    "dashboard": "Dashboard",
+    "logout": "Выйти"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Выберите инструмент для работы",
+    "tools": {
+      "calculator": {
+        "name": "Automation Calculator",
+        "description": "ROI-калькулятор автоматизации процессов"
+      },
+      "strategy": {
+        "name": "AI Strategy",
+        "description": "Стратегия внедрения AI для вашего бизнеса"
+      },
+      "proposal": {
+        "name": "Proposal Generator",
+        "description": "Генератор коммерческих предложений"
+      }
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "subtitle": "Профиль и безопасность аккаунта",
+    "profileSection": "Профиль",
+    "passwordSection": "Пароль",
+    "email": "Email",
+    "locale": "Язык интерфейса",
+    "currentPassword": "Текущий пароль",
+    "newPassword": "Новый пароль",
+    "saveProfile": "Сохранить профиль",
+    "savePassword": "Сменить пароль",
+    "saving": "Сохранение…",
+    "profileSaved": "Профиль обновлён",
+    "passwordSaved": "Пароль изменён",
+    "saveFailed": "Не удалось сохранить"
+  },
+  "admin": {
+    "title": "Панель суперадмина",
+    "subtitle": "Управление платформой Erman AI",
+    "phaseNote": "Полная админ-панель будет доступна в Фазе 7."
+  },
+  "stub": {
+    "comingSoon": "Раздел будет доступен в следующих фазах."
   }
 }
