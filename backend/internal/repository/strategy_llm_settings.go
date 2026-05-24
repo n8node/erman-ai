@@ -33,14 +33,14 @@ func (r *StrategyLLMSettingsRepository) Get(ctx context.Context) (*model.Strateg
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(raw, &rec.Settings); err != nil {
+	if err := json.Unmarshal(raw, &rec.Config); err != nil {
 		return nil, err
 	}
 	return &rec, nil
 }
 
-func (r *StrategyLLMSettingsRepository) Update(ctx context.Context, settings model.StrategyLLMSettings) (*model.StrategyLLMSettingsRecord, error) {
-	raw, err := json.Marshal(settings)
+func (r *StrategyLLMSettingsRepository) Update(ctx context.Context, config model.StrategyLLMStoredConfig) (*model.StrategyLLMSettingsRecord, error) {
+	raw, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (r *StrategyLLMSettingsRepository) Update(ctx context.Context, settings mod
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(out, &rec.Settings); err != nil {
+	if err := json.Unmarshal(out, &rec.Config); err != nil {
 		return nil, err
 	}
 	return &rec, nil

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
@@ -23,7 +25,7 @@ func NewLLMService(cfg *config.Config) *LLMService {
 	return &LLMService{
 		cfg: cfg,
 		client: &http.Client{
-			Timeout: 120 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }
@@ -35,6 +37,8 @@ type LLMCompletionRequest struct {
 	UserPrompt   string
 	Temperature  float64
 	MaxTokens    int
+	APIKey       string
+	BaseURL      string
 }
 
 type LLMCompletionResult struct {
@@ -46,24 +50,48 @@ type LLMCompletionResult struct {
 	TotalTokens      int
 }
 
-func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
-	switch req.Provider {
-	case model.LLMProviderDeepSeek:
-		return s.completeDeepSeek(ctx, req)
-	case model.LLMProviderOpenRouter:
-		fallthrough
-	default:
-		return s.completeOpenRouter(ctx, req)
+func (s *LLMService) ResolveOpenRouterKey(stored string) string {
+	if strings.TrimSpace(stored) != "" {
+		return strings.TrimSpace(stored)
 	}
+	return strings.TrimSpace(s.cfg.OpenRouterAPIKey)
 }
 
-func (s *LLMService) ProviderConfigured(provider model.LLMProvider) bool {
-	switch provider {
-	case model.LLMProviderDeepSeek:
-		return s.cfg.DeepSeekAPIKey != ""
-	default:
-		return s.cfg.OpenRouterAPIKey != ""
+func (s *LLMService) ResolveDeepSeekKey(stored string) string {
+	if strings.TrimSpace(stored) != "" {
+		return strings.TrimSpace(stored)
 	}
+	return strings.TrimSpace(s.cfg.DeepSeekAPIKey)
+}
+
+func (s *LLMService) ResolveKey(provider model.LLMProvider, storedOpenRouter, storedDeepSeek string) string {
+	if provider == model.LLMProviderDeepSeek {
+		return s.ResolveDeepSeekKey(storedDeepSeek)
+	}
+	return s.ResolveOpenRouterKey(storedOpenRouter)
+}
+
+func (s *LLMService) BaseURL(provider model.LLMProvider) string {
+	if provider == model.LLMProviderDeepSeek {
+		return strings.TrimRight(s.cfg.DeepSeekBaseURL, "/")
+	}
+	return strings.TrimRight(s.cfg.OpenRouterBaseURL, "/")
+}
+
+func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
+	apiKey := req.APIKey
+	baseURL := req.BaseURL
+	if apiKey == "" {
+		apiKey = s.ResolveKey(req.Provider, "", "")
+	}
+	if baseURL == "" {
+		baseURL = s.BaseURL(req.Provider)
+	}
+	if apiKey == "" {
+		return nil, errors.New("api key not configured")
+	}
+	openRouter := req.Provider != model.LLMProviderDeepSeek
+	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, openRouter)
 }
 
 type chatMessage struct {
@@ -93,18 +121,66 @@ type chatCompletionResponse struct {
 	} `json:"error"`
 }
 
-func (s *LLMService) completeOpenRouter(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
-	if s.cfg.OpenRouterAPIKey == "" {
-		return nil, errors.New("openrouter api key not configured")
-	}
-	return s.postChatCompletion(ctx, s.cfg.OpenRouterBaseURL+"/chat/completions", s.cfg.OpenRouterAPIKey, req, model.LLMProviderOpenRouter, true)
+type modelsListResponse struct {
+	Data []struct {
+		ID string `json:"id"`
+	} `json:"data"`
 }
 
-func (s *LLMService) completeDeepSeek(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
-	if s.cfg.DeepSeekAPIKey == "" {
-		return nil, errors.New("deepseek api key not configured")
+func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider, apiKey string) ([]string, error) {
+	if apiKey == "" {
+		return nil, errors.New("api key not configured")
 	}
-	return s.postChatCompletion(ctx, s.cfg.DeepSeekBaseURL+"/chat/completions", s.cfg.DeepSeekAPIKey, req, model.LLMProviderDeepSeek, false)
+	baseURL := s.BaseURL(provider)
+	openRouter := provider != model.LLMProviderDeepSeek
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/models", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if openRouter {
+		req.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
+		req.Header.Set("X-Title", "Erman AI")
+	}
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("models request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("models http %d: %s", resp.StatusCode, string(raw))
+	}
+
+	var parsed modelsListResponse
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, fmt.Errorf("models parse error: %w", err)
+	}
+
+	ids := make([]string, 0, len(parsed.Data))
+	seen := make(map[string]struct{})
+	for _, item := range parsed.Data {
+		id := strings.TrimSpace(item.ID)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if len(ids) == 0 {
+		return nil, errors.New("provider returned no models")
+	}
+	return ids, nil
 }
 
 func (s *LLMService) postChatCompletion(

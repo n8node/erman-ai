@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ModelPicker } from "@/components/admin/ModelPicker";
 import {
   fetchAdminStrategyLLMSettings,
+  testStrategyLLMConnection,
   updateAdminStrategyLLMSettings,
   type LLMProvider,
+  type LLMProviderStatus,
   type StrategyLLMSettings,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -26,21 +29,25 @@ export function AdminStrategyLLMEditor() {
   const t = useTranslations("admin.strategyLlm");
   const [settings, setSettings] = useState<StrategyLLMSettings>(DEFAULT_SETTINGS);
   const [defaultPrompt, setDefaultPrompt] = useState("");
-  const [providers, setProviders] = useState<
-    { id: LLMProvider; configured: boolean; suggested_models: string[] }[]
-  >([]);
+  const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
+  const [openrouterKeyInput, setOpenrouterKeyInput] = useState("");
+  const [deepseekKeyInput, setDeepseekKeyInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState<LLMProvider | null>(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [testStatus, setTestStatus] = useState<Partial<Record<LLMProvider, string>>>({});
+
+  function applyView(data: Awaited<ReturnType<typeof fetchAdminStrategyLLMSettings>>) {
+    setSettings(data.settings);
+    setDefaultPrompt(data.default_system_prompt);
+    setProviders(data.providers);
+  }
 
   useEffect(() => {
     fetchAdminStrategyLLMSettings()
-      .then((data) => {
-        setSettings(data.settings);
-        setDefaultPrompt(data.default_system_prompt);
-        setProviders(data.providers);
-      })
+      .then(applyView)
       .catch((err) =>
         setError(err instanceof Error ? err.message : t("loadFailed"))
       )
@@ -49,19 +56,23 @@ export function AdminStrategyLLMEditor() {
 
   function patch(partial: Partial<StrategyLLMSettings>) {
     setSettings((prev) => ({ ...prev, ...partial }));
-    setSuccess(false);
+    setSuccess("");
   }
 
   async function handleSave() {
     setSaving(true);
     setError("");
-    setSuccess(false);
+    setSuccess("");
     try {
-      const data = await updateAdminStrategyLLMSettings(settings);
-      setSettings(data.settings);
-      setDefaultPrompt(data.default_system_prompt);
-      setProviders(data.providers);
-      setSuccess(true);
+      const data = await updateAdminStrategyLLMSettings({
+        settings,
+        ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
+        ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
+      });
+      applyView(data);
+      setOpenrouterKeyInput("");
+      setDeepseekKeyInput("");
+      setSuccess(t("saved"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
@@ -69,11 +80,58 @@ export function AdminStrategyLLMEditor() {
     }
   }
 
+  async function handleTestConnection(provider: LLMProvider) {
+    setTesting(provider);
+    setError("");
+    setTestStatus((prev) => ({ ...prev, [provider]: "" }));
+    try {
+      if (
+        (provider === "openrouter" && openrouterKeyInput.trim()) ||
+        (provider === "deepseek" && deepseekKeyInput.trim())
+      ) {
+        const saved = await updateAdminStrategyLLMSettings({
+          settings,
+          ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
+          ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
+        });
+        applyView(saved);
+        setOpenrouterKeyInput("");
+        setDeepseekKeyInput("");
+      }
+
+      const result = await testStrategyLLMConnection(provider);
+      if (!result.ok) {
+        setTestStatus((prev) => ({ ...prev, [provider]: result.message }));
+        return;
+      }
+
+      setTestStatus((prev) => ({ ...prev, [provider]: result.message }));
+      const refreshed = await fetchAdminStrategyLLMSettings();
+      applyView(refreshed);
+      if (result.models.length > 0) {
+        if (provider === "openrouter" && !result.models.includes(settings.openrouter_model)) {
+          patch({ openrouter_model: result.models[0] });
+        }
+        if (provider === "deepseek" && !result.models.includes(settings.deepseek_model)) {
+          patch({ deepseek_model: result.models[0] });
+        }
+      }
+    } catch (err) {
+      setTestStatus((prev) => ({
+        ...prev,
+        [provider]: err instanceof Error ? err.message : t("connectionFailed"),
+      }));
+    } finally {
+      setTesting(null);
+    }
+  }
+
   function handleResetPrompt() {
     patch({ system_prompt: defaultPrompt });
   }
 
-  const activeProvider = providers.find((p) => p.id === settings.provider);
+  const openrouterMeta = providers.find((p) => p.id === "openrouter");
+  const deepseekMeta = providers.find((p) => p.id === "deepseek");
 
   if (loading) {
     return <p className="text-sm text-text2">{t("loading")}</p>;
@@ -93,9 +151,55 @@ export function AdminStrategyLLMEditor() {
       )}
       {success && (
         <div className="rounded-md border border-green-200 bg-success-bg px-3 py-2 text-sm text-success">
-          {t("saved")}
+          {success}
         </div>
       )}
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("keysSection")}
+        </h2>
+        {(["openrouter", "deepseek"] as LLMProvider[]).map((id) => {
+          const meta = providers.find((p) => p.id === id);
+          const keyValue = id === "openrouter" ? openrouterKeyInput : deepseekKeyInput;
+          const setKey = id === "openrouter" ? setOpenrouterKeyInput : setDeepseekKeyInput;
+          return (
+            <div key={id} className="rounded-lg border border-border bg-bg2/40 p-4 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium">{t(`providers.${id}`)}</p>
+                {meta?.configured ? (
+                  <span className="text-xs text-success">{t("keyConfigured")}: {meta.key_hint}</span>
+                ) : (
+                  <span className="text-xs text-warning">{t("keyMissing")}</span>
+                )}
+              </div>
+              <input
+                type="password"
+                className={fieldClass}
+                value={keyValue}
+                placeholder={meta?.key_hint ? t("keyPlaceholderExisting", { hint: meta.key_hint }) : t("keyPlaceholder")}
+                onChange={(e) => {
+                  setKey(e.target.value);
+                  setSuccess("");
+                }}
+              />
+              <button
+                type="button"
+                disabled={testing === id}
+                onClick={() => handleTestConnection(id)}
+                className="rounded-lg border border-border2 px-3 py-1.5 text-xs font-medium hover:bg-bg2 disabled:opacity-60"
+              >
+                {testing === id ? t("testing") : t("testConnection")}
+              </button>
+              {testStatus[id] && (
+                <p className={cn("text-xs", testStatus[id]?.includes("connected") ? "text-success" : "text-text2")}>
+                  {testStatus[id]}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
         <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
@@ -124,9 +228,6 @@ export function AdminStrategyLLMEditor() {
             );
           })}
         </div>
-        {activeProvider && !activeProvider.configured && (
-          <p className="text-xs text-warning">{t("keyMissingHint")}</p>
-        )}
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
@@ -134,38 +235,20 @@ export function AdminStrategyLLMEditor() {
           {t("modelsSection")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium">{t("openrouterModel")}</label>
-            <input
-              className={fieldClass}
-              value={settings.openrouter_model}
-              onChange={(e) => patch({ openrouter_model: e.target.value })}
-              list="openrouter-models"
-            />
-            <datalist id="openrouter-models">
-              {providers
-                .find((p) => p.id === "openrouter")
-                ?.suggested_models.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-            </datalist>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium">{t("deepseekModel")}</label>
-            <input
-              className={fieldClass}
-              value={settings.deepseek_model}
-              onChange={(e) => patch({ deepseek_model: e.target.value })}
-              list="deepseek-models"
-            />
-            <datalist id="deepseek-models">
-              {providers
-                .find((p) => p.id === "deepseek")
-                ?.suggested_models.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-            </datalist>
-          </div>
+          <ModelPicker
+            label={t("openrouterModel")}
+            value={settings.openrouter_model}
+            models={openrouterMeta?.models ?? []}
+            onChange={(v) => patch({ openrouter_model: v })}
+            placeholder={t("modelsEmpty")}
+          />
+          <ModelPicker
+            label={t("deepseekModel")}
+            value={settings.deepseek_model}
+            models={deepseekMeta?.models ?? []}
+            onChange={(v) => patch({ deepseek_model: v })}
+            placeholder={t("modelsEmpty")}
+          />
           <div>
             <label className="mb-1.5 block text-xs font-medium">{t("temperature")}</label>
             <input

@@ -43,7 +43,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)
 	budgetConfigSvc := service.NewCalculatorBudgetConfigService(budgetConfigRepo)
-	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg)
+	llmSvc := service.NewLLMService(cfg)
+	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg, llmSvc)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 
@@ -133,6 +134,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Put("/calculator-budget", budgetConfigHandler.UpdateAdmin)
 			admin.Get("/strategy-llm", strategyLLMHandler.GetAdmin)
 			admin.Put("/strategy-llm", strategyLLMHandler.UpdateAdmin)
+			admin.Post("/strategy-llm/test-connection", strategyLLMHandler.TestConnection)
 		})
 	})
 

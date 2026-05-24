@@ -355,8 +355,9 @@ export type StrategyLLMSettings = {
 export type LLMProviderStatus = {
   id: LLMProvider;
   configured: boolean;
+  key_hint?: string;
   default_model: string;
-  suggested_models: string[];
+  models: string[];
 };
 
 export type StrategyLLMAdminView = {
@@ -366,14 +367,34 @@ export type StrategyLLMAdminView = {
   updated_at?: string;
 };
 
+export type StrategyLLMAdminUpdateRequest = {
+  settings: StrategyLLMSettings;
+  openrouter_api_key?: string;
+  deepseek_api_key?: string;
+};
+
+export type StrategyLLMTestConnectionResult = {
+  provider: LLMProvider;
+  ok: boolean;
+  message: string;
+  models: string[];
+};
+
 export async function fetchAdminStrategyLLMSettings() {
   return apiFetch<StrategyLLMAdminView>("/admin/strategy-llm");
 }
 
-export async function updateAdminStrategyLLMSettings(settings: StrategyLLMSettings) {
+export async function updateAdminStrategyLLMSettings(payload: StrategyLLMAdminUpdateRequest) {
   return apiFetch<StrategyLLMAdminView>("/admin/strategy-llm", {
     method: "PUT",
-    body: JSON.stringify(settings),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function testStrategyLLMConnection(provider: LLMProvider) {
+  return apiFetch<StrategyLLMTestConnectionResult>("/admin/strategy-llm/test-connection", {
+    method: "POST",
+    body: JSON.stringify({ provider }),
   });
 }
 

@@ -27,13 +27,13 @@ func (h *StrategyLLMSettingsHandler) GetAdmin(w http.ResponseWriter, r *http.Req
 }
 
 func (h *StrategyLLMSettingsHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
-	var settings model.StrategyLLMSettings
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+	var req model.StrategyLLMAdminUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	view, err := h.svc.Update(r.Context(), settings)
+	view, err := h.svc.Update(r.Context(), req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidStrategyLLMSettings) {
 			writeError(w, http.StatusBadRequest, err.Error())
@@ -43,4 +43,27 @@ func (h *StrategyLLMSettingsHandler) UpdateAdmin(w http.ResponseWriter, r *http.
 		return
 	}
 	writeJSON(w, http.StatusOK, view)
+}
+
+type testConnectionRequest struct {
+	Provider model.LLMProvider `json:"provider"`
+}
+
+func (h *StrategyLLMSettingsHandler) TestConnection(w http.ResponseWriter, r *http.Request) {
+	var req testConnectionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.svc.TestConnection(r.Context(), req.Provider)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidStrategyLLMSettings) {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "connection test failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
