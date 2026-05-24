@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/login", "/register"];
+const authPages = ["/login", "/register"];
 
-function isPublicPath(pathname: string) {
-  if (publicPaths.includes(pathname)) return true;
-  if (pathname.startsWith("/share/")) return true;
-  return false;
+function isSharePath(pathname: string) {
+  return pathname.startsWith("/share/") || pathname.startsWith("/dashboard/share/");
 }
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("access_token");
-  const isPublic = isPublicPath(pathname);
 
-  if (!token && !isPublic) {
+  if (isSharePath(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!token && !authPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (token && isPublic) {
+  if (token && authPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

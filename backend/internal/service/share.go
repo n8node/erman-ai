@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"errors"
+	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -43,7 +44,7 @@ func (s *ShareService) CreateShare(ctx context.Context, userID, runID, baseURL s
 		return nil, ErrInvalidInput
 	}
 
-	token, err := randomToken(32)
+	token, err := s.generateShareToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +84,29 @@ func (s *ShareService) GetPublicReport(ctx context.Context, token string) (*mode
 	return run, nil
 }
 
-func randomToken(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
+func (s *ShareService) generateShareToken(ctx context.Context) (string, error) {
+	for range 8 {
+		token, err := randomShareID()
+		if err != nil {
+			return "", err
+		}
+		exists, err := s.shared.TokenExists(ctx, token)
+		if err != nil {
+			return "", err
+		}
+		if !exists {
+			return token, nil
+		}
+	}
+	return "", errors.New("failed to generate unique share token")
+}
+
+func randomShareID() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(10_000_000_000))
+	if err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(b), nil
+	return fmt.Sprintf("id%010d", n.Int64()), nil
 }
 
 type LeadService struct {

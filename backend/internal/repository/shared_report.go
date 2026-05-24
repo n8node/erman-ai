@@ -39,6 +39,12 @@ func (r *SharedReportRepository) GetByToken(ctx context.Context, token string) (
 	return sr, err
 }
 
+func (r *SharedReportRepository) TokenExists(ctx context.Context, token string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM shared_reports WHERE token = $1)`, token).Scan(&exists)
+	return exists, err
+}
+
 func (r *SharedReportRepository) IncrementView(ctx context.Context, id string) error {
 	_, err := r.pool.Exec(ctx, `UPDATE shared_reports SET view_count = view_count + 1 WHERE id = $1`, id)
 	return err

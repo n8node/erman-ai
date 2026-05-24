@@ -242,7 +242,8 @@
       "before": "Before",
       "after": "After",
       "change": "Change",
-      "months": "mo"
+      "months": "mo",
+      "readOnlyNote": "Read-only report. Calculation parameters cannot be edited."
     }
   }
 }
