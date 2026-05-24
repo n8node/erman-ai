@@ -53,6 +53,7 @@ export type RunDetail = {
 };
 
 export type BillingPlan = {
+  plan_id: string;
   plan_slug: string;
   plan_name: string;
   features: Record<string, unknown>;
@@ -61,6 +62,19 @@ export type BillingPlan = {
     share_report_used: number;
     share_report_limit: number;
   };
+};
+
+export type PublicPlan = {
+  id: string;
+  slug: string;
+  name: string;
+  price_monthly_rub: number;
+  price_yearly_rub: number;
+  tool_limits: Record<string, number>;
+  features: Record<string, unknown>;
+  support_level: string;
+  is_public: boolean;
+  is_archived: boolean;
 };
 
 export type ShareResult = {
@@ -193,6 +207,20 @@ export async function shareRun(runId: string) {
 
 export async function getBillingPlan() {
   return apiFetch<BillingPlan>("/billing/plan");
+}
+
+export async function fetchBillingPlans() {
+  return apiFetch<{ items: PublicPlan[] }>("/billing/plans");
+}
+
+export async function switchBillingPlan(planId: string) {
+  return apiFetch<{ plan_id: string; plan_slug: string; plan_name: string; status: string }>(
+    "/billing/switch",
+    {
+      method: "POST",
+      body: JSON.stringify({ plan_id: planId }),
+    }
+  );
 }
 
 export async function submitLead(payload: {

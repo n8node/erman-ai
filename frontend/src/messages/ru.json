@@ -182,6 +182,40 @@
   "stub": {
     "comingSoon": "Раздел будет доступен в следующих фазах."
   },
+  "billing": {
+    "title": "Тарифы",
+    "subtitle": "Выберите план под ваши задачи",
+    "loading": "Загрузка…",
+    "loadFailed": "Не удалось загрузить тарифы",
+    "actionFailed": "Не удалось выполнить действие",
+    "currentPlan": "Текущий тариф",
+    "currentBadge": "Ваш тариф",
+    "currentButton": "Текущий тариф",
+    "activate": "Активировать",
+    "purchase": "Купить",
+    "processing": "Обработка…",
+    "free": "Бесплатно",
+    "perMonth": "/ мес",
+    "perYear": "/ год",
+    "unlimited": "Безлимит",
+    "runsPerMonth": "{count} / мес",
+    "activated": "Тариф «{name}» активирован",
+    "paymentRequired": "Оплата онлайн скоро будет доступна. Напишите нам на hello@erman.ai для подключения Pro или Business.",
+    "paymentNote": "Оплата картой подключается. Сейчас бесплатные тарифы можно активировать сразу, платные — через менеджера.",
+    "tools": {
+      "calculator": "Automation Calculator",
+      "strategy": "AI Strategy",
+      "proposal": "Proposal Generator"
+    },
+    "features": {
+      "export_pdf": "Экспорт PDF",
+      "export_docx": "Экспорт DOCX",
+      "api_access": "API-доступ",
+      "share_report": "Публичные ссылки",
+      "priority_queue": "Приоритетная очередь",
+      "white_label": "White-label"
+    }
+  },
   "calculator": {
     "title": "Automation Calculator",
     "subtitle": "Оцените ROI автоматизации по финансовой модели Erman AI",

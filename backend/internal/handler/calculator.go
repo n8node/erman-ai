@@ -270,15 +270,73 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 	shareLimit := h.billing.ShareReportLimit(&up.Plan)
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"plan_slug": up.PlanSlug,
-		"plan_name": up.Plan.Name,
-		"features":  up.Plan.Features,
+		"plan_id":     up.Plan.ID,
+		"plan_slug":   up.PlanSlug,
+		"plan_name":   up.Plan.Name,
+		"features":    up.Plan.Features,
 		"tool_limits": up.Plan.ToolLimits,
 		"usage": map[string]any{
 			"share_report_used":  shareUsed,
 			"share_report_limit": shareLimit,
 		},
 	})
+}
+
+func (h *BillingHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
+	plans, err := h.billing.ListPublicPlans(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load plans")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": plans})
+}
+
+type switchPlanRequest struct {
+	PlanID string `json:"plan_id"`
+}
+
+func (h *BillingHandler) SwitchPlan(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req switchPlanRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.PlanID == "" {
+		writeError(w, http.StatusBadRequest, "plan_id required")
+		return
+	}
+
+	plan, err := h.billing.SwitchPlan(r.Context(), userID, req.PlanID)
+	if err != nil {
+		h.writeBillingError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"plan_id":   plan.ID,
+		"plan_slug": plan.Slug,
+		"plan_name": plan.Name,
+		"status":    "activated",
+	})
+}
+
+func (h *BillingHandler) writeBillingError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, service.ErrPaymentRequired):
+		writeError(w, http.StatusPaymentRequired, "payment required — contact us to upgrade")
+	case errors.Is(err, service.ErrInvalidInput):
+		writeError(w, http.StatusBadRequest, "invalid plan")
+	case errors.Is(err, repository.ErrNotFound):
+		writeError(w, http.StatusNotFound, "plan not found")
+	default:
+		writeError(w, http.StatusInternalServerError, "billing operation failed")
+	}
 }
 
 type ToolsHandler struct {

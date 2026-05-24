@@ -16,15 +16,17 @@ var (
 	ErrFeatureNotAvailable = errors.New("feature not available on current plan")
 	ErrShareLimitExceeded  = errors.New("share report limit exceeded")
 	ErrPartnerOnly         = errors.New("partner accounts only")
+	ErrPaymentRequired     = errors.New("payment required")
 )
 
 type BillingService struct {
-	plans   *repository.PlanRepository
-	runs    *repository.ToolRunRepository
+	plans *repository.PlanRepository
+	runs  *repository.ToolRunRepository
+	users *repository.UserRepository
 }
 
-func NewBillingService(plans *repository.PlanRepository, runs *repository.ToolRunRepository) *BillingService {
-	return &BillingService{plans: plans, runs: runs}
+func NewBillingService(plans *repository.PlanRepository, runs *repository.ToolRunRepository, users *repository.UserRepository) *BillingService {
+	return &BillingService{plans: plans, runs: runs, users: users}
 }
 
 func (s *BillingService) GetUserPlan(ctx context.Context, userID string) (*repository.UserPlan, error) {
@@ -96,6 +98,37 @@ func (s *BillingService) CanExportPDF(ctx context.Context, userID string) error 
 		return ErrFeatureNotAvailable
 	}
 	return nil
+}
+
+func (s *BillingService) ListPublicPlans(ctx context.Context) ([]model.Plan, error) {
+	return s.plans.ListPublic(ctx)
+}
+
+func (s *BillingService) SwitchPlan(ctx context.Context, userID, planID string) (*model.Plan, error) {
+	plan, err := s.plans.GetByID(ctx, planID)
+	if err != nil {
+		return nil, err
+	}
+	if !plan.IsPublic || plan.IsArchived {
+		return nil, ErrInvalidInput
+	}
+
+	user, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.PlanID != nil && *user.PlanID == planID {
+		return plan, nil
+	}
+
+	if plan.PriceMonthlyRUB > 0 {
+		return nil, ErrPaymentRequired
+	}
+
+	if err := s.users.UpdatePlanID(ctx, userID, planID); err != nil {
+		return nil, err
+	}
+	return plan, nil
 }
 
 type CalculatorService struct {

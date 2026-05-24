@@ -1,0 +1,217 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import {
+  fetchBillingPlans,
+  getBillingPlan,
+  switchBillingPlan,
+  type BillingPlan,
+  type PublicPlan,
+} from "@/lib/api";
+import { cn } from "@/lib/utils";
+
+const FEATURE_KEYS = [
+  "export_pdf",
+  "export_docx",
+  "api_access",
+  "share_report",
+  "priority_queue",
+  "white_label",
+] as const;
+
+const TOOL_KEYS = ["calculator", "strategy", "proposal"] as const;
+
+function formatRub(n: number) {
+  return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
+}
+
+function formatLimit(n: number, t: ReturnType<typeof useTranslations>) {
+  if (n === -1) return t("unlimited");
+  return t("runsPerMonth", { count: n });
+}
+
+export function BillingPlansView() {
+  const t = useTranslations("billing");
+  const [plans, setPlans] = useState<PublicPlan[]>([]);
+  const [current, setCurrent] = useState<BillingPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [plansRes, currentPlan] = await Promise.all([
+        fetchBillingPlans(),
+        getBillingPlan(),
+      ]);
+      setPlans(plansRes.items);
+      setCurrent(currentPlan);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("loadFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleAction(plan: PublicPlan) {
+    if (current?.plan_id === plan.id) return;
+
+    setBusyId(plan.id);
+    setError("");
+    setNotice("");
+
+    try {
+      await switchBillingPlan(plan.id);
+      setNotice(t("activated", { name: plan.name }));
+      await load();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("actionFailed");
+      if (message.includes("payment") || message.includes("402")) {
+        setNotice(t("paymentRequired"));
+      } else {
+        setError(message);
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-text2">{t("loading")}</p>;
+  }
+
+  return (
+    <div className="mx-auto max-w-md space-y-6">
+      <div>
+        <h1 className="text-base font-medium">{t("title")}</h1>
+        <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
+        {current && (
+          <p className="mt-3 text-sm text-text2">
+            {t("currentPlan")}: <span className="font-medium text-text">{current.plan_name}</span>
+          </p>
+        )}
+      </div>
+
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div className="rounded-md border border-accent bg-accent-bg px-3 py-2 text-sm text-accent">
+          {notice}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {plans.map((plan) => {
+          const isCurrent = current?.plan_id === plan.id;
+          const isFree = plan.price_monthly_rub === 0;
+          const disabled = busyId === plan.id || isCurrent;
+
+          return (
+            <article
+              key={plan.id}
+              className={cn(
+                "rounded-xl border bg-bg p-6",
+                isCurrent ? "border-text shadow-sm" : "border-border"
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-medium">{plan.name}</h2>
+                  {isCurrent && (
+                    <span className="mt-1 inline-block rounded bg-bg2 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-text2">
+                      {t("currentBadge")}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-medium">
+                    {isFree ? t("free") : formatRub(plan.price_monthly_rub)}
+                  </p>
+                  {!isFree && (
+                    <p className="text-xs text-text3">
+                      {t("perMonth")}
+                      {plan.price_yearly_rub > 0 && (
+                        <> · {formatRub(plan.price_yearly_rub)} {t("perYear")}</>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <ul className="mt-5 space-y-2 text-sm text-text2">
+                {TOOL_KEYS.map((slug) =>
+                  plan.tool_limits[slug] !== undefined ? (
+                    <li key={slug} className="flex justify-between gap-4">
+                      <span>{t(`tools.${slug}` as "tools.calculator")}</span>
+                      <span className="font-medium text-text">
+                        {formatLimit(plan.tool_limits[slug], t)}
+                      </span>
+                    </li>
+                  ) : null
+                )}
+              </ul>
+
+              <ul className="mt-4 space-y-1.5 border-t border-border pt-4 text-sm">
+                {FEATURE_KEYS.map((key) => {
+                  const enabled = Boolean(plan.features[key]);
+                  return (
+                    <li
+                      key={key}
+                      className={cn(
+                        "flex items-center gap-2",
+                        enabled ? "text-text" : "text-text3 line-through"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-block h-1.5 w-1.5 rounded-full",
+                          enabled ? "bg-success" : "bg-border2"
+                        )}
+                      />
+                      {t(`features.${key}` as "features.export_pdf")}
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => handleAction(plan)}
+                className={cn(
+                  "mt-6 w-full rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50",
+                  isCurrent
+                    ? "border border-border2 bg-bg2 text-text2"
+                    : isFree
+                      ? "bg-text text-white"
+                      : "bg-text text-white"
+                )}
+              >
+                {busyId === plan.id
+                  ? t("processing")
+                  : isCurrent
+                    ? t("currentButton")
+                    : isFree
+                      ? t("activate")
+                      : t("purchase")}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-xs text-text3">{t("paymentNote")}</p>
+    </div>
+  );
+}

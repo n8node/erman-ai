@@ -32,7 +32,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	tooltipRepo := repository.NewTooltipRepository(db.Pool)
 
 	authSvc := service.NewAuthService(userRepo, authMW)
-	billingSvc := service.NewBillingService(planRepo, runRepo)
+	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
@@ -95,6 +95,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/leads", leadHandler.Create)
 
 			protected.Get("/billing/plan", billingHandler.Plan)
+			protected.Get("/billing/plans", billingHandler.ListPlans)
+			protected.Post("/billing/switch", billingHandler.SwitchPlan)
 			protected.Get("/tooltips", tooltipHandler.ListPublic)
 		})
 

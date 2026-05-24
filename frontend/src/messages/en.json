@@ -182,6 +182,40 @@
   "stub": {
     "comingSoon": "This section will be available in upcoming phases."
   },
+  "billing": {
+    "title": "Plans",
+    "subtitle": "Choose the plan that fits your workflow",
+    "loading": "Loading…",
+    "loadFailed": "Failed to load plans",
+    "actionFailed": "Action failed",
+    "currentPlan": "Current plan",
+    "currentBadge": "Your plan",
+    "currentButton": "Current plan",
+    "activate": "Activate",
+    "purchase": "Purchase",
+    "processing": "Processing…",
+    "free": "Free",
+    "perMonth": "/ mo",
+    "perYear": "/ yr",
+    "unlimited": "Unlimited",
+    "runsPerMonth": "{count} / mo",
+    "activated": "Plan “{name}” activated",
+    "paymentRequired": "Online checkout is coming soon. Email hello@erman.ai to upgrade to Pro or Business.",
+    "paymentNote": "Card payments are on the way. Free plans activate instantly; paid plans are enabled by our team for now.",
+    "tools": {
+      "calculator": "Automation Calculator",
+      "strategy": "AI Strategy",
+      "proposal": "Proposal Generator"
+    },
+    "features": {
+      "export_pdf": "PDF export",
+      "export_docx": "DOCX export",
+      "api_access": "API access",
+      "share_report": "Public share links",
+      "priority_queue": "Priority queue",
+      "white_label": "White-label"
+    }
+  },
   "calculator": {
     "title": "Automation Calculator",
     "subtitle": "Estimate automation ROI with the Erman AI financial model",

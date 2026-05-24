@@ -220,6 +220,30 @@ func (r *PlanRepository) Update(ctx context.Context, id string, p *model.Plan) (
 	return plan, err
 }
 
+func (r *PlanRepository) ListPublic(ctx context.Context) ([]model.Plan, error) {
+	const q = `
+		SELECT id, slug, name, price_monthly_rub, price_yearly_rub, tool_limits, features, support_level, is_public, is_archived
+		FROM plans
+		WHERE is_public = true AND is_archived = false
+		ORDER BY price_monthly_rub ASC, name ASC
+	`
+	rows, err := r.pool.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.Plan
+	for rows.Next() {
+		p, err := r.scanPlan(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *p)
+	}
+	return out, rows.Err()
+}
+
 func (r *PlanRepository) ListAllTools(ctx context.Context) ([]model.ToolConfig, error) {
 	const q = `SELECT slug, name, description, enabled FROM tools ORDER BY slug`
 	rows, err := r.pool.Query(ctx, q)
