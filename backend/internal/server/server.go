@@ -60,6 +60,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/health", health.ServeHTTP)
 		api.Get("/shared/{token}", shareHandler.GetPublic)
+		api.Get("/public/tooltips", tooltipHandler.ListAnonymous)
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)

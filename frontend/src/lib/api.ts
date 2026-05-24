@@ -247,6 +247,12 @@ export async function fetchTooltips(prefix = "calculator") {
   );
 }
 
+export async function fetchPublicTooltips(prefix = "calculator", locale = "ru") {
+  return apiFetch<{ tooltips: Record<string, string> }>(
+    `/public/tooltips?prefix=${encodeURIComponent(prefix)}&locale=${encodeURIComponent(locale)}`
+  );
+}
+
 export async function fetchAdminTooltips() {
   return apiFetch<{ items: AdminTooltip[] }>("/admin/tooltips");
 }

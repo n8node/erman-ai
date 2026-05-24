@@ -12,7 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { HelpCircle } from "lucide-react";
-import { fetchTooltips } from "@/lib/api";
+import { fetchTooltips, fetchPublicTooltips } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type TooltipMap = Record<string, string>;
@@ -25,18 +25,23 @@ const TooltipContext = createContext<TooltipMap>({});
 
 export function TooltipProvider({
   prefix = "calculator",
+  locale,
   children,
 }: {
   prefix?: string;
+  locale?: string;
   children: ReactNode;
 }) {
   const [tooltips, setTooltips] = useState<TooltipMap>({});
 
   useEffect(() => {
-    fetchTooltips(prefix)
+    const loader = locale
+      ? () => fetchPublicTooltips(prefix, locale)
+      : () => fetchTooltips(prefix);
+    loader()
       .then((data) => setTooltips(data.tooltips))
       .catch(() => setTooltips({}));
-  }, [prefix]);
+  }, [prefix, locale]);
 
   return (
     <TooltipContext.Provider value={tooltips}>{children}</TooltipContext.Provider>

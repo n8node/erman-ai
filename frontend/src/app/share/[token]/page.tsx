@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { fetchPublicReport, type PublicReport } from "@/lib/api";
 import { CalculatorInputSummary } from "@/components/tools/CalculatorInputSummary";
 import { CalculatorReportView } from "@/components/tools/CalculatorReportView";
+import { TooltipProvider } from "@/components/ui/HelpTooltip";
 
 export default function PublicSharePage() {
   const t = useTranslations("calculator.share");
+  const locale = useLocale();
   const params = useParams();
   const token = params.token as string;
   const [report, setReport] = useState<PublicReport | null>(null);
@@ -37,36 +39,38 @@ export default function PublicSharePage() {
   }
 
   return (
-    <main className="min-h-screen bg-bg3 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="rounded-xl border border-border bg-bg p-8">
-          <div className="mb-6 flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-text text-sm font-semibold text-white">
-              E
+    <TooltipProvider prefix="calculator" locale={locale}>
+      <main className="min-h-screen bg-bg3 p-6">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <div className="rounded-xl border border-border bg-bg p-8">
+            <div className="mb-6 flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-text text-sm font-semibold text-white">
+                E
+              </div>
+              <span className="text-sm font-medium">Erman AI</span>
             </div>
-            <span className="text-sm font-medium">Erman AI</span>
-          </div>
-          <p className="text-xs text-text3">{t("disclaimer")}</p>
+            <p className="text-xs text-text3">{t("disclaimer")}</p>
 
-          <div className="mt-8 space-y-8">
-            <CalculatorInputSummary input={report.input} />
+            <div className="mt-8 space-y-8">
+              <CalculatorInputSummary input={report.input} />
 
-            <div className="border-t border-border pt-8">
-              <h2 className="mb-6 text-[10px] font-medium uppercase tracking-wider text-text3">
-                {t("reportTitle")}
-              </h2>
-              <CalculatorReportView
-                processName={report.process_name}
-                output={report.output}
-                withTooltips={false}
-                showHeader={false}
-              />
+              <div className="border-t border-border pt-8">
+                <h2 className="mb-6 text-[10px] font-medium uppercase tracking-wider text-text3">
+                  {t("reportTitle")}
+                </h2>
+                <CalculatorReportView
+                  processName={report.process_name}
+                  output={report.output}
+                  withTooltips
+                  showHeader={false}
+                />
+              </div>
             </div>
           </div>
+
+          <p className="text-center text-xs text-text3">{t("readOnlyNote")}</p>
         </div>
-
-        <p className="text-center text-xs text-text3">{t("readOnlyNote")}</p>
-      </div>
-    </main>
+      </main>
+    </TooltipProvider>
   );
 }

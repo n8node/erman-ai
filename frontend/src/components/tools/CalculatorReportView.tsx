@@ -130,10 +130,17 @@ export function CalculatorReportView({
 
       {showDetails && (
         <div className="grid gap-2 sm:grid-cols-3 text-sm text-text2 border-t border-border pt-4">
-          <div>TCO: {formatRub(output.tco_horizon)}</div>
-          <div>NPV: {formatRub(output.npv)}</div>
-          <div>
+          <div className="inline-flex items-center gap-1">
+            TCO: {formatRub(output.tco_horizon)}
+            {withTooltips && <HelpTooltip tooltipKey="calculator.result.tco" />}
+          </div>
+          <div className="inline-flex items-center gap-1">
+            NPV: {formatRub(output.npv)}
+            {withTooltips && <HelpTooltip tooltipKey="calculator.result.npv" />}
+          </div>
+          <div className="inline-flex items-center gap-1">
             Hm: {Math.round(output.hours_saved_month)} {t("wizard.hoursMonth")}
+            {withTooltips && <HelpTooltip tooltipKey="calculator.wizard.hm_preview" />}
           </div>
         </div>
       )}

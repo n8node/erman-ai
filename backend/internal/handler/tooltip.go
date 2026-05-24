@@ -48,6 +48,25 @@ func (h *TooltipHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"tooltips": tooltips})
 }
 
+func (h *TooltipHandler) ListAnonymous(w http.ResponseWriter, r *http.Request) {
+	prefix := r.URL.Query().Get("prefix")
+	if prefix == "" {
+		prefix = "calculator"
+	}
+	locale := r.URL.Query().Get("locale")
+	if locale == "" {
+		locale = "ru"
+	}
+
+	tooltips, err := h.tooltips.ListForLocale(r.Context(), prefix, locale)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load tooltips")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"tooltips": tooltips})
+}
+
 func (h *TooltipHandler) ListAdmin(w http.ResponseWriter, r *http.Request) {
 	items, err := h.tooltips.ListAll(r.Context())
 	if err != nil {

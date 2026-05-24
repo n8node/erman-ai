@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import type { CalculatorInput } from "@/lib/api";
 import { totalMinutesPerUnit } from "@/lib/calculator";
+import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 
 type Props = {
   input: CalculatorInput;
@@ -23,20 +24,45 @@ function formatNum(n: number, decimals = 0) {
 
 function ReadOnlyField({
   label,
+  tooltipKey,
   value,
   className,
 }: {
   label: string;
+  tooltipKey?: string;
   value: React.ReactNode;
   className?: string;
 }) {
   return (
     <div className={className}>
-      <p className="mb-1.5 text-xs font-medium text-text2">{label}</p>
+      <p className="mb-1.5 text-xs font-medium text-text2">
+        {tooltipKey ? (
+          <LabelWithHelp label={label} tooltipKey={tooltipKey} />
+        ) : (
+          label
+        )}
+      </p>
       <div className="rounded-lg border border-border bg-bg2 px-3 py-2 text-sm text-text">
         {value}
       </div>
     </div>
+  );
+}
+
+function TableHeader({
+  label,
+  tooltipKey,
+}: {
+  label: string;
+  tooltipKey: string;
+}) {
+  return (
+    <th className="px-3 py-2 normal-case">
+      <span className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-medium uppercase tracking-wider text-text3">
+        {label}
+        <HelpTooltip tooltipKey={tooltipKey} />
+      </span>
+    </th>
   );
 }
 
@@ -68,6 +94,7 @@ export function CalculatorInputSummary({ input }: Props) {
 
         <ReadOnlyField
           label={ts("calculationMode")}
+          tooltipKey="calculator.wizard.hm_mode_direct"
           value={
             input.hm_mode === "process"
               ? t("wizard.modeProcess")
@@ -81,12 +108,27 @@ export function CalculatorInputSummary({ input }: Props) {
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
-                      <th className="px-3 py-2">{t("wizard.colOperation")}</th>
-                      <th className="px-3 py-2">{t("wizard.colExecutor")}</th>
-                      <th className="px-3 py-2">{t("wizard.colMinutes")}</th>
-                      <th className="px-3 py-2">{t("wizard.colRate")}</th>
-                      <th className="px-3 py-2">{t("wizard.colCost")}</th>
+                    <tr className="border-b border-border bg-bg2">
+                      <TableHeader
+                        label={t("wizard.colOperation")}
+                        tooltipKey="calculator.wizard.col_operation"
+                      />
+                      <TableHeader
+                        label={t("wizard.colExecutor")}
+                        tooltipKey="calculator.wizard.col_executor"
+                      />
+                      <TableHeader
+                        label={t("wizard.colMinutes")}
+                        tooltipKey="calculator.wizard.col_minutes"
+                      />
+                      <TableHeader
+                        label={t("wizard.colRate")}
+                        tooltipKey="calculator.wizard.col_rate"
+                      />
+                      <TableHeader
+                        label={t("wizard.colCost")}
+                        tooltipKey="calculator.wizard.col_cost"
+                      />
                     </tr>
                   </thead>
                   <tbody>
@@ -114,10 +156,12 @@ export function CalculatorInputSummary({ input }: Props) {
             <div className="grid gap-4 sm:grid-cols-2">
               <ReadOnlyField
                 label={t("wizard.unitsPerMonth")}
+                tooltipKey="calculator.wizard.units_per_month"
                 value={formatNum(input.units_per_month)}
               />
               <ReadOnlyField
                 label={t("wizard.automationPct")}
+                tooltipKey="calculator.wizard.automation_pct"
                 value={`${formatNum(input.automation_pct)}%`}
               />
             </div>
@@ -125,6 +169,7 @@ export function CalculatorInputSummary({ input }: Props) {
         ) : (
           <ReadOnlyField
             label={t("wizard.hmDirect")}
+            tooltipKey="calculator.wizard.hm_mode_direct"
             value={`${formatNum(hm, 1)} ${t("wizard.hoursMonth")}`}
           />
         )}
@@ -132,16 +177,22 @@ export function CalculatorInputSummary({ input }: Props) {
         <div className="grid gap-4 sm:grid-cols-2 border-t border-border pt-4">
           <ReadOnlyField
             label={t("wizard.errorRateBefore")}
+            tooltipKey="calculator.wizard.error_rate_before"
             value={`${formatNum(input.error_rate_before_pct)}%`}
           />
           <ReadOnlyField
             label={t("wizard.throughputBefore")}
+            tooltipKey="calculator.wizard.throughput_before"
             value={formatNum(input.throughput_before_per_day)}
           />
         </div>
 
         <div className="rounded-lg border border-accent bg-accent-bg px-4 py-3 text-sm text-accent">
-          <span className="font-medium">Hm:</span> {formatNum(hm, 1)} {t("wizard.hoursMonth")}
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            Hm:
+            <HelpTooltip tooltipKey="calculator.wizard.hm_preview" />
+          </span>{" "}
+          {formatNum(hm, 1)} {t("wizard.hoursMonth")}
         </div>
       </section>
 
@@ -153,34 +204,42 @@ export function CalculatorInputSummary({ input }: Props) {
         <div className="grid gap-4 sm:grid-cols-2">
           <ReadOnlyField
             label={t("wizard.hmLabel")}
+            tooltipKey="calculator.wizard.hm_label"
             value={`${formatNum(hm, 1)} ${t("wizard.hoursMonth")}`}
           />
           <ReadOnlyField
             label={t("fields.horizon")}
+            tooltipKey="calculator.wizard.horizon"
             value={`${input.horizon_months} ${t("metrics.months")}`}
           />
           <ReadOnlyField
             label={t("fields.ch")}
+            tooltipKey="calculator.wizard.ch"
             value={formatRub(input.hourly_cost_loaded)}
           />
           <ReadOnlyField
             label={t("fields.om")}
+            tooltipKey="calculator.wizard.om"
             value={formatRub(input.monthly_solution_cost)}
           />
           <ReadOnlyField
             label={t("fields.capex")}
+            tooltipKey="calculator.wizard.capex"
             value={formatRub(input.capex)}
           />
           <ReadOnlyField
             label={t("fields.sm")}
+            tooltipKey="calculator.wizard.sm"
             value={formatRub(input.other_benefit_monthly)}
           />
           <ReadOnlyField
             label={t("fields.utilization")}
+            tooltipKey="calculator.wizard.utilization"
             value={formatNum(input.utilization, 2)}
           />
           <ReadOnlyField
             label={t("fields.discount")}
+            tooltipKey="calculator.wizard.discount"
             value={`${formatNum(input.discount_rate_annual * 100, 1)}%`}
           />
         </div>
