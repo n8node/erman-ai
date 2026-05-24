@@ -17,6 +17,7 @@ import {
   totalMinutesPerUnit,
 } from "@/lib/calculator";
 import { CalculatorResult } from "./CalculatorResult";
+import { CalculatorTemplatePicker } from "./CalculatorTemplatePicker";
 import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ export function CalculatorWizard() {
   const [result, setResult] = useState<Awaited<
     ReturnType<typeof runCalculator>
   > | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -154,6 +156,7 @@ export function CalculatorWizard() {
     setInput(defaultCalculatorInput);
     setStep(1);
     setShowExpert(false);
+    setActiveTemplateId(null);
     setError("");
     router.replace("/tools/calculator");
   }
@@ -164,6 +167,12 @@ export function CalculatorWizard() {
     setInput(defaultCalculatorInput);
     setStep(1);
     setShowExpert(false);
+    setActiveTemplateId(null);
+  }
+
+  function applyTemplate(patch: Partial<CalculatorInput>, templateId: string) {
+    setInput((prev) => ({ ...prev, ...patch }));
+    setActiveTemplateId(templateId);
   }
 
   const totalMin = totalMinutesPerUnit(input.process_steps || []);
@@ -204,6 +213,11 @@ export function CalculatorWizard() {
 
       {step === 1 && (
         <div className="rounded-xl border border-border bg-bg p-6 space-y-6">
+          <CalculatorTemplatePicker
+            onApply={applyTemplate}
+            activeTemplateId={activeTemplateId}
+          />
+
           <div>
             <label className="mb-1.5 block text-xs font-medium">{t("fields.processName")}</label>
             <input
