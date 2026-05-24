@@ -140,3 +140,93 @@ func (r *UserRepository) SetRole(ctx context.Context, id, role string) error {
 	_, err := r.pool.Exec(ctx, `UPDATE users SET role = $2, updated_at = NOW() WHERE id = $1`, id, role)
 	return err
 }
+
+type AdminUserRow struct {
+	model.User
+	PlanSlug *string `json:"plan_slug,omitempty"`
+	PlanName *string `json:"plan_name,omitempty"`
+}
+
+func (r *UserRepository) ListAdmin(ctx context.Context, search string, limit, offset int) ([]AdminUserRow, error) {
+	const q = `
+		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.is_blocked,
+		       u.created_at, u.updated_at, u.last_active_at, p.slug, p.name
+		FROM users u
+		LEFT JOIN plans p ON p.id = u.plan_id
+		WHERE ($1 = '' OR u.email ILIKE '%' || $1 || '%')
+		ORDER BY u.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.pool.Query(ctx, q, search, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanAdminUserRows(rows)
+}
+
+func (r *UserRepository) CountAdmin(ctx context.Context, search string) (int, error) {
+	const q = `
+		SELECT COUNT(*) FROM users u
+		WHERE ($1 = '' OR u.email ILIKE '%' || $1 || '%')
+	`
+	var total int
+	err := r.pool.QueryRow(ctx, q, search).Scan(&total)
+	return total, err
+}
+
+func (r *UserRepository) GetAdminRow(ctx context.Context, id string) (*AdminUserRow, error) {
+	const q = `
+		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.is_blocked,
+		       u.created_at, u.updated_at, u.last_active_at, p.slug, p.name
+		FROM users u
+		LEFT JOIN plans p ON p.id = u.plan_id
+		WHERE u.id = $1
+	`
+	var item AdminUserRow
+	err := scanAdminUserRow(r.pool.QueryRow(ctx, q, id), &item)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *UserRepository) UpdatePlanID(ctx context.Context, userID, planID string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE users SET plan_id = $2, updated_at = NOW() WHERE id = $1`, userID, planID)
+	return err
+}
+
+func (r *UserRepository) Delete(ctx context.Context, userID string) error {
+	tag, err := r.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func scanAdminUserRows(rows pgx.Rows) ([]AdminUserRow, error) {
+	var out []AdminUserRow
+	for rows.Next() {
+		var item AdminUserRow
+		if err := scanAdminUserRow(rows, &item); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
+}
+
+func scanAdminUserRow(row pgx.Row, item *AdminUserRow) error {
+	return row.Scan(
+		&item.ID, &item.Email, &item.Role, &item.PlanID, &item.Locale,
+		&item.AccountSegment, &item.OnboardingCompleted, &item.IsBlocked,
+		&item.CreatedAt, &item.UpdatedAt, &item.LastActiveAt,
+		&item.PlanSlug, &item.PlanName,
+	)
+}

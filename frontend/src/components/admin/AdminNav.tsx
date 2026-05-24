@@ -10,6 +10,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   const links = [
+    { href: "/admin/users", label: t("users") },
     { href: "/admin/plans", label: t("plans") },
     { href: "/admin/tooltips", label: t("tooltips") },
   ];

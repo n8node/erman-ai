@@ -321,3 +321,57 @@ export async function updateAdminPlan(id: string, input: PlanUpsertInput) {
     body: JSON.stringify(input),
   });
 }
+
+export type AdminUserRow = {
+  id: string;
+  email: string;
+  role: string;
+  plan_id: string | null;
+  plan_slug?: string | null;
+  plan_name?: string | null;
+  locale: string;
+  account_segment: string;
+  onboarding_completed: boolean;
+  is_blocked: boolean;
+  created_at: string;
+  last_active_at?: string | null;
+};
+
+export type AdminUserListResponse = {
+  items: AdminUserRow[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export async function fetchAdminUsers(params?: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.q) q.set("q", params.q);
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiFetch<AdminUserListResponse>(`/admin/users${qs ? `?${qs}` : ""}`);
+}
+
+export async function updateAdminUserPlan(userId: string, planId: string) {
+  return apiFetch<AdminUserRow>(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ plan_id: planId }),
+  });
+}
+
+export async function deleteAdminUser(userId: string) {
+  return apiFetch<{ status: string }>(`/admin/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function impersonateAdminUser(userId: string) {
+  return apiFetch<User>(`/admin/users/${userId}/impersonate`, {
+    method: "POST",
+  });
+}
