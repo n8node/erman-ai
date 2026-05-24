@@ -1,5 +1,5 @@
-import { CalculatorTool } from "@/components/tools/CalculatorTool";
+import { CalculatorWizard } from "@/components/tools/CalculatorWizard";
 
 export default function CalculatorPage() {
-  return <CalculatorTool />;
+  return <CalculatorWizard />;
 }

@@ -10,28 +10,14 @@ export type User = {
   created_at: string;
 };
 
-export type CalculatorInput = {
-  process_name: string;
-  hours_per_month: number;
-  hourly_rate_rub: number;
-  employees_count: number;
-  error_rate_pct: number;
-  error_cost_rub: number;
-  automation_cost_rub: number;
-  monthly_support_rub: number;
-};
+import type {
+  CalculatorInput,
+  CalculatorOutput,
+  KPIRow,
+  ProcessStep,
+} from "./api-calculator";
 
-export type CalculatorOutput = {
-  current_monthly_cost: number;
-  error_monthly_cost: number;
-  total_current_cost: number;
-  monthly_savings: number;
-  net_monthly_savings: number;
-  payback_months: number;
-  annual_savings: number;
-  recommendation: "automate" | "consider" | "not_recommended";
-  recommendation_text: string;
-};
+export type { CalculatorInput, CalculatorOutput, KPIRow, ProcessStep };
 
 export type CalculatorRunResult = {
   run_id: string;

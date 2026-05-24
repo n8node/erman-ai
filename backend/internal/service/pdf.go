@@ -26,21 +26,25 @@ func GenerateCalculatorPDF(input model.CalculatorInput, output model.CalculatorO
 	pdf.Ln(8)
 
 	rows := []struct{ label, value string }{
-		{"Total current cost /month", fmt.Sprintf("%s RUB", FormatMoney(output.TotalCurrentCost))},
-		{"Monthly savings", fmt.Sprintf("%s RUB", FormatMoney(output.MonthlySavings))},
-		{"Net monthly savings", fmt.Sprintf("%s RUB", FormatMoney(output.NetMonthlySavings))},
-		{"Payback months", fmt.Sprintf("%.1f", output.PaybackMonths)},
-		{"Annual savings", fmt.Sprintf("%s RUB", FormatMoney(output.AnnualSavings))},
+		{"Net benefit /month", fmt.Sprintf("%s RUB", FormatMoney(output.NetBenefitMonthly))},
+		{"Hours saved /month", fmt.Sprintf("%.0f h", output.HoursSavedMonth)},
+		{"FTE freed", fmt.Sprintf("%.2f", output.FTE)},
+		{"Payback", fmt.Sprintf("%.1f mo", output.PaybackMonths)},
+		{"ROI (horizon)", fmt.Sprintf("%.1f%%", output.ROIHorizonPct)},
+		{"TCO (horizon)", fmt.Sprintf("%s RUB", FormatMoney(output.TCOHorizon))},
+		{"NPV", fmt.Sprintf("%s RUB", FormatMoney(output.NPV))},
 		{"Recommendation", output.RecommendationText},
 	}
 
 	if locale == "ru" {
 		rows = []struct{ label, value string }{
-			{"Текущие расходы /мес", fmt.Sprintf("%s ₽", FormatMoney(output.TotalCurrentCost))},
-			{"Экономия /мес", fmt.Sprintf("%s ₽", FormatMoney(output.MonthlySavings))},
-			{"Чистая экономия /мес", fmt.Sprintf("%s ₽", FormatMoney(output.NetMonthlySavings))},
-			{"Окупаемость, мес", fmt.Sprintf("%.1f", output.PaybackMonths)},
-			{"Годовая экономия", fmt.Sprintf("%s ₽", FormatMoney(output.AnnualSavings))},
+			{"Чистая выгода /мес", fmt.Sprintf("%s ₽", FormatMoney(output.NetBenefitMonthly))},
+			{"Экономия часов /мес", fmt.Sprintf("%.0f ч", output.HoursSavedMonth)},
+			{"Освобождено FTE", fmt.Sprintf("%.2f", output.FTE)},
+			{"Окупаемость", fmt.Sprintf("%.1f мес", output.PaybackMonths)},
+			{"ROI за горизонт", fmt.Sprintf("%.1f%%", output.ROIHorizonPct)},
+			{"TCO за горизонт", fmt.Sprintf("%s ₽", FormatMoney(output.TCOHorizon))},
+			{"NPV", fmt.Sprintf("%s ₽", FormatMoney(output.NPV))},
 			{"Рекомендация", output.RecommendationText},
 		}
 	}
@@ -51,6 +55,22 @@ func GenerateCalculatorPDF(input model.CalculatorInput, output model.CalculatorO
 		pdf.SetFont("Helvetica", "", 10)
 		pdf.Cell(0, 7, row.value)
 		pdf.Ln(7)
+	}
+
+	if len(output.KPIRows) > 0 {
+		pdf.Ln(4)
+		kpiTitle := "KPI before / after"
+		if locale == "ru" {
+			kpiTitle = "KPI до / после"
+		}
+		pdf.SetFont("Helvetica", "B", 12)
+		pdf.Cell(0, 8, kpiTitle)
+		pdf.Ln(6)
+		pdf.SetFont("Helvetica", "", 9)
+		for _, k := range output.KPIRows {
+			line := fmt.Sprintf("%s: %s -> %s (%s)", k.Label, k.Before, k.After, k.Change)
+			pdf.MultiCell(0, 5, line, "", "L", false)
+		}
 	}
 
 	var buf bytes.Buffer
