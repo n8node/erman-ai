@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { listRuns, type RunListItem } from "@/lib/api";
+import { ProcessNameWithStatus } from "@/components/tools/RecommendationStatus";
 
 export function RecentCalculatorRuns() {
   const t = useTranslations("dashboard");
@@ -55,7 +56,17 @@ export function RecentCalculatorRuns() {
                 className="border-b border-border last:border-0 cursor-pointer hover:bg-bg2"
                 onClick={() => router.push(`/tools/calculator?run=${row.id}`)}
               >
-                <td className="px-4 py-2 font-medium">{row.process_name || "—"}</td>
+                <td className="px-4 py-2 font-medium">
+                  <ProcessNameWithStatus
+                    name={row.process_name || "—"}
+                    recommendation={row.recommendation}
+                    statusLabel={
+                      row.recommendation
+                        ? tc(`history.rec.${row.recommendation}` as "history.rec.automate")
+                        : undefined
+                    }
+                  />
+                </td>
                 <td className="px-4 py-2 text-text2">
                   {formatRub(row.net_benefit_monthly)}
                 </td>

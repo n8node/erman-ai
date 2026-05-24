@@ -10,12 +10,12 @@ import {
   type RunListItem,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import {
+  ProcessNameWithStatus,
+  recommendationBadgeStyles,
+} from "./RecommendationStatus";
 
-const recStyles: Record<string, string> = {
-  automate: "bg-success-bg text-success",
-  consider: "bg-warning-bg text-warning",
-  not_recommended: "bg-error-bg text-error",
-};
+const recStyles = recommendationBadgeStyles;
 
 export function CalculatorHistory() {
   const t = useTranslations("calculator");
@@ -97,7 +97,15 @@ export function CalculatorHistory() {
               {items.map((row) => (
                 <tr key={row.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3 font-medium">
-                    {row.process_name || "—"}
+                    <ProcessNameWithStatus
+                      name={row.process_name || "—"}
+                      recommendation={row.recommendation}
+                      statusLabel={
+                        row.recommendation
+                          ? t(`history.rec.${row.recommendation}` as "history.rec.automate")
+                          : undefined
+                      }
+                    />
                   </td>
                   <td className="px-4 py-3 text-text2">
                     {formatRub(row.net_benefit_monthly)}
