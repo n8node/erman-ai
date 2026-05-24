@@ -16,8 +16,14 @@ import {
   resolveHoursSaved,
   totalMinutesPerUnit,
 } from "@/lib/calculator";
+import {
+  defaultIntegrationLevel,
+  estimateImplementationBudget,
+  type IntegrationLevel,
+} from "@/lib/calculator-budget-estimate";
 import { CalculatorResult } from "./CalculatorResult";
 import { CalculatorTemplatePicker } from "./CalculatorTemplatePicker";
+import { BudgetEstimatePanel } from "./BudgetEstimatePanel";
 import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +48,10 @@ export function CalculatorWizard() {
     ReturnType<typeof runCalculator>
   > | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [integrationLevel, setIntegrationLevel] = useState<IntegrationLevel>("standard");
+  const [capexManuallyEdited, setCapexManuallyEdited] = useState(false);
+  const [omManuallyEdited, setOmManuallyEdited] = useState(false);
+  const [showBudgetBreakdown, setShowBudgetBreakdown] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -149,6 +159,37 @@ export function CalculatorWizard() {
     }
   }
 
+  function resetBudgetEstimateState() {
+    setIntegrationLevel("standard");
+    setCapexManuallyEdited(false);
+    setOmManuallyEdited(false);
+    setShowBudgetBreakdown(false);
+  }
+
+  function applyBudgetEstimate(capex: number, om: number) {
+    patch({ capex, monthly_solution_cost: om });
+    setCapexManuallyEdited(false);
+    setOmManuallyEdited(false);
+  }
+
+  function goToFinanceStep() {
+    const level = defaultIntegrationLevel(input, hmPreview);
+    setIntegrationLevel(level);
+    if (!capexManuallyEdited && !omManuallyEdited) {
+      const est = estimateImplementationBudget(input, {
+        hm: hmPreview,
+        integrationLevel: level,
+        templateId: activeTemplateId,
+      });
+      setInput((prev) => ({
+        ...prev,
+        capex: est.capex,
+        monthly_solution_cost: est.om,
+      }));
+    }
+    setStep(2);
+  }
+
   function handleNewCalculation() {
     clearCalculatorDraft();
     setDraftBanner(false);
@@ -157,6 +198,7 @@ export function CalculatorWizard() {
     setStep(1);
     setShowExpert(false);
     setActiveTemplateId(null);
+    resetBudgetEstimateState();
     setError("");
     router.replace("/tools/calculator");
   }
@@ -168,6 +210,7 @@ export function CalculatorWizard() {
     setStep(1);
     setShowExpert(false);
     setActiveTemplateId(null);
+    resetBudgetEstimateState();
   }
 
   function applyTemplate(patch: Partial<CalculatorInput>, templateId: string) {
@@ -372,7 +415,7 @@ export function CalculatorWizard() {
           </div>
 
           <div className="flex justify-end">
-            <button type="button" onClick={() => setStep(2)} disabled={!input.process_name || hmPreview <= 0} className="rounded-lg bg-text px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+            <button type="button" onClick={goToFinanceStep} disabled={!input.process_name || hmPreview <= 0} className="rounded-lg bg-text px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
               {t("wizard.next")}
             </button>
           </div>
@@ -391,10 +434,24 @@ export function CalculatorWizard() {
               </label>
               <input type="number" min={0} className={fieldClass} value={Math.round(hmPreview * 100) / 100} onChange={(e) => patch({ hours_saved_month: Number(e.target.value), hm_mode: "direct" })} />
             </div>
+
+            <BudgetEstimatePanel
+              input={input}
+              hm={hmPreview}
+              templateId={activeTemplateId}
+              integrationLevel={integrationLevel}
+              onIntegrationLevelChange={setIntegrationLevel}
+              capexManuallyEdited={capexManuallyEdited}
+              omManuallyEdited={omManuallyEdited}
+              onApplyEstimate={applyBudgetEstimate}
+              showBreakdown={showBudgetBreakdown}
+              onToggleBreakdown={() => setShowBudgetBreakdown((v) => !v)}
+            />
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={t("fields.ch")} hint={t("hints.ch")} tooltipKey="calculator.wizard.ch" type="number" value={input.hourly_cost_loaded} onChange={(v) => patch({ hourly_cost_loaded: v })} />
-              <Field label={t("fields.om")} hint={t("hints.om")} tooltipKey="calculator.wizard.om" type="number" value={input.monthly_solution_cost} onChange={(v) => patch({ monthly_solution_cost: v })} />
-              <Field label={t("fields.capex")} hint={t("hints.capex")} tooltipKey="calculator.wizard.capex" type="number" value={input.capex} onChange={(v) => patch({ capex: v })} />
+              <Field label={t("fields.om")} hint={t("hints.om")} tooltipKey="calculator.wizard.om" type="number" value={input.monthly_solution_cost} onChange={(v) => { setOmManuallyEdited(true); patch({ monthly_solution_cost: v }); }} />
+              <Field label={t("fields.capex")} hint={t("hints.capex")} tooltipKey="calculator.wizard.capex" type="number" value={input.capex} onChange={(v) => { setCapexManuallyEdited(true); patch({ capex: v }); }} />
               <div>
                 <label className="mb-1.5 block text-xs font-medium">
                   <LabelWithHelp

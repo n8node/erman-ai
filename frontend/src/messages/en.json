@@ -341,6 +341,23 @@
     "proposalRequestSent": "Request sent",
     "proposalRequestSuccess": "Proposal request sent. The Erman AI team will contact you.",
     "proposalRequestFailed": "Could not send proposal request",
+    "budgetEstimate": {
+      "title": "Implementation budget estimate",
+      "subtitle": "I₀ and Om are derived from process volume, steps, and integration level — you can adjust the values",
+      "recommendedCapex": "I₀ — recommended budget",
+      "recommendedOm": "Om — recommended support / month",
+      "apply": "Apply estimate",
+      "reapply": "Update estimate",
+      "showBreakdown": "Show breakdown",
+      "hideBreakdown": "Hide breakdown",
+      "manualHint": "Fields were edited manually",
+      "totalCapex": "Total I₀",
+      "integration": {
+        "simple": "Simple",
+        "standard": "Standard",
+        "complex": "Complex"
+      }
+    },
     "templates": {
       "title": "Process templates",
       "subtitle": "Pick an industry and a ready-made process — values are prefilled and fully editable",
