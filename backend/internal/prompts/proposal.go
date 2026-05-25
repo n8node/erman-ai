@@ -1,6 +1,10 @@
 package prompts
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/erman-ai/erman-ai/internal/i18n"
+)
 
 // DefaultProposalSystemPrompt is the editable template for Proposal Generator.
 // {{LANGUAGE}} is replaced with Russian or English at generation time.
@@ -40,10 +44,7 @@ Rules:
 - Never contradict proposal_scenario (e.g. no "thank you for your request" in cold_outreach or proactive_offer)`
 
 func proposalLanguageName(locale string) string {
-	if locale == "en" {
-		return "English"
-	}
-	return "Russian"
+	return i18n.LanguageName(locale)
 }
 
 // MaterializeProposalPrompt replaces {{LANGUAGE}} in the template for the user locale.

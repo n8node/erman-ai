@@ -93,7 +93,8 @@
       "tooltips": "Tooltips",
       "proposalRequests": "Proposal requests",
       "calculatorBudget": "Calculator rates",
-      "strategyLlm": "AI Strategy LLM"
+      "strategyLlm": "AI Strategy LLM",
+      "translations": "Translations"
     },
     "users": {
       "title": "Users",
@@ -185,6 +186,23 @@
       "saving": "Saving…",
       "textRu": "Text (RU)",
       "textEn": "Text (EN)"
+    },
+    "translations": {
+      "title": "Translations",
+      "subtitle": "Search and edit UI lexemes for all supported languages",
+      "loading": "Loading…",
+      "loadFailed": "Could not load translations",
+      "saveFailed": "Could not save",
+      "saved": "Changes saved",
+      "save": "Save overrides",
+      "saving": "Saving…",
+      "searchPlaceholder": "Search by key or text…",
+      "allNamespaces": "All namespaces",
+      "colKey": "Lexeme key",
+      "colValue": "Translation",
+      "pagination": "{from}–{to} of {total}",
+      "prev": "Previous",
+      "next": "Next"
     },
     "calculatorBudget": {
       "title": "Budget estimate rates",

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
+	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/prompts"
 	"github.com/erman-ai/erman-ai/internal/repository"
@@ -188,10 +189,7 @@ func (s *ProposalService) processRun(runID string) {
 		return
 	}
 
-	locale := input.Locale
-	if locale != "en" {
-		locale = "ru"
-	}
+	locale := i18n.NormalizeLocale(input.Locale)
 
 	maxTokens := settings.MaxTokens
 	if maxTokens > 16000 {

@@ -93,7 +93,8 @@
       "tooltips": "Тултипы",
       "proposalRequests": "Запросы на КП",
       "calculatorBudget": "Ставки калькулятора",
-      "strategyLlm": "AI Strategy LLM"
+      "strategyLlm": "AI Strategy LLM",
+      "translations": "Переводы"
     },
     "users": {
       "title": "Пользователи",
@@ -185,6 +186,23 @@
       "saving": "Сохранение…",
       "textRu": "Текст (RU)",
       "textEn": "Текст (EN)"
+    },
+    "translations": {
+      "title": "Переводы",
+      "subtitle": "Поиск и редактирование лексем интерфейса на всех языках",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить переводы",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Изменения сохранены",
+      "save": "Сохранить переопределения",
+      "saving": "Сохранение…",
+      "searchPlaceholder": "Поиск по ключу или тексту…",
+      "allNamespaces": "Все пространства",
+      "colKey": "Ключ лексемы",
+      "colValue": "Перевод",
+      "pagination": "{from}–{to} из {total}",
+      "prev": "Назад",
+      "next": "Далее"
     },
     "calculatorBudget": {
       "title": "Ставки оценки бюджета",

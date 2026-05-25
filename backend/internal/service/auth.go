@@ -11,6 +11,7 @@ import (
 
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -129,9 +130,7 @@ func (s *AuthService) UpdateMe(ctx context.Context, userID, email, locale string
 	if _, err := mail.ParseAddress(email); err != nil {
 		return nil, ErrInvalidInput
 	}
-	if locale != "ru" && locale != "en" {
-		locale = "ru"
-	}
+	locale = i18n.NormalizeLocale(locale)
 	return s.users.UpdateProfile(ctx, userID, email, locale)
 }
 

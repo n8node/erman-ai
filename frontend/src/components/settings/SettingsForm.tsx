@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { User } from "@/lib/api";
 import { changePassword, updateMe } from "@/lib/api";
+import { LOCALE_META, SUPPORTED_LOCALES } from "@/i18n/locales";
 
 type Props = {
   user: User;
@@ -11,6 +13,7 @@ type Props = {
 
 export function SettingsForm({ user }: Props) {
   const t = useTranslations("settings");
+  const router = useRouter();
   const [email, setEmail] = useState(user.email);
   const [locale, setLocale] = useState(user.locale);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -29,6 +32,12 @@ export function SettingsForm({ user }: Props) {
     setProfileLoading(true);
     try {
       await updateMe(email, locale);
+      await fetch("/dashboard/api/locale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      router.refresh();
       setProfileMsg(t("profileSaved"));
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : t("saveFailed"));
@@ -99,8 +108,11 @@ export function SettingsForm({ user }: Props) {
               onChange={(e) => setLocale(e.target.value)}
               className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
             >
-              <option value="ru">Русский</option>
-              <option value="en">English</option>
+              {SUPPORTED_LOCALES.map((code) => (
+                <option key={code} value={code}>
+                  {LOCALE_META[code].flag} {LOCALE_META[code].nativeName}
+                </option>
+              ))}
             </select>
           </div>
           <button

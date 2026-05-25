@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { LogOut } from "lucide-react";
 import type { User } from "@/lib/api";
 import { logout } from "@/lib/api";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 type Props = {
   user: User;
@@ -24,6 +25,7 @@ export function Topbar({ user }: Props) {
     <header className="sticky top-0 z-20 flex h-[52px] items-center justify-between border-b border-border bg-bg px-6">
       <span className="text-sm text-text2">{t("dashboard")}</span>
       <div className="flex items-center gap-3">
+        <LanguageSwitcher userEmail={user.email} />
         <span className="text-[13px] text-text2">{user.email}</span>
         <button
           type="button"

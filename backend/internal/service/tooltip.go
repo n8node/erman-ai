@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
@@ -37,7 +38,18 @@ func (s *TooltipService) Update(ctx context.Context, key, textRU, textEN string)
 }
 
 func pickTooltipText(t model.UITooltip, locale string) string {
-	if strings.HasPrefix(locale, "en") && t.TextEN != "" {
+	locale = i18n.NormalizeLocale(locale)
+	if t.LocaleTexts != nil {
+		if v := strings.TrimSpace(t.LocaleTexts[locale]); v != "" {
+			return v
+		}
+		for _, fb := range []string{"en", "ru"} {
+			if v := strings.TrimSpace(t.LocaleTexts[fb]); v != "" {
+				return v
+			}
+		}
+	}
+	if locale == "en" && t.TextEN != "" {
 		return t.TextEN
 	}
 	if t.TextRU != "" {

@@ -31,6 +31,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	leadRepo := repository.NewLeadRepository(db.Pool)
 	proposalReqRepo := repository.NewProposalRequestRepository(db.Pool)
 	tooltipRepo := repository.NewTooltipRepository(db.Pool)
+	translationRepo := repository.NewTranslationRepository(db.Pool)
 	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
 	strategyLLMRepo := repository.NewStrategyLLMSettingsRepository(db.Pool)
 
@@ -44,6 +45,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	proposalReqSvc := service.NewProposalRequestService(proposalReqRepo, runRepo, userRepo)
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)
+	translationSvc := service.NewTranslationService(translationRepo)
 	budgetConfigSvc := service.NewCalculatorBudgetConfigService(budgetConfigRepo)
 	llmSvc := service.NewLLMService(cfg)
 	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg, llmSvc)
@@ -56,6 +58,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
 	runsHandler := handler.NewRunsHandler(runSvc)
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)
+	translationHandler := handler.NewTranslationHandler(translationSvc)
 	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
 	strategyLLMHandler := handler.NewStrategyLLMSettingsHandler(strategyLLMSvc)
 	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc, billingSvc)
@@ -81,6 +84,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/health", health.ServeHTTP)
 		api.Get("/shared/{token}", shareHandler.GetPublic)
 		api.Get("/public/tooltips", tooltipHandler.ListAnonymous)
+		api.Get("/public/translations", translationHandler.ListPublic)
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)
@@ -146,6 +150,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Get("/strategy-llm", strategyLLMHandler.GetAdmin)
 			admin.Put("/strategy-llm", strategyLLMHandler.UpdateAdmin)
 			admin.Post("/strategy-llm/test-connection", strategyLLMHandler.TestConnection)
+			admin.Get("/translations", translationHandler.SearchAdmin)
+			admin.Put("/translations", translationHandler.BulkUpsertAdmin)
+			admin.Put("/translations/item", translationHandler.UpsertAdmin)
+			admin.Delete("/translations/{key}", translationHandler.DeleteAdmin)
 		})
 	})
 

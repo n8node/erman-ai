@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { LOCALE_COOKIE, isAppLocale } from "./i18n/locales";
+import { negotiateFromAcceptLanguage } from "./i18n/negotiate";
 
 const authPages = ["/login", "/register"];
 
@@ -11,23 +13,33 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("access_token");
 
-  if (isSharePath(pathname)) {
-    return NextResponse.next();
-  }
+  let response: NextResponse;
 
-  if (!token && !authPages.includes(pathname)) {
+  if (isSharePath(pathname)) {
+    response = NextResponse.next();
+  } else if (!token && !authPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  if (token && authPages.includes(pathname)) {
+    response = NextResponse.redirect(url);
+  } else if (token && authPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    response = NextResponse.redirect(url);
+  } else {
+    response = NextResponse.next();
   }
 
-  return NextResponse.next();
+  const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (!isAppLocale(cookieLocale)) {
+    const negotiated = negotiateFromAcceptLanguage(request.headers.get("accept-language"));
+    response.cookies.set(LOCALE_COOKIE, negotiated, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
+  return response;
 }
 
 export const config = {

@@ -481,6 +481,37 @@ export async function bulkUpdateAdminTooltips(
   });
 }
 
+export type AdminTranslation = {
+  key: string;
+  locale: string;
+  value: string;
+  updated_at?: string;
+};
+
+export async function searchAdminTranslations(params?: {
+  search?: string;
+  locale?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.search) q.set("search", params.search);
+  if (params?.locale) q.set("locale", params.locale);
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.offset != null) q.set("offset", String(params.offset));
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  return apiFetch<{ items: AdminTranslation[] }>(`/admin/translations${suffix}`);
+}
+
+export async function bulkUpdateAdminTranslations(
+  items: Pick<AdminTranslation, "key" | "locale" | "value">[]
+) {
+  return apiFetch<{ items: AdminTranslation[] }>("/admin/translations", {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+}
+
 export type { CalculatorBudgetConfig, CalculatorBudgetConfigRecord } from "./calculator-budget-config";
 
 export async function fetchCalculatorBudgetConfig() {

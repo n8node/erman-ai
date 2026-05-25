@@ -101,7 +101,7 @@ RESPONSE FORMAT — return ONLY valid JSON, no markdown fences:
 }
 
 RULES:
-- Write in the language from input field "locale" ("ru" or "en")
+- Write in the language from input field "locale" (supported: en, ru, de, es, fr, zh)
 - Be specific to company_name, business_description, industry, company_size, market_position, key_processes, pain_points, data_maturity, change_readiness, existing_tools
 - Exactly 5-6 items in ai_use_cases with priorities 1-6; exactly 3 recommended_solutions with priorities 1-3
 - process_analysis: 3-5 items covering key_processes and calculator-linked processes if present
