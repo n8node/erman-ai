@@ -7,6 +7,7 @@ import {
   Calculator,
   Brain,
   FileText,
+  ClipboardList,
   CreditCard,
   Key,
   Settings,
@@ -27,6 +28,7 @@ export function Sidebar({ user }: Props) {
     { href: "/tools/calculator", label: t("calculator"), icon: Calculator },
     { href: "/tools/strategy", label: t("strategy"), icon: Brain },
     { href: "/tools/proposal", label: t("proposal"), icon: FileText },
+    { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
   ];
 
   const accountLinks = [

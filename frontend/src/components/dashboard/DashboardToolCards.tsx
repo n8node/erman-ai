@@ -10,6 +10,7 @@ const CARD_TOOLS = [
   { slug: "calculator", href: "/tools/calculator" },
   { slug: "strategy", href: "/tools/strategy" },
   { slug: "proposal", href: "/tools/proposal" },
+  { slug: "audit", href: "/tools/audit" },
 ] as const;
 
 export function DashboardToolCards() {
@@ -28,7 +29,7 @@ export function DashboardToolCards() {
   }
 
   return (
-    <div className="mt-8 grid gap-4 sm:grid-cols-3">
+    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {CARD_TOOLS.map(({ slug, href }) => {
         const meta = toolMeta(slug);
         return (

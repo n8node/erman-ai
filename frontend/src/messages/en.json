@@ -37,6 +37,7 @@
     "calculator": "Calculator",
     "strategy": "AI Strategy",
     "proposal": "Proposal",
+    "audit": "Automation Audit",
     "billing": "Billing",
     "apiKeys": "API Keys",
     "settings": "Settings",
@@ -64,6 +65,10 @@
       "proposal": {
         "name": "Proposal Generator",
         "description": "Commercial proposal generator"
+      },
+      "audit": {
+        "name": "Automation Audit",
+        "description": "Multi-process audit with prioritization roadmap"
       }
     }
   },
@@ -992,6 +997,256 @@
       "sender_contact": "Sender name for signature and next-step block.",
       "sender_phone": "Contact phone in the document signature.",
       "sender_email": "Email for the client reply."
+    }
+  },
+  "audit": {
+    "title": "Automation Audit",
+    "subtitle": "Compare multiple processes and get a prioritized automation plan",
+    "loadingRun": "Loading…",
+    "subnav": {
+      "new": "New audit",
+      "history": "History"
+    },
+    "formSteps": {
+      "company": "Company",
+      "processes": "Processes",
+      "review": "Generate"
+    },
+    "form": {
+      "companySection": "Company context",
+      "processesSection": "Processes to audit",
+      "reviewSection": "Review before generation",
+      "companyName": "Company name",
+      "primaryGoal": "Primary automation goal",
+      "customGoal": "Custom goal",
+      "companySize": "Company size",
+      "headcount": "Operational headcount",
+      "budget": "Automation budget",
+      "timeline": "Decision horizon",
+      "dataDuplication": "Data duplication across systems",
+      "priorityCriteria": "Prioritization criteria",
+      "itSystems": "Systems in use",
+      "otherSystem": "Other system",
+      "otherSystemPlaceholder": "e.g. Notion, Bitrix…",
+      "select": "Select…",
+      "next": "Next",
+      "back": "Back",
+      "generate": "Generate report",
+      "generating": "Starting…",
+      "newAudit": "New audit",
+      "processesHint": "Add {min} to {max} processes. Use templates for faster input.",
+      "processNumber": "Process {n}",
+      "incomplete": "Fill required fields",
+      "removeProcess": "Remove process"
+    },
+    "goals": {
+      "reduce_costs": "Reduce costs",
+      "speed": "Speed up processes",
+      "quality": "Reduce errors",
+      "scale": "Scale without hiring",
+      "control": "Transparency and control"
+    },
+    "criteria": {
+      "cost_savings": "Cost savings",
+      "speed": "Speed",
+      "quality": "Quality",
+      "scalability": "Scalability",
+      "control": "Control",
+      "quick_wins": "Quick wins"
+    },
+    "headcount": {
+      "1-10": "1–10 people",
+      "11-30": "11–30",
+      "31-100": "31–100",
+      "101-500": "101–500",
+      "500+": "500+"
+    },
+    "budget": {
+      "up_to_500k": "up to 500K ₽",
+      "500k_2m": "500K – 2M ₽",
+      "2m_5m": "2M – 5M ₽",
+      "5m_plus": "5M+ ₽"
+    },
+    "timeline": {
+      "3months": "3 months",
+      "6months": "6 months",
+      "1year": "1 year",
+      "2years": "2 years"
+    },
+    "duplication": {
+      "none": "Almost none",
+      "some": "Some cases",
+      "many": "Often",
+      "critical": "Critical issue"
+    },
+    "systems": {
+      "crm": "CRM",
+      "erp": "ERP",
+      "1c": "1C",
+      "spreadsheets": "Spreadsheets",
+      "email": "Email",
+      "messengers": "Messengers",
+      "website": "Website",
+      "helpdesk": "Helpdesk",
+      "warehouse": "Warehouse / WMS"
+    },
+    "departments": {
+      "sales": "Sales",
+      "operations": "Operations",
+      "finance": "Finance",
+      "hr": "HR",
+      "marketing": "Marketing",
+      "logistics": "Logistics",
+      "support": "Support",
+      "it": "IT",
+      "other": "Other"
+    },
+    "bottlenecks": {
+      "manual_data_entry": "Manual data entry",
+      "approvals": "Approvals",
+      "integrations": "System integrations",
+      "errors_rework": "Errors and rework",
+      "waiting": "Waiting / idle time",
+      "other": "Other"
+    },
+    "templates": {
+      "incoming_leads": "Incoming leads",
+      "order_processing": "Order processing",
+      "customer_support": "Customer support",
+      "invoicing": "Invoicing",
+      "hr_onboarding": "Employee onboarding",
+      "inventory": "Inventory",
+      "reporting": "Reporting",
+      "custom": "Custom process"
+    },
+    "levels": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "process": {
+      "name": "Process name",
+      "department": "Department / owner",
+      "customDepartment": "Specify department",
+      "frequency": "Frequency per month",
+      "minutes": "Time per cycle",
+      "fte": "People involved",
+      "hourlyRate": "Hourly cost",
+      "errorRate": "Error / rework rate",
+      "errorCost": "Cost per error",
+      "systems": "Systems used",
+      "bottleneck": "Main bottleneck",
+      "customBottleneck": "Describe bottleneck",
+      "standardization": "Process standardization",
+      "readiness": "Automation readiness",
+      "impact": "Expected impact",
+      "integrationComplexity": "Integration complexity (1–5)"
+    },
+    "ranges": {
+      "frequency": {
+        "1-10": "1–10 / month",
+        "11-50": "11–50",
+        "51-200": "51–200",
+        "201-500": "201–500",
+        "500+": "500+"
+      },
+      "minutes": {
+        "5-15": "5–15 min",
+        "16-30": "16–30 min",
+        "31-60": "31–60 min",
+        "61-120": "1–2 h",
+        "120+": "2+ h"
+      },
+      "fte": {
+        "1": "1 person",
+        "2-3": "2–3",
+        "4-10": "4–10",
+        "11+": "11+"
+      },
+      "hourly": {
+        "300-500": "300–500 ₽/h",
+        "501-800": "501–800 ₽/h",
+        "801-1200": "801–1200 ₽/h",
+        "1201-2000": "1201–2000 ₽/h",
+        "2000+": "2000+ ₽/h"
+      },
+      "errorRate": {
+        "0-2": "0–2%",
+        "3-5": "3–5%",
+        "6-10": "6–10%",
+        "11-20": "11–20%",
+        "20+": "20%+"
+      },
+      "errorCost": {
+        "500-2000": "500–2K ₽",
+        "2001-5000": "2–5K ₽",
+        "5001-15000": "5–15K ₽",
+        "15001-50000": "15–50K ₽",
+        "50000+": "50K+ ₽"
+      }
+    },
+    "polling": {
+      "title": "Preparing audit report",
+      "hint": "Usually takes 1–3 minutes",
+      "failed": "Failed to generate report"
+    },
+    "errors": {
+      "startFailed": "Failed to start audit",
+      "loadFailed": "Failed to load result"
+    },
+    "result": {
+      "document": "Automation Audit Report",
+      "subtitle": "Prioritized automation plan",
+      "metrics": {
+        "totalCost": "Total monthly cost",
+        "totalSavings": "Potential monthly savings",
+        "processCount": "Processes audited"
+      },
+      "sections": {
+        "summary": "Executive summary",
+        "context": "Company context",
+        "quickWins": "Quick wins",
+        "priority": "Automation priorities",
+        "roadmap": "Roadmap",
+        "risks": "Risks",
+        "nextSteps": "Next steps (30 days)",
+        "metrics": "Metrics to track"
+      },
+      "table": {
+        "rank": "#",
+        "process": "Process",
+        "score": "Score",
+        "savings": "Savings / mo",
+        "quickWin": "Quick win",
+        "yes": "Yes"
+      },
+      "roadmap": {
+        "processes": "Processes"
+      },
+      "severity": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
+      }
+    },
+    "history": {
+      "loading": "Loading…",
+      "empty": "No audits yet",
+      "createFirst": "Create first audit →",
+      "view": "Open",
+      "continue": "Continue",
+      "columns": {
+        "date": "Date",
+        "company": "Company",
+        "status": "Status",
+        "action": "Action"
+      },
+      "status": {
+        "done": "Done",
+        "error": "Error",
+        "processing": "Generating",
+        "pending": "Queued"
+      }
     }
   }
 }

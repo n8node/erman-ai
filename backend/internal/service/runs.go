@@ -112,6 +112,12 @@ func summarizeRun(run model.ToolRun) RunListItem {
 				item.ProcessName = input.ClientCompany
 			}
 		}
+		if run.ToolSlug == "audit" {
+			var input model.AuditInput
+			if err := json.Unmarshal(run.Input, &input); err == nil {
+				item.ProcessName = input.CompanyName
+			}
+		}
 		return item
 	}
 	var input model.CalculatorInput

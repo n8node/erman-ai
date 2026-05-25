@@ -46,8 +46,8 @@ export type RunDetail = {
   id: string;
   tool_slug: string;
   status: string;
-  input?: CalculatorInput | import("./api-strategy").StrategyInput;
-  output?: CalculatorOutput | import("./api-strategy").StrategyOutput;
+  input?: CalculatorInput | import("./api-strategy").StrategyInput | import("./api-audit").AuditInput;
+  output?: CalculatorOutput | import("./api-strategy").StrategyOutput | import("./api-audit").AuditOutput;
   created_at: string;
   updated_at?: string;
   completed_at?: string;
@@ -303,6 +303,7 @@ export function subscribeStrategyStream(runId: string, handlers: StrategyStreamH
 }
 
 export type { StrategyInput, StrategyOutput } from "./api-strategy";
+export type { AuditInput, AuditOutput } from "./api-audit";
 
 export async function exportCalculatorPDF(runId: string) {
   const res = await fetch(`${clientBase()}/tools/calculator/export`, {
@@ -338,6 +339,13 @@ export async function exportStrategyPDF(runId: string) {
 
 export async function runProposal(input: import("./api-proposal").ProposalInput) {
   return apiFetch<import("./api-proposal").ProposalRunStart>("/tools/proposal/run", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function runAudit(input: import("./api-audit").AuditInput) {
+  return apiFetch<import("./api-audit").AuditRunStart>("/tools/audit/run", {
     method: "POST",
     body: JSON.stringify(input),
   });
