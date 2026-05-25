@@ -21,6 +21,7 @@ type ProposalService struct {
 	plans    *repository.PlanRepository
 	billing  *BillingService
 	llm      *LLMService
+	llmCfg   *StrategyLLMSettingsService
 	usageLog *repository.UsageLogRepository
 	logger   *slog.Logger
 }
@@ -31,12 +32,13 @@ func NewProposalService(
 	plans *repository.PlanRepository,
 	billing *BillingService,
 	llm *LLMService,
+	llmCfg *StrategyLLMSettingsService,
 	usageLog *repository.UsageLogRepository,
 	logger *slog.Logger,
 ) *ProposalService {
 	return &ProposalService{
 		cfg: cfg, runs: runs, plans: plans, billing: billing,
-		llm: llm, usageLog: usageLog, logger: logger,
+		llm: llm, llmCfg: llmCfg, usageLog: usageLog, logger: logger,
 	}
 }
 
@@ -164,7 +166,14 @@ func (s *ProposalService) processRun(runID string) {
 		return
 	}
 
-	apiKey := s.llm.ResolveOpenRouterKey(s.cfg.OpenRouterAPIKey)
+	stored, err := s.llmCfg.GetStored(ctx)
+	if err != nil {
+		s.failRun(ctx, runID, "llm settings unavailable")
+		return
+	}
+	settings := stored.Config.StrategyLLMSettings
+	provider := settings.Provider
+	apiKey := s.llm.ResolveKey(provider, stored.Config.OpenRouterAPIKey, stored.Config.DeepSeekAPIKey)
 	if apiKey == "" {
 		s.failRun(ctx, runID, "llm api key not configured")
 		return
@@ -181,15 +190,20 @@ func (s *ProposalService) processRun(runID string) {
 		locale = "ru"
 	}
 
+	maxTokens := settings.MaxTokens
+	if maxTokens > 16000 {
+		maxTokens = 16000
+	}
+
 	req := LLMCompletionRequest{
-		Provider:     model.LLMProviderOpenRouter,
-		Model:        s.cfg.OpenRouterModelSmart,
+		Provider:     provider,
+		Model:        settings.ActiveModel(),
 		SystemPrompt: prompts.ProposalSystemPrompt(locale),
 		UserPrompt:   string(userPayload),
-		Temperature:  0.65,
-		MaxTokens:    8000,
+		Temperature:  settings.Temperature,
+		MaxTokens:    maxTokens,
 		APIKey:       apiKey,
-		BaseURL:      s.llm.BaseURL(model.LLMProviderOpenRouter),
+		BaseURL:      s.llm.BaseURL(provider),
 	}
 
 	result, err := s.llm.Complete(ctx, req)

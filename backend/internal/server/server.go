@@ -48,7 +48,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	llmSvc := service.NewLLMService(cfg)
 	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg, llmSvc)
 	strategySvc := service.NewStrategyService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
-	proposalSvc := service.NewProposalService(cfg, runRepo, planRepo, billingSvc, llmSvc, usageLogRepo, logger)
+	proposalSvc := service.NewProposalService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 

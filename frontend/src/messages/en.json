@@ -245,7 +245,7 @@
     },
     "strategyLlm": {
       "title": "AI Strategy — LLM",
-      "subtitle": "Provider, model, and system prompt for strategy generation. API keys are stored in DB (superadmin only).",
+      "subtitle": "Provider, model, and API keys for AI Strategy and Proposal Generator. Keys are stored in DB (superadmin only).",
       "loading": "Loading…",
       "loadFailed": "Could not load settings",
       "saveFailed": "Could not save",
