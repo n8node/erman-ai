@@ -161,7 +161,7 @@ export function AdminTranslationsEditor() {
         >
           {SUPPORTED_LOCALES.map((code) => (
             <option key={code} value={code}>
-              {LOCALE_META[code].flag} {LOCALE_META[code].nativeName}
+              {LOCALE_META[code].nativeName}
             </option>
           ))}
         </select>

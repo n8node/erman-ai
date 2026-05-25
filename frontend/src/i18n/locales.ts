@@ -12,16 +12,15 @@ export type LocaleMeta = {
   nativeName: string;
   /** BCP-47 tag for Accept-Language matching */
   bcp47: string[];
-  flag: string;
 };
 
 export const LOCALE_META: Record<AppLocale, LocaleMeta> = {
-  en: { code: "en", nativeName: "English", bcp47: ["en", "en-US", "en-GB"], flag: "🇬🇧" },
-  ru: { code: "ru", nativeName: "Русский", bcp47: ["ru", "ru-RU"], flag: "🇷🇺" },
-  de: { code: "de", nativeName: "Deutsch", bcp47: ["de", "de-DE", "de-AT", "de-CH"], flag: "🇩🇪" },
-  es: { code: "es", nativeName: "Español", bcp47: ["es", "es-ES", "es-MX", "es-AR"], flag: "🇪🇸" },
-  fr: { code: "fr", nativeName: "Français", bcp47: ["fr", "fr-FR", "fr-CA", "fr-BE"], flag: "🇫🇷" },
-  zh: { code: "zh", nativeName: "中文", bcp47: ["zh", "zh-CN", "zh-Hans", "zh-Hant", "zh-TW"], flag: "🇨🇳" },
+  en: { code: "en", nativeName: "English", bcp47: ["en", "en-US", "en-GB"] },
+  ru: { code: "ru", nativeName: "Русский", bcp47: ["ru", "ru-RU"] },
+  de: { code: "de", nativeName: "Deutsch", bcp47: ["de", "de-DE", "de-AT", "de-CH"] },
+  es: { code: "es", nativeName: "Español", bcp47: ["es", "es-ES", "es-MX", "es-AR"] },
+  fr: { code: "fr", nativeName: "Français", bcp47: ["fr", "fr-FR", "fr-CA", "fr-BE"] },
+  zh: { code: "zh", nativeName: "中文", bcp47: ["zh", "zh-CN", "zh-Hans", "zh-Hant", "zh-TW"] },
 };
 
 export function isAppLocale(value: string | undefined | null): value is AppLocale {

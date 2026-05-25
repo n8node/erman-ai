@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { LocaleFlag } from "@/components/ui/LocaleFlag";
 import { LOCALE_META, SUPPORTED_LOCALES, type AppLocale } from "@/i18n/locales";
 import { updateMe } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,7 @@ export function LanguageSwitcher({ userEmail, className }: Props) {
         aria-expanded={open}
         aria-haspopup="listbox"
       >
-        <span aria-hidden>{current.flag}</span>
+        <LocaleFlag locale={locale} />
         <span>{current.nativeName}</span>
         <ChevronDown size={14} className="text-text3" />
       </button>
@@ -82,7 +83,7 @@ export function LanguageSwitcher({ userEmail, className }: Props) {
                     code === locale && "bg-bg2 font-medium"
                   )}
                 >
-                  <span aria-hidden>{meta.flag}</span>
+                  <LocaleFlag locale={code} />
                   <span>{meta.nativeName}</span>
                 </button>
               </li>
