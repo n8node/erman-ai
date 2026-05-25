@@ -1,4 +1,5 @@
 import { ProposalSubnav } from "@/components/tools/ProposalSubnav";
+import { TooltipProvider } from "@/components/ui/HelpTooltip";
 
 export default function ProposalLayout({
   children,
@@ -6,9 +7,11 @@ export default function ProposalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
-      <ProposalSubnav />
-      {children}
-    </div>
+    <TooltipProvider prefix="proposal">
+      <div className="space-y-6">
+        <ProposalSubnav />
+        {children}
+      </div>
+    </TooltipProvider>
   );
 }

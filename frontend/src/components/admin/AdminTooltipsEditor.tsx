@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   bulkUpdateAdminTooltips,
   fetchAdminTooltips,
   type AdminTooltip,
 } from "@/lib/api";
+
+function tooltipGroup(key: string): string {
+  const dot = key.indexOf(".");
+  if (dot === -1) return key;
+  return key.slice(0, dot);
+}
 
 export function AdminTooltipsEditor() {
   const t = useTranslations("admin.tooltips");
@@ -72,41 +78,50 @@ export function AdminTooltipsEditor() {
       )}
 
       <div className="space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.key}
-            className="rounded-xl border border-border bg-bg p-5 space-y-3"
-          >
-            <div>
-              <p className="text-sm font-medium">{item.label}</p>
-              <p className="text-[10px] font-mono text-text3">{item.key}</p>
-            </div>
-            <div className="grid gap-3 lg:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text2">
-                  {t("textRu")}
-                </label>
-                <textarea
-                  rows={3}
-                  className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-                  value={item.text_ru}
-                  onChange={(e) => updateItem(item.key, "text_ru", e.target.value)}
-                />
+        {items.map((item, index) => {
+          const group = tooltipGroup(item.key);
+          const prevGroup = index > 0 ? tooltipGroup(items[index - 1].key) : null;
+          const showGroupHeader = group !== prevGroup;
+          return (
+            <Fragment key={item.key}>
+              {showGroupHeader && (
+                <p className="pt-2 text-[10px] font-medium uppercase tracking-wider text-text3">
+                  {t(`groups.${group}` as "groups.calculator", { defaultValue: group })}
+                </p>
+              )}
+              <div className="rounded-xl border border-border bg-bg p-5 space-y-3">
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-[10px] font-mono text-text3">{item.key}</p>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-text2">
+                      {t("textRu")}
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                      value={item.text_ru}
+                      onChange={(e) => updateItem(item.key, "text_ru", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-text2">
+                      {t("textEn")}
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                      value={item.text_en}
+                      onChange={(e) => updateItem(item.key, "text_en", e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-text2">
-                  {t("textEn")}
-                </label>
-                <textarea
-                  rows={3}
-                  className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-                  value={item.text_en}
-                  onChange={(e) => updateItem(item.key, "text_en", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+            </Fragment>
+          );
+        })}
       </div>
 
       <button

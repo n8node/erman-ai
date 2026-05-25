@@ -22,6 +22,7 @@ import {
 } from "@/lib/api-proposal";
 import { isLimitReached } from "@/lib/tool-limits";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { ProposalPollingView } from "./ProposalPollingView";
 import { ProposalResult } from "./ProposalResult";
@@ -269,14 +270,14 @@ function ProposalWizardInner() {
                 </select>
               </Field>
             </div>
-            <Field label={t("form.clientProblem")} required>
+            <Field label={t("form.clientProblem")} required tooltipKey="proposal.wizard.client_problem">
               <textarea rows={4} className={fieldClass} value={input.client_problem} onChange={(e) => patch({ client_problem: e.target.value })} />
             </Field>
           </FormSection>
 
           <FormSection label={t("form.solutionSection")}>
             {calcRuns.length > 0 && (
-              <Field label={t("form.calculatorRun")}>
+              <Field label={t("form.calculatorRun")} tooltipKey="proposal.wizard.calculator_run">
                 <select
                   className={fieldClass}
                   value={input.calculator_run_id || ""}
@@ -294,10 +295,10 @@ function ProposalWizardInner() {
             <Field label={t("form.solutionName")} required>
               <input className={fieldClass} value={input.solution_name} onChange={(e) => patch({ solution_name: e.target.value })} />
             </Field>
-            <Field label={t("form.solutionDescription")} required>
+            <Field label={t("form.solutionDescription")} required tooltipKey="proposal.wizard.solution_description">
               <textarea rows={3} className={fieldClass} value={input.solution_description} onChange={(e) => patch({ solution_description: e.target.value })} />
             </Field>
-            <Field label={t("form.deliverables")} required>
+            <Field label={t("form.deliverables")} required tooltipKey="proposal.wizard.deliverables">
               <div className="space-y-2">
                 {input.deliverables.map((d, i) => (
                   <div key={i} className="flex gap-2">
@@ -396,11 +397,28 @@ function FormSection({ label, children }: { label: string; children: React.React
   );
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  tooltipKey,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  tooltipKey?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium text-text2">
-        {label}{required ? " *" : ""}
+        {tooltipKey ? (
+          <LabelWithHelp label={`${label}${required ? " *" : ""}`} tooltipKey={tooltipKey} />
+        ) : (
+          <>
+            {label}
+            {required ? " *" : ""}
+          </>
+        )}
       </label>
       {children}
     </div>

@@ -173,6 +173,10 @@
     "tooltips": {
       "title": "Тултипы",
       "subtitle": "Тексты подсказок в калькуляторе и других инструментах",
+      "groups": {
+        "calculator": "Automation Calculator",
+        "proposal": "Proposal Generator"
+      },
       "loading": "Загрузка…",
       "loadFailed": "Не удалось загрузить тултипы",
       "saveFailed": "Не удалось сохранить",

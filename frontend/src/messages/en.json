@@ -173,6 +173,10 @@
     "tooltips": {
       "title": "Tooltips",
       "subtitle": "Help texts for calculator and other tools",
+      "groups": {
+        "calculator": "Automation Calculator",
+        "proposal": "Proposal Generator"
+      },
       "loading": "Loading…",
       "loadFailed": "Could not load tooltips",
       "saveFailed": "Could not save",
