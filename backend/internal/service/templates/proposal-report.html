@@ -87,17 +87,21 @@
 
   <div class="section">
     <div class="section-label">{{.Labels.Cost}}</div>
+    {{if .ShowPricing}}
     <div class="cost-box">
       <div style="font-size:10px;text-transform:uppercase;color:#3b6d11;">{{.Labels.TotalCost}}</div>
       <div class="cost-value">{{.ProjectCostFormatted}}</div>
     </div>
+    {{end}}
     <div class="prose" style="margin-top:12px;">{{.CostSummary}}</div>
   </div>
 
+  {{if .ShowPricing}}
   <div class="section">
     <div class="section-label">{{.Labels.Payment}}</div>
     <div class="prose">{{.PaymentTerms}}</div>
   </div>
+  {{end}}
 
   <div class="section">
     <div class="section-label">{{.Labels.WhyUs}}</div>

@@ -796,9 +796,16 @@
     "loadingRun": "Loading proposal…",
     "newProposal": "← New proposal",
     "form": {
+      "scenarioSection": "Scenario",
       "clientSection": "Client",
       "solutionSection": "Solution",
       "senderSection": "Sender",
+      "priorContactSummary": "Prior contact context",
+      "priorContactPlaceholder": "E.g. call on Mar 12, client asked for a quote on lead intake automation…",
+      "problemSource": "How you know about the problem",
+      "problemSourcePlaceholder": "E.g. observed the process on site, typical industry pain…",
+      "includePricing": "Pricing mode",
+      "includePricingLabel": "Include exact price and payment terms",
       "clientCompany": "Client company",
       "clientContact": "Contact person",
       "clientIndustry": "Industry",
@@ -818,6 +825,20 @@
       "senderPhone": "Phone",
       "senderEmail": "Email",
       "select": "Select…"
+    },
+    "scenarios": {
+      "after_contact": {
+        "title": "After contact",
+        "description": "You already spoke or the client requested a quote — the document continues the conversation."
+      },
+      "cold_outreach": {
+        "title": "Cold outreach",
+        "description": "First touch with no prior contact. Soft CTA; pricing optional."
+      },
+      "proactive_offer": {
+        "title": "Proactive offer",
+        "description": "You propose automation after analysis / calculator — the client did not ask for a quote."
+      }
     },
     "industries": {
       "retail": "Retail",
@@ -840,14 +861,11 @@
       "loadFailed": "Could not load result"
     },
     "result": {
-      "document": "Commercial proposal",
       "linkedCalculator": "Linked calculator: {process}",
       "exportPdf": "Export PDF",
       "exportDocx": "Export DOCX",
       "exporting": "Exporting…",
       "pdfFailed": "PDF export failed",
-      "greeting": "Introduction",
-      "taskUnderstanding": "Understanding the task",
       "proposedSolution": "Proposed solution",
       "scopeIncluded": "In scope",
       "scopeExcluded": "Out of scope",
@@ -859,7 +877,31 @@
       "cost": "Investment",
       "payment": "Payment terms",
       "whyUs": "Why us",
-      "nextStep": "Next step"
+      "scenarioBadge": {
+        "after_contact": "Scenario: after contact",
+        "cold_outreach": "Scenario: cold outreach",
+        "proactive_offer": "Scenario: proactive offer"
+      },
+      "scenarios": {
+        "after_contact": {
+          "document": "Commercial proposal",
+          "greeting": "Introduction",
+          "taskUnderstanding": "Understanding the task",
+          "nextStep": "Next step"
+        },
+        "cold_outreach": {
+          "document": "Introductory letter",
+          "greeting": "Introduction",
+          "taskUnderstanding": "Why we are reaching out",
+          "nextStep": "Suggested next step"
+        },
+        "proactive_offer": {
+          "document": "Automation proposal",
+          "greeting": "Value proposition",
+          "taskUnderstanding": "Process analysis & ROI",
+          "nextStep": "Next step"
+        }
+      }
     },
     "history": {
       "title": "Proposal history",

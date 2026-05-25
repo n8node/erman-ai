@@ -1,6 +1,16 @@
 package model
 
+const (
+	ProposalScenarioAfterContact   = "after_contact"
+	ProposalScenarioColdOutreach     = "cold_outreach"
+	ProposalScenarioProactiveOffer   = "proactive_offer"
+)
+
 type ProposalInput struct {
+	ProposalScenario    string  `json:"proposal_scenario"`
+	PriorContactSummary string  `json:"prior_contact_summary,omitempty"`
+	ProblemSource       string  `json:"problem_source,omitempty"`
+	IncludePricing      bool    `json:"include_pricing"`
 	ClientCompany       string  `json:"client_company"`
 	ClientContact       string  `json:"client_contact"`
 	ClientIndustry      string  `json:"client_industry"`
@@ -15,9 +25,9 @@ type ProposalInput struct {
 	SenderContact       string  `json:"sender_contact"`
 	SenderPhone         string  `json:"sender_phone"`
 	SenderEmail         string  `json:"sender_email"`
-	CalculatorRunID     *string                `json:"calculator_run_id,omitempty"`
-	CalculatorContext   *CalculatorRunContext  `json:"calculator_context,omitempty"`
-	Locale              string                 `json:"locale"`
+	CalculatorRunID     *string               `json:"calculator_run_id,omitempty"`
+	CalculatorContext   *CalculatorRunContext   `json:"calculator_context,omitempty"`
+	Locale              string                `json:"locale"`
 }
 
 type ProposalTimelinePhase struct {
@@ -37,4 +47,13 @@ type ProposalOutput struct {
 	PaymentTerms      string                  `json:"payment_terms"`
 	WhyUs             string                  `json:"why_us"`
 	NextStep          string                  `json:"next_step"`
+}
+
+func NormalizeProposalScenario(s string) string {
+	switch s {
+	case ProposalScenarioColdOutreach, ProposalScenarioProactiveOffer:
+		return s
+	default:
+		return ProposalScenarioAfterContact
+	}
 }

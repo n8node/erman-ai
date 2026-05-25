@@ -9,6 +9,7 @@ import (
 
 	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/prompts"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
@@ -80,6 +81,9 @@ func (s *ProposalService) StartRun(ctx context.Context, userID string, input mod
 }
 
 func normalizeProposalInput(input *model.ProposalInput) {
+	input.ProposalScenario = model.NormalizeProposalScenario(input.ProposalScenario)
+	input.PriorContactSummary = strings.TrimSpace(input.PriorContactSummary)
+	input.ProblemSource = strings.TrimSpace(input.ProblemSource)
 	input.ClientCompany = strings.TrimSpace(input.ClientCompany)
 	input.ClientContact = strings.TrimSpace(input.ClientContact)
 	input.ClientIndustry = strings.TrimSpace(input.ClientIndustry)
@@ -194,10 +198,15 @@ func (s *ProposalService) processRun(runID string) {
 		maxTokens = 16000
 	}
 
+	basePrompt := settings.ProposalSystemPrompt
+	if basePrompt == "" {
+		basePrompt = prompts.DefaultProposalSystemPrompt
+	}
+
 	req := LLMCompletionRequest{
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
-		SystemPrompt: s.llmCfg.ResolvedProposalSystemPrompt(settings, locale),
+		SystemPrompt: prompts.BuildProposalSystemPrompt(basePrompt, locale, input.ProposalScenario, input.IncludePricing),
 		UserPrompt:   string(userPayload),
 		Temperature:  settings.Temperature,
 		MaxTokens:    maxTokens,

@@ -1,6 +1,12 @@
 import type { CalculatorRunContext } from "./api-strategy";
 
+export type ProposalScenario = "after_contact" | "cold_outreach" | "proactive_offer";
+
 export type ProposalInput = {
+  proposal_scenario: ProposalScenario;
+  prior_contact_summary?: string;
+  problem_source?: string;
+  include_pricing: boolean;
   client_company: string;
   client_contact: string;
   client_industry: string;
@@ -43,7 +49,17 @@ export type ProposalRunStart = {
   status: string;
 };
 
+export const PROPOSAL_SCENARIOS: ProposalScenario[] = [
+  "after_contact",
+  "cold_outreach",
+  "proactive_offer",
+];
+
 export const DEFAULT_PROPOSAL_INPUT: ProposalInput = {
+  proposal_scenario: "after_contact",
+  prior_contact_summary: "",
+  problem_source: "",
+  include_pricing: true,
   client_company: "",
   client_contact: "",
   client_industry: "",
@@ -59,6 +75,11 @@ export const DEFAULT_PROPOSAL_INPUT: ProposalInput = {
   sender_phone: "",
   sender_email: "",
 };
+
+export function normalizeProposalScenario(s?: string): ProposalScenario {
+  if (s === "cold_outreach" || s === "proactive_offer") return s;
+  return "after_contact";
+}
 
 export const PAYMENT_SCHEDULE_OPTIONS = [
   "50% предоплата, 50% по завершению",

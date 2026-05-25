@@ -8,6 +8,8 @@ import (
 )
 
 func validateProposalInput(in model.ProposalInput) error {
+	in.ProposalScenario = model.NormalizeProposalScenario(in.ProposalScenario)
+
 	if strings.TrimSpace(in.ClientCompany) == "" {
 		return ErrInvalidInput
 	}
@@ -23,13 +25,13 @@ func validateProposalInput(in model.ProposalInput) error {
 	if len(in.Deliverables) == 0 {
 		return ErrInvalidInput
 	}
-	if in.ProjectCostRub <= 0 {
+	if in.IncludePricing && in.ProjectCostRub <= 0 {
 		return ErrInvalidInput
 	}
 	if in.TimelineWeeks <= 0 || in.TimelineWeeks > 104 {
 		return ErrInvalidInput
 	}
-	if strings.TrimSpace(in.PaymentSchedule) == "" {
+	if in.IncludePricing && strings.TrimSpace(in.PaymentSchedule) == "" {
 		return ErrInvalidInput
 	}
 	if strings.TrimSpace(in.SenderCompany) == "" {
@@ -41,6 +43,22 @@ func validateProposalInput(in model.ProposalInput) error {
 	if strings.TrimSpace(in.SenderEmail) == "" {
 		return ErrInvalidInput
 	}
+
+	switch in.ProposalScenario {
+	case model.ProposalScenarioAfterContact:
+		if strings.TrimSpace(in.PriorContactSummary) == "" {
+			return ErrInvalidInput
+		}
+	case model.ProposalScenarioColdOutreach:
+		if strings.TrimSpace(in.ProblemSource) == "" {
+			return ErrInvalidInput
+		}
+	case model.ProposalScenarioProactiveOffer:
+		// calculator link optional
+	default:
+		return ErrInvalidInput
+	}
+
 	return nil
 }
 

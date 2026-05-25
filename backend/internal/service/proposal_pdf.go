@@ -47,6 +47,7 @@ type proposalPDFTimelineRow struct {
 type proposalPDFData struct {
 	LangAttr string
 	Labels   proposalPDFLabels
+	ShowPricing bool
 
 	ClientCompany       string
 	ClientContact       string
@@ -84,7 +85,8 @@ func GenerateProposalPDF(input model.ProposalInput, output model.ProposalOutput,
 }
 
 func renderProposalReportHTML(input model.ProposalInput, output model.ProposalOutput, locale string) (string, error) {
-	labels := proposalPDFLabelsForLocale(locale)
+	scenario := model.NormalizeProposalScenario(input.ProposalScenario)
+	labels := proposalPDFLabelsForScenario(locale, scenario)
 	timeline := make([]proposalPDFTimelineRow, 0, len(output.Timeline))
 	for _, ph := range output.Timeline {
 		timeline = append(timeline, proposalPDFTimelineRow{
@@ -102,6 +104,7 @@ func renderProposalReportHTML(input model.ProposalInput, output model.ProposalOu
 	data := proposalPDFData{
 		LangAttr:             locale,
 		Labels:               labels,
+		ShowPricing:          input.IncludePricing,
 		ClientCompany:        input.ClientCompany,
 		ClientContact:        input.ClientContact,
 		SolutionName:         input.SolutionName,
@@ -156,6 +159,37 @@ func formatIntPDF(n int64) string {
 		parts = append([]string{s}, parts...)
 	}
 	return strings.Join(parts, " ")
+}
+
+func proposalPDFLabelsForScenario(locale, scenario string) proposalPDFLabels {
+	base := proposalPDFLabelsForLocale(locale)
+	switch scenario {
+	case model.ProposalScenarioColdOutreach:
+		if locale == "en" {
+			base.Title = "Introduction letter"
+			base.Greeting = "Opening"
+			base.TaskUnderstanding = "Why we are reaching out"
+			base.NextStep = "Suggested next step"
+		} else {
+			base.Title = "Письмо-знакомство"
+			base.Greeting = "Обращение"
+			base.TaskUnderstanding = "Почему мы обращаемся"
+			base.NextStep = "Предлагаемый следующий шаг"
+		}
+	case model.ProposalScenarioProactiveOffer:
+		if locale == "en" {
+			base.Title = "Automation opportunity proposal"
+			base.Greeting = "Value proposition"
+			base.TaskUnderstanding = "Process analysis & ROI"
+			base.NextStep = "Next step"
+		} else {
+			base.Title = "Предложение по автоматизации"
+			base.Greeting = "Ценностное предложение"
+			base.TaskUnderstanding = "Анализ процесса и ROI"
+			base.NextStep = "Следующий шаг"
+		}
+	}
+	return base
 }
 
 func proposalPDFLabelsForLocale(locale string) proposalPDFLabels {

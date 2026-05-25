@@ -796,9 +796,16 @@
     "loadingRun": "Загрузка КП…",
     "newProposal": "← Новое КП",
     "form": {
+      "scenarioSection": "Сценарий",
       "clientSection": "Клиент",
       "solutionSection": "Решение",
       "senderSection": "Отправитель",
+      "priorContactSummary": "Контекст контакта",
+      "priorContactPlaceholder": "Например: созвон 12.03, клиент просил КП по автоматизации заявок…",
+      "problemSource": "Откуда знаете о проблеме",
+      "problemSourcePlaceholder": "Например: наблюдали процесс на производстве, типичная боль отрасли…",
+      "includePricing": "Режим цены",
+      "includePricingLabel": "Указать конкретную стоимость и условия оплаты",
       "clientCompany": "Компания клиента",
       "clientContact": "Контактное лицо",
       "clientIndustry": "Отрасль",
@@ -818,6 +825,20 @@
       "senderPhone": "Телефон",
       "senderEmail": "Email",
       "select": "Выберите…"
+    },
+    "scenarios": {
+      "after_contact": {
+        "title": "После контакта",
+        "description": "Был созвон, письмо или запрос КП — документ продолжает диалог."
+      },
+      "cold_outreach": {
+        "title": "Холодное обращение",
+        "description": "Первое письмо без prior contact. Мягкий CTA, можно без цены."
+      },
+      "proactive_offer": {
+        "title": "Проактивное предложение",
+        "description": "Вы сами предлагаете автоматизацию после анализа / калькулятора."
+      }
     },
     "industries": {
       "retail": "Розничная торговля",
@@ -840,14 +861,11 @@
       "loadFailed": "Не удалось загрузить результат"
     },
     "result": {
-      "document": "Коммерческое предложение",
       "linkedCalculator": "Привязан расчёт: {process}",
       "exportPdf": "Экспорт PDF",
       "exportDocx": "Экспорт DOCX",
       "exporting": "Экспорт…",
       "pdfFailed": "Не удалось экспортировать PDF",
-      "greeting": "Обращение",
-      "taskUnderstanding": "Понимание задачи",
       "proposedSolution": "Предлагаемое решение",
       "scopeIncluded": "Входит в scope",
       "scopeExcluded": "Не входит",
@@ -859,7 +877,31 @@
       "cost": "Стоимость",
       "payment": "Условия оплаты",
       "whyUs": "Почему мы",
-      "nextStep": "Следующий шаг"
+      "scenarioBadge": {
+        "after_contact": "Сценарий: после контакта",
+        "cold_outreach": "Сценарий: холодное обращение",
+        "proactive_offer": "Сценарий: проактивное предложение"
+      },
+      "scenarios": {
+        "after_contact": {
+          "document": "Коммерческое предложение",
+          "greeting": "Обращение",
+          "taskUnderstanding": "Понимание задачи",
+          "nextStep": "Следующий шаг"
+        },
+        "cold_outreach": {
+          "document": "Письмо-знакомство",
+          "greeting": "Обращение",
+          "taskUnderstanding": "Почему мы обращаемся",
+          "nextStep": "Предлагаемый следующий шаг"
+        },
+        "proactive_offer": {
+          "document": "Предложение по автоматизации",
+          "greeting": "Ценностное предложение",
+          "taskUnderstanding": "Анализ процесса и ROI",
+          "nextStep": "Следующий шаг"
+        }
+      }
     },
     "history": {
       "title": "История КП",

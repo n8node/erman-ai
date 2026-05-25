@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Download, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { exportProposalPDF, getBillingPlan } from "@/lib/api";
-import type { ProposalInput, ProposalOutput } from "@/lib/api-proposal";
+import { normalizeProposalScenario, type ProposalInput, type ProposalOutput } from "@/lib/api-proposal";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -19,6 +19,8 @@ function Prose({ children }: { children: React.ReactNode }) {
 
 export function ProposalResult({ input, output, runId }: Props) {
   const t = useTranslations("proposal.result");
+  const scenario = normalizeProposalScenario(input.proposal_scenario);
+  const ts = useTranslations(`proposal.result.scenarios.${scenario}`);
   const [canPdf, setCanPdf] = useState(false);
   const [canDocx, setCanDocx] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
@@ -51,6 +53,7 @@ export function ProposalResult({ input, output, runId }: Props) {
     }
   }
 
+  const showPricing = input.include_pricing !== false;
   const costFormatted = new Intl.NumberFormat("ru-RU").format(input.project_cost_rub) + " ₽";
 
   return (
@@ -58,12 +61,13 @@ export function ProposalResult({ input, output, runId }: Props) {
       <div className="rounded-xl border border-border bg-bg p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("document")}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{ts("document")}</p>
             <h2 className="mt-1 text-base font-medium">{input.solution_name}</h2>
             <p className="mt-1 text-sm text-text2">
               {input.client_company}
               {input.client_contact ? ` · ${input.client_contact}` : ""}
             </p>
+            <p className="mt-1 text-xs text-text3">{t(`scenarioBadge.${scenario}`)}</p>
             {input.calculator_context && (
               <p className="mt-2 text-xs text-success">
                 {t("linkedCalculator", { process: input.calculator_context.process_name })}
@@ -98,11 +102,11 @@ export function ProposalResult({ input, output, runId }: Props) {
         )}
       </div>
 
-      <Section title={t("greeting")}>
+      <Section title={ts("greeting")}>
         <Prose>{output.greeting}</Prose>
       </Section>
 
-      <Section title={t("taskUnderstanding")}>
+      <Section title={ts("taskUnderstanding")}>
         <Prose>{output.task_understanding}</Prose>
       </Section>
 
@@ -153,21 +157,25 @@ export function ProposalResult({ input, output, runId }: Props) {
       )}
 
       <Section title={t("cost")}>
-        <p className="text-lg font-semibold text-success">{costFormatted}</p>
-        <div className="mt-2">
+        {showPricing && input.project_cost_rub > 0 && (
+          <p className="text-lg font-semibold text-success">{costFormatted}</p>
+        )}
+        <div className={showPricing && input.project_cost_rub > 0 ? "mt-2" : ""}>
           <Prose>{output.cost_summary}</Prose>
         </div>
       </Section>
 
-      <Section title={t("payment")}>
-        <Prose>{output.payment_terms}</Prose>
-      </Section>
+      {showPricing && output.payment_terms.trim() && (
+        <Section title={t("payment")}>
+          <Prose>{output.payment_terms}</Prose>
+        </Section>
+      )}
 
       <Section title={t("whyUs")}>
         <Prose>{output.why_us}</Prose>
       </Section>
 
-      <Section title={t("nextStep")}>
+      <Section title={ts("nextStep")}>
         <Prose>{output.next_step}</Prose>
       </Section>
     </div>
