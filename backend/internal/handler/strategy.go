@@ -49,7 +49,7 @@ func (h *StrategyHandler) Run(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, service.ErrInvalidInput):
 			writeError(w, http.StatusBadRequest, "invalid input")
 		case errors.Is(err, service.ErrToolLimitExceeded):
-			writeError(w, http.StatusPaymentRequired, "strategy run limit exceeded")
+			writeErrorCode(w, http.StatusPaymentRequired, "strategy run limit exceeded", "tool_limit_exceeded")
 		case errors.Is(err, repository.ErrNotFound):
 			writeError(w, http.StatusBadRequest, "calculator run not found")
 		default:

@@ -65,6 +65,7 @@ export type BillingPlan = {
   usage: {
     share_report_used: number;
     share_report_limit: number;
+    tools?: Record<string, { used: number; limit: number }>;
   };
 };
 
@@ -99,6 +100,28 @@ export type PublicReport = {
 const clientBase = () =>
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "/api/v1";
 
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export function isToolLimitError(err: unknown): boolean {
+  if (err instanceof ApiError) {
+    return err.status === 402 || err.code === "tool_limit_exceeded";
+  }
+  if (err instanceof Error) {
+    return err.message.includes("limit exceeded");
+  }
+  return false;
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit
@@ -115,9 +138,9 @@ export async function apiFetch<T>(
   if (init?.headers && (init.headers as Record<string, string>)["Accept"] === "application/pdf") {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(
-        typeof data.error === "string" ? data.error : "request failed"
-      );
+      const message = typeof data.error === "string" ? data.error : "request failed";
+      const code = typeof data.code === "string" ? data.code : undefined;
+      throw new ApiError(message, res.status, code);
     }
     return res.blob() as Promise<T>;
   }
@@ -125,9 +148,9 @@ export async function apiFetch<T>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.error === "string" ? data.error : "request failed"
-    );
+    const message = typeof data.error === "string" ? data.error : "request failed";
+    const code = typeof data.code === "string" ? data.code : undefined;
+    throw new ApiError(message, res.status, code);
   }
 
   return data as T;
@@ -299,6 +322,29 @@ export async function exportCalculatorPDF(runId: string) {
 
 export async function exportStrategyPDF(runId: string) {
   const res = await fetch(`${clientBase()}/tools/strategy/export`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof data.error === "string" ? data.error : "export failed"
+    );
+  }
+  return res.blob();
+}
+
+export async function runProposal(input: import("./api-proposal").ProposalInput) {
+  return apiFetch<import("./api-proposal").ProposalRunStart>("/tools/proposal/run", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function exportProposalPDF(runId: string) {
+  const res = await fetch(`${clientBase()}/tools/proposal/export`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

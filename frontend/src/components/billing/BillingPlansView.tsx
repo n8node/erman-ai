@@ -100,6 +100,28 @@ export function BillingPlansView() {
         )}
       </div>
 
+      {current?.usage?.tools && (
+        <div className="rounded-xl border border-border bg-bg p-5">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("usageTitle")}</p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {TOOL_KEYS.map((slug) => {
+              const row = current.usage.tools?.[slug];
+              if (!row) return null;
+              const label =
+                row.limit === -1
+                  ? t("usageUnlimited")
+                  : t("usageRemaining", { used: row.used, limit: row.limit });
+              return (
+                <li key={slug} className="flex justify-between gap-3">
+                  <span className="text-text2">{t(`tools.${slug}` as "tools.calculator")}</span>
+                  <span className="font-medium text-text">{label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}

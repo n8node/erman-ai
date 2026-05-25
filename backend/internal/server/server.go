@@ -48,6 +48,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	llmSvc := service.NewLLMService(cfg)
 	strategyLLMSvc := service.NewStrategyLLMSettingsService(strategyLLMRepo, cfg, llmSvc)
 	strategySvc := service.NewStrategyService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
+	proposalSvc := service.NewProposalService(cfg, runRepo, planRepo, billingSvc, llmSvc, usageLogRepo, logger)
 	planSvc := service.NewPlanService(planRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW)
 
@@ -58,6 +59,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	budgetConfigHandler := handler.NewCalculatorBudgetConfigHandler(budgetConfigSvc)
 	strategyLLMHandler := handler.NewStrategyLLMSettingsHandler(strategyLLMSvc)
 	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc, billingSvc)
+	proposalHandler := handler.NewProposalHandler(proposalSvc, authSvc, billingSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
@@ -105,6 +107,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/calculator/proposal-request", proposalReqHandler.Create)
 			protected.Post("/tools/strategy/run", strategyHandler.Run)
 			protected.Post("/tools/strategy/export", strategyHandler.Export)
+			protected.Post("/tools/proposal/run", proposalHandler.Run)
+			protected.Post("/tools/proposal/export", proposalHandler.Export)
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
 			protected.Get("/runs", runsHandler.List)

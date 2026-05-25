@@ -269,6 +269,18 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 	shareUsed, _ := h.runs.GetUsageCount(r.Context(), userID, "share_report")
 	shareLimit := h.billing.ShareReportLimit(&up.Plan)
 
+	toolUsage := make(map[string]map[string]int)
+	for _, slug := range []string{"calculator", "strategy", "proposal"} {
+		limit := -1
+		if up.Plan.ToolLimits != nil {
+			if v, ok := up.Plan.ToolLimits[slug]; ok {
+				limit = v
+			}
+		}
+		used, _ := h.runs.GetUsageCount(r.Context(), userID, slug)
+		toolUsage[slug] = map[string]int{"used": used, "limit": limit}
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"plan_id":     up.Plan.ID,
 		"plan_slug":   up.PlanSlug,
@@ -278,6 +290,7 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 		"usage": map[string]any{
 			"share_report_used":  shareUsed,
 			"share_report_limit": shareLimit,
+			"tools":              toolUsage,
 		},
 	})
 }

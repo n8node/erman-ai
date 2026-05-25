@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   fetchTools,
   getRun,
+  isToolLimitError,
   listRuns,
   runStrategy,
-  type RunDetail,
   type RunListItem,
+  type ToolListItem,
 } from "@/lib/api";
+import { isLimitReached } from "@/lib/tool-limits";
 import {
   DEFAULT_STRATEGY_INPUT,
   MAX_CALCULATOR_LINKS,
@@ -21,6 +24,8 @@ import {
   type StrategyInput,
   type StrategyOutput,
 } from "@/lib/api-strategy";
+import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { StrategyStreamView } from "./StrategyStreamView";
 import { StrategyResult } from "./StrategyResult";
 import { cn } from "@/lib/utils";
@@ -30,6 +35,7 @@ const fieldClass =
 
 function StrategyWizardInner() {
   const t = useTranslations("strategy");
+  const tLimits = useTranslations("toolLimits");
   const router = useRouter();
   const searchParams = useSearchParams();
   const runIdParam = searchParams.get("run");
@@ -42,29 +48,27 @@ function StrategyWizardInner() {
   const [loading, setLoading] = useState(false);
   const [loadingRun, setLoadingRun] = useState(!!runIdParam);
   const [error, setError] = useState("");
-  const [runsLeft, setRunsLeft] = useState("");
+  const [limitExceeded, setLimitExceeded] = useState(false);
+  const [strategyTool, setStrategyTool] = useState<ToolListItem | null>(null);
   const [calcRuns, setCalcRuns] = useState<RunListItem[]>([]);
 
-  useEffect(() => {
-    fetchTools()
+  function loadToolLimits() {
+    return fetchTools()
       .then((data) => {
-        const tool = data.tools.find((x) => x.slug === "strategy");
-        if (tool) {
-          setRunsLeft(
-            tool.runs_limit === -1
-              ? t("limits.unlimited")
-              : t("limits.remaining", {
-                  left: Math.max(0, tool.runs_limit - tool.runs_used),
-                  total: tool.runs_limit,
-                })
-          );
-        }
+        const tool = data.tools.find((x) => x.slug === "strategy") ?? null;
+        setStrategyTool(tool);
+        if (tool) setLimitExceeded(isLimitReached(tool));
+        return tool;
       })
-      .catch(() => {});
+      .catch(() => null);
+  }
+
+  useEffect(() => {
+    void loadToolLimits();
     listRuns({ tool_slug: "calculator", limit: 50 })
       .then((data) => setCalcRuns(data.items.filter((r) => r.status === "done")))
       .catch(() => {});
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     if (!runIdParam) {
@@ -137,8 +141,15 @@ function StrategyWizardInner() {
     input.main_goals.length > 0 &&
     input.pain_points.trim();
 
+  const strategyLimitReached = strategyTool ? isLimitReached(strategyTool) : limitExceeded;
+
   async function handleGenerate() {
+    if (strategyLimitReached) {
+      setLimitExceeded(true);
+      return;
+    }
     setError("");
+    setLimitExceeded(false);
     setLoading(true);
     try {
       const payload: StrategyInput = {
@@ -149,8 +160,14 @@ function StrategyWizardInner() {
       setRunId(data.run_id);
       setStep(2);
       router.replace(`/tools/strategy?run=${data.run_id}`);
+      void loadToolLimits();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.startFailed"));
+      if (isToolLimitError(err)) {
+        setLimitExceeded(true);
+        setError("");
+      } else {
+        setError(err instanceof Error ? err.message : t("errors.startFailed"));
+      }
     } finally {
       setLoading(false);
     }
@@ -184,6 +201,8 @@ function StrategyWizardInner() {
     setResult(null);
     setStep(1);
     setError("");
+    setLimitExceeded(false);
+    void loadToolLimits();
     router.replace("/tools/strategy");
   }
 
@@ -198,10 +217,17 @@ function StrategyWizardInner() {
           <h1 className="text-base font-medium">{t("title")}</h1>
           <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
         </div>
-        {runsLeft && (
-          <span className="rounded-lg bg-ai-bg px-3 py-1 text-xs font-medium text-ai">{runsLeft}</span>
+        {strategyTool && (
+          <ToolLimitBadge
+            tool={strategyTool}
+            t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}
+          />
         )}
       </div>
+
+      {(limitExceeded || strategyLimitReached) && step === 1 && (
+        <ToolLimitExceededAlert toolName={t("title")} />
+      )}
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>
@@ -409,13 +435,21 @@ function StrategyWizardInner() {
                 </button>
                 <button
                   type="button"
-                  disabled={loading || !step2Valid}
+                  disabled={loading || !step2Valid || strategyLimitReached}
                   onClick={handleGenerate}
                   className="rounded-lg bg-ai px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
                   {loading ? t("generating") : t("generate")}
                 </button>
               </div>
+              {strategyLimitReached && (
+                <p className="text-xs text-text2 text-right">
+                  {t("limits.noRunsLeft")}{" "}
+                  <Link href="/billing" className="text-accent underline-offset-2 hover:underline">
+                    {tLimits("upgradeCta")}
+                  </Link>
+                </p>
+              )}
             </>
           )}
         </div>

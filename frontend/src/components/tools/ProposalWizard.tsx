@@ -1,0 +1,416 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import {
+  fetchTools,
+  fetchMe,
+  getRun,
+  isToolLimitError,
+  listRuns,
+  runProposal,
+  type RunListItem,
+  type ToolListItem,
+} from "@/lib/api";
+import {
+  DEFAULT_PROPOSAL_INPUT,
+  PAYMENT_SCHEDULE_OPTIONS,
+  PROPOSAL_INDUSTRY_OPTIONS,
+  type ProposalInput,
+  type ProposalOutput,
+} from "@/lib/api-proposal";
+import { isLimitReached } from "@/lib/tool-limits";
+import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
+import { ProposalPollingView } from "./ProposalPollingView";
+import { ProposalResult } from "./ProposalResult";
+import { cn } from "@/lib/utils";
+
+const fieldClass =
+  "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+
+function ProposalWizardInner() {
+  const t = useTranslations("proposal");
+  const tLimits = useTranslations("toolLimits");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const runIdParam = searchParams.get("run");
+  const calcRunParam = searchParams.get("calculator_run_id");
+
+  const [input, setInput] = useState<ProposalInput>(DEFAULT_PROPOSAL_INPUT);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [result, setResult] = useState<{ input: ProposalInput; output: ProposalOutput; runId: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingRun, setLoadingRun] = useState(!!runIdParam);
+  const [error, setError] = useState("");
+  const [limitExceeded, setLimitExceeded] = useState(false);
+  const [proposalTool, setProposalTool] = useState<ToolListItem | null>(null);
+  const [calcRuns, setCalcRuns] = useState<RunListItem[]>([]);
+
+  function loadToolLimits() {
+    return fetchTools()
+      .then((data) => {
+        const tool = data.tools.find((x) => x.slug === "proposal") ?? null;
+        setProposalTool(tool);
+        if (tool) setLimitExceeded(isLimitReached(tool));
+        return tool;
+      })
+      .catch(() => null);
+  }
+
+  useEffect(() => {
+    void loadToolLimits();
+    listRuns({ tool_slug: "calculator", limit: 50 })
+      .then((data) => setCalcRuns(data.items.filter((r) => r.status === "done")))
+      .catch(() => {});
+    fetchMe()
+      .then((user) => {
+        if (user?.email) {
+          setInput((prev) => ({ ...prev, sender_email: prev.sender_email || user.email }));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!calcRunParam) return;
+    setInput((prev) => ({ ...prev, calculator_run_id: calcRunParam }));
+    getRun(calcRunParam)
+      .then((run) => {
+        if (run.status !== "done" || !run.input || !run.output) return;
+        const calcIn = run.input as { process_name?: string; capex?: number };
+        const calcOut = run.output as { net_benefit_monthly?: number };
+        setInput((prev) => ({
+          ...prev,
+          calculator_run_id: calcRunParam,
+          solution_name: prev.solution_name || `Автоматизация: ${calcIn.process_name || "процесс"}`,
+          project_cost_rub: prev.project_cost_rub || calcIn.capex || 0,
+          client_problem:
+            prev.client_problem ||
+            `Оптимизация процесса «${calcIn.process_name || ""}». Потенциальная экономия: ${Math.round(calcOut.net_benefit_monthly || 0).toLocaleString("ru-RU")} ₽/мес.`,
+        }));
+      })
+      .catch(() => undefined);
+  }, [calcRunParam]);
+
+  useEffect(() => {
+    if (!runIdParam) {
+      setLoadingRun(false);
+      return;
+    }
+    setLoadingRun(true);
+    getRun(runIdParam)
+      .then((run) => {
+        if (run.status === "done" && run.input && run.output) {
+          setResult({
+            input: run.input as unknown as ProposalInput,
+            output: run.output as unknown as ProposalOutput,
+            runId: run.id,
+          });
+          setStep(3);
+        } else if (run.status === "pending" || run.status === "processing") {
+          setRunId(run.id);
+          setStep(2);
+        } else if (run.status === "error") {
+          setError(run.error_msg || t("errors.loadFailed"));
+        }
+      })
+      .catch(() => setError(t("errors.loadFailed")))
+      .finally(() => setLoadingRun(false));
+  }, [runIdParam, t]);
+
+  function patch(partial: Partial<ProposalInput>) {
+    setInput((prev) => ({ ...prev, ...partial }));
+  }
+
+  function setDeliverable(index: number, value: string) {
+    setInput((prev) => {
+      const next = [...prev.deliverables];
+      next[index] = value;
+      return { ...prev, deliverables: next };
+    });
+  }
+
+  function addDeliverable() {
+    setInput((prev) => ({ ...prev, deliverables: [...prev.deliverables, ""] }));
+  }
+
+  function removeDeliverable(index: number) {
+    setInput((prev) => ({
+      ...prev,
+      deliverables: prev.deliverables.filter((_, i) => i !== index),
+    }));
+  }
+
+  const formValid =
+    input.client_company.trim() &&
+    input.client_problem.trim() &&
+    input.solution_name.trim() &&
+    input.solution_description.trim() &&
+    input.deliverables.some((d) => d.trim()) &&
+    input.project_cost_rub > 0 &&
+    input.timeline_weeks > 0 &&
+    input.payment_schedule.trim() &&
+    input.sender_company.trim() &&
+    input.sender_contact.trim() &&
+    input.sender_email.trim();
+
+  const proposalLimitReached = proposalTool ? isLimitReached(proposalTool) : limitExceeded;
+
+  async function handleGenerate() {
+    if (proposalLimitReached) {
+      setLimitExceeded(true);
+      return;
+    }
+    setError("");
+    setLimitExceeded(false);
+    setLoading(true);
+    try {
+      const payload: ProposalInput = {
+        ...input,
+        deliverables: input.deliverables.map((d) => d.trim()).filter(Boolean),
+        calculator_run_id: input.calculator_run_id || undefined,
+      };
+      const data = await runProposal(payload);
+      setRunId(data.run_id);
+      setStep(2);
+      router.replace(`/tools/proposal?run=${data.run_id}`);
+      void loadToolLimits();
+    } catch (err) {
+      if (isToolLimitError(err)) {
+        setLimitExceeded(true);
+        setError("");
+      } else {
+        setError(err instanceof Error ? err.message : t("errors.startFailed"));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePollComplete() {
+    if (!runId) return;
+    try {
+      const run = await getRun(runId);
+      if (run.status === "done" && run.input && run.output) {
+        setResult({
+          input: run.input as unknown as ProposalInput,
+          output: run.output as unknown as ProposalOutput,
+          runId: run.id,
+        });
+        setStep(3);
+      } else if (run.status === "error") {
+        setError(run.error_msg || t("errors.loadFailed"));
+        setStep(1);
+      }
+    } catch {
+      setError(t("errors.loadFailed"));
+      setStep(1);
+    }
+  }
+
+  function handleNew() {
+    setInput(DEFAULT_PROPOSAL_INPUT);
+    setRunId(null);
+    setResult(null);
+    setStep(1);
+    setError("");
+    setLimitExceeded(false);
+    void loadToolLimits();
+    fetchMe()
+      .then((user) => {
+        if (user?.email) setInput((prev) => ({ ...prev, sender_email: user.email }));
+      })
+      .catch(() => undefined);
+    router.replace("/tools/proposal");
+  }
+
+  if (loadingRun) {
+    return <p className="text-sm text-text2">{t("loadingRun")}</p>;
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-base font-medium">{t("title")}</h1>
+          <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
+        </div>
+        {proposalTool && (
+          <ToolLimitBadge
+            tool={proposalTool}
+            t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}
+          />
+        )}
+      </div>
+
+      {(limitExceeded || proposalLimitReached) && (
+        <ToolLimitExceededAlert toolName={t("title")} />
+      )}
+
+      {step === 1 && (
+        <div className="space-y-6">
+          <FormSection label={t("form.clientSection")}>
+            <Field label={t("form.clientCompany")} required>
+              <input className={fieldClass} value={input.client_company} onChange={(e) => patch({ client_company: e.target.value })} />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t("form.clientContact")}>
+                <input className={fieldClass} value={input.client_contact} onChange={(e) => patch({ client_contact: e.target.value })} />
+              </Field>
+              <Field label={t("form.clientIndustry")}>
+                <select className={fieldClass} value={input.client_industry} onChange={(e) => patch({ client_industry: e.target.value })}>
+                  <option value="">{t("form.select")}</option>
+                  {PROPOSAL_INDUSTRY_OPTIONS.map((key) => (
+                    <option key={key} value={key}>{t(`industries.${key}`)}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Field label={t("form.clientProblem")} required>
+              <textarea rows={4} className={fieldClass} value={input.client_problem} onChange={(e) => patch({ client_problem: e.target.value })} />
+            </Field>
+          </FormSection>
+
+          <FormSection label={t("form.solutionSection")}>
+            {calcRuns.length > 0 && (
+              <Field label={t("form.calculatorRun")}>
+                <select
+                  className={fieldClass}
+                  value={input.calculator_run_id || ""}
+                  onChange={(e) => patch({ calculator_run_id: e.target.value || undefined })}
+                >
+                  <option value="">{t("form.noCalculator")}</option>
+                  {calcRuns.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.process_name || r.id.slice(0, 8)} — {new Date(r.created_at).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <Field label={t("form.solutionName")} required>
+              <input className={fieldClass} value={input.solution_name} onChange={(e) => patch({ solution_name: e.target.value })} />
+            </Field>
+            <Field label={t("form.solutionDescription")} required>
+              <textarea rows={3} className={fieldClass} value={input.solution_description} onChange={(e) => patch({ solution_description: e.target.value })} />
+            </Field>
+            <Field label={t("form.deliverables")} required>
+              <div className="space-y-2">
+                {input.deliverables.map((d, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input className={fieldClass} value={d} onChange={(e) => setDeliverable(i, e.target.value)} placeholder={t("form.deliverablePlaceholder")} />
+                    {input.deliverables.length > 1 && (
+                      <button type="button" onClick={() => removeDeliverable(i)} className="shrink-0 rounded-lg border border-border2 px-3 text-text3 hover:bg-bg2">×</button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={addDeliverable} className="text-xs text-accent hover:underline">{t("form.addDeliverable")}</button>
+              </div>
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label={t("form.projectCost")} required>
+                <input type="number" min={1} className={fieldClass} value={input.project_cost_rub || ""} onChange={(e) => patch({ project_cost_rub: Number(e.target.value) })} />
+              </Field>
+              <Field label={t("form.timelineWeeks")} required>
+                <input type="number" min={1} max={104} className={fieldClass} value={input.timeline_weeks} onChange={(e) => patch({ timeline_weeks: Number(e.target.value) })} />
+              </Field>
+              <Field label={t("form.paymentSchedule")} required>
+                <select className={fieldClass} value={input.payment_schedule} onChange={(e) => patch({ payment_schedule: e.target.value })}>
+                  {PAYMENT_SCHEDULE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </FormSection>
+
+          <FormSection label={t("form.senderSection")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t("form.senderCompany")} required>
+                <input className={fieldClass} value={input.sender_company} onChange={(e) => patch({ sender_company: e.target.value })} />
+              </Field>
+              <Field label={t("form.senderContact")} required>
+                <input className={fieldClass} value={input.sender_contact} onChange={(e) => patch({ sender_contact: e.target.value })} />
+              </Field>
+              <Field label={t("form.senderPhone")}>
+                <input className={fieldClass} value={input.sender_phone} onChange={(e) => patch({ sender_phone: e.target.value })} />
+              </Field>
+              <Field label={t("form.senderEmail")} required>
+                <input type="email" className={fieldClass} value={input.sender_email} onChange={(e) => patch({ sender_email: e.target.value })} />
+              </Field>
+            </div>
+          </FormSection>
+
+          {error && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={!formValid || loading || proposalLimitReached}
+              className={cn(
+                "rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50",
+                "bg-[#534ab7] hover:opacity-90"
+              )}
+            >
+              {loading ? t("generating") : t("generate")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && runId && (
+        <ProposalPollingView
+          runId={runId}
+          onComplete={handlePollComplete}
+          onError={(msg) => {
+            setError(msg);
+            setStep(1);
+          }}
+        />
+      )}
+
+      {step === 3 && result && (
+        <div className="space-y-4">
+          <button type="button" onClick={handleNew} className="text-sm text-accent hover:underline">
+            {t("newProposal")}
+          </button>
+          <ProposalResult input={result.input} output={result.output} runId={result.runId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-bg p-5 space-y-4">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-text3 border-b border-border pb-3">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-text2">
+        {label}{required ? " *" : ""}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+export function ProposalWizard() {
+  return (
+    <Suspense fallback={<p className="text-sm text-text2">…</p>}>
+      <ProposalWizardInner />
+    </Suspense>
+  );
+}

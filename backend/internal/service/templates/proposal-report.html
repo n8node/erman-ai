@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="{{.LangAttr}}">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{.Labels.Title}} — {{.ClientCompany}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, sans-serif; font-size: 12px; line-height: 1.55; color: #1a1a1a; background: #fff; padding: 28px; }
+    .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: #1a1a1a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: #5f5e5a; margin-bottom: 20px; font-size: 13px; }
+    .meta { display: flex; gap: 24px; margin-bottom: 24px; font-size: 11px; color: #5f5e5a; }
+    .section { margin-bottom: 22px; page-break-inside: avoid; }
+    .section-label { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #888780; margin-bottom: 8px; }
+    .prose { color: #5f5e5a; white-space: pre-wrap; font-size: 12px; }
+    .two-col { display: flex; gap: 16px; }
+    .col { flex: 1; }
+    .list-box { border: 1px solid #e8e7e3; border-radius: 8px; padding: 12px; }
+    .list-box h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #888780; margin-bottom: 8px; }
+    .included { border-color: #c5ddb0; background: #fafdf7; }
+    .excluded { border-color: #e8e7e3; background: #f8f8f7; }
+    ul { padding-left: 18px; }
+    li { margin-bottom: 4px; color: #5f5e5a; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+    th, td { border: 1px solid #e8e7e3; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f8f8f7; font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: #888780; }
+    .cost-box { background: #eaf3de; border-radius: 8px; padding: 14px 16px; margin-top: 8px; }
+    .cost-value { font-size: 20px; font-weight: 600; color: #3b6d11; margin-top: 4px; }
+    .footer { margin-top: 32px; font-size: 10px; color: #888780; border-top: 1px solid #e8e7e3; padding-top: 12px; }
+    .sender { margin-top: 16px; font-size: 11px; color: #5f5e5a; }
+  </style>
+</head>
+<body>
+  <div class="brand"><div class="brand-mark">E</div><span>{{.SenderCompany}}</span></div>
+  <h1>{{.Labels.Title}}</h1>
+  <p class="subtitle">{{.SolutionName}} — {{.ClientCompany}}</p>
+  <div class="meta">
+    <span>{{.Labels.Client}}: {{.ClientContact}}</span>
+    <span>{{.Labels.Timeline}}: {{.TimelineWeeks}} {{.Labels.Weeks}}</span>
+    <span>{{.Labels.Date}}: {{.GeneratedDate}}</span>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Greeting}}</div>
+    <div class="prose">{{.Greeting}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.TaskUnderstanding}}</div>
+    <div class="prose">{{.TaskUnderstanding}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.ProposedSolution}}</div>
+    <div class="prose">{{.ProposedSolution}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Scope}}</div>
+    <div class="two-col">
+      <div class="col list-box included">
+        <h3>{{.Labels.Included}}</h3>
+        <ul>{{range .ScopeIncluded}}<li>{{.}}</li>{{end}}</ul>
+      </div>
+      <div class="col list-box excluded">
+        <h3>{{.Labels.Excluded}}</h3>
+        <ul>{{range .ScopeExcluded}}<li>{{.}}</li>{{end}}</ul>
+      </div>
+    </div>
+  </div>
+
+  {{if .Timeline}}
+  <div class="section">
+    <div class="section-label">{{.Labels.TimelineSection}}</div>
+    <table>
+      <thead><tr><th>{{.Labels.Phase}}</th><th>{{.Labels.Duration}}</th><th>{{.Labels.Description}}</th></tr></thead>
+      <tbody>
+        {{range .Timeline}}
+        <tr><td>{{.Title}}</td><td>{{.DurationWeeks}} {{$.Labels.Weeks}}</td><td>{{.Description}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Cost}}</div>
+    <div class="cost-box">
+      <div style="font-size:10px;text-transform:uppercase;color:#3b6d11;">{{.Labels.TotalCost}}</div>
+      <div class="cost-value">{{.ProjectCostFormatted}}</div>
+    </div>
+    <div class="prose" style="margin-top:12px;">{{.CostSummary}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.Payment}}</div>
+    <div class="prose">{{.PaymentTerms}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.WhyUs}}</div>
+    <div class="prose">{{.WhyUs}}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">{{.Labels.NextStep}}</div>
+    <div class="prose">{{.NextStep}}</div>
+  </div>
+
+  <div class="sender">
+    <strong>{{.SenderContact}}</strong><br />
+    {{.SenderCompany}}<br />
+    {{if .SenderPhone}}{{.SenderPhone}} · {{end}}{{.SenderEmail}}
+  </div>
+
+  <div class="footer">{{.Labels.Disclaimer}}</div>
+</body>
+</html>

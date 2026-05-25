@@ -308,6 +308,14 @@
   "stub": {
     "comingSoon": "This section will be available in upcoming phases."
   },
+  "toolLimits": {
+    "unlimited": "Unlimited",
+    "remaining": "{left} / {total}",
+    "limitReached": "Limit reached",
+    "exceededTitle": "{tool} limit reached",
+    "exceededBody": "You have used all runs this month. Upgrade to Pro or Business for a higher limit.",
+    "upgradeCta": "View plans"
+  },
   "billing": {
     "title": "Plans",
     "subtitle": "Choose the plan that fits your workflow",
@@ -328,6 +336,9 @@
     "activated": "Plan “{name}” activated",
     "paymentRequired": "Online checkout is coming soon. Email hello@erman.ai to upgrade to Pro or Business.",
     "paymentNote": "Card payments are on the way. Free plans activate instantly; paid plans are enabled by our team for now.",
+    "usageTitle": "Usage this month",
+    "usageRemaining": "{used} / {limit}",
+    "usageUnlimited": "unlimited",
     "tools": {
       "calculator": "Automation Calculator",
       "strategy": "AI Strategy",
@@ -428,6 +439,7 @@
     "pdfFailed": "PDF export failed",
     "createProposal": "Create proposal",
     "requestProposal": "Request proposal from Erman AI",
+    "createProposal": "Create proposal",
     "proposalRequesting": "Sending request…",
     "proposalRequestSent": "Request sent",
     "proposalRequestSuccess": "Proposal request sent. The Erman AI team will contact you.",
@@ -545,7 +557,8 @@
     },
     "limits": {
       "unlimited": "Unlimited",
-      "remaining": "{left} / {total} runs left"
+      "remaining": "{left} / {total} runs left",
+      "noRunsLeft": "Monthly generation limit reached."
     },
     "generate": "Generate strategy",
     "generating": "Starting…",
@@ -756,6 +769,100 @@
       "empty": "No saved strategies yet",
       "emptyAction": "Create your first strategy →",
       "colCompany": "Company",
+      "colStatus": "Status",
+      "colDate": "Date",
+      "colActions": "Actions",
+      "open": "Open",
+      "delete": "Delete"
+    }
+  },
+  "proposal": {
+    "title": "Proposal Generator",
+    "subtitle": "Create a commercial proposal for your client",
+    "subnav": {
+      "new": "New proposal",
+      "history": "History"
+    },
+    "generate": "Generate proposal",
+    "generating": "Starting…",
+    "loadingRun": "Loading proposal…",
+    "newProposal": "← New proposal",
+    "form": {
+      "clientSection": "Client",
+      "solutionSection": "Solution",
+      "senderSection": "Sender",
+      "clientCompany": "Client company",
+      "clientContact": "Contact person",
+      "clientIndustry": "Industry",
+      "clientProblem": "Problem description",
+      "calculatorRun": "Calculator run",
+      "noCalculator": "No calculator link",
+      "solutionName": "Solution name",
+      "solutionDescription": "Solution description",
+      "deliverables": "Deliverables",
+      "deliverablePlaceholder": "Deliverable",
+      "addDeliverable": "+ Add item",
+      "projectCost": "Project cost, ₽",
+      "timelineWeeks": "Timeline, weeks",
+      "paymentSchedule": "Payment terms",
+      "senderCompany": "Your company",
+      "senderContact": "Contact person",
+      "senderPhone": "Phone",
+      "senderEmail": "Email",
+      "select": "Select…"
+    },
+    "industries": {
+      "retail": "Retail",
+      "finance": "Finance",
+      "manufacturing": "Manufacturing",
+      "services": "Services",
+      "it": "IT",
+      "logistics": "Logistics",
+      "healthcare": "Healthcare",
+      "other": "Other"
+    },
+    "polling": {
+      "title": "Preparing your proposal",
+      "hint": "Usually takes 30–90 seconds",
+      "statusProcessing": "Generating",
+      "failed": "Could not generate proposal"
+    },
+    "errors": {
+      "startFailed": "Could not start generation",
+      "loadFailed": "Could not load result"
+    },
+    "result": {
+      "document": "Commercial proposal",
+      "linkedCalculator": "Linked calculator: {process}",
+      "exportPdf": "Export PDF",
+      "exportDocx": "Export DOCX",
+      "exporting": "Exporting…",
+      "pdfFailed": "PDF export failed",
+      "greeting": "Introduction",
+      "taskUnderstanding": "Understanding the task",
+      "proposedSolution": "Proposed solution",
+      "scopeIncluded": "In scope",
+      "scopeExcluded": "Out of scope",
+      "timeline": "Timeline & phases",
+      "phase": "Phase",
+      "duration": "Duration",
+      "description": "Description",
+      "weeks": "wks",
+      "cost": "Investment",
+      "payment": "Payment terms",
+      "whyUs": "Why us",
+      "nextStep": "Next step"
+    },
+    "history": {
+      "title": "Proposal history",
+      "subtitle": "Saved commercial proposals",
+      "loading": "Loading…",
+      "loadFailed": "Could not load history",
+      "deleteFailed": "Could not delete",
+      "deleteConfirm": "Delete this proposal from history?",
+      "empty": "No saved proposals yet",
+      "emptyAction": "Create your first proposal →",
+      "colClient": "Client",
       "colStatus": "Status",
       "colDate": "Date",
       "colActions": "Actions",

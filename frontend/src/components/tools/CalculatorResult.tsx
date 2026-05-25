@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -86,6 +87,15 @@ export function CalculatorResult({ runId, input, output }: Props) {
       {actionError && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{actionError}</div>
       )}
+
+      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+        <Link
+          href={`/tools/proposal?calculator_run_id=${runId}`}
+          className="rounded-lg bg-[#534ab7] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          {t("createProposal")}
+        </Link>
+      </div>
 
       {isPartner && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
