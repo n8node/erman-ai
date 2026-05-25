@@ -35,11 +35,13 @@ func (s *StrategyLLMSettingsService) GetStored(ctx context.Context) (*model.Stra
 		if errors.Is(err, repository.ErrNotFound) {
 			def := model.DefaultStrategyLLMStoredConfig()
 			s.applyPromptDefault(&def.StrategyLLMSettings)
+			s.applyProposalPromptDefault(&def.StrategyLLMSettings)
 			return &model.StrategyLLMSettingsRecord{Config: def}, nil
 		}
 		return nil, err
 	}
 	s.applyPromptDefault(&rec.Config.StrategyLLMSettings)
+	s.applyProposalPromptDefault(&rec.Config.StrategyLLMSettings)
 	if rec.Config.OpenRouterModels == nil {
 		rec.Config.OpenRouterModels = []string{}
 	}
@@ -81,6 +83,7 @@ func (s *StrategyLLMSettingsService) Update(ctx context.Context, req model.Strat
 		return nil, err
 	}
 	s.applyPromptDefault(&updated.Config.StrategyLLMSettings)
+	s.applyProposalPromptDefault(&updated.Config.StrategyLLMSettings)
 	return s.buildAdminView(updated), nil
 }
 
@@ -149,19 +152,34 @@ func (s *StrategyLLMSettingsService) ResolvedSystemPrompt(settings model.Strateg
 	return prompts.DefaultStrategySystemPrompt
 }
 
+func (s *StrategyLLMSettingsService) ResolvedProposalSystemPrompt(settings model.StrategyLLMSettings, locale string) string {
+	base := settings.ProposalSystemPrompt
+	if base == "" {
+		base = prompts.DefaultProposalSystemPrompt
+	}
+	return prompts.MaterializeProposalPrompt(base, locale)
+}
+
 func (s *StrategyLLMSettingsService) applyPromptDefault(settings *model.StrategyLLMSettings) {
 	if settings.SystemPrompt == "" {
 		settings.SystemPrompt = prompts.DefaultStrategySystemPrompt
 	}
 }
 
+func (s *StrategyLLMSettingsService) applyProposalPromptDefault(settings *model.StrategyLLMSettings) {
+	if settings.ProposalSystemPrompt == "" {
+		settings.ProposalSystemPrompt = prompts.DefaultProposalSystemPrompt
+	}
+}
+
 func (s *StrategyLLMSettingsService) buildAdminView(rec *model.StrategyLLMSettingsRecord) *model.StrategyLLMAdminView {
 	cfg := rec.Config
 	return &model.StrategyLLMAdminView{
-		Settings:            cfg.StrategyLLMSettings,
-		Providers:           s.providerStatuses(cfg),
-		DefaultSystemPrompt: prompts.DefaultStrategySystemPrompt,
-		UpdatedAt:           rec.UpdatedAt,
+		Settings:                    cfg.StrategyLLMSettings,
+		Providers:                   s.providerStatuses(cfg),
+		DefaultSystemPrompt:         prompts.DefaultStrategySystemPrompt,
+		DefaultProposalSystemPrompt: prompts.DefaultProposalSystemPrompt,
+		UpdatedAt:                   rec.UpdatedAt,
 	}
 }
 

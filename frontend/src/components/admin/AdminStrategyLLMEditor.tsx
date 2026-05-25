@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS: StrategyLLMSettings = {
   openrouter_model: "anthropic/claude-sonnet-4-5",
   deepseek_model: "deepseek-chat",
   system_prompt: "",
+  proposal_system_prompt: "",
   temperature: 0.7,
   max_tokens: 8192,
 };
@@ -29,6 +30,7 @@ export function AdminStrategyLLMEditor() {
   const t = useTranslations("admin.strategyLlm");
   const [settings, setSettings] = useState<StrategyLLMSettings>(DEFAULT_SETTINGS);
   const [defaultPrompt, setDefaultPrompt] = useState("");
+  const [defaultProposalPrompt, setDefaultProposalPrompt] = useState("");
   const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
   const [openrouterKeyInput, setOpenrouterKeyInput] = useState("");
   const [deepseekKeyInput, setDeepseekKeyInput] = useState("");
@@ -42,6 +44,7 @@ export function AdminStrategyLLMEditor() {
   function applyView(data: Awaited<ReturnType<typeof fetchAdminStrategyLLMSettings>>) {
     setSettings(data.settings);
     setDefaultPrompt(data.default_system_prompt);
+    setDefaultProposalPrompt(data.default_proposal_system_prompt);
     setProviders(data.providers);
   }
 
@@ -128,6 +131,10 @@ export function AdminStrategyLLMEditor() {
 
   function handleResetPrompt() {
     patch({ system_prompt: defaultPrompt });
+  }
+
+  function handleResetProposalPrompt() {
+    patch({ proposal_system_prompt: defaultProposalPrompt });
   }
 
   const openrouterMeta = providers.find((p) => p.id === "openrouter");
@@ -287,7 +294,7 @@ export function AdminStrategyLLMEditor() {
       <section className="rounded-xl border border-border bg-bg p-5 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
-            {t("promptSection")}
+            {t("strategyPromptSection")}
           </h2>
           <button
             type="button"
@@ -302,6 +309,28 @@ export function AdminStrategyLLMEditor() {
           className={cn(fieldClass, "font-mono text-xs leading-relaxed")}
           value={settings.system_prompt}
           onChange={(e) => patch({ system_prompt: e.target.value })}
+        />
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+            {t("proposalPromptSection")}
+          </h2>
+          <button
+            type="button"
+            onClick={handleResetProposalPrompt}
+            className="text-xs text-accent underline hover:no-underline"
+          >
+            {t("resetProposalPrompt")}
+          </button>
+        </div>
+        <p className="text-xs text-text3">{t("proposalPromptHint")}</p>
+        <textarea
+          rows={18}
+          className={cn(fieldClass, "font-mono text-xs leading-relaxed")}
+          value={settings.proposal_system_prompt}
+          onChange={(e) => patch({ proposal_system_prompt: e.target.value })}
         />
       </section>
 

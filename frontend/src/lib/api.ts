@@ -514,6 +514,7 @@ export type StrategyLLMSettings = {
   openrouter_model: string;
   deepseek_model: string;
   system_prompt: string;
+  proposal_system_prompt: string;
   temperature: number;
   max_tokens: number;
 };
@@ -530,6 +531,7 @@ export type StrategyLLMAdminView = {
   settings: StrategyLLMSettings;
   providers: LLMProviderStatus[];
   default_system_prompt: string;
+  default_proposal_system_prompt: string;
   updated_at?: string;
 };
 

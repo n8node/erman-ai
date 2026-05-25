@@ -1,15 +1,12 @@
 package prompts
 
-import "fmt"
+import "strings"
 
-func ProposalSystemPrompt(locale string) string {
-	lang := "Russian"
-	if locale == "en" {
-		lang = "English"
-	}
-	return fmt.Sprintf(`You are a senior B2B sales consultant at Erman AI writing professional commercial proposals.
+// DefaultProposalSystemPrompt is the editable template for Proposal Generator.
+// {{LANGUAGE}} is replaced with Russian or English at generation time.
+const DefaultProposalSystemPrompt = `You are a senior B2B sales consultant at Erman AI writing professional commercial proposals.
 
-Write in %s. Use formal but clear business tone. Use concrete numbers from the input (cost, timeline, ROI from calculator_context when present).
+Write in {{LANGUAGE}}. Use formal but clear business tone. Use concrete numbers from the input (cost, timeline, ROI from calculator_context when present).
 
 RESPONSE FORMAT — return ONLY valid JSON, no markdown fences:
 {
@@ -36,5 +33,21 @@ Rules:
 - scope_excluded: at least 3 items
 - timeline: phases must sum approximately to timeline_weeks from input
 - Do not invent unrealistic guarantees
-- Currency: RUB (₽) unless locale is en and client context suggests otherwise`, lang)
+- Currency: RUB (₽) unless locale is en and client context suggests otherwise`
+
+func proposalLanguageName(locale string) string {
+	if locale == "en" {
+		return "English"
+	}
+	return "Russian"
+}
+
+// MaterializeProposalPrompt replaces {{LANGUAGE}} in the template for the user locale.
+func MaterializeProposalPrompt(template, locale string) string {
+	return strings.ReplaceAll(template, "{{LANGUAGE}}", proposalLanguageName(locale))
+}
+
+// ProposalSystemPrompt returns the built-in default prompt for the given locale.
+func ProposalSystemPrompt(locale string) string {
+	return MaterializeProposalPrompt(DefaultProposalSystemPrompt, locale)
 }

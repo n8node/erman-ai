@@ -11,12 +11,13 @@ const (
 
 // StrategyLLMSettings — public settings (no API keys).
 type StrategyLLMSettings struct {
-	Provider        LLMProvider `json:"provider"`
-	OpenRouterModel string      `json:"openrouter_model"`
-	DeepSeekModel   string      `json:"deepseek_model"`
-	SystemPrompt    string      `json:"system_prompt"`
-	Temperature     float64     `json:"temperature"`
-	MaxTokens       int         `json:"max_tokens"`
+	Provider             LLMProvider `json:"provider"`
+	OpenRouterModel      string      `json:"openrouter_model"`
+	DeepSeekModel        string      `json:"deepseek_model"`
+	SystemPrompt         string      `json:"system_prompt"`
+	ProposalSystemPrompt string      `json:"proposal_system_prompt"`
+	Temperature          float64     `json:"temperature"`
+	MaxTokens            int         `json:"max_tokens"`
 }
 
 // StrategyLLMStoredConfig — full row persisted in JSONB.
@@ -42,10 +43,11 @@ type LLMProviderStatus struct {
 }
 
 type StrategyLLMAdminView struct {
-	Settings            StrategyLLMSettings `json:"settings"`
-	Providers           []LLMProviderStatus `json:"providers"`
-	DefaultSystemPrompt string              `json:"default_system_prompt"`
-	UpdatedAt           time.Time           `json:"updated_at"`
+	Settings                    StrategyLLMSettings `json:"settings"`
+	Providers                   []LLMProviderStatus `json:"providers"`
+	DefaultSystemPrompt         string              `json:"default_system_prompt"`
+	DefaultProposalSystemPrompt string              `json:"default_proposal_system_prompt"`
+	UpdatedAt                   time.Time           `json:"updated_at"`
 }
 
 type StrategyLLMAdminUpdateRequest struct {

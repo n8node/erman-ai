@@ -9,7 +9,6 @@ import (
 
 	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
-	"github.com/erman-ai/erman-ai/internal/prompts"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
@@ -198,7 +197,7 @@ func (s *ProposalService) processRun(runID string) {
 	req := LLMCompletionRequest{
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
-		SystemPrompt: prompts.ProposalSystemPrompt(locale),
+		SystemPrompt: s.llmCfg.ResolvedProposalSystemPrompt(settings, locale),
 		UserPrompt:   string(userPayload),
 		Temperature:  settings.Temperature,
 		MaxTokens:    maxTokens,
