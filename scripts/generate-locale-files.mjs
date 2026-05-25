@@ -38,7 +38,12 @@ async function translateText(text, targetLang) {
       const res = await fetch(url);
       const data = await res.json();
       const translated = data?.responseData?.translatedText;
-      if (translated && typeof translated === "string") {
+      if (
+        translated &&
+        typeof translated === "string" &&
+        !translated.includes("MYMEMORY") &&
+        !translated.includes("USAGELIMITS.PHP")
+      ) {
         cache[cacheKey] = translated;
         return translated;
       }

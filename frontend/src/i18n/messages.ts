@@ -84,6 +84,26 @@ async function fetchTranslationOverrides(locale: AppLocale): Promise<Record<stri
   }
 }
 
+function isBadTranslation(value: string): boolean {
+  return value.includes("MYMEMORY") || value.includes("USAGELIMITS.PHP");
+}
+
+function sanitizeMessages(base: MessageTree, fallback: MessageTree): MessageTree {
+  const out: MessageTree = {};
+  for (const [key, value] of Object.entries(base)) {
+    if (typeof value === "string") {
+      const fb = typeof fallback[key] === "string" ? (fallback[key] as string) : value;
+      out[key] = isBadTranslation(value) ? fb : value;
+    } else if (isPlainObject(value)) {
+      const fbTree = isPlainObject(fallback[key]) ? (fallback[key] as MessageTree) : {};
+      out[key] = sanitizeMessages(value as MessageTree, fbTree);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 export async function loadMessagesForLocale(locale: AppLocale): Promise<MessageTree> {
   const en = (await import("../messages/en.json")).default as MessageTree;
   let base: MessageTree;
@@ -93,9 +113,10 @@ export async function loadMessagesForLocale(locale: AppLocale): Promise<MessageT
     base = en;
   }
   if (locale !== "en") {
-    base = deepMergeMessages(en, base);
+    base = sanitizeMessages(deepMergeMessages(en, base), en);
   }
   const overrides = await fetchTranslationOverrides(locale);
   if (Object.keys(overrides).length === 0) return base;
-  return deepMergeMessages(base, unflattenMessages(overrides));
+  const merged = deepMergeMessages(base, unflattenMessages(overrides));
+  return locale === "en" ? merged : sanitizeMessages(merged, en);
 }
