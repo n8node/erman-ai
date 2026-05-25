@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/model"
 )
 
@@ -35,6 +36,7 @@ func TotalMinutesPerUnit(steps []model.ProcessStep) float64 {
 }
 
 func CalculateExcel(in model.CalculatorInput, locale string) model.CalculatorOutput {
+	locale = i18n.NormalizeLocale(locale)
 	Hm := ResolveHoursSaved(in)
 	L := in.Utilization
 	if L <= 0 || L > 1 {
@@ -123,7 +125,7 @@ func buildKPIRows(
 	locale string,
 	minPerUnit, autoPct, hoursBefore, hoursAfter, Hm, payroll, payback float64,
 ) []model.KPIRow {
-	labels := kpiLabels(locale)
+	labels := i18n.CalculatorKPIFor(locale)
 
 	minAfter := minPerUnit * (1 - autoPct/100)
 	var timeChange string
@@ -147,46 +149,42 @@ func buildKPIRows(
 
 	paybackStr := "—"
 	if payback > 0 && payback < 1e6 && !math.IsInf(payback, 0) {
-		if locale == "en" {
-			paybackStr = formatNum(payback, 1) + " mo (forecast)"
-		} else {
-			paybackStr = formatNum(payback, 1) + " мес (прогноз)"
-		}
+		paybackStr = formatNum(payback, 1) + labels.MonthForecastSuffix
 	}
 
 	rows := []model.KPIRow{
 		{
-			Key: labels.timeKey, Label: labels.time,
+			Key: labels.TimeKey, Label: labels.Time,
 			Before: formatMin(minPerUnit, locale),
 			After:  formatMin(minAfter, locale),
 			Change: timeChange,
 		},
 		{
-			Key: labels.volumeKey, Label: labels.volume,
+			Key: labels.VolumeKey, Label: labels.Volume,
 			Before: formatThroughput(tBefore, locale),
 			After:  formatThroughput(tAfter, locale),
 			Change: volumeChange,
 		},
 		{
-			Key: labels.errorsKey, Label: labels.errors,
+			Key: labels.ErrorsKey, Label: labels.Errors,
 			Before: formatErrBefore(errBefore, locale),
-			After:  labels.errorsAfter,
-			Change: labels.errorsChange,
+			After:  labels.ErrorsAfter,
+			Change: labels.ErrorsChange,
 		},
 		{
-			Key: labels.hoursKey, Label: labels.hours,
+			Key: labels.HoursKey, Label: labels.Hours,
 			Before: formatHours(hoursBefore, locale),
 			After:  formatHours(hoursAfter, locale),
 			Change: formatHoursDelta(hoursBefore-hoursAfter, autoPct, locale),
 		},
 		{
-			Key: labels.payrollKey, Label: labels.payroll,
+			Key: labels.PayrollKey, Label: labels.Payroll,
 			Before: "0 ₽",
 			After:  formatRub(payroll, locale),
 			Change: formatRub(payroll, locale),
 		},
 		{
-			Key: labels.paybackKey, Label: labels.payback,
+			Key: labels.PaybackKey, Label: labels.Payback,
 			Before: "—",
 			After:  paybackStr,
 			Change: "—",
@@ -195,50 +193,15 @@ func buildKPIRows(
 	return rows
 }
 
-type kpiLabelSet struct {
-	timeKey, volumeKey, errorsKey, hoursKey, payrollKey, paybackKey string
-	time, volume, errors, hours, payroll, payback                   string
-	errorsAfter, errorsChange                                       string
-}
-
-func kpiLabels(locale string) kpiLabelSet {
-	if locale == "en" {
-		return kpiLabelSet{
-			timeKey: "processing_time", volumeKey: "throughput", errorsKey: "errors",
-			hoursKey: "monthly_hours", payrollKey: "payroll_savings", paybackKey: "payback",
-			time: "Order processing time", volume: "Volume per employee",
-			errors: "Data entry errors", hours: "Monthly hours spent",
-			payroll: "Payroll savings (RUB/mo)", payback: "Project payback",
-			errorsAfter: "0% (automated)", errorsChange: "Errors eliminated",
-		}
-	}
-	return kpiLabelSet{
-		timeKey: "processing_time", volumeKey: "throughput", errorsKey: "errors",
-		hoursKey: "monthly_hours", payrollKey: "payroll_savings", paybackKey: "payback",
-		time: "Время обработки единицы", volume: "Объём на сотрудника",
-		errors: "Ошибки при обработке", hours: "Ежемесячно затраченное время",
-		payroll: "Экономия ФОТ (₽/мес)", payback: "Окупаемость проекта",
-		errorsAfter: "0% (автоматически)", errorsChange: "Ошибки устранены",
-	}
-}
-
 func recommendationExcel(payback, Bm, roiPct float64, locale string) (model.Recommendation, string) {
+	copy := i18n.CalculatorRecommendationFor(locale)
 	if Bm <= 0 || math.IsInf(payback, 1) || payback > 24 {
-		if locale == "en" {
-			return model.RecommendationNotRecommended, "Automation is not recommended at current parameters"
-		}
-		return model.RecommendationNotRecommended, "Автоматизация не рекомендуется при текущих параметрах"
+		return model.RecommendationNotRecommended, copy.NotRecommended
 	}
 	if payback >= 12 || roiPct <= 0 {
-		if locale == "en" {
-			return model.RecommendationConsider, "Consider automation — moderate payback or ROI"
-		}
-		return model.RecommendationConsider, "Рассмотрите автоматизацию — умеренная окупаемость или ROI"
+		return model.RecommendationConsider, copy.Consider
 	}
-	if locale == "en" {
-		return model.RecommendationAutomate, "Automation is recommended — payback under 12 months and positive ROI"
-	}
-	return model.RecommendationAutomate, "Рекомендуется автоматизировать — окупаемость менее 12 месяцев и положительный ROI"
+	return model.RecommendationAutomate, copy.Automate
 }
 
 func round3(v float64) float64 {
@@ -252,48 +215,37 @@ func formatMin(v float64, locale string) string {
 	if v <= 0 {
 		return "—"
 	}
-	if locale == "en" {
-		return formatNum(v, 0) + " min"
-	}
-	return formatNum(v, 0) + " мин"
+	copy := i18n.CalculatorKPIFor(locale)
+	return formatNum(v, 0) + copy.MinSuffix
 }
 
 func formatHours(v float64, locale string) string {
 	if v <= 0 {
 		return "—"
 	}
-	if locale == "en" {
-		return formatNum(v, 0) + " h"
-	}
-	return formatNum(v, 0) + " ч"
+	copy := i18n.CalculatorKPIFor(locale)
+	return formatNum(v, 0) + copy.HourSuffix
 }
 
 func formatRub(v float64, locale string) string {
 	if v <= 0 {
 		return "0 ₽"
 	}
-	s := formatNum(v, 0)
-	if locale == "en" {
-		return s + " RUB"
-	}
-	return s + " ₽"
+	copy := i18n.CalculatorKPIFor(locale)
+	return formatNum(v, 0) + copy.RubSuffix
 }
 
 func formatThroughput(v float64, locale string) string {
 	if v <= 0 {
 		return "—"
 	}
-	if locale == "en" {
-		return formatNum(v, 0) + "/day"
-	}
-	return formatNum(v, 0) + "/день"
+	copy := i18n.CalculatorKPIFor(locale)
+	return formatNum(v, 0) + copy.ThroughputSuffix
 }
 
 func formatErrBefore(pct float64, locale string) string {
-	if locale == "en" {
-		return "~" + formatNum(pct, 0) + "% with errors"
-	}
-	return "~" + formatNum(pct, 0) + "% с ошибками"
+	copy := i18n.CalculatorKPIFor(locale)
+	return "~" + formatNum(pct, 0) + copy.ErrBeforeSuffix
 }
 
 func formatPctChange(pct float64, locale string) string {
@@ -307,10 +259,12 @@ func formatHoursDelta(delta, autoPct float64, locale string) string {
 	if delta <= 0 {
 		return "—"
 	}
-	if locale == "en" {
-		return "-" + formatNum(delta, 0) + " h (" + formatNum(autoPct, 0) + "%)"
+	copy := i18n.CalculatorKPIFor(locale)
+	sep := "-"
+	if locale == "ru" {
+		sep = "−"
 	}
-	return "−" + formatNum(delta, 0) + " ч (" + formatNum(autoPct, 0) + "%)"
+	return sep + formatNum(delta, 0) + copy.HourSuffix + " (" + formatNum(autoPct, 0) + "%)"
 }
 
 func formatMultiplier(m float64, locale string) string {

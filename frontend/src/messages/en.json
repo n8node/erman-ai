@@ -438,7 +438,9 @@
     "calculating": "Calculating…",
     "calcFailed": "Calculation failed",
     "resultTitle": "Result",
-    "result": { "showDetails": "Show TCO and NPV" },
+    "result": {
+      "showDetails": "Show TCO and NPV"
+    },
     "metrics": {
       "netBenefit": "Net benefit / month",
       "payback": "Payback",
@@ -465,7 +467,6 @@
     "pdfFailed": "PDF export failed",
     "createProposal": "Create proposal",
     "requestProposal": "Request proposal from Erman AI",
-    "createProposal": "Create proposal",
     "proposalRequesting": "Sending request…",
     "proposalRequestSent": "Request sent",
     "proposalRequestSuccess": "Proposal request sent. The Erman AI team will contact you.",
@@ -485,6 +486,14 @@
         "simple": "Simple",
         "standard": "Standard",
         "complex": "Complex"
+      },
+      "lines": {
+        "audit": "Discovery and project management",
+        "dev": "Development (~{hours} h × {rate} ₽)",
+        "integrations": "Integrations and systems",
+        "training": "Training and go-live",
+        "factorComplex": "Complex integrations (+{pct}%)",
+        "factorSimple": "Simple scope (−{pct}%)"
       }
     },
     "templates": {
@@ -572,6 +581,11 @@
         "text": "Want to run the same calculation for your process?",
         "link": "Sign up for Erman AI"
       }
+    },
+    "recommendation": {
+      "automate": "Automation is recommended — payback under 12 months and positive ROI",
+      "consider": "Consider automation — moderate payback or ROI",
+      "not_recommended": "Automation is not recommended at current parameters"
     }
   },
   "strategy": {
@@ -848,7 +862,18 @@
       "senderContact": "Contact person",
       "senderPhone": "Phone",
       "senderEmail": "Email",
-      "select": "Select…"
+      "select": "Select…",
+      "paymentSchedules": {
+        "50_50": "50% prepayment, 50% on completion",
+        "100_prepaid": "100% prepayment",
+        "30_70": "30% prepayment, 70% on completion",
+        "milestone": "Milestone-based payments"
+      },
+      "calcPrefill": {
+        "solutionName": "Automation: {process}",
+        "clientProblem": "Process «{process}»: potential savings {savings} ₽/mo after automation.",
+        "processFallback": "process"
+      }
     },
     "scenarios": {
       "after_contact": {
@@ -943,6 +968,30 @@
       "colActions": "Actions",
       "open": "Open",
       "delete": "Delete"
+    },
+    "tooltipsFallback": {
+      "scenario": "Choose the situation: prior client contact, first outreach, or a proactive offer after ROI analysis. The tone of the entire document depends on the scenario.",
+      "scenario_after_contact": "The client already spoke with you: call, email, brief, or quote request. The document references the discussion and leads to project kickoff.",
+      "scenario_cold_outreach": "First touch with no prior contact. No “thanks for reaching out” or “as we discussed”. CTA is a short meeting, not contract signing.",
+      "scenario_proactive_offer": "You propose automation after analysis (often from the calculator). Focus on ROI and the process — the client did not request a quote.",
+      "prior_contact_summary": "Briefly: when and what you discussed, what the client asked for, agreements. The model uses this in the greeting and task understanding block.",
+      "problem_source": "How you know about the problem without contact: process observation, industry pattern, referral, public data. Do not invent facts — describe the basis.",
+      "include_pricing": "On: the proposal includes a specific price and payment terms. Off (soft CP): price after diagnostics, CTA is a meeting. Useful for cold first emails.",
+      "client_company": "Legal or trade name of the company the proposal is addressed to. In cold outreach you can address the company without a contact name.",
+      "client_contact": "Recipient name or title. Optional for cold outreach. If provided — used in the greeting without faking prior dialogue (unless “after contact”).",
+      "client_industry": "Helps the model choose industry wording and typical pain points.",
+      "client_problem": "Describe the client pain in your words: what fails, how much time or money is lost, consequences. Goes into the “Understanding the task” block.",
+      "calculator_run": "Link a ready ROI run from Automation Calculator — the model inserts savings, payback, and NPV figures into the proposal text.",
+      "solution_name": "Short project title for the proposal header, e.g. “Lead intake automation”.",
+      "solution_description": "What you propose to do: high-level scope, key technologies or approach. Do not duplicate deliverables — this is the why and how.",
+      "deliverables": "Concrete artifacts and outcomes: documents, integrations, training, support. One item per line.",
+      "project_cost": "Used only when “Include price” is on. Amount in ₽ for the cost block and PDF.",
+      "timeline_weeks": "Total project duration. Phases in the document should fit this timeline.",
+      "payment_schedule": "Payment scheme for a full proposal. Ignored in soft mode without price.",
+      "sender_company": "Integrator or consultant company sending the proposal.",
+      "sender_contact": "Sender name for signature and next-step block.",
+      "sender_phone": "Contact phone in the document signature.",
+      "sender_email": "Email for the client reply."
     }
   }
 }

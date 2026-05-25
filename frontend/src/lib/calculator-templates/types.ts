@@ -1,4 +1,10 @@
+import type { AppLocale } from "@/i18n/locales";
+import { isAppLocale } from "@/i18n/locales";
 import type { CalculatorInput, ProcessStep } from "@/lib/api";
+import deOverlay from "./overlays/de.json";
+import esOverlay from "./overlays/es.json";
+import frOverlay from "./overlays/fr.json";
+import zhOverlay from "./overlays/zh.json";
 
 export type LocaleKey = "ru" | "en";
 
@@ -29,8 +35,26 @@ export type CalculatorSector = {
   templates: CalculatorProcessTemplate[];
 };
 
+const OVERLAYS: Partial<Record<AppLocale, Record<string, string>>> = {
+  de: deOverlay,
+  es: esOverlay,
+  fr: frOverlay,
+  zh: zhOverlay,
+};
+
+function isValidOverlayTranslation(value: string | undefined): value is string {
+  if (!value?.trim()) return false;
+  return !value.includes("MYMEMORY") && !value.includes("WARNING");
+}
+
 export function localize(text: LocalizedText, locale: string): string {
-  return locale === "en" ? text.en : text.ru;
+  if (locale === "ru") return text.ru;
+  if (locale === "en") return text.en;
+  if (isAppLocale(locale)) {
+    const translated = OVERLAYS[locale]?.[text.en];
+    if (isValidOverlayTranslation(translated)) return translated;
+  }
+  return text.en;
 }
 
 export function applyProcessTemplate(

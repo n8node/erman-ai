@@ -52,6 +52,9 @@ func pickTooltipText(t model.UITooltip, locale string) string {
 	if locale == "en" && t.TextEN != "" {
 		return t.TextEN
 	}
+	if locale != "ru" && t.TextEN != "" {
+		return t.TextEN
+	}
 	if t.TextRU != "" {
 		return t.TextRU
 	}

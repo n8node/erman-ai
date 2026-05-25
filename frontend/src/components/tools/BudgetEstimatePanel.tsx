@@ -7,6 +7,7 @@ import {
   formatEstimateRub,
   type IntegrationLevel,
 } from "@/lib/calculator-budget-estimate";
+import { intlLocale } from "@/i18n/intl-locale";
 import type { CalculatorInput } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,20 @@ export function BudgetEstimatePanel({
   });
 
   const needsReapply = capexManuallyEdited || omManuallyEdited;
+
+  const lineLabel = (row: (typeof estimate.lines)[number]) => {
+    if (row.key === "dev" && row.params) {
+      const rate = new Intl.NumberFormat(intlLocale(locale)).format(Number(row.params.rate));
+      return t("lines.dev", {
+        hours: row.params.hours,
+        rate,
+      });
+    }
+    if ((row.key === "factorComplex" || row.key === "factorSimple") && row.params) {
+      return t(`lines.${row.key}`, { pct: row.params.pct });
+    }
+    return t(`lines.${row.key}`);
+  };
 
   return (
     <div className="rounded-lg border border-accent bg-accent-bg p-4 space-y-3">
@@ -106,7 +121,7 @@ export function BudgetEstimatePanel({
         <ul className="space-y-1 border-t border-accent/20 pt-3 text-xs text-text2">
           {estimate.lines.map((row) => (
             <li key={row.key} className="flex justify-between gap-4">
-              <span>{locale === "en" ? row.labelEn : row.labelRu}</span>
+              <span>{lineLabel(row)}</span>
               <span className="shrink-0 font-medium text-text">
                 {formatEstimateRub(Math.round(row.amount), locale)}
               </span>

@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/intl-locale";
 import type { StrategyDiagram, StrategyPriorityRow, StrategyROISummary } from "@/lib/api-strategy";
 
-function formatRub(n: number) {
-  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(n) + " ₽";
+function formatRub(n: number, locale: string) {
+  return new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 0 }).format(n) + " ₽";
 }
 
 export function StrategyROIBarChart({ summary }: { summary: StrategyROISummary }) {
+  const t = useTranslations("strategy.result");
+  const locale = useLocale();
   const max = Math.max(...summary.lines.map((l) => l.net_benefit_monthly_rub), 1);
   return (
     <div className="space-y-3">
@@ -17,7 +21,9 @@ export function StrategyROIBarChart({ summary }: { summary: StrategyROISummary }
           <div key={line.run_id}>
             <div className="mb-1 flex justify-between gap-2 text-xs">
               <span className="font-medium text-text">{line.process_name}</span>
-              <span className="text-text2">{formatRub(line.net_benefit_monthly_rub)}/мес</span>
+              <span className="text-text2">
+                {formatRub(line.net_benefit_monthly_rub, locale)}/{t("months")}
+              </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-bg2">
               <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
@@ -27,12 +33,12 @@ export function StrategyROIBarChart({ summary }: { summary: StrategyROISummary }
       })}
       <div className="grid gap-3 sm:grid-cols-2 pt-2">
         <div className="rounded-lg bg-accent-bg px-4 py-3">
-          <p className="text-[10px] uppercase tracking-wider text-accent">Σ / мес</p>
-          <p className="mt-1 text-lg font-medium text-accent">{formatRub(summary.total_monthly_benefit_rub)}</p>
+          <p className="text-[10px] uppercase tracking-wider text-accent">Σ / {t("months")}</p>
+          <p className="mt-1 text-lg font-medium text-accent">{formatRub(summary.total_monthly_benefit_rub, locale)}</p>
         </div>
         <div className="rounded-lg bg-accent-bg px-4 py-3">
           <p className="text-[10px] uppercase tracking-wider text-accent">Σ NPV</p>
-          <p className="mt-1 text-lg font-medium text-accent">{formatRub(summary.total_npv_rub)}</p>
+          <p className="mt-1 text-lg font-medium text-accent">{formatRub(summary.total_npv_rub, locale)}</p>
         </div>
       </div>
     </div>

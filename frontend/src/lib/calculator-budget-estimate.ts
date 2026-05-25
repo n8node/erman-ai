@@ -5,14 +5,14 @@ import {
   DEFAULT_CALCULATOR_BUDGET_CONFIG,
   type CalculatorBudgetConfig,
 } from "@/lib/calculator-budget-config";
+import { intlLocale } from "@/i18n/intl-locale";
 
 export type IntegrationLevel = "simple" | "standard" | "complex";
 
 export type BudgetEstimateLine = {
   key: string;
-  labelRu: string;
-  labelEn: string;
   amount: number;
+  params?: Record<string, string | number>;
 };
 
 export type BudgetEstimate = {
@@ -98,24 +98,6 @@ function devHoursForInput(input: CalculatorInput, hm: number, cfg: CalculatorBud
   return hours;
 }
 
-function integrationFactorLabel(
-  level: IntegrationLevel,
-  mult: number
-): { ru: string; en: string } {
-  if (mult === 1) return { ru: "", en: "" };
-  const pct = Math.round(Math.abs(mult - 1) * 100);
-  if (level === "complex") {
-    return {
-      ru: `Сложные интеграции (+${pct}%)`,
-      en: `Complex integrations (+${pct}%)`,
-    };
-  }
-  return {
-    ru: `Простой контур (−${pct}%)`,
-    en: `Simple scope (−${pct}%)`,
-  };
-}
-
 export function estimateImplementationBudget(
   input: CalculatorInput,
   options?: {
@@ -147,7 +129,7 @@ export function estimateImplementationBudget(
   om = roundOm(om, cfg.om_round_step);
 
   const score = complexityScore(input, hm, cfg);
-  const factorLabels = integrationFactorLabel(level, mult);
+  const pct = Math.round(Math.abs(mult - 1) * 100);
 
   return {
     capex,
@@ -156,24 +138,19 @@ export function estimateImplementationBudget(
     complexityTier: level,
     devHours,
     lines: [
-      line("audit", "Аудит и управление проектом", "Discovery and project management", cfg.audit_base),
-      line(
-        "dev",
-        `Разработка (~${devHours} ч × ${cfg.dev_rate_rub.toLocaleString("ru-RU")} ₽)`,
-        `Development (~${devHours} h × ${cfg.dev_rate_rub.toLocaleString("en-US")} RUB)`,
-        devCost
-      ),
-      ...(integrations > 0
-        ? [line("integrations", "Интеграции и контуры", "Integrations and systems", integrations)]
-        : []),
-      line("training", "Обучение и запуск", "Training and go-live", cfg.training),
+      line("audit", cfg.audit_base),
+      line("dev", devCost, {
+        hours: devHours,
+        rate: cfg.dev_rate_rub,
+      }),
+      ...(integrations > 0 ? [line("integrations", integrations)] : []),
+      line("training", cfg.training),
       ...(mult !== 1
         ? [
             line(
-              "factor",
-              factorLabels.ru,
-              factorLabels.en,
-              subtotal * (mult - 1)
+              level === "complex" ? "factorComplex" : "factorSimple",
+              subtotal * (mult - 1),
+              { pct }
             ),
           ]
         : []),
@@ -181,12 +158,16 @@ export function estimateImplementationBudget(
   };
 }
 
-function line(key: string, labelRu: string, labelEn: string, amount: number): BudgetEstimateLine {
-  return { key, labelRu, labelEn, amount };
+function line(
+  key: string,
+  amount: number,
+  params?: Record<string, string | number>
+): BudgetEstimateLine {
+  return { key, amount, params };
 }
 
 export function formatEstimateRub(value: number, locale: string) {
-  return new Intl.NumberFormat(locale === "en" ? "en-US" : "ru-RU").format(value) + " ₽";
+  return new Intl.NumberFormat(intlLocale(locale)).format(value) + " ₽";
 }
 
 export function defaultIntegrationLevel(

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   fetchTools,
   fetchMe,
@@ -13,11 +13,14 @@ import {
   type RunListItem,
   type ToolListItem,
 } from "@/lib/api";
+import { intlLocale } from "@/i18n/intl-locale";
 import {
   DEFAULT_PROPOSAL_INPUT,
-  PAYMENT_SCHEDULE_OPTIONS,
+  PAYMENT_SCHEDULE_IDS,
   PROPOSAL_INDUSTRY_OPTIONS,
   PROPOSAL_SCENARIOS,
+  resolvePaymentScheduleId,
+  type PaymentScheduleId,
   type ProposalInput,
   type ProposalOutput,
   type ProposalScenario,
@@ -44,12 +47,14 @@ function scenarioDefaults(scenario: ProposalScenario): Partial<ProposalInput> {
 function ProposalWizardInner() {
   const t = useTranslations("proposal");
   const tLimits = useTranslations("toolLimits");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const runIdParam = searchParams.get("run");
   const calcRunParam = searchParams.get("calculator_run_id");
 
   const [input, setInput] = useState<ProposalInput>(DEFAULT_PROPOSAL_INPUT);
+  const [paymentScheduleId, setPaymentScheduleId] = useState<PaymentScheduleId>("50_50");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [runId, setRunId] = useState<string | null>(null);
   const [result, setResult] = useState<{ input: ProposalInput; output: ProposalOutput; runId: string } | null>(null);
@@ -98,20 +103,23 @@ function ProposalWizardInner() {
         if (run.status !== "done" || !run.input || !run.output) return;
         const calcIn = run.input as { process_name?: string; capex?: number };
         const calcOut = run.output as { net_benefit_monthly?: number };
+        const processName = calcIn.process_name || t("form.calcPrefill.processFallback");
+        const savings = Math.round(calcOut.net_benefit_monthly || 0).toLocaleString(intlLocale(locale));
         setInput((prev) => ({
           ...prev,
           calculator_run_id: calcRunParam,
           proposal_scenario: "proactive_offer",
           include_pricing: true,
-          solution_name: prev.solution_name || `Автоматизация: ${calcIn.process_name || "процесс"}`,
+          solution_name:
+            prev.solution_name || t("form.calcPrefill.solutionName", { process: processName }),
           project_cost_rub: prev.project_cost_rub || calcIn.capex || 0,
           client_problem:
             prev.client_problem ||
-            `Процесс «${calcIn.process_name || ""}»: потенциальная экономия ${Math.round(calcOut.net_benefit_monthly || 0).toLocaleString("ru-RU")} ₽/мес после автоматизации.`,
+            t("form.calcPrefill.clientProblem", { process: processName, savings }),
         }));
       })
       .catch(() => undefined);
-  }, [calcRunParam]);
+  }, [calcRunParam, locale, t]);
 
   useEffect(() => {
     if (!runIdParam) {
@@ -122,7 +130,9 @@ function ProposalWizardInner() {
     getRun(runIdParam)
       .then((run) => {
         if (run.input) {
-          setInput((prev) => ({ ...prev, ...(run.input as unknown as ProposalInput) }));
+          const loaded = run.input as unknown as ProposalInput;
+          setInput((prev) => ({ ...prev, ...loaded }));
+          setPaymentScheduleId(resolvePaymentScheduleId(loaded.payment_schedule));
         }
         if (run.status === "done" && run.input && run.output) {
           setResult({
@@ -184,7 +194,7 @@ function ProposalWizardInner() {
     input.deliverables.some((d) => d.trim()) &&
     (!pricingRequired || input.project_cost_rub > 0) &&
     input.timeline_weeks > 0 &&
-    (!pricingRequired || input.payment_schedule.trim()) &&
+    (!pricingRequired || paymentScheduleId) &&
     input.sender_company.trim() &&
     input.sender_contact.trim() &&
     input.sender_email.trim() &&
@@ -205,6 +215,7 @@ function ProposalWizardInner() {
       const payload: ProposalInput = {
         ...input,
         deliverables: input.deliverables.map((d) => d.trim()).filter(Boolean),
+        payment_schedule: t(`form.paymentSchedules.${paymentScheduleId}`),
         calculator_run_id: input.calculator_run_id || undefined,
         prior_contact_summary: input.prior_contact_summary?.trim() || undefined,
         problem_source: input.problem_source?.trim() || undefined,
@@ -435,9 +446,15 @@ function ProposalWizardInner() {
               </Field>
               {pricingRequired && (
                 <Field label={t("form.paymentSchedule")} required tooltipKey="proposal.wizard.payment_schedule">
-                  <select className={fieldClass} value={input.payment_schedule} onChange={(e) => patch({ payment_schedule: e.target.value })}>
-                    {PAYMENT_SCHEDULE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
+                  <select
+                    className={fieldClass}
+                    value={paymentScheduleId}
+                    onChange={(e) => setPaymentScheduleId(e.target.value as PaymentScheduleId)}
+                  >
+                    {PAYMENT_SCHEDULE_IDS.map((id) => (
+                      <option key={id} value={id}>
+                        {t(`form.paymentSchedules.${id}`)}
+                      </option>
                     ))}
                   </select>
                 </Field>

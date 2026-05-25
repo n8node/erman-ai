@@ -1,6 +1,5 @@
 import { ProposalSubnav } from "@/components/tools/ProposalSubnav";
-import { TooltipProvider } from "@/components/ui/HelpTooltip";
-import { PROPOSAL_TOOLTIP_FALLBACKS_RU } from "@/lib/proposal-tooltip-fallbacks";
+import { ProposalTooltipProvider } from "@/components/tools/ProposalTooltipProvider";
 
 export default function ProposalLayout({
   children,
@@ -8,11 +7,11 @@ export default function ProposalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <TooltipProvider prefix="proposal" fallbacks={PROPOSAL_TOOLTIP_FALLBACKS_RU}>
+    <ProposalTooltipProvider>
       <div className="space-y-6">
         <ProposalSubnav />
         {children}
       </div>
-    </TooltipProvider>
+    </ProposalTooltipProvider>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { CalculatorInput, CalculatorOutput } from "@/lib/api";
 import { HelpTooltip } from "@/components/ui/HelpTooltip";
+import { intlLocale } from "@/i18n/intl-locale";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -13,9 +14,9 @@ type Props = {
   showHeader?: boolean;
 };
 
-function formatRub(n: number) {
+function formatRub(n: number, locale: string) {
   if (!isFinite(n)) return "—";
-  return new Intl.NumberFormat("ru-RU").format(Math.round(n)) + " ₽";
+  return new Intl.NumberFormat(intlLocale(locale)).format(Math.round(n)) + " ₽";
 }
 
 function formatPayback(n: number, t: ReturnType<typeof useTranslations>) {
@@ -30,6 +31,7 @@ export function CalculatorReportView({
   showHeader = true,
 }: Props) {
   const t = useTranslations("calculator");
+  const locale = useLocale();
   const [showDetails, setShowDetails] = useState(false);
 
   const recClass =
@@ -50,7 +52,7 @@ export function CalculatorReportView({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
           label={t("metrics.netBenefit")}
-          value={formatRub(output.net_benefit_monthly)}
+          value={formatRub(output.net_benefit_monthly, locale)}
           large
           tooltipKey={withTooltips ? "calculator.result.net_benefit" : undefined}
         />
@@ -74,7 +76,9 @@ export function CalculatorReportView({
       </div>
 
       <div className={cn("rounded-lg border px-4 py-3 text-sm", recClass)}>
-        {output.recommendation_text}
+        {t(`recommendation.${output.recommendation}`, {
+          defaultMessage: output.recommendation_text,
+        })}
       </div>
 
       {output.kpi_rows.length > 0 && (
@@ -131,11 +135,11 @@ export function CalculatorReportView({
       {showDetails && (
         <div className="grid gap-2 sm:grid-cols-3 text-sm text-text2 border-t border-border pt-4">
           <div className="inline-flex items-center gap-1">
-            TCO: {formatRub(output.tco_horizon)}
+            TCO: {formatRub(output.tco_horizon, locale)}
             {withTooltips && <HelpTooltip tooltipKey="calculator.result.tco" />}
           </div>
           <div className="inline-flex items-center gap-1">
-            NPV: {formatRub(output.npv)}
+            NPV: {formatRub(output.npv, locale)}
             {withTooltips && <HelpTooltip tooltipKey="calculator.result.npv" />}
           </div>
           <div className="inline-flex items-center gap-1">

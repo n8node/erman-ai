@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/i18n/intl-locale";
 import {
   fetchTools,
   getRun,
@@ -36,6 +37,7 @@ const fieldClass =
 function StrategyWizardInner() {
   const t = useTranslations("strategy");
   const tLimits = useTranslations("toolLimits");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const runIdParam = searchParams.get("run");
@@ -418,8 +420,10 @@ function StrategyWizardInner() {
                             <span className="font-medium text-text">{r.process_name || r.id.slice(0, 8)}</span>
                             <span className="mt-0.5 block text-xs text-text2">
                               {new Date(r.created_at).toLocaleDateString()}
-                              {r.net_benefit_monthly != null && ` · ${Math.round(r.net_benefit_monthly).toLocaleString()} ₽/мес`}
-                              {r.payback_months != null && ` · ${r.payback_months.toFixed(1)} мес`}
+                              {r.net_benefit_monthly != null &&
+                                ` · ${Math.round(r.net_benefit_monthly).toLocaleString(intlLocale(locale))} ₽/${t("result.months")}`}
+                              {r.payback_months != null &&
+                                ` · ${r.payback_months.toFixed(1)} ${t("result.months")}`}
                             </span>
                           </span>
                         </label>
