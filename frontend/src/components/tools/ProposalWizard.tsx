@@ -28,6 +28,7 @@ import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { ProposalPollingView } from "./ProposalPollingView";
 import { ProposalResult } from "./ProposalResult";
+import { ProposalScenarioBar } from "./ProposalScenarioBar";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
@@ -120,6 +121,9 @@ function ProposalWizardInner() {
     setLoadingRun(true);
     getRun(runIdParam)
       .then((run) => {
+        if (run.input) {
+          setInput((prev) => ({ ...prev, ...(run.input as unknown as ProposalInput) }));
+        }
         if (run.status === "done" && run.input && run.output) {
           setResult({
             input: run.input as unknown as ProposalInput,
@@ -281,6 +285,8 @@ function ProposalWizardInner() {
       {(limitExceeded || proposalLimitReached) && (
         <ToolLimitExceededAlert toolName={t("title")} />
       )}
+
+      {step <= 2 && <ProposalScenarioBar input={input} step={step} />}
 
       {step === 1 && (
         <div className="space-y-6">
@@ -479,6 +485,7 @@ function ProposalWizardInner() {
       {step === 2 && runId && (
         <ProposalPollingView
           runId={runId}
+          input={input}
           onComplete={handlePollComplete}
           onError={(msg) => {
             setError(msg);
@@ -492,6 +499,7 @@ function ProposalWizardInner() {
           <button type="button" onClick={handleNew} className="text-sm text-accent hover:underline">
             {t("newProposal")}
           </button>
+          <ProposalScenarioBar input={result.input} step={3} />
           <ProposalResult input={result.input} output={result.output} runId={result.runId} />
         </div>
       )}

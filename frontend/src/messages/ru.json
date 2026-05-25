@@ -795,6 +795,11 @@
     "generating": "Запуск…",
     "loadingRun": "Загрузка КП…",
     "newProposal": "← Новое КП",
+    "steps": {
+      "1": "Шаг 1 — параметры",
+      "2": "Шаг 2 — генерация",
+      "3": "Шаг 3 — результат"
+    },
     "form": {
       "scenarioSection": "Сценарий",
       "clientSection": "Клиент",
@@ -806,6 +811,7 @@
       "problemSourcePlaceholder": "Например: наблюдали процесс на производстве, типичная боль отрасли…",
       "includePricing": "Режим цены",
       "includePricingLabel": "Указать конкретную стоимость и условия оплаты",
+      "includePricingLabelOff": "Мягкое КП — без цены",
       "clientCompany": "Компания клиента",
       "clientContact": "Контактное лицо",
       "clientIndustry": "Отрасль",
@@ -853,6 +859,7 @@
     "polling": {
       "title": "Готовим коммерческое предложение",
       "hint": "Обычно занимает 30–90 секунд",
+      "scenarioHint": "Сценарий: {scenario}",
       "statusProcessing": "Генерация",
       "failed": "Не удалось сгенерировать КП"
     },

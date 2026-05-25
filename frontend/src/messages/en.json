@@ -795,6 +795,11 @@
     "generating": "Starting…",
     "loadingRun": "Loading proposal…",
     "newProposal": "← New proposal",
+    "steps": {
+      "1": "Step 1 — parameters",
+      "2": "Step 2 — generation",
+      "3": "Step 3 — result"
+    },
     "form": {
       "scenarioSection": "Scenario",
       "clientSection": "Client",
@@ -806,6 +811,7 @@
       "problemSourcePlaceholder": "E.g. observed the process on site, typical industry pain…",
       "includePricing": "Pricing mode",
       "includePricingLabel": "Include exact price and payment terms",
+      "includePricingLabelOff": "Soft CP — no price",
       "clientCompany": "Client company",
       "clientContact": "Contact person",
       "clientIndustry": "Industry",
@@ -853,6 +859,7 @@
     "polling": {
       "title": "Preparing your proposal",
       "hint": "Usually takes 30–90 seconds",
+      "scenarioHint": "Scenario: {scenario}",
       "statusProcessing": "Generating",
       "failed": "Could not generate proposal"
     },

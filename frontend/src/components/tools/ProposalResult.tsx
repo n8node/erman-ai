@@ -67,7 +67,6 @@ export function ProposalResult({ input, output, runId }: Props) {
               {input.client_company}
               {input.client_contact ? ` · ${input.client_contact}` : ""}
             </p>
-            <p className="mt-1 text-xs text-text3">{t(`scenarioBadge.${scenario}`)}</p>
             {input.calculator_context && (
               <p className="mt-2 text-xs text-success">
                 {t("linkedCalculator", { process: input.calculator_context.process_name })}

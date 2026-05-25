@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 
 type TooltipMap = Record<string, string>;
 
+const EMPTY_TOOLTIP_FALLBACKS: TooltipMap = {};
+
 const PANEL_WIDTH = 256;
 const GAP = 8;
 const VIEWPORT_PAD = 12;
@@ -26,10 +28,12 @@ const TooltipContext = createContext<TooltipMap>({});
 export function TooltipProvider({
   prefix = "calculator",
   locale,
+  fallbacks = EMPTY_TOOLTIP_FALLBACKS,
   children,
 }: {
   prefix?: string;
   locale?: string;
+  fallbacks?: TooltipMap;
   children: ReactNode;
 }) {
   const [tooltips, setTooltips] = useState<TooltipMap>({});
@@ -39,9 +43,9 @@ export function TooltipProvider({
       ? () => fetchPublicTooltips(prefix, locale)
       : () => fetchTooltips(prefix);
     loader()
-      .then((data) => setTooltips(data.tooltips))
-      .catch(() => setTooltips({}));
-  }, [prefix, locale]);
+      .then((data) => setTooltips({ ...fallbacks, ...data.tooltips }))
+      .catch(() => setTooltips(fallbacks));
+  }, [prefix, locale, fallbacks]);
 
   return (
     <TooltipContext.Provider value={tooltips}>{children}</TooltipContext.Provider>
