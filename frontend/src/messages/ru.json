@@ -34,18 +34,18 @@
   "nav": {
     "tools": "Инструменты",
     "account": "Аккаунт",
-    "calculator": "Calculator",
-    "strategy": "AI Strategy",
-    "proposal": "Proposal",
+    "calculator": "Калькулятор",
+    "strategy": "AI-стратегия",
+    "proposal": "КП",
     "billing": "Биллинг",
-    "apiKeys": "API Keys",
+    "apiKeys": "API-ключи",
     "settings": "Настройки",
     "admin": "Админ",
-    "dashboard": "Dashboard",
+    "dashboard": "Дашборд",
     "logout": "Выйти"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Дашборд",
     "subtitle": "Выберите инструмент для работы",
     "recentRuns": {
       "title": "Последние расчёты",
@@ -54,15 +54,15 @@
     },
     "tools": {
       "calculator": {
-        "name": "Automation Calculator",
+        "name": "Калькулятор автоматизации",
         "description": "ROI-калькулятор автоматизации процессов"
       },
       "strategy": {
-        "name": "AI Strategy",
+        "name": "AI-стратегия",
         "description": "Стратегия внедрения AI для вашего бизнеса"
       },
       "proposal": {
-        "name": "Proposal Generator",
+        "name": "Генератор КП",
         "description": "Генератор коммерческих предложений"
       }
     }
@@ -175,8 +175,8 @@
       "title": "Тултипы",
       "subtitle": "Тексты подсказок в калькуляторе и других инструментах",
       "groups": {
-        "calculator": "Automation Calculator",
-        "proposal": "Proposal Generator"
+        "calculator": "Калькулятор автоматизации",
+        "proposal": "Генератор КП"
       },
       "loading": "Загрузка…",
       "loadFailed": "Не удалось загрузить тултипы",
@@ -366,9 +366,9 @@
     "usageRemaining": "{used} / {limit}",
     "usageUnlimited": "безлимит",
     "tools": {
-      "calculator": "Automation Calculator",
-      "strategy": "AI Strategy",
-      "proposal": "Proposal Generator"
+      "calculator": "Калькулятор автоматизации",
+      "strategy": "AI-стратегия",
+      "proposal": "Генератор КП"
     },
     "features": {
       "export_pdf": "Экспорт PDF",
@@ -380,7 +380,7 @@
     }
   },
   "calculator": {
-    "title": "Automation Calculator",
+    "title": "Калькулятор автоматизации",
     "subtitle": "Оцените ROI автоматизации по финансовой модели Erman AI",
     "subnav": {
       "new": "Новый расчёт",
@@ -589,7 +589,7 @@
     }
   },
   "strategy": {
-    "title": "AI Strategy",
+    "title": "AI-стратегия",
     "subtitle": "Персонализированная стратегия внедрения AI для вашего бизнеса",
     "subnav": {
       "new": "Новая стратегия",
@@ -817,7 +817,7 @@
     }
   },
   "proposal": {
-    "title": "Proposal Generator",
+    "title": "Генератор КП",
     "subtitle": "Сформируйте коммерческое предложение для клиента",
     "subnav": {
       "new": "Новое КП",
