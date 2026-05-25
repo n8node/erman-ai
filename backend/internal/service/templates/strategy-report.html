@@ -31,7 +31,12 @@
     .risk-high { background: #fcebeb; }
     .risk-medium { background: #faeeda; }
     .risk-low { background: #f8f8f7; }
-    .diagram-block { border: 1px solid #e8e7e3; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 10px; white-space: pre-wrap; color: #5f5e5a; }
+    .diagram-card { border: 1px solid #e8e7e3; border-radius: 8px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid; }
+    .diagram-title { font-weight: 600; font-size: 12px; margin-bottom: 10px; color: #1a1a1a; }
+    .diagram-type { color: #888780; font-weight: 400; }
+    .mermaid-rendered { overflow-x: auto; text-align: center; }
+    .mermaid-rendered svg { max-width: 100%; height: auto; }
+    .mermaid-fallback { font-family: monospace; font-size: 9px; white-space: pre-wrap; color: #5f5e5a; background: #f8f8f7; padding: 10px; border-radius: 6px; margin-top: 8px; }
     .footer { margin-top: 32px; font-size: 10px; color: #888780; border-top: 1px solid #e8e7e3; padding-top: 12px; }
     ul { padding-left: 18px; }
     li { margin-bottom: 4px; color: #5f5e5a; }
@@ -154,10 +159,43 @@
   <div class="section">
     <div class="section-label">{{.Labels.Diagrams}}</div>
     {{range .Diagrams}}
-    <div class="diagram-block"><strong>{{.Title}}</strong> ({{.Type}})
-{{.Mermaid}}</div>
+    <div class="diagram-card">
+      <p class="diagram-title">{{.Title}} <span class="diagram-type">({{.Type}})</span></p>
+      <pre class="mermaid">{{.Mermaid}}</pre>
+    </div>
     {{end}}
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>
+    (async function () {
+      try {
+        mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "loose" });
+        var nodes = document.querySelectorAll("pre.mermaid");
+        for (var i = 0; i < nodes.length; i++) {
+          var el = nodes[i];
+          var code = (el.textContent || "").trim();
+          if (!code) continue;
+          try {
+            var result = await mermaid.render("strategy-pdf-diagram-" + i, code);
+            var wrap = document.createElement("div");
+            wrap.className = "mermaid-rendered";
+            wrap.innerHTML = result.svg;
+            el.replaceWith(wrap);
+          } catch (err) {
+            var fb = document.createElement("pre");
+            fb.className = "mermaid-fallback";
+            fb.textContent = code;
+            el.replaceWith(fb);
+          }
+        }
+      } catch (err) {
+        /* keep fallback pre blocks */
+      }
+      document.body.setAttribute("data-pdf-ready", "true");
+    })();
+  </script>
+  {{else}}
+  <script>document.body.setAttribute("data-pdf-ready", "true");</script>
   {{end}}
 
   <div class="footer">{{.Labels.Disclaimer}}</div>

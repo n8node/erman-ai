@@ -160,33 +160,80 @@ func renderCalculatorReportHTML(input model.CalculatorInput, output model.Calcul
 	return buf.String(), nil
 }
 
+type pdfRenderOptions struct {
+	// WaitForBodyAttr waits until document.body has attribute=value (e.g. data-pdf-ready=true).
+	WaitForBodyAttr string
+	WaitForValue    string
+	RenderTimeout   time.Duration
+}
+
 func htmlToPDF(html string) ([]byte, error) {
+	return htmlToPDFWithOptions(html, pdfRenderOptions{})
+}
+
+func htmlToPDFWithOptions(html string, opts pdfRenderOptions) ([]byte, error) {
 	execPath := chromeExecPath()
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+	chromeOpts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
 	)
 	if execPath != "" {
-		opts = append(opts, chromedp.ExecPath(execPath))
+		chromeOpts = append(chromeOpts, chromedp.ExecPath(execPath))
 	}
 
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), chromeOpts...)
 	defer cancelAlloc()
 
 	ctx, cancelCtx := chromedp.NewContext(allocCtx)
 	defer cancelCtx()
 
-	ctx, cancelTimeout := context.WithTimeout(ctx, 60*time.Second)
+	timeout := 60 * time.Second
+	if opts.RenderTimeout > 0 {
+		timeout = opts.RenderTimeout
+	}
+	ctx, cancelTimeout := context.WithTimeout(ctx, timeout)
 	defer cancelTimeout()
 
 	var pdfBuf []byte
 	dataURL := "data:text/html;charset=utf-8;base64," + base64.StdEncoding.EncodeToString([]byte(html))
-	if err := chromedp.Run(ctx,
+
+	tasks := []chromedp.Action{
 		chromedp.Navigate(dataURL),
 		chromedp.WaitReady("body"),
-		chromedp.Sleep(800*time.Millisecond),
+	}
+	if opts.WaitForBodyAttr != "" {
+		waitValue := opts.WaitForValue
+		if waitValue == "" {
+			waitValue = "true"
+		}
+		attr := opts.WaitForBodyAttr
+		val := waitValue
+		tasks = append(tasks, chromedp.ActionFunc(func(ctx context.Context) error {
+			deadline := time.Now().Add(timeout - 5*time.Second)
+			for time.Now().Before(deadline) {
+				var ready bool
+				script := fmt.Sprintf(`document.body.getAttribute(%q) === %q`, attr, val)
+				if err := chromedp.Evaluate(script, &ready).Do(ctx); err != nil {
+					return err
+				}
+				if ready {
+					return nil
+				}
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(200 * time.Millisecond):
+				}
+			}
+			return nil
+		}))
+	} else {
+		tasks = append(tasks, chromedp.Sleep(800*time.Millisecond))
+	}
+	tasks = append(tasks,
+		chromedp.Sleep(400*time.Millisecond),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var err error
 			pdfBuf, _, err = page.PrintToPDF().
@@ -200,7 +247,9 @@ func htmlToPDF(html string) ([]byte, error) {
 				Do(ctx)
 			return err
 		}),
-	); err != nil {
+	)
+
+	if err := chromedp.Run(ctx, tasks...); err != nil {
 		return nil, fmt.Errorf("pdf render: %w", err)
 	}
 	return pdfBuf, nil

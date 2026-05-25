@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
+	"strings"
+	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
 )
@@ -94,21 +96,35 @@ type strategyPDFData struct {
 	Risks   []model.StrategyRisk
 
 	ShowDiagrams bool
-	Diagrams     []model.StrategyDiagram
+	Diagrams     []strategyPDFDiagramView
+}
+
+type strategyPDFDiagramView struct {
+	Title   string
+	Type    string
+	Mermaid template.HTML
 }
 
 func GenerateStrategyPDF(input model.StrategyInput, output model.StrategyOutput, locale string) ([]byte, error) {
 	if locale != "en" {
 		locale = "ru"
 	}
-	html, err := renderStrategyReportHTML(input, output, locale)
+	html, hasDiagrams, err := renderStrategyReportHTML(input, output, locale)
 	if err != nil {
 		return nil, err
 	}
-	return htmlToPDF(html)
+	opts := pdfRenderOptions{}
+	if hasDiagrams {
+		opts = pdfRenderOptions{
+			WaitForBodyAttr: "data-pdf-ready",
+			WaitForValue:    "true",
+			RenderTimeout:   90 * time.Second,
+		}
+	}
+	return htmlToPDFWithOptions(html, opts)
 }
 
-func renderStrategyReportHTML(input model.StrategyInput, output model.StrategyOutput, locale string) (string, error) {
+func renderStrategyReportHTML(input model.StrategyInput, output model.StrategyOutput, locale string) (string, bool, error) {
 	labels := strategyPDFLabelsForLocale(locale)
 	data := strategyPDFData{
 		LangAttr:            locale,
@@ -127,12 +143,22 @@ func renderStrategyReportHTML(input model.StrategyInput, output model.StrategyOu
 		Risks:               output.Risks,
 		Maturity:            output.MaturityMatrix,
 		Priority:            output.PriorityMatrix,
-		Diagrams:            output.Diagrams,
 		ShowMaturity:        len(output.MaturityMatrix) > 0,
 		ShowPriority:        len(output.PriorityMatrix) > 0,
 		ShowBudgetPhases:    len(output.BudgetPhases) > 0,
 		ShowDiagrams:        len(output.Diagrams) > 0,
 	}
+	for _, d := range output.Diagrams {
+		if strings.TrimSpace(d.Mermaid) == "" {
+			continue
+		}
+		data.Diagrams = append(data.Diagrams, strategyPDFDiagramView{
+			Title:   d.Title,
+			Type:    d.Type,
+			Mermaid: template.HTML(d.Mermaid),
+		})
+	}
+	data.ShowDiagrams = len(data.Diagrams) > 0
 
 	if output.ROISummary != nil && len(output.ROISummary.Lines) > 0 {
 		data.ShowROI = true
@@ -169,13 +195,13 @@ func renderStrategyReportHTML(input model.StrategyInput, output model.StrategyOu
 
 	tmpl, err := template.ParseFS(strategyReportHTML, "templates/strategy-report.html")
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", err
+		return "", false, err
 	}
-	return buf.String(), nil
+	return buf.String(), data.ShowDiagrams, nil
 }
 
 func strategyPDFLabelsForLocale(locale string) strategyPDFLabels {
