@@ -30,8 +30,8 @@ export function RegisterForm() {
     }
     setLoading(true);
     try {
-      const user = await register(email, password, referral);
-      router.push(user.onboarding_completed ? "/" : "/onboarding");
+      const result = await register(email, password, referral);
+      router.push(`/verify-email?email=${encodeURIComponent(result.email)}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("registerFailed"));

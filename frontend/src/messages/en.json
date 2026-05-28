@@ -18,9 +18,25 @@
     "hasAccount": "Already have an account?",
     "loginFailed": "Sign in failed",
     "registerFailed": "Registration failed",
+    "emailNotVerified": "Confirm your email — we already sent a link",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 8 characters",
-    "ermanReferral": "Registration via Erman AI invitation"
+    "ermanReferral": "Registration via Erman AI invitation",
+    "verify": {
+      "title": "Confirm your email",
+      "subtitle": "We sent a confirmation link. Open the email and follow the link.",
+      "sentTo": "We sent an email to {email}. Check your inbox and spam folder.",
+      "checkInbox": "Check your inbox and open the link from the email.",
+      "emailLabel": "Email",
+      "resend": "Resend confirmation email",
+      "resent": "If an account exists, a new email was sent.",
+      "resendFailed": "Could not resend email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "verifyFailed": "This link is invalid or expired",
+      "confirming": "Confirming your email…",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    }
   },
   "onboarding": {
     "title": "Who are you?",
@@ -99,6 +115,7 @@
       "proposalRequests": "Proposal requests",
       "calculatorBudget": "Calculator rates",
       "strategyLlm": "AI Strategy LLM",
+      "emailSmtp": "Email / SMTP",
       "translations": "Translations"
     },
     "users": {
@@ -265,6 +282,40 @@
         "hm_threshold_150": "Hm threshold 150",
         "hm_threshold_200": "Hm threshold 200"
       }
+    },
+    "emailSmtp": {
+      "title": "Email / SMTP",
+      "subtitle": "External SMTP server for verification and notification emails (e.g. Yandex 360)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Email settings saved",
+      "save": "Save email settings",
+      "saving": "Saving…",
+      "enableSending": "Enable email sending in the system",
+      "presetSection": "Quick preset",
+      "yandexPreset": "Apply Yandex SMTP",
+      "senderSection": "Sender settings",
+      "fromEmail": "Sender email",
+      "fromName": "Sender name",
+      "forceFromEmail": "Always use this sender address",
+      "forceFromName": "Always use this sender name",
+      "replyToFromEmail": "Use this address as Reply-to",
+      "connectionSection": "SMTP connection",
+      "host": "SMTP Host",
+      "port": "SMTP Port",
+      "encryption": "Encryption",
+      "autoTls": "Use Auto TLS",
+      "auth": "Authentication",
+      "username": "SMTP Username",
+      "password": "SMTP Password",
+      "passwordPlaceholder": "SMTP password",
+      "passwordPlaceholderExisting": "New password (current: {hint})",
+      "testSection": "Test send",
+      "testEmailPlaceholder": "email for test message",
+      "testSend": "Send",
+      "testing": "Sending…",
+      "testFailed": "Test send failed"
     },
     "strategyLlm": {
       "title": "AI Strategy — LLM",

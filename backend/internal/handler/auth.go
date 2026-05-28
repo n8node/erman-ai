@@ -54,8 +54,52 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"status":              "verification_required",
+		"email":               result.User.Email,
+		"email_verified":      false,
+		"onboarding_completed": result.User.OnboardingCompleted,
+	})
+}
+
+type verifyEmailRequest struct {
+	Token string `json:"token"`
+}
+
+func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	var req verifyEmailRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.auth.VerifyEmail(r.Context(), req.Token)
+	if err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+
 	h.mw.SetTokenCookie(w, result.Token, h.secureCookies())
-	writeJSON(w, http.StatusCreated, userResponse(result.User))
+	writeJSON(w, http.StatusOK, userResponse(result.User))
+}
+
+type resendVerificationRequest struct {
+	Email string `json:"email"`
+}
+
+func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request) {
+	var req resendVerificationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := h.auth.ResendVerification(r.Context(), req.Email); err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +215,12 @@ func (h *AuthHandler) writeAuthError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusForbidden, "account blocked")
 	case errors.Is(err, service.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "invalid input")
+	case errors.Is(err, service.ErrEmailNotVerified):
+		writeErrorCode(w, http.StatusForbidden, "confirm your email before signing in", "email_not_verified")
+	case errors.Is(err, service.ErrVerificationTokenInvalid):
+		writeError(w, http.StatusBadRequest, "invalid or expired verification link")
+	case errors.Is(err, service.ErrVerificationTooSoon):
+		writeError(w, http.StatusTooManyRequests, "please wait before requesting another email")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal error")
 	}
@@ -189,6 +239,7 @@ func userResponse(u *model.User) map[string]any {
 		"locale":                u.Locale,
 		"account_segment":       u.AccountSegment,
 		"onboarding_completed":  u.OnboardingCompleted,
+		"email_verified":        u.EmailVerified(),
 		"is_blocked":            u.IsBlocked,
 		"created_at":            u.CreatedAt,
 	}

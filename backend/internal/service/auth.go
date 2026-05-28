@@ -21,18 +21,20 @@ var (
 	ErrEmailTaken         = errors.New("email already registered")
 	ErrUserBlocked        = errors.New("account blocked")
 	ErrInvalidInput       = errors.New("invalid input")
+	ErrEmailNotVerified   = errors.New("email not verified")
 )
 
 const bcryptCost = 12
 const tokenTTL = 7 * 24 * time.Hour
 
 type AuthService struct {
-	users *repository.UserRepository
-	auth  *middleware.Auth
+	users  *repository.UserRepository
+	auth   *middleware.Auth
+	verify *EmailVerificationService
 }
 
-func NewAuthService(users *repository.UserRepository, auth *middleware.Auth) *AuthService {
-	return &AuthService{users: users, auth: auth}
+func NewAuthService(users *repository.UserRepository, auth *middleware.Auth, verify *EmailVerificationService) *AuthService {
+	return &AuthService{users: users, auth: auth, verify: verify}
 }
 
 type AuthResult struct {
@@ -40,7 +42,12 @@ type AuthResult struct {
 	User  *model.User
 }
 
-func (s *AuthService) Register(ctx context.Context, email, password, referral string) (*AuthResult, error) {
+type RegisterResult struct {
+	RequiresVerification bool
+	User                 *model.User
+}
+
+func (s *AuthService) Register(ctx context.Context, email, password, referral string) (*RegisterResult, error) {
 	email = normalizeEmail(email)
 	if err := validateCredentials(email, password); err != nil {
 		return nil, err
@@ -71,17 +78,16 @@ func (s *AuthService) Register(ctx context.Context, email, password, referral st
 		onboardingDone = true
 	}
 
-	user, err := s.users.Create(ctx, email, string(hash), planID, "user", segment, onboardingDone)
+	user, err := s.users.Create(ctx, email, string(hash), planID, "user", segment, onboardingDone, false)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := s.auth.IssueToken(user.ID, user.Role, tokenTTL)
-	if err != nil {
-		return nil, err
+	if _, err := s.verify.SendVerification(ctx, user); err != nil {
+		return nil, fmt.Errorf("send verification email: %w", err)
 	}
 
-	return &AuthResult{Token: token, User: user}, nil
+	return &RegisterResult{RequiresVerification: true, User: user}, nil
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthResult, error) {
@@ -102,6 +108,9 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*AuthR
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
+	}
+	if !user.EmailVerified() && user.Role != "superadmin" {
+		return nil, ErrEmailNotVerified
 	}
 
 	s.users.TouchLastActive(ctx, user.ID)
@@ -195,7 +204,23 @@ func (s *AuthService) SeedAdmin(ctx context.Context, email, password string) (*m
 		return s.users.GetByID(ctx, u.ID)
 	}
 
-	return s.users.Create(ctx, email, string(hash), planID, "superadmin", model.AccountSegmentPartner, true)
+	return s.users.Create(ctx, email, string(hash), planID, "superadmin", model.AccountSegmentPartner, true, true)
+}
+
+func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*AuthResult, error) {
+	user, err := s.verify.Verify(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	jwt, err := s.auth.IssueToken(user.ID, user.Role, tokenTTL)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthResult{Token: jwt, User: user}, nil
+}
+
+func (s *AuthService) ResendVerification(ctx context.Context, email string) error {
+	return s.verify.Resend(ctx, email)
 }
 
 func normalizeEmail(email string) string {

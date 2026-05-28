@@ -34,10 +34,15 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	translationRepo := repository.NewTranslationRepository(db.Pool)
 	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
 	strategyLLMRepo := repository.NewStrategyLLMSettingsRepository(db.Pool)
+	smtpSettingsRepo := repository.NewSMTPSettingsRepository(db.Pool)
+	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
-	authSvc := service.NewAuthService(userRepo, authMW)
+	smtpSettingsSvc := service.NewSMTPSettingsService(smtpSettingsRepo)
+	mailSvc := service.NewMailService(smtpSettingsSvc)
+	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, cfg)
+	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
@@ -67,6 +72,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	auditHandler := handler.NewAuditHandler(auditSvc, authSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
+	smtpHandler := handler.NewSMTPSettingsHandler(smtpSettingsSvc, mailSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
 	proposalReqHandler := handler.NewProposalRequestHandler(proposalReqSvc)
@@ -91,6 +97,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)
 			auth.Post("/register", authHandler.Register)
+			auth.Post("/verify-email", authHandler.VerifyEmail)
+			auth.Post("/resend-verification", authHandler.ResendVerification)
 			auth.Post("/login", authHandler.Login)
 			auth.Post("/logout", authHandler.Logout)
 
@@ -157,6 +165,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Put("/translations", translationHandler.BulkUpsertAdmin)
 			admin.Put("/translations/item", translationHandler.UpsertAdmin)
 			admin.Delete("/translations/{key}", translationHandler.DeleteAdmin)
+			admin.Get("/email-smtp", smtpHandler.GetAdmin)
+			admin.Put("/email-smtp", smtpHandler.UpdateAdmin)
+			admin.Post("/email-smtp/test", smtpHandler.SendTest)
 		})
 	})
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { login } from "@/lib/api";
+import { ApiError, login } from "@/lib/api";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -23,6 +23,10 @@ export function LoginForm() {
       router.push(user.onboarding_completed ? "/" : "/onboarding");
       router.refresh();
     } catch (err) {
+      if (err instanceof ApiError && err.code === "email_not_verified") {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
       setError(err instanceof Error ? err.message : t("loginFailed"));
     } finally {
       setLoading(false);

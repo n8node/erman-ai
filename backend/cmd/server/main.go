@@ -56,7 +56,13 @@ func main() {
 			os.Exit(1)
 		}
 		authMW := middleware.NewAuth(cfg.JWTSecret)
-		authSvc := service.NewAuthService(repository.NewUserRepository(db.Pool), authMW)
+		userRepo := repository.NewUserRepository(db.Pool)
+		smtpRepo := repository.NewSMTPSettingsRepository(db.Pool)
+		tokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
+		smtpSvc := service.NewSMTPSettingsService(smtpRepo)
+		mailSvc := service.NewMailService(smtpSvc)
+		verifySvc := service.NewEmailVerificationService(userRepo, tokenRepo, mailSvc, cfg)
+		authSvc := service.NewAuthService(userRepo, authMW, verifySvc)
 		user, err := authSvc.SeedAdmin(ctx, *seedEmail, *seedPassword)
 		if err != nil {
 			logger.Error("seed admin failed", "error", err)

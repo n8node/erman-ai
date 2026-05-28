@@ -18,9 +18,25 @@
     "hasAccount": "Уже есть аккаунт?",
     "loginFailed": "Не удалось войти",
     "registerFailed": "Не удалось зарегистрироваться",
+    "emailNotVerified": "Подтвердите email — письмо уже отправлено",
     "passwordMismatch": "Пароли не совпадают",
     "passwordTooShort": "Пароль должен быть не короче 8 символов",
-    "ermanReferral": "Регистрация по приглашению Erman AI"
+    "ermanReferral": "Регистрация по приглашению Erman AI",
+    "verify": {
+      "title": "Подтвердите email",
+      "subtitle": "Мы отправили ссылку для подтверждения. Откройте письмо и перейдите по ссылке.",
+      "sentTo": "Письмо отправлено на {email}. Проверьте входящие и папку «Спам».",
+      "checkInbox": "Проверьте почту и перейдите по ссылке из письма.",
+      "emailLabel": "Email",
+      "resend": "Отправить письмо снова",
+      "resent": "Если аккаунт существует, письмо отправлено повторно.",
+      "resendFailed": "Не удалось отправить письмо",
+      "tooSoon": "Подождите пару минут перед повторной отправкой",
+      "verifyFailed": "Ссылка недействительна или устарела",
+      "confirming": "Подтверждаем email…",
+      "backToLogin": "Вернуться ко входу",
+      "loading": "Загрузка…"
+    }
   },
   "onboarding": {
     "title": "Кто вы?",
@@ -100,6 +116,7 @@
       "proposalRequests": "Запросы на КП",
       "calculatorBudget": "Ставки калькулятора",
       "strategyLlm": "AI Strategy LLM",
+      "emailSmtp": "Email / SMTP",
       "translations": "Переводы"
     },
     "users": {
@@ -266,6 +283,40 @@
         "hm_threshold_150": "Порог Hm 150",
         "hm_threshold_200": "Порог Hm 200"
       }
+    },
+    "emailSmtp": {
+      "title": "Email / SMTP",
+      "subtitle": "Настройка внешнего SMTP-сервера для писем подтверждения и уведомлений (например, Yandex 360)",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить настройки",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Email-настройки сохранены",
+      "save": "Сохранить email-настройки",
+      "saving": "Сохранение…",
+      "enableSending": "Включить отправку email в системе",
+      "presetSection": "Быстрый пресет",
+      "yandexPreset": "Применить Yandex SMTP",
+      "senderSection": "Настройки отправителя",
+      "fromEmail": "Эл. адрес отправителя",
+      "fromName": "Имя отправителя",
+      "forceFromEmail": "Всегда использовать этот адрес отправителя",
+      "forceFromName": "Всегда использовать это имя отправителя",
+      "replyToFromEmail": "Использовать этот адрес как Reply-to",
+      "connectionSection": "SMTP подключение",
+      "host": "SMTP Host",
+      "port": "SMTP Port",
+      "encryption": "Шифрование",
+      "autoTls": "Use Auto TLS",
+      "auth": "Authentication",
+      "username": "SMTP Username",
+      "password": "SMTP Password",
+      "passwordPlaceholder": "Пароль SMTP",
+      "passwordPlaceholderExisting": "Новый пароль (текущий: {hint})",
+      "testSection": "Тестовая отправка",
+      "testEmailPlaceholder": "email для тестовой отправки",
+      "testSend": "Отправить",
+      "testing": "Отправка…",
+      "testFailed": "Не удалось отправить тест"
     },
     "strategyLlm": {
       "title": "AI Strategy — LLM",

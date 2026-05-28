@@ -6,8 +6,16 @@ export type User = {
   locale: string;
   account_segment: "partner" | "direct_lead";
   onboarding_completed: boolean;
+  email_verified: boolean;
   is_blocked: boolean;
   created_at: string;
+};
+
+export type RegisterPendingResponse = {
+  status: "verification_required";
+  email: string;
+  email_verified: boolean;
+  onboarding_completed: boolean;
 };
 
 import type {
@@ -168,9 +176,23 @@ export async function register(
   password: string,
   referral?: string
 ) {
-  return apiFetch<User>("/auth/register", {
+  return apiFetch<RegisterPendingResponse>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password, referral }),
+  });
+}
+
+export async function verifyEmail(token: string) {
+  return apiFetch<User>("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerification(email: string) {
+  return apiFetch<{ status: string }>("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email }),
   });
 }
 
@@ -602,6 +624,60 @@ export async function testStrategyLLMConnection(provider: LLMProvider) {
   return apiFetch<StrategyLLMTestConnectionResult>("/admin/strategy-llm/test-connection", {
     method: "POST",
     body: JSON.stringify({ provider }),
+  });
+}
+
+export type SMTPEncryption = "none" | "ssl" | "tls";
+
+export type SMTPSettings = {
+  enabled: boolean;
+  from_email: string;
+  from_name: string;
+  force_from_email: boolean;
+  force_from_name: boolean;
+  reply_to_from_email: boolean;
+  host: string;
+  port: number;
+  encryption: SMTPEncryption;
+  auto_tls: boolean;
+  auth: boolean;
+  username: string;
+};
+
+export type SMTPAdminView = {
+  settings: SMTPSettings;
+  password_set: boolean;
+  password_hint?: string;
+  updated_at?: string;
+  yandex_preset_host: string;
+  yandex_preset_port: number;
+};
+
+export type SMTPAdminUpdateRequest = {
+  settings: SMTPSettings;
+  password?: string;
+};
+
+export type SMTPTestEmailResult = {
+  ok: boolean;
+  message: string;
+};
+
+export async function fetchAdminSMTPSettings() {
+  return apiFetch<SMTPAdminView>("/admin/email-smtp");
+}
+
+export async function updateAdminSMTPSettings(payload: SMTPAdminUpdateRequest) {
+  return apiFetch<SMTPAdminView>("/admin/email-smtp", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sendAdminSMTPTest(to: string) {
+  return apiFetch<SMTPTestEmailResult>("/admin/email-smtp/test", {
+    method: "POST",
+    body: JSON.stringify({ to }),
   });
 }
 

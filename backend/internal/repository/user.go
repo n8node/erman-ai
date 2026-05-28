@@ -19,9 +19,9 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{pool: pool}
 }
 
-const userColumns = `id, email, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at`
+const userColumns = `id, email, role, plan_id, locale, account_segment, onboarding_completed, email_verified_at, is_blocked, created_at, updated_at, last_active_at`
 
-func (r *UserRepository) Create(ctx context.Context, email, passwordHash string, planID *string, role, segment string, onboardingDone bool) (*model.User, error) {
+func (r *UserRepository) Create(ctx context.Context, email, passwordHash string, planID *string, role, segment string, onboardingDone bool, emailVerified bool) (*model.User, error) {
 	if role == "" {
 		role = "user"
 	}
@@ -29,15 +29,28 @@ func (r *UserRepository) Create(ctx context.Context, email, passwordHash string,
 		segment = model.AccountSegmentPartner
 	}
 	const q = `
-		INSERT INTO users (email, password_hash, role, plan_id, account_segment, onboarding_completed)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (email, password_hash, role, plan_id, account_segment, onboarding_completed, email_verified_at)
+		VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $7 THEN NOW() ELSE NULL END)
 		RETURNING ` + userColumns
-	return r.scanUser(r.pool.QueryRow(ctx, q, email, passwordHash, role, planID, segment, onboardingDone))
+	return r.scanUser(r.pool.QueryRow(ctx, q, email, passwordHash, role, planID, segment, onboardingDone, emailVerified))
+}
+
+func (r *UserRepository) MarkEmailVerified(ctx context.Context, userID string) (*model.User, error) {
+	const q = `
+		UPDATE users SET email_verified_at = NOW(), updated_at = NOW()
+		WHERE id = $1
+		RETURNING ` + userColumns
+	return r.scanUser(r.pool.QueryRow(ctx, q, userID))
+}
+
+func (r *UserRepository) ClearEmailVerified(ctx context.Context, userID string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE users SET email_verified_at = NULL, updated_at = NOW() WHERE id = $1`, userID)
+	return err
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, string, error) {
 	const q = `
-		SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at
+		SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, email_verified_at, is_blocked, created_at, updated_at, last_active_at
 		FROM users WHERE email = $1
 	`
 	var hash string
@@ -50,7 +63,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*model.User, error) {
-	const q = `SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, is_blocked, created_at, updated_at, last_active_at FROM users WHERE id = $1`
+	const q = `SELECT id, email, password_hash, role, plan_id, locale, account_segment, onboarding_completed, email_verified_at, is_blocked, created_at, updated_at, last_active_at FROM users WHERE id = $1`
 	var hash string
 	row := r.pool.QueryRow(ctx, q, id)
 	u, err := r.scanUserRow(row, &hash)
@@ -62,7 +75,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*model.User, e
 
 func (r *UserRepository) UpdateProfile(ctx context.Context, id, email, locale string) (*model.User, error) {
 	const q = `
-		UPDATE users SET email = $2, locale = $3, updated_at = NOW()
+		UPDATE users SET
+			email = $2,
+			locale = $3,
+			email_verified_at = CASE WHEN LOWER(email) = LOWER($2) THEN email_verified_at ELSE NULL END,
+			updated_at = NOW()
 		WHERE id = $1
 		RETURNING ` + userColumns
 	return r.scanUser(r.pool.QueryRow(ctx, q, id, email, locale))
@@ -102,7 +119,7 @@ func (r *UserRepository) scanUser(row pgx.Row) (*model.User, error) {
 	var u model.User
 	err := row.Scan(
 		&u.ID, &u.Email, &u.Role, &u.PlanID, &u.Locale,
-		&u.AccountSegment, &u.OnboardingCompleted, &u.IsBlocked,
+		&u.AccountSegment, &u.OnboardingCompleted, &u.EmailVerifiedAt, &u.IsBlocked,
 		&u.CreatedAt, &u.UpdatedAt, &u.LastActiveAt,
 	)
 	return &u, err
@@ -112,7 +129,7 @@ func (r *UserRepository) scanUserRow(row pgx.Row, hash *string) (*model.User, er
 	var u model.User
 	err := row.Scan(
 		&u.ID, &u.Email, hash, &u.Role, &u.PlanID, &u.Locale,
-		&u.AccountSegment, &u.OnboardingCompleted, &u.IsBlocked,
+		&u.AccountSegment, &u.OnboardingCompleted, &u.EmailVerifiedAt, &u.IsBlocked,
 		&u.CreatedAt, &u.UpdatedAt, &u.LastActiveAt,
 	)
 	return &u, err
@@ -149,7 +166,7 @@ type AdminUserRow struct {
 
 func (r *UserRepository) ListAdmin(ctx context.Context, search string, limit, offset int) ([]AdminUserRow, error) {
 	const q = `
-		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.is_blocked,
+		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.email_verified_at, u.is_blocked,
 		       u.created_at, u.updated_at, u.last_active_at, p.slug, p.name
 		FROM users u
 		LEFT JOIN plans p ON p.id = u.plan_id
@@ -177,7 +194,7 @@ func (r *UserRepository) CountAdmin(ctx context.Context, search string) (int, er
 
 func (r *UserRepository) GetAdminRow(ctx context.Context, id string) (*AdminUserRow, error) {
 	const q = `
-		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.is_blocked,
+		SELECT u.id, u.email, u.role, u.plan_id, u.locale, u.account_segment, u.onboarding_completed, u.email_verified_at, u.is_blocked,
 		       u.created_at, u.updated_at, u.last_active_at, p.slug, p.name
 		FROM users u
 		LEFT JOIN plans p ON p.id = u.plan_id
@@ -225,7 +242,7 @@ func scanAdminUserRows(rows pgx.Rows) ([]AdminUserRow, error) {
 func scanAdminUserRow(row pgx.Row, item *AdminUserRow) error {
 	return row.Scan(
 		&item.ID, &item.Email, &item.Role, &item.PlanID, &item.Locale,
-		&item.AccountSegment, &item.OnboardingCompleted, &item.IsBlocked,
+		&item.AccountSegment, &item.OnboardingCompleted, &item.EmailVerifiedAt, &item.IsBlocked,
 		&item.CreatedAt, &item.UpdatedAt, &item.LastActiveAt,
 		&item.PlanSlug, &item.PlanName,
 	)
