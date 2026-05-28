@@ -7,8 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/erman-ai/erman-ai/internal/model"
 )
 
 type telegramUser struct {
@@ -83,4 +88,69 @@ func (s *TelegramService) telegramGetChat(ctx context.Context, token, chatID str
 		"chat_id": strings.TrimSpace(chatID),
 	})
 	return err
+}
+
+func (s *TelegramService) telegramSendMessage(ctx context.Context, token, chatID, text string) error {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return nil
+	}
+	_, err := s.telegramAPI(ctx, token, "sendMessage", map[string]string{
+		"chat_id": strings.TrimSpace(chatID),
+		"text":    truncateRunes(text, model.TelegramMessageMaxRunes),
+	})
+	return err
+}
+
+func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chatID, filePath, caption string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+
+	_ = w.WriteField("chat_id", strings.TrimSpace(chatID))
+	if c := strings.TrimSpace(caption); c != "" {
+		_ = w.WriteField("caption", truncateRunes(c, model.TelegramCaptionMaxRunes))
+	}
+
+	part, err := w.CreateFormFile("photo", filepath.Base(filePath))
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendPhoto", strings.TrimSpace(token))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
+	var parsed telegramAPIResponse
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return fmt.Errorf("telegram api: invalid response")
+	}
+	if !parsed.OK {
+		if parsed.Description != "" {
+			return fmt.Errorf("telegram api: %s", parsed.Description)
+		}
+		return fmt.Errorf("telegram api: sendPhoto failed")
+	}
+	return nil
 }

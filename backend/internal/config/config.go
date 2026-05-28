@@ -35,8 +35,9 @@ type Config struct {
 	WorkerStrategyConcurrency int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`
 	WorkerProposalConcurrency int `env:"WORKER_PROPOSAL_CONCURRENCY" envDefault:"3"`
 
-	StorageBackend string `env:"STORAGE_BACKEND" envDefault:"local"`
-	Domain         string `env:"DOMAIN" envDefault:"erman.ai"`
+	StorageBackend     string `env:"STORAGE_BACKEND" envDefault:"local"`
+	TelegramAssetsDir  string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
+	Domain             string `env:"DOMAIN" envDefault:"erman.ai"`
 
 	startedAt time.Time
 }

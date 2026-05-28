@@ -684,6 +684,8 @@ export async function sendAdminSMTPTest(to: string) {
 export type TelegramSettings = {
   enabled: boolean;
   chat_id: string;
+  start_enabled: boolean;
+  start_text: string;
   notify_registration: boolean;
   registration_template: string;
   notify_email_verified: boolean;
@@ -706,12 +708,17 @@ export type TelegramRuntimeStatus = {
   last_error?: string;
   last_check_at?: string;
   supervisor_running: boolean;
+  polling_running?: boolean;
 };
 
 export type TelegramAdminView = {
   settings: TelegramSettings;
   bot_token_set: boolean;
   bot_token_hint?: string;
+  start_image_configured: boolean;
+  start_text_runes: number;
+  start_text_limit: number;
+  start_caption_limit: number;
   updated_at?: string;
   runtime: TelegramRuntimeStatus;
 };
@@ -719,6 +726,7 @@ export type TelegramAdminView = {
 export type TelegramAdminUpdateRequest = {
   settings: TelegramSettings;
   bot_token?: string;
+  clear_start_image?: boolean;
 };
 
 export type TelegramTestResult = {
@@ -754,6 +762,27 @@ export async function sendAdminTelegramTest() {
     method: "POST",
     body: JSON.stringify({}),
   });
+}
+
+export function adminTelegramStartImageUrl(cacheBust?: number) {
+  const q = cacheBust ? `?v=${cacheBust}` : "";
+  return `${clientBase()}/admin/telegram/start-image${q}`;
+}
+
+export async function uploadAdminTelegramStartImage(file: File) {
+  const form = new FormData();
+  form.append("image", file);
+  const res = await fetch(`${clientBase()}/admin/telegram/start-image`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message = typeof data.error === "string" ? data.error : "upload failed";
+    throw new Error(message);
+  }
+  return data as TelegramAdminView;
 }
 
 export type AdminPlan = {

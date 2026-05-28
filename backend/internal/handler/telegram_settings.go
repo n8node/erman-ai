@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -55,6 +56,64 @@ func (h *TelegramSettingsHandler) UpdateAdmin(w http.ResponseWriter, r *http.Req
 	}
 	view.Runtime = h.telegram.Restart(r.Context())
 	writeJSON(w, http.StatusOK, view)
+}
+
+func (h *TelegramSettingsHandler) UploadStartImage(w http.ResponseWriter, r *http.Request) {
+	const maxUpload = model.TelegramPhotoMaxBytes + 1024
+	r.Body = http.MaxBytesReader(w, r.Body, maxUpload)
+
+	if err := r.ParseMultipartForm(maxUpload); err != nil {
+		writeError(w, http.StatusBadRequest, "file too large (max 10 MB)")
+		return
+	}
+
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "image field required")
+		return
+	}
+	defer file.Close()
+
+	contentType := header.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+
+	view, err := h.settings.SaveStartImage(r.Context(), contentType, file)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidTelegramSettings) {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	view.Runtime = h.telegram.Restart(r.Context())
+	writeJSON(w, http.StatusOK, view)
+}
+
+func (h *TelegramSettingsHandler) GetStartImage(w http.ResponseWriter, r *http.Request) {
+	rec, err := h.settings.GetStored(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load settings")
+		return
+	}
+	filename := rec.Config.StartImageFilename
+	if filename == "" {
+		writeError(w, http.StatusNotFound, "no start image")
+		return
+	}
+
+	f, contentType, err := h.settings.StartImageReader(filename)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "image not found")
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	_, _ = io.Copy(w, f)
 }
 
 func (h *TelegramSettingsHandler) SendTest(w http.ResponseWriter, r *http.Request) {

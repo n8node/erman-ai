@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -14,11 +17,12 @@ var ErrInvalidTelegramSettings = errors.New("invalid telegram settings")
 
 type TelegramSettingsService struct {
 	repo     *repository.TelegramSettingsRepository
+	assets   *TelegramAssets
 	runtime  func() model.TelegramBotRuntimeStatus
 }
 
-func NewTelegramSettingsService(repo *repository.TelegramSettingsRepository) *TelegramSettingsService {
-	return &TelegramSettingsService{repo: repo}
+func NewTelegramSettingsService(repo *repository.TelegramSettingsRepository, assets *TelegramAssets) *TelegramSettingsService {
+	return &TelegramSettingsService{repo: repo, assets: assets}
 }
 
 func (s *TelegramSettingsService) BindRuntimeStatus(fn func() model.TelegramBotRuntimeStatus) {
@@ -64,10 +68,6 @@ func (s *TelegramSettingsService) GetAdminView(ctx context.Context) (*model.Tele
 }
 
 func (s *TelegramSettingsService) Update(ctx context.Context, req model.TelegramAdminUpdateRequest) (*model.TelegramAdminView, error) {
-	if err := validateTelegramSettings(req.Settings); err != nil {
-		return nil, err
-	}
-
 	rec, err := s.GetStored(ctx)
 	if err != nil {
 		return nil, err
@@ -79,6 +79,17 @@ func (s *TelegramSettingsService) Update(ctx context.Context, req model.Telegram
 	} else {
 		cfg.BotToken = rec.Config.BotToken
 	}
+	cfg.StartImageFilename = rec.Config.StartImageFilename
+	if req.ClearStartImage {
+		cfg.StartImageFilename = ""
+		if s.assets != nil {
+			_ = s.assets.DeleteStartImage()
+		}
+	}
+
+	if err := validateTelegramSettings(cfg); err != nil {
+		return nil, err
+	}
 
 	updated, err := s.repo.Update(ctx, cfg)
 	if err != nil {
@@ -87,22 +98,81 @@ func (s *TelegramSettingsService) Update(ctx context.Context, req model.Telegram
 	return buildTelegramAdminView(updated, s.currentRuntime()), nil
 }
 
+func (s *TelegramSettingsService) SaveStartImage(ctx context.Context, contentType string, r io.Reader) (*model.TelegramAdminView, error) {
+	rec, err := s.GetStored(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.assets == nil {
+		return nil, fmt.Errorf("%w: assets storage not configured", ErrInvalidTelegramSettings)
+	}
+	filename, err := s.assets.SaveStartImage(contentType, r, model.TelegramPhotoMaxBytes)
+	if err != nil {
+		return nil, err
+	}
+	cfg := rec.Config
+	cfg.StartImageFilename = filename
+	updated, err := s.repo.Update(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return buildTelegramAdminView(updated, s.currentRuntime()), nil
+}
+
+func (s *TelegramSettingsService) StartImageReader(filename string) (io.ReadCloser, string, error) {
+	if s.assets == nil || !s.assets.StartImageExists(filename) {
+		return nil, "", os.ErrNotExist
+	}
+	f, err := s.assets.OpenStartImage(filename)
+	if err != nil {
+		return nil, "", err
+	}
+	ext := strings.ToLower(filepath.Ext(filename))
+	ct := "image/jpeg"
+	switch ext {
+	case ".png":
+		ct = "image/png"
+	case ".webp":
+		ct = "image/webp"
+	}
+	return f, ct, nil
+}
+
 func buildTelegramAdminView(rec *model.TelegramSettingsRecord, runtime model.TelegramBotRuntimeStatus) *model.TelegramAdminView {
 	pub := rec.Config
 	pub.BotToken = ""
+	pub.StartImageFilename = ""
+	imageOK := rec.Config.StartImageFilename != ""
 	return &model.TelegramAdminView{
-		Settings:     pub,
-		BotTokenSet:  strings.TrimSpace(rec.Config.BotToken) != "",
-		BotTokenHint: maskSecret(rec.Config.BotToken),
-		UpdatedAt:    rec.UpdatedAt,
-		Runtime:      runtime,
+		Settings:             pub,
+		BotTokenSet:          strings.TrimSpace(rec.Config.BotToken) != "",
+		BotTokenHint:         maskSecret(rec.Config.BotToken),
+		StartImageConfigured: imageOK,
+		StartTextRunes:       runeLen(rec.Config.StartText),
+		StartTextLimit:       model.TelegramMessageMaxRunes,
+		StartCaptionLimit:    model.TelegramCaptionMaxRunes,
+		UpdatedAt:            rec.UpdatedAt,
+		Runtime:              runtime,
 	}
 }
 
 func validateTelegramSettings(cfg model.TelegramSettings) error {
 	if cfg.Enabled {
 		if strings.TrimSpace(cfg.ChatID) == "" {
-			return fmt.Errorf("%w: chat_id required when enabled", ErrInvalidTelegramSettings)
+			return fmt.Errorf("%w: chat_id required when notifications enabled", ErrInvalidTelegramSettings)
+		}
+	}
+	if cfg.StartEnabled {
+		if strings.TrimSpace(cfg.BotToken) == "" {
+			return fmt.Errorf("%w: bot token required for /start handler", ErrInvalidTelegramSettings)
+		}
+		hasText := strings.TrimSpace(cfg.StartText) != ""
+		hasImage := strings.TrimSpace(cfg.StartImageFilename) != ""
+		if !hasText && !hasImage {
+			return fmt.Errorf("%w: add welcome text or image for /start", ErrInvalidTelegramSettings)
+		}
+		if runeLen(cfg.StartText) > model.TelegramMessageMaxRunes {
+			return fmt.Errorf("%w: start text exceeds %d characters", ErrInvalidTelegramSettings, model.TelegramMessageMaxRunes)
 		}
 	}
 	return nil

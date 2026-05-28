@@ -43,8 +43,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 
 	smtpSettingsSvc := service.NewSMTPSettingsService(smtpSettingsRepo)
 	mailSvc := service.NewMailService(smtpSettingsSvc)
-	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo)
-	telegramSvc := service.NewTelegramService(telegramSettingsSvc, logger)
+	telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
+	_ = telegramAssets.EnsureDir()
+	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo, telegramAssets)
+	telegramSvc := service.NewTelegramService(telegramSettingsSvc, telegramAssets, logger)
 	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
 	telegramSvc.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
@@ -180,6 +182,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Get("/telegram/status", telegramHandler.GetStatus)
 			admin.Post("/telegram/restart", telegramHandler.Restart)
 			admin.Post("/telegram/test", telegramHandler.SendTest)
+			admin.Post("/telegram/start-image", telegramHandler.UploadStartImage)
+			admin.Get("/telegram/start-image", telegramHandler.GetStartImage)
 		})
 	})
 

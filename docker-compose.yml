@@ -20,6 +20,9 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      TELEGRAM_ASSETS_DIR: /app/data/telegram
+    volumes:
+      - telegram_assets:/app/data/telegram
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,3 +94,4 @@ volumes:
   postgres_data:
   mysql_data:
   wp_uploads:
+  telegram_assets:

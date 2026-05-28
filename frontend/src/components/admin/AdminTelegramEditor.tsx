@@ -4,11 +4,13 @@ import { Eye, EyeOff, RefreshCw, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  adminTelegramStartImageUrl,
   fetchAdminTelegramSettings,
   fetchAdminTelegramStatus,
   restartAdminTelegramBot,
   sendAdminTelegramTest,
   updateAdminTelegramSettings,
+  uploadAdminTelegramStartImage,
   type TelegramAdminView,
   type TelegramBotStatus,
   type TelegramRuntimeStatus,
@@ -45,6 +47,8 @@ function statusDotClass(status: TelegramBotStatus): string {
 const DEFAULT_SETTINGS: TelegramSettings = {
   enabled: false,
   chat_id: "",
+  start_enabled: false,
+  start_text: "",
   notify_registration: true,
   registration_template: "",
   notify_email_verified: true,
@@ -68,11 +72,21 @@ export function AdminTelegramEditor() {
   const [testMessage, setTestMessage] = useState("");
   const [runtime, setRuntime] = useState<TelegramRuntimeStatus>(DEFAULT_RUNTIME);
   const [restarting, setRestarting] = useState(false);
+  const [startImageConfigured, setStartImageConfigured] = useState(false);
+  const [startTextRunes, setStartTextRunes] = useState(0);
+  const [startTextLimit, setStartTextLimit] = useState(4096);
+  const [startCaptionLimit, setStartCaptionLimit] = useState(1024);
+  const [imageCacheBust, setImageCacheBust] = useState(0);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   function applyView(data: TelegramAdminView) {
     setSettings(data.settings);
     setTokenSet(data.bot_token_set);
     setTokenHint(data.bot_token_hint || "");
+    setStartImageConfigured(data.start_image_configured);
+    setStartTextRunes(data.start_text_runes);
+    setStartTextLimit(data.start_text_limit || 4096);
+    setStartCaptionLimit(data.start_caption_limit || 1024);
     if (data.runtime) setRuntime(data.runtime);
   }
 
@@ -103,6 +117,41 @@ export function AdminTelegramEditor() {
   function patch(partial: Partial<TelegramSettings>) {
     setSettings((prev) => ({ ...prev, ...partial }));
     setSuccess("");
+  }
+
+  async function handleImageUpload(file: File) {
+    setUploadingImage(true);
+    setError("");
+    try {
+      const data = await uploadAdminTelegramStartImage(file);
+      applyView(data);
+      setImageCacheBust(Date.now());
+      setSuccess(t("imageUploaded"));
+      if (data.runtime) setRuntime(data.runtime);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("imageUploadFailed"));
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  async function handleRemoveImage() {
+    setSaving(true);
+    setError("");
+    try {
+      const data = await updateAdminTelegramSettings({
+        settings,
+        clear_start_image: true,
+        ...(tokenInput.trim() ? { bot_token: tokenInput.trim() } : {}),
+      });
+      applyView(data);
+      setImageCacheBust(0);
+      setSuccess(t("imageRemoved"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("saveFailed"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -280,6 +329,94 @@ export function AdminTelegramEditor() {
             placeholder="639160984"
           />
         </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-text3">
+          {t("startSection")}
+        </h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.start_enabled}
+            onChange={(e) => patch({ start_enabled: e.target.checked })}
+            className="rounded border-border2"
+          />
+          {t("startEnabled")}
+        </label>
+        <p className="text-xs text-text3">{t("startHint")}</p>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <label className="text-xs font-medium">{t("startText")}</label>
+            <span
+              className={cn(
+                "text-xs",
+                startTextRunes >
+                  (startImageConfigured ? startCaptionLimit : startTextLimit)
+                  ? "text-red-800"
+                  : "text-text3"
+              )}
+            >
+              {startTextRunes} /{" "}
+              {startImageConfigured ? startCaptionLimit : startTextLimit}
+              {startImageConfigured && startTextRunes > startCaptionLimit
+                ? ` (+ ${t("startOverflowHint")})`
+                : ""}
+            </span>
+          </div>
+          <textarea
+            value={settings.start_text}
+            onChange={(e) => {
+              patch({ start_text: e.target.value });
+              setStartTextRunes([...e.target.value].length);
+            }}
+            className={templateClass}
+            rows={6}
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("startImage")}</label>
+          <p className="mb-2 text-xs text-text3">{t("startImageHint")}</p>
+          {startImageConfigured && (
+            <div className="mb-3 overflow-hidden rounded-lg border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={adminTelegramStartImageUrl(imageCacheBust)}
+                alt=""
+                className="max-h-48 w-full object-contain bg-bg2"
+              />
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex cursor-pointer items-center rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                disabled={uploadingImage}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleImageUpload(f);
+                  e.target.value = "";
+                }}
+              />
+              {uploadingImage ? t("imageUploading") : t("startImageUpload")}
+            </label>
+            {startImageConfigured && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleRemoveImage}
+                className="rounded-lg border border-border2 px-4 py-2 text-sm text-text2 hover:bg-bg2 disabled:opacity-60"
+              >
+                {t("startImageRemove")}
+              </button>
+            )}
+          </div>
+        </div>
+        {runtime.polling_running && (
+          <p className="text-xs text-green-800">{t("startPollingActive")}</p>
+        )}
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-3">
