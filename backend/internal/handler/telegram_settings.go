@@ -24,7 +24,17 @@ func (h *TelegramSettingsHandler) GetAdmin(w http.ResponseWriter, r *http.Reques
 		writeError(w, http.StatusInternalServerError, "failed to load telegram settings")
 		return
 	}
+	view.Runtime = h.telegram.GetRuntimeStatus()
 	writeJSON(w, http.StatusOK, view)
+}
+
+func (h *TelegramSettingsHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, h.telegram.GetRuntimeStatus())
+}
+
+func (h *TelegramSettingsHandler) Restart(w http.ResponseWriter, r *http.Request) {
+	st := h.telegram.Restart(r.Context())
+	writeJSON(w, http.StatusOK, st)
 }
 
 func (h *TelegramSettingsHandler) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
@@ -43,10 +53,16 @@ func (h *TelegramSettingsHandler) UpdateAdmin(w http.ResponseWriter, r *http.Req
 		writeError(w, http.StatusInternalServerError, "failed to update telegram settings")
 		return
 	}
+	view.Runtime = h.telegram.Restart(r.Context())
 	writeJSON(w, http.StatusOK, view)
 }
 
 func (h *TelegramSettingsHandler) SendTest(w http.ResponseWriter, r *http.Request) {
 	ok, msg := h.telegram.SendTest(r.Context())
-	writeJSON(w, http.StatusOK, model.TelegramTestResult{OK: ok, Message: msg})
+	result := model.TelegramTestResult{OK: ok, Message: msg}
+	if ok {
+		st := h.telegram.GetRuntimeStatus()
+		result.Runtime = &st
+	}
+	writeJSON(w, http.StatusOK, result)
 }

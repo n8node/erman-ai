@@ -15,8 +15,9 @@ import (
 )
 
 type Server struct {
-	cfg    *config.Config
-	router chi.Router
+	cfg      *config.Config
+	router   chi.Router
+	telegram *service.TelegramService
 }
 
 func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Server {
@@ -43,7 +44,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	smtpSettingsSvc := service.NewSMTPSettingsService(smtpSettingsRepo)
 	mailSvc := service.NewMailService(smtpSettingsSvc)
 	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo)
-	telegramSvc := service.NewTelegramService(telegramSettingsSvc)
+	telegramSvc := service.NewTelegramService(telegramSettingsSvc, logger)
+	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
+	telegramSvc.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
 	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc, telegramSvc)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
@@ -174,11 +177,19 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Post("/email-smtp/test", smtpHandler.SendTest)
 			admin.Get("/telegram", telegramHandler.GetAdmin)
 			admin.Put("/telegram", telegramHandler.UpdateAdmin)
+			admin.Get("/telegram/status", telegramHandler.GetStatus)
+			admin.Post("/telegram/restart", telegramHandler.Restart)
 			admin.Post("/telegram/test", telegramHandler.SendTest)
 		})
 	})
 
-	return &Server{cfg: cfg, router: r}
+	return &Server{cfg: cfg, router: r, telegram: telegramSvc}
+}
+
+func (s *Server) Shutdown() {
+	if s.telegram != nil {
+		s.telegram.Stop()
+	}
 }
 
 func (s *Server) Handler() http.Handler {

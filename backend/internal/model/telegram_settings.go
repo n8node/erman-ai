@@ -19,11 +19,31 @@ type TelegramSettingsRecord struct {
 	UpdatedAt time.Time        `json:"updated_at"`
 }
 
+type TelegramBotStatus string
+
+const (
+	TelegramBotStatusDisabled      TelegramBotStatus = "disabled"
+	TelegramBotStatusMisconfigured TelegramBotStatus = "misconfigured"
+	TelegramBotStatusStarting      TelegramBotStatus = "starting"
+	TelegramBotStatusOnline        TelegramBotStatus = "online"
+	TelegramBotStatusOffline       TelegramBotStatus = "offline"
+)
+
+type TelegramBotRuntimeStatus struct {
+	Status            TelegramBotStatus `json:"status"`
+	Message           string            `json:"message"`
+	BotUsername       string            `json:"bot_username,omitempty"`
+	LastError         string            `json:"last_error,omitempty"`
+	LastCheckAt       time.Time         `json:"last_check_at,omitempty"`
+	SupervisorRunning bool              `json:"supervisor_running"`
+}
+
 type TelegramAdminView struct {
-	Settings     TelegramSettings `json:"settings"`
-	BotTokenSet  bool             `json:"bot_token_set"`
-	BotTokenHint string           `json:"bot_token_hint,omitempty"`
-	UpdatedAt    time.Time        `json:"updated_at"`
+	Settings     TelegramSettings         `json:"settings"`
+	BotTokenSet  bool                     `json:"bot_token_set"`
+	BotTokenHint string                   `json:"bot_token_hint,omitempty"`
+	UpdatedAt    time.Time                `json:"updated_at"`
+	Runtime      TelegramBotRuntimeStatus `json:"runtime"`
 }
 
 type TelegramAdminUpdateRequest struct {
@@ -32,8 +52,9 @@ type TelegramAdminUpdateRequest struct {
 }
 
 type TelegramTestResult struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
+	OK      bool                     `json:"ok"`
+	Message string                   `json:"message"`
+	Runtime *TelegramBotRuntimeStatus `json:"runtime,omitempty"`
 }
 
 func DefaultTelegramSettings() TelegramSettings {

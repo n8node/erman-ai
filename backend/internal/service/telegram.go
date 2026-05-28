@@ -1,14 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"strings"
 	"time"
 
@@ -19,18 +15,6 @@ var (
 	ErrTelegramDisabled      = errors.New("telegram notifications disabled")
 	ErrTelegramNotConfigured = errors.New("telegram bot not configured")
 )
-
-type TelegramService struct {
-	settings *TelegramSettingsService
-	client   *http.Client
-}
-
-func NewTelegramService(settings *TelegramSettingsService) *TelegramService {
-	return &TelegramService{
-		settings: settings,
-		client:   &http.Client{Timeout: 15 * time.Second},
-	}
-}
 
 func (s *TelegramService) SendTest(ctx context.Context) (bool, string) {
 	cfg, err := s.settings.GetEffective(ctx)
@@ -47,6 +31,7 @@ func (s *TelegramService) SendTest(ctx context.Context) (bool, string) {
 	if err := s.send(ctx, cfg, text); err != nil {
 		return false, err.Error()
 	}
+	s.triggerHealthCheck()
 	return true, "Тестовое сообщение отправлено"
 }
 
@@ -56,13 +41,13 @@ func (s *TelegramService) NotifyRegistration(ctx context.Context, user *model.Us
 		return
 	}
 	vars := map[string]string{
-		"email":           user.Email,
-		"name":            displayName(user.Email),
-		"referral":        strings.TrimSpace(referral),
-		"accountSegment":  user.AccountSegment,
-		"inviteCode":      strings.TrimSpace(referral),
-		"inviteScope":     user.AccountSegment,
-		"inviteOwner":     "",
+		"email":          user.Email,
+		"name":           displayName(user.Email),
+		"referral":       strings.TrimSpace(referral),
+		"accountSegment": user.AccountSegment,
+		"inviteCode":     strings.TrimSpace(referral),
+		"inviteScope":    user.AccountSegment,
+		"inviteOwner":    "",
 	}
 	text := applyTemplate(cfg.RegistrationTemplate, vars)
 	s.sendAsync(cfg, text, "registration")
@@ -120,44 +105,11 @@ func (s *TelegramService) send(ctx context.Context, cfg model.TelegramSettings, 
 		return errors.New("empty message")
 	}
 
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
-	body, _ := json.Marshal(map[string]string{
+	_, err := s.telegramAPI(ctx, token, "sendMessage", map[string]string{
 		"chat_id": chatID,
 		"text":    text,
 	})
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	if resp.StatusCode != http.StatusOK {
-		var tg struct {
-			Description string `json:"description"`
-		}
-		_ = json.Unmarshal(raw, &tg)
-		if tg.Description != "" {
-			return fmt.Errorf("telegram api: %s", tg.Description)
-		}
-		return fmt.Errorf("telegram api: status %d", resp.StatusCode)
-	}
-
-	var result struct {
-		OK bool `json:"ok"`
-	}
-	_ = json.Unmarshal(raw, &result)
-	if !result.OK {
-		return errors.New("telegram api: not ok")
-	}
-	return nil
+	return err
 }
 
 func applyTemplate(tpl string, vars map[string]string) string {

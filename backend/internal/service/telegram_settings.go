@@ -13,11 +13,26 @@ import (
 var ErrInvalidTelegramSettings = errors.New("invalid telegram settings")
 
 type TelegramSettingsService struct {
-	repo *repository.TelegramSettingsRepository
+	repo     *repository.TelegramSettingsRepository
+	runtime  func() model.TelegramBotRuntimeStatus
 }
 
 func NewTelegramSettingsService(repo *repository.TelegramSettingsRepository) *TelegramSettingsService {
 	return &TelegramSettingsService{repo: repo}
+}
+
+func (s *TelegramSettingsService) BindRuntimeStatus(fn func() model.TelegramBotRuntimeStatus) {
+	s.runtime = fn
+}
+
+func (s *TelegramSettingsService) currentRuntime() model.TelegramBotRuntimeStatus {
+	if s.runtime != nil {
+		return s.runtime()
+	}
+	return model.TelegramBotRuntimeStatus{
+		Status:  model.TelegramBotStatusStarting,
+		Message: "Статус недоступен",
+	}
 }
 
 func (s *TelegramSettingsService) GetStored(ctx context.Context) (*model.TelegramSettingsRecord, error) {
@@ -45,7 +60,7 @@ func (s *TelegramSettingsService) GetAdminView(ctx context.Context) (*model.Tele
 	if err != nil {
 		return nil, err
 	}
-	return buildTelegramAdminView(rec), nil
+	return buildTelegramAdminView(rec, s.currentRuntime()), nil
 }
 
 func (s *TelegramSettingsService) Update(ctx context.Context, req model.TelegramAdminUpdateRequest) (*model.TelegramAdminView, error) {
@@ -69,10 +84,10 @@ func (s *TelegramSettingsService) Update(ctx context.Context, req model.Telegram
 	if err != nil {
 		return nil, err
 	}
-	return buildTelegramAdminView(updated), nil
+	return buildTelegramAdminView(updated, s.currentRuntime()), nil
 }
 
-func buildTelegramAdminView(rec *model.TelegramSettingsRecord) *model.TelegramAdminView {
+func buildTelegramAdminView(rec *model.TelegramSettingsRecord, runtime model.TelegramBotRuntimeStatus) *model.TelegramAdminView {
 	pub := rec.Config
 	pub.BotToken = ""
 	return &model.TelegramAdminView{
@@ -80,6 +95,7 @@ func buildTelegramAdminView(rec *model.TelegramSettingsRecord) *model.TelegramAd
 		BotTokenSet:  strings.TrimSpace(rec.Config.BotToken) != "",
 		BotTokenHint: maskSecret(rec.Config.BotToken),
 		UpdatedAt:    rec.UpdatedAt,
+		Runtime:      runtime,
 	}
 }
 

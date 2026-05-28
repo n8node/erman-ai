@@ -692,11 +692,28 @@ export type TelegramSettings = {
   payment_template: string;
 };
 
+export type TelegramBotStatus =
+  | "disabled"
+  | "misconfigured"
+  | "starting"
+  | "online"
+  | "offline";
+
+export type TelegramRuntimeStatus = {
+  status: TelegramBotStatus;
+  message: string;
+  bot_username?: string;
+  last_error?: string;
+  last_check_at?: string;
+  supervisor_running: boolean;
+};
+
 export type TelegramAdminView = {
   settings: TelegramSettings;
   bot_token_set: boolean;
   bot_token_hint?: string;
   updated_at?: string;
+  runtime: TelegramRuntimeStatus;
 };
 
 export type TelegramAdminUpdateRequest = {
@@ -707,6 +724,7 @@ export type TelegramAdminUpdateRequest = {
 export type TelegramTestResult = {
   ok: boolean;
   message: string;
+  runtime?: TelegramRuntimeStatus;
 };
 
 export async function fetchAdminTelegramSettings() {
@@ -717,6 +735,17 @@ export async function updateAdminTelegramSettings(payload: TelegramAdminUpdateRe
   return apiFetch<TelegramAdminView>("/admin/telegram", {
     method: "PUT",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchAdminTelegramStatus() {
+  return apiFetch<TelegramRuntimeStatus>("/admin/telegram/status");
+}
+
+export async function restartAdminTelegramBot() {
+  return apiFetch<TelegramRuntimeStatus>("/admin/telegram/restart", {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 

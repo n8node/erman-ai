@@ -63,7 +63,7 @@ func main() {
 		smtpSvc := service.NewSMTPSettingsService(smtpRepo)
 		mailSvc := service.NewMailService(smtpSvc)
 		telegramSettingsSvc := service.NewTelegramSettingsService(telegramRepo)
-		telegramSvc := service.NewTelegramService(telegramSettingsSvc)
+		telegramSvc := service.NewTelegramService(telegramSettingsSvc, logger)
 		verifySvc := service.NewEmailVerificationService(userRepo, tokenRepo, mailSvc, telegramSvc, cfg)
 		authSvc := service.NewAuthService(userRepo, authMW, verifySvc, telegramSvc)
 		user, err := authSvc.SeedAdmin(ctx, *seedEmail, *seedPassword)
@@ -95,6 +95,8 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
+	srv.Shutdown()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
