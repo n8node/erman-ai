@@ -21,6 +21,20 @@
     "emailNotVerified": "Confirm your email — we already sent a link",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 8 characters",
+    "passwordPolicy": {
+      "show": "Show password",
+      "hide": "Hide password",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong",
+      "minLength": "At least 8 characters",
+      "lowercase": "Lowercase letter (a–z)",
+      "uppercase": "Uppercase letter (A–Z)",
+      "digit": "Number (0–9)",
+      "special": "Special character (!@#$…)",
+      "invalid": "Password does not meet the requirements"
+    },
     "ermanReferral": "Registration via Erman AI invitation",
     "verify": {
       "title": "Confirm your email",

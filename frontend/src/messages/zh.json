@@ -20,6 +20,20 @@
     "registerFailed": "注册失败",
     "passwordMismatch": "两次输入的密码不一致",
     "passwordTooShort": "密码至少需要 8 个字符",
+    "passwordPolicy": {
+      "show": "显示密码",
+      "hide": "隐藏密码",
+      "weak": "弱",
+      "fair": "一般",
+      "good": "良好",
+      "strong": "强",
+      "minLength": "至少 8 个字符",
+      "lowercase": "小写字母 (a–z)",
+      "uppercase": "大写字母 (A–Z)",
+      "digit": "数字 (0–9)",
+      "special": "特殊字符 (!@#$…)",
+      "invalid": "密码不符合要求"
+    },
     "ermanReferral": "通过 Erman AI 邀请注册"
   },
   "onboarding": {

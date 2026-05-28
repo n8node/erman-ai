@@ -20,6 +20,20 @@
     "registerFailed": "Échec de l’inscription",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "passwordTooShort": "Le mot de passe doit comporter au moins 8 caractères",
+    "passwordPolicy": {
+      "show": "Afficher le mot de passe",
+      "hide": "Masquer le mot de passe",
+      "weak": "Faible",
+      "fair": "Moyen",
+      "good": "Bon",
+      "strong": "Fort",
+      "minLength": "Au moins 8 caractères",
+      "lowercase": "Lettre minuscule (a–z)",
+      "uppercase": "Lettre majuscule (A–Z)",
+      "digit": "Chiffre (0–9)",
+      "special": "Caractère spécial (!@#$…)",
+      "invalid": "Le mot de passe ne respecte pas les exigences"
+    },
     "ermanReferral": "Inscription via invitation Erman AI"
   },
   "onboarding": {

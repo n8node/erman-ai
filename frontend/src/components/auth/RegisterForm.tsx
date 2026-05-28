@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { register } from "@/lib/api";
+import { checkPasswordRules, isPasswordValid } from "@/lib/password-policy";
+import { PasswordField } from "@/components/auth/PasswordField";
 
 export function RegisterForm() {
   const t = useTranslations("auth");
+  const tPolicy = useTranslations("auth.passwordPolicy");
   const router = useRouter();
   const searchParams = useSearchParams();
   const referral = searchParams.get("ref") || undefined;
@@ -17,15 +20,18 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const rules = useMemo(() => checkPasswordRules(password), [password]);
+  const passwordOk = isPasswordValid(rules);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password !== confirm) {
-      setError(t("passwordMismatch"));
+    if (!passwordOk) {
+      setError(tPolicy("invalid"));
       return;
     }
-    if (password.length < 8) {
-      setError(t("passwordTooShort"));
+    if (password !== confirm) {
+      setError(t("passwordMismatch"));
       return;
     }
     setLoading(true);
@@ -34,7 +40,12 @@ export function RegisterForm() {
       router.push(`/verify-email?email=${encodeURIComponent(result.email)}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("registerFailed"));
+      const msg = err instanceof Error ? err.message : t("registerFailed");
+      if (msg === "invalid input") {
+        setError(tPolicy("invalid"));
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,39 +77,25 @@ export function RegisterForm() {
           className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         />
       </div>
-      <div>
-        <label htmlFor="password" className="mb-1.5 block text-xs font-medium">
-          {t("password")}
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-        />
-      </div>
-      <div>
-        <label htmlFor="confirm" className="mb-1.5 block text-xs font-medium">
-          {t("confirmPassword")}
-        </label>
-        <input
-          id="confirm"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-        />
-      </div>
+      <PasswordField
+        id="password"
+        label={t("password")}
+        value={password}
+        onChange={setPassword}
+        autoComplete="new-password"
+        showStrength
+        showRequirements
+      />
+      <PasswordField
+        id="confirm"
+        label={t("confirmPassword")}
+        value={confirm}
+        onChange={setConfirm}
+        autoComplete="new-password"
+      />
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !passwordOk}
         className="w-full rounded-lg bg-text px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
       >
         {loading ? t("loading") : t("register")}

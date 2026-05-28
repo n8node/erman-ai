@@ -7,11 +7,11 @@ import (
 	"net/mail"
 	"strings"
 	"time"
-	"unicode/utf8"
 
+	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/model"
-	"github.com/erman-ai/erman-ai/internal/i18n"
+	pwdpolicy "github.com/erman-ai/erman-ai/internal/password"
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -238,7 +238,7 @@ func validateCredentials(email, password string) error {
 }
 
 func validatePassword(password string) error {
-	if utf8.RuneCountInString(password) < 8 {
+	if err := pwdpolicy.Validate(password); err != nil {
 		return ErrInvalidInput
 	}
 	return nil

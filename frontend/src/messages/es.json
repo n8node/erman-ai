@@ -20,6 +20,20 @@
     "registerFailed": "El registro falló",
     "passwordMismatch": "Las contraseñas no coinciden",
     "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+    "passwordPolicy": {
+      "show": "Mostrar contraseña",
+      "hide": "Ocultar contraseña",
+      "weak": "Débil",
+      "fair": "Media",
+      "good": "Buena",
+      "strong": "Fuerte",
+      "minLength": "Al menos 8 caracteres",
+      "lowercase": "Letra minúscula (a–z)",
+      "uppercase": "Letra mayúscula (A–Z)",
+      "digit": "Número (0–9)",
+      "special": "Carácter especial (!@#$…)",
+      "invalid": "La contraseña no cumple los requisitos"
+    },
     "ermanReferral": "Registro mediante invitación de Erman AI"
   },
   "onboarding": {
