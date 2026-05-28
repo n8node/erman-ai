@@ -36,12 +36,14 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	budgetConfigRepo := repository.NewCalculatorBudgetConfigRepository(db.Pool)
 	strategyLLMRepo := repository.NewStrategyLLMSettingsRepository(db.Pool)
 	smtpSettingsRepo := repository.NewSMTPSettingsRepository(db.Pool)
+	paymentSettingsRepo := repository.NewPaymentSettingsRepository(db.Pool)
 	telegramSettingsRepo := repository.NewTelegramSettingsRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
 	smtpSettingsSvc := service.NewSMTPSettingsService(smtpSettingsRepo)
+	paymentSettingsSvc := service.NewPaymentSettingsService(paymentSettingsRepo, cfg)
 	mailSvc := service.NewMailService(smtpSettingsSvc)
 	telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
 	_ = telegramAssets.EnsureDir()
@@ -81,6 +83,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	planHandler := handler.NewPlanHandler(planSvc)
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	smtpHandler := handler.NewSMTPSettingsHandler(smtpSettingsSvc, mailSvc)
+	paymentHandler := handler.NewPaymentSettingsHandler(paymentSettingsSvc)
+	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentSettingsSvc, logger)
 	telegramHandler := handler.NewTelegramSettingsHandler(telegramSettingsSvc, telegramSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
@@ -102,6 +106,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/shared/{token}", shareHandler.GetPublic)
 		api.Get("/public/tooltips", tooltipHandler.ListAnonymous)
 		api.Get("/public/translations", translationHandler.ListPublic)
+		api.Post("/billing/yookassa/webhook", paymentWebhookHandler.YookassaWebhook)
+		api.Get("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
+		api.Post("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)
@@ -177,6 +184,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Get("/email-smtp", smtpHandler.GetAdmin)
 			admin.Put("/email-smtp", smtpHandler.UpdateAdmin)
 			admin.Post("/email-smtp/test", smtpHandler.SendTest)
+			admin.Get("/payments", paymentHandler.GetAdmin)
+			admin.Put("/payments", paymentHandler.UpdateAdmin)
+			admin.Post("/payments/test", paymentHandler.TestConnection)
 			admin.Get("/telegram", telegramHandler.GetAdmin)
 			admin.Put("/telegram", telegramHandler.UpdateAdmin)
 			admin.Get("/telegram/status", telegramHandler.GetStatus)

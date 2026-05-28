@@ -681,6 +681,68 @@ export async function sendAdminSMTPTest(to: string) {
   });
 }
 
+export type PaymentProvider = "yookassa" | "robokassa";
+
+export type YookassaAdminSettings = {
+  shop_id: string;
+  return_url: string;
+  enabled: boolean;
+};
+
+export type RobokassaAdminSettings = {
+  merchant_login: string;
+  test_mode: boolean;
+  enabled: boolean;
+};
+
+export type PaymentAdminView = {
+  active_provider: PaymentProvider;
+  yookassa: YookassaAdminSettings;
+  robokassa: RobokassaAdminSettings;
+  yookassa_secret_set: boolean;
+  yookassa_secret_hint?: string;
+  robokassa_password1_set: boolean;
+  robokassa_password1_hint?: string;
+  robokassa_password2_set: boolean;
+  robokassa_password2_hint?: string;
+  yookassa_webhook_url: string;
+  robokassa_result_url: string;
+  default_return_url: string;
+  updated_at?: string;
+};
+
+export type PaymentAdminUpdateRequest = {
+  active_provider: PaymentProvider;
+  yookassa: YookassaAdminSettings;
+  robokassa: RobokassaAdminSettings;
+  yookassa_secret_key?: string;
+  robokassa_password1?: string;
+  robokassa_password2?: string;
+};
+
+export type PaymentTestResult = {
+  ok: boolean;
+  message: string;
+};
+
+export async function fetchAdminPaymentSettings() {
+  return apiFetch<PaymentAdminView>("/admin/payments");
+}
+
+export async function updateAdminPaymentSettings(payload: PaymentAdminUpdateRequest) {
+  return apiFetch<PaymentAdminView>("/admin/payments", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function testAdminPaymentConnection(provider: PaymentProvider) {
+  return apiFetch<PaymentTestResult>("/admin/payments/test", {
+    method: "POST",
+    body: JSON.stringify({ provider }),
+  });
+}
+
 export type TelegramSettings = {
   enabled: boolean;
   chat_id: string;
