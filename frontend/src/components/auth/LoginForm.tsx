@@ -24,7 +24,7 @@ export function LoginForm() {
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.code === "email_not_verified") {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        setError(t("emailNotVerified"));
         return;
       }
       setError(err instanceof Error ? err.message : t("loginFailed"));
@@ -38,6 +38,16 @@ export function LoginForm() {
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
+          {error === t("emailNotVerified") && email.trim() && (
+            <p className="mt-2">
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+                className="text-accent hover:underline"
+              >
+                {t("verify.resendLink")}
+              </Link>
+            </p>
+          )}
         </div>
       )}
       <div>

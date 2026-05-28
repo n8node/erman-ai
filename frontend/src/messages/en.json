@@ -35,6 +35,7 @@
       "verifyFailed": "This link is invalid or expired",
       "confirming": "Confirming your email…",
       "backToLogin": "Back to sign in",
+      "resendLink": "Confirm email or resend the message",
       "loading": "Loading…"
     }
   },

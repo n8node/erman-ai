@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 import { LOCALE_COOKIE, isAppLocale } from "./i18n/locales";
 import { negotiateFromAcceptLanguage } from "./i18n/negotiate";
 
-const authPages = ["/login", "/register"];
+/** Pages reachable without a session (basePath is stripped in middleware). */
+const publicPages = ["/login", "/register", "/verify-email"];
 
 function isSharePath(pathname: string) {
   return pathname.startsWith("/share/") || pathname.startsWith("/dashboard/share/");
@@ -17,11 +18,11 @@ export function middleware(request: NextRequest) {
 
   if (isSharePath(pathname)) {
     response = NextResponse.next();
-  } else if (!token && !authPages.includes(pathname)) {
+  } else if (!token && !publicPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     response = NextResponse.redirect(url);
-  } else if (token && authPages.includes(pathname)) {
+  } else if (token && publicPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     response = NextResponse.redirect(url);
