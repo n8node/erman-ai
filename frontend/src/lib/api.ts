@@ -745,6 +745,7 @@ export type AdminUserRow = {
   locale: string;
   account_segment: string;
   onboarding_completed: boolean;
+  email_verified_at?: string | null;
   is_blocked: boolean;
   created_at: string;
   last_active_at?: string | null;

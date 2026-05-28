@@ -24,6 +24,12 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
+function userStatus(user: AdminUserRow): "blocked" | "verified" | "pending" {
+  if (user.is_blocked) return "blocked";
+  if (user.email_verified_at) return "verified";
+  return "pending";
+}
+
 export function AdminUsersEditor() {
   const t = useTranslations("admin.users");
   const [users, setUsers] = useState<AdminUserRow[]>([]);
@@ -161,6 +167,7 @@ export function AdminUsersEditor() {
             <thead>
               <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                 <th className="px-4 py-3">{t("colEmail")}</th>
+                <th className="px-4 py-3">{t("colStatus")}</th>
                 <th className="px-4 py-3">{t("colPlan")}</th>
                 <th className="px-4 py-3">{t("colRole")}</th>
                 <th className="px-4 py-3">{t("colSegment")}</th>
@@ -179,11 +186,23 @@ export function AdminUsersEditor() {
                   <tr key={user.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3">
                       <div className="font-medium">{user.email}</div>
-                      {user.is_blocked && (
-                        <span className="mt-1 inline-block rounded bg-red-50 px-1.5 py-0.5 text-[10px] uppercase text-red-700">
-                          {t("blocked")}
-                        </span>
-                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const status = userStatus(user);
+                        return (
+                          <span
+                            className={cn(
+                              "inline-block rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                              status === "blocked" && "bg-red-50 text-red-700",
+                              status === "verified" && "bg-success-bg text-success",
+                              status === "pending" && "bg-warning-bg text-warning"
+                            )}
+                          >
+                            {t(`status.${status}`)}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       {canEditPlan ? (

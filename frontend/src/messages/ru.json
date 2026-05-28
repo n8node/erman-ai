@@ -132,6 +132,7 @@
       "searchPlaceholder": "Поиск по email…",
       "search": "Найти",
       "colEmail": "Email",
+      "colStatus": "Статус",
       "colPlan": "Тариф",
       "colRole": "Роль",
       "colSegment": "Сегмент",
@@ -142,6 +143,11 @@
       "impersonate": "Войти как",
       "delete": "Удалить",
       "blocked": "Заблокирован",
+      "status": {
+        "verified": "Подтверждён",
+        "pending": "Ожидает email",
+        "blocked": "Заблокирован"
+      },
       "deleteConfirm": "Удалить пользователя {email}? Все его данные будут удалены безвозвратно.",
       "impersonateConfirm": "Войти в аккаунт {email}? Ваша текущая сессия будет заменена.",
       "pagination": "Страница {page} из {total} · всего {count}",

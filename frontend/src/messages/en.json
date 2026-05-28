@@ -131,6 +131,7 @@
       "searchPlaceholder": "Search by email…",
       "search": "Search",
       "colEmail": "Email",
+      "colStatus": "Status",
       "colPlan": "Plan",
       "colRole": "Role",
       "colSegment": "Segment",
@@ -141,6 +142,11 @@
       "impersonate": "Impersonate",
       "delete": "Delete",
       "blocked": "Blocked",
+      "status": {
+        "verified": "Verified",
+        "pending": "Email pending",
+        "blocked": "Blocked"
+      },
       "deleteConfirm": "Delete user {email}? All their data will be permanently removed.",
       "impersonateConfirm": "Sign in as {email}? Your current session will be replaced.",
       "pagination": "Page {page} of {total} · {count} total",
