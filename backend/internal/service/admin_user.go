@@ -15,13 +15,14 @@ var (
 )
 
 type AdminUserService struct {
-	users *repository.UserRepository
-	plans *repository.PlanRepository
-	auth  *middleware.Auth
+	users    *repository.UserRepository
+	plans    *repository.PlanRepository
+	auth     *middleware.Auth
+	telegram *TelegramService
 }
 
-func NewAdminUserService(users *repository.UserRepository, plans *repository.PlanRepository, auth *middleware.Auth) *AdminUserService {
-	return &AdminUserService{users: users, plans: plans, auth: auth}
+func NewAdminUserService(users *repository.UserRepository, plans *repository.PlanRepository, auth *middleware.Auth, telegram *TelegramService) *AdminUserService {
+	return &AdminUserService{users: users, plans: plans, auth: auth, telegram: telegram}
 }
 
 type AdminUserList struct {
@@ -57,13 +58,25 @@ func (s *AdminUserService) UpdatePlan(ctx context.Context, actorID, targetID, pl
 	if target.Role == "superadmin" && target.ID != actorID {
 		return nil, ErrCannotModifySuperadmin
 	}
-	if _, err := s.plans.GetByID(ctx, planID); err != nil {
+	newPlan, err := s.plans.GetByID(ctx, planID)
+	if err != nil {
 		return nil, err
 	}
+	oldPlanID := target.PlanID
 	if err := s.users.UpdatePlanID(ctx, targetID, planID); err != nil {
 		return nil, err
 	}
+	if s.telegram != nil && newPlan.PriceMonthlyRUB > 0 && planChanged(oldPlanID, planID) {
+		s.telegram.NotifyPayment(ctx, target, newPlan, newPlan.PriceMonthlyRUB)
+	}
 	return s.users.GetAdminRow(ctx, targetID)
+}
+
+func planChanged(oldPlanID *string, newPlanID string) bool {
+	if oldPlanID == nil {
+		return true
+	}
+	return *oldPlanID != newPlanID
 }
 
 func (s *AdminUserService) Delete(ctx context.Context, actorID, targetID string) error {

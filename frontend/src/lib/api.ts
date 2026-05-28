@@ -681,6 +681,52 @@ export async function sendAdminSMTPTest(to: string) {
   });
 }
 
+export type TelegramSettings = {
+  enabled: boolean;
+  chat_id: string;
+  notify_registration: boolean;
+  registration_template: string;
+  notify_email_verified: boolean;
+  email_verified_template: string;
+  notify_payment: boolean;
+  payment_template: string;
+};
+
+export type TelegramAdminView = {
+  settings: TelegramSettings;
+  bot_token_set: boolean;
+  bot_token_hint?: string;
+  updated_at?: string;
+};
+
+export type TelegramAdminUpdateRequest = {
+  settings: TelegramSettings;
+  bot_token?: string;
+};
+
+export type TelegramTestResult = {
+  ok: boolean;
+  message: string;
+};
+
+export async function fetchAdminTelegramSettings() {
+  return apiFetch<TelegramAdminView>("/admin/telegram");
+}
+
+export async function updateAdminTelegramSettings(payload: TelegramAdminUpdateRequest) {
+  return apiFetch<TelegramAdminView>("/admin/telegram", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sendAdminTelegramTest() {
+  return apiFetch<TelegramTestResult>("/admin/telegram/test", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
 export type AdminPlan = {
   id: string;
   slug: string;

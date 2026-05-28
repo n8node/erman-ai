@@ -28,13 +28,14 @@ const bcryptCost = 12
 const tokenTTL = 7 * 24 * time.Hour
 
 type AuthService struct {
-	users  *repository.UserRepository
-	auth   *middleware.Auth
-	verify *EmailVerificationService
+	users    *repository.UserRepository
+	auth     *middleware.Auth
+	verify   *EmailVerificationService
+	telegram *TelegramService
 }
 
-func NewAuthService(users *repository.UserRepository, auth *middleware.Auth, verify *EmailVerificationService) *AuthService {
-	return &AuthService{users: users, auth: auth, verify: verify}
+func NewAuthService(users *repository.UserRepository, auth *middleware.Auth, verify *EmailVerificationService, telegram *TelegramService) *AuthService {
+	return &AuthService{users: users, auth: auth, verify: verify, telegram: telegram}
 }
 
 type AuthResult struct {
@@ -81,6 +82,10 @@ func (s *AuthService) Register(ctx context.Context, email, password, referral st
 	user, err := s.users.Create(ctx, email, string(hash), planID, "user", segment, onboardingDone, false)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.telegram != nil {
+		s.telegram.NotifyRegistration(ctx, user, referral)
 	}
 
 	if _, err := s.verify.SendVerification(ctx, user); err != nil {

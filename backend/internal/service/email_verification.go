@@ -28,6 +28,7 @@ type EmailVerificationService struct {
 	users    *repository.UserRepository
 	tokens   *repository.EmailVerificationTokenRepository
 	mail     *MailService
+	telegram *TelegramService
 	cfg      *config.Config
 	keySalt  string
 	lastSent map[string]time.Time
@@ -37,12 +38,14 @@ func NewEmailVerificationService(
 	users *repository.UserRepository,
 	tokens *repository.EmailVerificationTokenRepository,
 	mail *MailService,
+	telegram *TelegramService,
 	cfg *config.Config,
 ) *EmailVerificationService {
 	return &EmailVerificationService{
 		users:    users,
 		tokens:   tokens,
 		mail:     mail,
+		telegram: telegram,
 		cfg:      cfg,
 		keySalt:  cfg.APIKeySalt,
 		lastSent: make(map[string]time.Time),
@@ -113,6 +116,9 @@ func (s *EmailVerificationService) Verify(ctx context.Context, rawToken string) 
 		return nil, err
 	}
 	_ = s.tokens.DeleteByHash(ctx, hash)
+	if s.telegram != nil {
+		s.telegram.NotifyEmailVerified(ctx, user)
+	}
 	return user, nil
 }
 
