@@ -55,6 +55,7 @@
     "apiKeys": "Clés API",
     "settings": "Paramètres",
     "admin": "Administration",
+    "projects": "Projets Erman AI",
     "dashboard": "Tableau de bord",
     "logout": "Se déconnecter"
   },
@@ -108,7 +109,8 @@
       "proposalRequests": "Demandes de proposition",
       "calculatorBudget": "Barèmes du calculateur",
       "strategyLlm": "Stratégie IA — LLM",
-      "translations": "Traductions"
+      "translations": "Traductions",
+      "projects": "Projets"
     },
     "users": {
       "title": "Utilisateurs",
@@ -217,6 +219,36 @@
       "pagination": "{from}–{to} sur {total}",
       "prev": "Précédent",
       "next": "Suivant"
+    },
+    "projects": {
+      "title": "Projets Erman AI",
+      "subtitle": "Liens vers des projets externes dans la barre latérale du tableau de bord",
+      "loading": "Chargement…",
+      "loadFailed": "Impossible de charger les projets",
+      "saveFailed": "Impossible d’enregistrer",
+      "deleteFailed": "Impossible de supprimer",
+      "saved": "Modifications enregistrées",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "add": "Ajouter un projet",
+      "createTitle": "Nouveau projet",
+      "editTitle": "Modifier le projet",
+      "fieldTitle": "Titre",
+      "fieldUrl": "URL",
+      "fieldSortOrder": "Ordre",
+      "fieldEnabled": "Afficher dans la barre latérale",
+      "colTitle": "Titre",
+      "colUrl": "URL",
+      "colSortOrder": "Ordre",
+      "colEnabled": "Visible",
+      "colActions": "Actions",
+      "empty": "Aucun projet pour le moment",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "deleteConfirm": "Supprimer le projet « {title} » ?",
+      "enabledYes": "Oui",
+      "enabledNo": "Non"
     },
     "calculatorBudget": {
       "title": "Barèmes d’estimation budgétaire",

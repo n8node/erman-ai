@@ -73,6 +73,7 @@
     "apiKeys": "API Keys",
     "settings": "Settings",
     "admin": "Admin",
+    "projects": "Erman AI Projects",
     "dashboard": "Dashboard",
     "logout": "Log out"
   },
@@ -133,7 +134,8 @@
       "emailSmtp": "Email / SMTP",
       "payments": "Payments",
       "telegram": "Telegram",
-      "translations": "Translations"
+      "translations": "Translations",
+      "projects": "Projects"
     },
     "users": {
       "title": "Users",
@@ -248,6 +250,36 @@
       "pagination": "{from}–{to} of {total}",
       "prev": "Previous",
       "next": "Next"
+    },
+    "projects": {
+      "title": "Erman AI Projects",
+      "subtitle": "External project links shown in the dashboard sidebar",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load projects",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete",
+      "saved": "Changes saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "add": "Add project",
+      "createTitle": "New project",
+      "editTitle": "Edit project",
+      "fieldTitle": "Title",
+      "fieldUrl": "URL",
+      "fieldSortOrder": "Sort order",
+      "fieldEnabled": "Show in sidebar",
+      "colTitle": "Title",
+      "colUrl": "URL",
+      "colSortOrder": "Order",
+      "colEnabled": "Visible",
+      "colActions": "Actions",
+      "empty": "No projects yet",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete project \"{title}\"?",
+      "enabledYes": "Yes",
+      "enabledNo": "No"
     },
     "calculatorBudget": {
       "title": "Budget estimate rates",

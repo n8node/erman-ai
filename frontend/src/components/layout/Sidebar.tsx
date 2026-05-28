@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import {
   Calculator,
   Brain,
@@ -11,7 +12,9 @@ import {
   CreditCard,
   Settings,
   Shield,
+  ExternalLink,
 } from "lucide-react";
+import { fetchExternalProjects, type ExternalProject } from "@/lib/api";
 import type { User } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +25,13 @@ type Props = {
 export function Sidebar({ user }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  const [projects, setProjects] = useState<ExternalProject[]>([]);
+
+  useEffect(() => {
+    fetchExternalProjects()
+      .then((data) => setProjects(data.items))
+      .catch(() => setProjects([]));
+  }, []);
 
   const toolLinks = [
     { href: "/tools/calculator", label: t("calculator"), icon: Calculator },
@@ -68,6 +78,29 @@ export function Sidebar({ user }: Props) {
             </li>
           ))}
         </ul>
+
+        {projects.length > 0 && (
+          <>
+            <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
+              {t("projects")}
+            </p>
+            <ul className="space-y-0.5">
+              {projects.map((project) => (
+                <li key={project.id}>
+                  <a
+                    href={project.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2"
+                  >
+                    <ExternalLink size={16} />
+                    <span className="truncate">{project.title}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
           {t("account")}

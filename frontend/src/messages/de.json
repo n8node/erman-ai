@@ -55,6 +55,7 @@
     "apiKeys": "API-Schlüssel",
     "settings": "Einstellungen",
     "admin": "Administrator",
+    "projects": "Erman AI Projekte",
     "dashboard": "Dashboard",
     "logout": "Logout"
   },
@@ -107,7 +108,8 @@
       "tooltips": "Tooltips",
       "proposalRequests": "Ausschreibung",
       "calculatorBudget": "Rechnertarife",
-      "strategyLlm": "KI-Strategie"
+      "strategyLlm": "KI-Strategie",
+      "projects": "Projekte"
     },
     "users": {
       "title": "Benutzer",
@@ -199,6 +201,36 @@
       "saving": "Sichern …",
       "textRu": "Text (RU)",
       "textEn": "Text (EN)"
+    },
+    "projects": {
+      "title": "Erman AI Projekte",
+      "subtitle": "Externe Projektlinks in der Dashboard-Sidebar",
+      "loading": "Lädt…",
+      "loadFailed": "Projekte konnten nicht geladen werden",
+      "saveFailed": "Speichern fehlgeschlagen",
+      "deleteFailed": "Löschen fehlgeschlagen",
+      "saved": "Änderungen gespeichert",
+      "save": "Speichern",
+      "saving": "Sichern …",
+      "cancel": "Abbrechen",
+      "add": "Projekt hinzufügen",
+      "createTitle": "Neues Projekt",
+      "editTitle": "Projekt bearbeiten",
+      "fieldTitle": "Titel",
+      "fieldUrl": "URL",
+      "fieldSortOrder": "Reihenfolge",
+      "fieldEnabled": "In Sidebar anzeigen",
+      "colTitle": "Titel",
+      "colUrl": "URL",
+      "colSortOrder": "Reihenfolge",
+      "colEnabled": "Sichtbar",
+      "colActions": "Aktionen",
+      "empty": "Noch keine Projekte",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "deleteConfirm": "Projekt \"{title}\" löschen?",
+      "enabledYes": "Ja",
+      "enabledNo": "Nein"
     },
     "calculatorBudget": {
       "title": "Budgetschätzungssätze",

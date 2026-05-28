@@ -55,6 +55,7 @@
     "apiKeys": "API 密钥",
     "settings": "设置",
     "admin": "管理",
+    "projects": "Erman AI 项目",
     "dashboard": "控制台",
     "logout": "退出登录"
   },
@@ -108,7 +109,8 @@
       "proposalRequests": "方案请求",
       "calculatorBudget": "计算器费率",
       "strategyLlm": "AI 战略 LLM",
-      "translations": "翻译"
+      "translations": "翻译",
+      "projects": "项目"
     },
     "users": {
       "title": "用户",
@@ -217,6 +219,36 @@
       "pagination": "{from}–{to} / 共 {total} 条",
       "prev": "上一页",
       "next": "下一页"
+    },
+    "projects": {
+      "title": "Erman AI 项目",
+      "subtitle": "在控制台侧边栏显示的外部项目链接",
+      "loading": "加载中…",
+      "loadFailed": "加载项目失败",
+      "saveFailed": "保存失败",
+      "deleteFailed": "删除失败",
+      "saved": "更改已保存",
+      "save": "保存",
+      "saving": "保存中…",
+      "cancel": "取消",
+      "add": "添加项目",
+      "createTitle": "新项目",
+      "editTitle": "编辑项目",
+      "fieldTitle": "名称",
+      "fieldUrl": "链接",
+      "fieldSortOrder": "排序",
+      "fieldEnabled": "在侧边栏显示",
+      "colTitle": "名称",
+      "colUrl": "链接",
+      "colSortOrder": "排序",
+      "colEnabled": "可见",
+      "colActions": "操作",
+      "empty": "暂无项目",
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteConfirm": "删除项目「{title}」？",
+      "enabledYes": "是",
+      "enabledNo": "否"
     },
     "calculatorBudget": {
       "title": "预算估算费率",

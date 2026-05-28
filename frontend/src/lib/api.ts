@@ -1010,3 +1010,51 @@ export async function updateAdminProposalRequestStatus(
     }
   );
 }
+
+export type ExternalProject = {
+  id: string;
+  title: string;
+  url: string;
+  sort_order: number;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExternalProjectInput = {
+  title: string;
+  url: string;
+  sort_order: number;
+  is_enabled: boolean;
+};
+
+export async function fetchExternalProjects() {
+  return apiFetch<{ items: ExternalProject[] }>("/projects");
+}
+
+export async function fetchAdminExternalProjects() {
+  return apiFetch<{ items: ExternalProject[] }>("/admin/projects");
+}
+
+export async function createAdminExternalProject(payload: ExternalProjectInput) {
+  return apiFetch<ExternalProject>("/admin/projects", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminExternalProject(
+  id: string,
+  payload: ExternalProjectInput
+) {
+  return apiFetch<ExternalProject>(`/admin/projects/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminExternalProject(id: string) {
+  return apiFetch<{ status: string }>(`/admin/projects/${id}`, {
+    method: "DELETE",
+  });
+}

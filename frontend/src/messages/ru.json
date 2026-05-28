@@ -74,6 +74,7 @@
     "apiKeys": "API-ключи",
     "settings": "Настройки",
     "admin": "Админ",
+    "projects": "Проекты Erman AI",
     "dashboard": "Дашборд",
     "logout": "Выйти"
   },
@@ -134,7 +135,8 @@
       "emailSmtp": "Email / SMTP",
       "payments": "Платежи",
       "telegram": "Telegram",
-      "translations": "Переводы"
+      "translations": "Переводы",
+      "projects": "Проекты"
     },
     "users": {
       "title": "Пользователи",
@@ -249,6 +251,36 @@
       "pagination": "{from}–{to} из {total}",
       "prev": "Назад",
       "next": "Далее"
+    },
+    "projects": {
+      "title": "Проекты Erman AI",
+      "subtitle": "Ссылки на внешние проекты в сайдбаре личного кабинета",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить проекты",
+      "saveFailed": "Не удалось сохранить",
+      "deleteFailed": "Не удалось удалить",
+      "saved": "Изменения сохранены",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "cancel": "Отмена",
+      "add": "Добавить проект",
+      "createTitle": "Новый проект",
+      "editTitle": "Редактирование проекта",
+      "fieldTitle": "Название",
+      "fieldUrl": "Ссылка",
+      "fieldSortOrder": "Порядок",
+      "fieldEnabled": "Показывать в сайдбаре",
+      "colTitle": "Название",
+      "colUrl": "Ссылка",
+      "colSortOrder": "Порядок",
+      "colEnabled": "Видимость",
+      "colActions": "Действия",
+      "empty": "Проектов пока нет",
+      "edit": "Изменить",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить проект «{title}»?",
+      "enabledYes": "Да",
+      "enabledNo": "Нет"
     },
     "calculatorBudget": {
       "title": "Ставки оценки бюджета",

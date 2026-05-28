@@ -38,6 +38,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	smtpSettingsRepo := repository.NewSMTPSettingsRepository(db.Pool)
 	paymentSettingsRepo := repository.NewPaymentSettingsRepository(db.Pool)
 	telegramSettingsRepo := repository.NewTelegramSettingsRepository(db.Pool)
+	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
@@ -68,6 +69,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	proposalSvc := service.NewProposalService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
 	auditSvc := service.NewAuditService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
 	planSvc := service.NewPlanService(planRepo)
+	externalProjectSvc := service.NewExternalProjectService(externalProjectRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW, telegramSvc)
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
@@ -86,6 +88,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	paymentHandler := handler.NewPaymentSettingsHandler(paymentSettingsSvc)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentSettingsSvc, logger)
 	telegramHandler := handler.NewTelegramSettingsHandler(telegramSettingsSvc, telegramSvc)
+	externalProjectHandler := handler.NewExternalProjectHandler(externalProjectSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
 	proposalReqHandler := handler.NewProposalRequestHandler(proposalReqSvc)
@@ -152,6 +155,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Get("/billing/plans", billingHandler.ListPlans)
 			protected.Post("/billing/switch", billingHandler.SwitchPlan)
 			protected.Get("/tooltips", tooltipHandler.ListPublic)
+			protected.Get("/projects", externalProjectHandler.ListPublic)
 		})
 
 		api.Route("/admin", func(admin chi.Router) {
@@ -194,6 +198,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Post("/telegram/test", telegramHandler.SendTest)
 			admin.Post("/telegram/start-image", telegramHandler.UploadStartImage)
 			admin.Get("/telegram/start-image", telegramHandler.GetStartImage)
+			admin.Get("/projects", externalProjectHandler.ListAdmin)
+			admin.Post("/projects", externalProjectHandler.Create)
+			admin.Put("/projects/{id}", externalProjectHandler.Update)
+			admin.Delete("/projects/{id}", externalProjectHandler.Delete)
 		})
 	})
 
