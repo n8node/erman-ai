@@ -54,7 +54,11 @@ func (s *TelegramService) telegramAPI(ctx context.Context, token, method string,
 	}
 	defer resp.Body.Close()
 
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
+	readLimit := int64(8192)
+	if method == "getUpdates" {
+		readLimit = 512 * 1024
+	}
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, readLimit))
 	var parsed telegramAPIResponse
 	if err := json.Unmarshal(raw, &parsed); err != nil {
 		return nil, fmt.Errorf("telegram api: invalid response")

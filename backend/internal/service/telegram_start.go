@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 
@@ -39,7 +40,7 @@ func (s *TelegramService) sendStartReply(ctx context.Context, cfg model.Telegram
 	}
 
 	if text == "" {
-		return nil
+		return errors.New("start message is empty: add text or image in admin settings")
 	}
 	return s.telegramSendMessage(ctx, token, userChatID, truncateRunes(text, model.TelegramMessageMaxRunes))
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +62,16 @@ func (s *TelegramService) startPolling() {
 	stopCh := s.pollStopCh
 	s.mu.Unlock()
 
+	cfg, err := s.settings.GetEffective(context.Background())
+	if err == nil {
+		token := strings.TrimSpace(cfg.BotToken)
+		if token != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			_, _ = s.telegramAPI(ctx, token, "deleteWebhook", map[string]any{"drop_pending_updates": false})
+			cancel()
+		}
+	}
+
 	s.logger.Info("telegram updates polling started")
 	go s.pollLoop(stopCh)
 }
@@ -87,12 +96,8 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 	}()
 
 	for {
-		select {
-		case <-stopCh:
+		if s.pollShouldStop(stopCh) {
 			return
-		case <-s.stopCh:
-			return
-		default:
 		}
 
 		cfg, err := s.settings.GetEffective(context.Background())
@@ -103,7 +108,7 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 
 		updates, err := s.fetchUpdates(cfg)
 		if err != nil {
-			slog.Warn("telegram getUpdates failed", "err", err)
+			s.logger.Warn("telegram getUpdates failed", "err", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -111,23 +116,34 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 		for _, upd := range updates {
 			if upd.Message != nil && isStartCommand(upd.Message) {
 				chatID := formatChatID(upd.Message.Chat.ID)
+				s.logger.Info("telegram /start received", "chat_id", chatID)
 				go func(targetChat string) {
 					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 					defer cancel()
 					current, err := s.settings.GetEffective(ctx)
 					if err != nil {
+						s.logger.Warn("telegram /start settings load failed", "err", err)
 						return
 					}
 					if err := s.sendStartReply(ctx, current, targetChat); err != nil {
 						s.logger.Warn("telegram /start reply failed", "chat_id", targetChat, "err", err)
+						return
 					}
+					s.logger.Info("telegram /start reply sent", "chat_id", targetChat)
 				}(chatID)
 			}
 		}
+	}
+}
 
-		if len(updates) == 0 {
-			time.Sleep(500 * time.Millisecond)
-		}
+func (s *TelegramService) pollShouldStop(stopCh <-chan struct{}) bool {
+	select {
+	case <-stopCh:
+		return true
+	case <-s.stopCh:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -172,21 +188,34 @@ func (s *TelegramService) fetchUpdates(cfg model.TelegramSettings) ([]telegramUp
 
 func isStartCommand(msg *telegramMessage) bool {
 	text := strings.TrimSpace(msg.Text)
+	if text == "" {
+		return false
+	}
 	if text == "/start" {
 		return true
 	}
-	if strings.HasPrefix(text, "/start ") || strings.HasPrefix(text, "/start@") {
+	if strings.HasPrefix(text, "/start ") {
+		return true
+	}
+	if strings.HasPrefix(text, "/start@") {
+		return true
+	}
+	lower := strings.ToLower(text)
+	if lower == "/start" || strings.HasPrefix(lower, "/start ") || strings.HasPrefix(lower, "/start@") {
 		return true
 	}
 	for _, e := range msg.Entities {
-		if e.Type == "bot_command" && e.Offset == 0 {
-			cmd := text
-			if e.Length > 0 && e.Length <= len(text) {
-				cmd = text[:e.Length]
-			}
-			if cmd == "/start" || strings.HasPrefix(cmd, "/start@") {
-				return true
-			}
+		if e.Type != "bot_command" || e.Offset != 0 {
+			continue
+		}
+		// /start is ASCII; byte offset matches UTF-8 for these commands
+		end := e.Length
+		if end <= 0 || end > len(text) {
+			end = len(text)
+		}
+		cmd := strings.ToLower(strings.TrimSpace(text[:end]))
+		if cmd == "/start" || strings.HasPrefix(cmd, "/start@") {
+			return true
 		}
 	}
 	return false
