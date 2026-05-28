@@ -342,7 +342,7 @@ func (h *BillingHandler) SwitchPlan(w http.ResponseWriter, r *http.Request) {
 func (h *BillingHandler) writeBillingError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrPaymentRequired):
-		writeError(w, http.StatusPaymentRequired, "payment required — contact us to upgrade")
+		writeError(w, http.StatusPaymentRequired, "payment required")
 	case errors.Is(err, service.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "invalid plan")
 	case errors.Is(err, repository.ErrNotFound):

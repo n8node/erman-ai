@@ -374,8 +374,6 @@
     "unlimited": "无限制",
     "runsPerMonth": "{count} / 月",
     "activated": "套餐「{name}」已激活",
-    "paymentRequired": "在线结账即将上线。请邮件 hello@erman.ai 联系升级到 Professional 或 Business。",
-    "paymentNote": "银行卡支付即将支持。免费套餐可即时激活；付费套餐目前由我们的团队手动开通。",
     "usageTitle": "本月用量",
     "usageRemaining": "{used} / {limit}",
     "usageUnlimited": "无限制",

@@ -374,8 +374,6 @@
     "unlimited": "Illimité",
     "runsPerMonth": "{count} / mois",
     "activated": "Offre « {name} » activée",
-    "paymentRequired": "Le paiement en ligne arrive bientôt. Écrivez à hello@erman.ai pour passer à Pro ou Business.",
-    "paymentNote": "Le paiement par carte arrive. Les offres gratuites s’activent instantanément ; les offres payantes sont activées par notre équipe pour l’instant.",
     "usageTitle": "Utilisation ce mois-ci",
     "usageRemaining": "{used} / {limit}",
     "usageUnlimited": "illimité",

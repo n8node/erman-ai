@@ -146,10 +146,6 @@ func (s *BillingService) SwitchPlan(ctx context.Context, userID, planID string) 
 		return plan, nil
 	}
 
-	if plan.PriceMonthlyRUB > 0 && user.Role != "superadmin" {
-		return nil, ErrPaymentRequired
-	}
-
 	if err := s.users.UpdatePlanID(ctx, userID, planID); err != nil {
 		return nil, err
 	}

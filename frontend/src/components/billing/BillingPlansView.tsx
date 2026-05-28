@@ -73,12 +73,7 @@ export function BillingPlansView() {
       setNotice(t("activated", { name: plan.name }));
       await load();
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("actionFailed");
-      if (message.includes("payment") || message.includes("402")) {
-        setNotice(t("paymentRequired"));
-      } else {
-        setError(message);
-      }
+      setError(err instanceof Error ? err.message : t("actionFailed"));
     } finally {
       setBusyId(null);
     }
@@ -230,8 +225,6 @@ export function BillingPlansView() {
           );
         })}
       </div>
-
-      <p className="text-center text-xs text-text3">{t("paymentNote")}</p>
     </div>
   );
 }

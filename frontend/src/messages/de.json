@@ -356,8 +356,6 @@
     "unlimited": "Unbegrenzt",
     "runsPerMonth": "{count} / Monat",
     "activated": "Plan „{name}“ aktiviert",
-    "paymentRequired": "Der Online-Checkout steht in Kürze an. Senden Sie eine E-Mail an hello@erman.ai, um ein Upgrade auf Pro oder Business durchzuführen.",
-    "paymentNote": "Kartenzahlungen sind unterwegs. Kostenlose Pläne werden sofort aktiviert; kostenpflichtige Pläne werden von unserem Team vorerst aktiviert.",
     "usageTitle": "Nutzung in diesem Monat",
     "usageRemaining": "Verbraucht / Limit",
     "usageUnlimited": "unlimited",
