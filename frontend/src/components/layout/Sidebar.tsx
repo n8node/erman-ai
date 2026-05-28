@@ -9,7 +9,6 @@ import {
   FileText,
   ClipboardList,
   CreditCard,
-  Key,
   Settings,
   Shield,
 } from "lucide-react";
@@ -33,7 +32,6 @@ export function Sidebar({ user }: Props) {
 
   const accountLinks = [
     { href: "/billing", label: t("billing"), icon: CreditCard },
-    { href: "/api-keys", label: t("apiKeys"), icon: Key },
     { href: "/settings", label: t("settings"), icon: Settings },
   ];
 
