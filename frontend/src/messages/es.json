@@ -56,6 +56,7 @@
     "settings": "Configuración",
     "admin": "Administración",
     "projects": "Proyectos Erman AI",
+    "projectHidden": "Oculto para usuarios",
     "dashboard": "Panel",
     "logout": "Cerrar sesión"
   },

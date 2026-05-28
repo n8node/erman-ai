@@ -48,6 +48,10 @@ function formToPayload(form: FormState): ExternalProjectInput {
   };
 }
 
+function notifyProjectsUpdated() {
+  window.dispatchEvent(new Event("external-projects-updated"));
+}
+
 export function AdminProjectsEditor() {
   const t = useTranslations("admin.projects");
   const [items, setItems] = useState<ExternalProject[]>([]);
@@ -121,6 +125,7 @@ export function AdminProjectsEditor() {
         cancelForm();
       }
       setSuccess(true);
+      notifyProjectsUpdated();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("saveFailed"));
     } finally {
@@ -141,6 +146,7 @@ export function AdminProjectsEditor() {
         cancelForm();
       }
       setSuccess(true);
+      notifyProjectsUpdated();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("deleteFailed"));
     }

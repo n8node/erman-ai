@@ -56,6 +56,7 @@
     "settings": "设置",
     "admin": "管理",
     "projects": "Erman AI 项目",
+    "projectHidden": "对用户隐藏",
     "dashboard": "控制台",
     "logout": "退出登录"
   },

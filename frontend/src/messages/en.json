@@ -74,6 +74,7 @@
     "settings": "Settings",
     "admin": "Admin",
     "projects": "Erman AI Projects",
+    "projectHidden": "Hidden from users",
     "dashboard": "Dashboard",
     "logout": "Log out"
   },

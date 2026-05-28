@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Calculator,
   Brain,
@@ -14,7 +14,11 @@ import {
   Shield,
   ExternalLink,
 } from "lucide-react";
-import { fetchExternalProjects, type ExternalProject } from "@/lib/api";
+import {
+  fetchAdminExternalProjects,
+  fetchExternalProjects,
+  type ExternalProject,
+} from "@/lib/api";
 import type { User } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -26,12 +30,27 @@ export function Sidebar({ user }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const [projects, setProjects] = useState<ExternalProject[]>([]);
+  const isSuperAdmin = user.role === "superadmin";
 
-  useEffect(() => {
-    fetchExternalProjects()
+  const loadProjects = useCallback(() => {
+    const fetcher = isSuperAdmin
+      ? fetchAdminExternalProjects
+      : fetchExternalProjects;
+    fetcher()
       .then((data) => setProjects(data.items))
       .catch(() => setProjects([]));
-  }, []);
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects, pathname]);
+
+  useEffect(() => {
+    const onProjectsUpdated = () => loadProjects();
+    window.addEventListener("external-projects-updated", onProjectsUpdated);
+    return () =>
+      window.removeEventListener("external-projects-updated", onProjectsUpdated);
+  }, [loadProjects]);
 
   const toolLinks = [
     { href: "/tools/calculator", label: t("calculator"), icon: Calculator },
@@ -47,6 +66,10 @@ export function Sidebar({ user }: Props) {
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
+
+  const sidebarProjects = isSuperAdmin
+    ? projects
+    : projects.filter((project) => project.is_enabled);
 
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-[220px] flex-col border-r border-border bg-bg">
@@ -79,21 +102,29 @@ export function Sidebar({ user }: Props) {
           ))}
         </ul>
 
-        {projects.length > 0 && (
+        {sidebarProjects.length > 0 && (
           <>
             <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
               {t("projects")}
             </p>
             <ul className="space-y-0.5">
-              {projects.map((project) => (
+              {sidebarProjects.map((project) => (
                 <li key={project.id}>
                   <a
                     href={project.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2"
+                    title={
+                      isSuperAdmin && !project.is_enabled
+                        ? t("projectHidden")
+                        : undefined
+                    }
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
+                      isSuperAdmin && !project.is_enabled && "opacity-50"
+                    )}
                   >
-                    <ExternalLink size={16} />
+                    <ExternalLink size={16} className="shrink-0" />
                     <span className="truncate">{project.title}</span>
                   </a>
                 </li>
