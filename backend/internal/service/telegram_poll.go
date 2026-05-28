@@ -3,16 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
 )
-
-type telegramUpdatesResponse struct {
-	Result []telegramUpdate `json:"result"`
-}
 
 type telegramUpdate struct {
 	UpdateID int64            `json:"update_id"`
@@ -156,21 +153,23 @@ func (s *TelegramService) fetchUpdates(cfg model.TelegramSettings) ([]telegramUp
 	defer cancel()
 
 	raw, err := s.telegramAPI(ctx, strings.TrimSpace(cfg.BotToken), "getUpdates", map[string]any{
-		"offset":          offset,
-		"timeout":         25,
-		"allowed_updates": []string{"message"},
+		"offset":  offset,
+		"timeout": 25,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var resp telegramUpdatesResponse
-	if err := json.Unmarshal(raw, &resp); err != nil {
-		return nil, err
+	var updates []telegramUpdate
+	if len(raw) > 0 && raw[0] != '[' {
+		return nil, fmt.Errorf("telegram getUpdates: unexpected payload")
+	}
+	if err := json.Unmarshal(raw, &updates); err != nil {
+		return nil, fmt.Errorf("telegram getUpdates parse: %w", err)
 	}
 
 	var maxID int64
-	for _, u := range resp.Result {
+	for _, u := range updates {
 		if u.UpdateID >= maxID {
 			maxID = u.UpdateID + 1
 		}
@@ -183,7 +182,7 @@ func (s *TelegramService) fetchUpdates(cfg model.TelegramSettings) ([]telegramUp
 		s.mu.Unlock()
 	}
 
-	return resp.Result, nil
+	return updates, nil
 }
 
 func isStartCommand(msg *telegramMessage) bool {

@@ -63,6 +63,24 @@ func (s *TelegramService) Start() {
 
 	s.logger.Info("telegram bot supervisor starting")
 	go s.supervisorLoop()
+	s.ensurePollingFromSettings()
+}
+
+func (s *TelegramService) ensurePollingFromSettings() {
+	cfg, err := s.settings.GetEffective(context.Background())
+	if err != nil {
+		return
+	}
+	if !cfg.StartEnabled || strings.TrimSpace(cfg.BotToken) == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	st := s.checkHealth(ctx)
+	s.setRuntime(st)
+	if s.shouldRunPolling(cfg, st) {
+		s.syncPolling(true, cfg)
+	}
 }
 
 // Stop shuts down the supervisor gracefully.
@@ -148,8 +166,11 @@ func (s *TelegramService) runHealthCheck() {
 	s.setRuntime(st)
 
 	cfg, _ := s.settings.GetEffective(context.Background())
-	if s.shouldRunPolling(cfg, st) {
-		s.syncPolling(true, cfg)
+	if cfg.StartEnabled && strings.TrimSpace(cfg.BotToken) != "" {
+		if s.shouldRunPolling(cfg, st) {
+			s.syncPolling(true, cfg)
+		}
+		// Do not stop polling on transient health errors — only when /start is disabled.
 	} else {
 		s.stopPolling()
 	}
