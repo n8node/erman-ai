@@ -49,12 +49,14 @@ func (r *ProjectInquiryRepository) Create(
 	userID *string,
 	runID *string,
 	name, email, telegram, projectTitle, projectDescription, status, locale, ipHash string,
+	calculatorSnapshot json.RawMessage,
 ) (*model.ProjectInquiry, error) {
 	const q = `
 		INSERT INTO project_inquiries (
 			user_id, calculator_run_id, name, email, telegram,
-			project_title, project_description, status, locale, ip_hash
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULLIF($10, ''))
+			project_title, project_description, status, locale, ip_hash,
+			calculator_snapshot
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULLIF($10, ''), $11)
 		RETURNING id, user_id, calculator_run_id, name, email, telegram,
 		          project_title, project_description, status, email_verified_at,
 		          locale, created_at, updated_at
@@ -62,6 +64,7 @@ func (r *ProjectInquiryRepository) Create(
 	return r.scan(r.pool.QueryRow(ctx, q,
 		userID, runID, name, email, telegram,
 		projectTitle, projectDescription, status, locale, ipHash,
+		nullJSON(calculatorSnapshot),
 	))
 }
 
@@ -102,10 +105,10 @@ func (r *ProjectInquiryRepository) ListAdmin(ctx context.Context, limit, offset 
 	const q = `
 		SELECT pi.id, pi.user_id, u.email, pi.calculator_run_id,
 		       pi.name, pi.email, pi.telegram, pi.project_title, pi.project_description,
-		       COALESCE(tr.input->>'process_name', '') AS process_name,
-		       NULLIF(tr.output->>'net_benefit_monthly', '')::double precision,
-		       NULLIF(tr.output->>'payback_months', '')::double precision,
-		       NULLIF(tr.output->>'recommendation', ''),
+		       COALESCE(tr.input->>'process_name', pi.calculator_snapshot->'input'->>'process_name', '') AS process_name,
+		       NULLIF(COALESCE(tr.output->>'net_benefit_monthly', pi.calculator_snapshot->'output'->>'net_benefit_monthly'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'payback_months', pi.calculator_snapshot->'output'->>'payback_months'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'recommendation', pi.calculator_snapshot->'output'->>'recommendation'), ''),
 		       pi.status, pi.created_at, pi.updated_at
 		FROM project_inquiries pi
 		LEFT JOIN users u ON u.id = pi.user_id
@@ -139,12 +142,13 @@ func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string
 	const q = `
 		SELECT pi.id, pi.user_id, u.email, pi.calculator_run_id,
 		       pi.name, pi.email, pi.telegram, pi.project_title, pi.project_description,
-		       COALESCE(tr.input->>'process_name', '') AS process_name,
-		       NULLIF(tr.output->>'net_benefit_monthly', '')::double precision,
-		       NULLIF(tr.output->>'payback_months', '')::double precision,
-		       NULLIF(tr.output->>'recommendation', ''),
+		       COALESCE(tr.input->>'process_name', pi.calculator_snapshot->'input'->>'process_name', '') AS process_name,
+		       NULLIF(COALESCE(tr.output->>'net_benefit_monthly', pi.calculator_snapshot->'output'->>'net_benefit_monthly'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'payback_months', pi.calculator_snapshot->'output'->>'payback_months'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'recommendation', pi.calculator_snapshot->'output'->>'recommendation'), ''),
 		       pi.status, pi.created_at, pi.updated_at,
-		       tr.input, tr.output
+		       COALESCE(tr.input, pi.calculator_snapshot->'input'),
+		       COALESCE(tr.output, pi.calculator_snapshot->'output')
 		FROM project_inquiries pi
 		LEFT JOIN users u ON u.id = pi.user_id
 		LEFT JOIN tool_runs tr ON tr.id = pi.calculator_run_id
@@ -192,6 +196,13 @@ func (r *ProjectInquiryRepository) UpdateStatus(ctx context.Context, id, status 
 		return nil, ErrNotFound
 	}
 	return inq, err
+}
+
+func nullJSON(raw json.RawMessage) any {
+	if len(raw) == 0 {
+		return nil
+	}
+	return raw
 }
 
 func (r *ProjectInquiryRepository) scan(row pgx.Row) (*model.ProjectInquiry, error) {

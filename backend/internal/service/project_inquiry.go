@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -31,6 +32,7 @@ type ProjectInquiryInput struct {
 	ProjectTitle       string
 	ProjectDescription string
 	CalculatorRunID    string
+	CalculatorSnapshot json.RawMessage
 	Locale             string
 	Honeypot           string
 }
@@ -86,6 +88,7 @@ func (s *ProjectInquiryService) CreatePublic(ctx context.Context, input ProjectI
 		normalized.projectTitle, normalized.projectDescription,
 		string(model.ProjectInquiryStatusPendingEmail),
 		normalized.locale, ipHash,
+		normalized.calculatorSnapshot,
 	)
 	if err != nil {
 		return nil, err
@@ -140,6 +143,11 @@ func (s *ProjectInquiryService) CreateAuthenticated(
 		runID = normalized.runID
 	}
 
+	snapshot := normalized.calculatorSnapshot
+	if runID != nil {
+		snapshot = nil
+	}
+
 	uid := userID
 	inq, err := s.inquiries.Create(
 		ctx, &uid, runID,
@@ -147,6 +155,7 @@ func (s *ProjectInquiryService) CreateAuthenticated(
 		normalized.projectTitle, normalized.projectDescription,
 		string(model.ProjectInquiryStatusNew),
 		normalized.locale, "",
+		snapshot,
 	)
 	if err != nil {
 		return nil, err
@@ -244,6 +253,7 @@ func (s *ProjectInquiryService) validateRunOwnership(ctx context.Context, userID
 type normalizedInquiry struct {
 	name, email, telegram, projectTitle, projectDescription, locale string
 	runID                                                           *string
+	calculatorSnapshot                                              json.RawMessage
 }
 
 func normalizeProjectInquiryInput(input ProjectInquiryInput) normalizedInquiry {
@@ -261,6 +271,11 @@ func normalizeProjectInquiryInput(input ProjectInquiryInput) normalizedInquiry {
 		runID = &id
 	}
 
+	snapshot := json.RawMessage(nil)
+	if len(input.CalculatorSnapshot) > 0 {
+		snapshot = input.CalculatorSnapshot
+	}
+
 	return normalizedInquiry{
 		name:               strings.TrimSpace(input.Name),
 		email:              strings.ToLower(strings.TrimSpace(input.Email)),
@@ -269,11 +284,18 @@ func normalizeProjectInquiryInput(input ProjectInquiryInput) normalizedInquiry {
 		projectDescription: strings.TrimSpace(input.ProjectDescription),
 		locale:             locale,
 		runID:              runID,
+		calculatorSnapshot: snapshot,
 	}
 }
 
 func validateProjectInquiryInput(input ProjectInquiryInput) error {
+	if len(input.CalculatorSnapshot) > 65536 {
+		return ErrInvalidInput
+	}
 	n := normalizeProjectInquiryInput(input)
+	if len(input.CalculatorSnapshot) > 0 && !json.Valid(input.CalculatorSnapshot) {
+		return ErrInvalidInput
+	}
 	if n.name == "" || n.email == "" || n.telegram == "" || n.projectDescription == "" {
 		return ErrInvalidInput
 	}

@@ -12,6 +12,7 @@ import {
   loadCalculatorDraft,
   saveCalculatorDraft,
 } from "@/lib/calculator-draft";
+import { saveGuestCalculatorResult } from "@/lib/calculator-guest-result";
 import {
   defaultCalculatorInput,
   previewCalculator,
@@ -161,6 +162,7 @@ export function CalculatorWizard() {
         const output = previewCalculator(payload, locale);
         clearCalculatorDraft();
         setDraftBanner(false);
+        saveGuestCalculatorResult(payload, output);
         setResult({
           run_id: "",
           input: payload,

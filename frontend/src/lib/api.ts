@@ -447,6 +447,7 @@ export type ProjectInquirySubmitPayload = {
   project_title?: string;
   project_description: string;
   calculator_run_id?: string;
+  calculator_snapshot?: { input: CalculatorInput; output: CalculatorOutput };
   locale?: string;
   website?: string;
 };

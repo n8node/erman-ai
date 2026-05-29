@@ -13,6 +13,11 @@ import {
 } from "@/lib/api";
 import { useAuthUser } from "@/context/AuthContext";
 import { GuestBanner } from "@/components/layout/GuestBanner";
+import {
+  clearGuestCalculatorResult,
+  loadGuestCalculatorResult,
+  type GuestCalculatorResult,
+} from "@/lib/calculator-guest-result";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
@@ -49,6 +54,7 @@ function DiscussProjectFormInner() {
     payback_months?: number;
     recommendation?: string;
   } | null>(null);
+  const [guestSnapshot, setGuestSnapshot] = useState<GuestCalculatorResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<"auth" | "guest" | null>(null);
@@ -68,7 +74,8 @@ function DiscussProjectFormInner() {
   }, [user]);
 
   useEffect(() => {
-    if (!calculatorRunId || !user) {
+    if (!user) return;
+    if (!calculatorRunId) {
       setSelectedRunPreview(null);
       return;
     }
@@ -99,6 +106,28 @@ function DiscussProjectFormInner() {
       .catch(() => setSelectedRunPreview(null));
   }, [calculatorRunId, user, calcRuns, projectTitle]);
 
+  useEffect(() => {
+    if (user) {
+      setGuestSnapshot(null);
+      return;
+    }
+    const guest = loadGuestCalculatorResult();
+    if (!guest) {
+      setGuestSnapshot(null);
+      return;
+    }
+    setGuestSnapshot(guest);
+    setSelectedRunPreview({
+      process_name: guest.input.process_name,
+      net_benefit_monthly: guest.output.net_benefit_monthly,
+      payback_months: guest.output.payback_months,
+      recommendation: guest.output.recommendation,
+    });
+    if (!projectNameParam && guest.input.process_name) {
+      setProjectTitle((prev) => prev || guest.input.process_name || "");
+    }
+  }, [user, projectNameParam]);
+
   const steps = useMemo(
     () => [t("steps.calc"), t("steps.describe"), t("steps.talk")],
     [t]
@@ -115,6 +144,9 @@ function DiscussProjectFormInner() {
       project_title: projectTitle.trim(),
       project_description: projectDescription.trim(),
       calculator_run_id: calculatorRunId || undefined,
+      calculator_snapshot: guestSnapshot
+        ? { input: guestSnapshot.input, output: guestSnapshot.output }
+        : undefined,
       locale,
       website: honeypot,
     };
@@ -124,6 +156,7 @@ function DiscussProjectFormInner() {
         setDone("auth");
       } else {
         await submitProjectInquiryPublic(payload);
+        clearGuestCalculatorResult();
         setDone("guest");
       }
     } catch (err) {
@@ -276,6 +309,16 @@ function DiscussProjectFormInner() {
                 </p>
               </div>
             )}
+          </div>
+        ) : guestSnapshot && selectedRunPreview ? (
+          <div className="rounded-lg border border-border bg-bg2 p-4 text-sm">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-text3">{t("form.runPreview")}</p>
+            <p className="mt-1 font-medium">{selectedRunPreview.process_name || "—"}</p>
+            <p className="mt-1 text-text2">
+              {t("form.runBenefit", { value: formatRub(selectedRunPreview.net_benefit_monthly) })} ·{" "}
+              {t("form.runPayback", { value: formatPayback(selectedRunPreview.payback_months, t("form.months")) })}
+            </p>
+            <p className="mt-2 text-[10px] text-text3">{t("form.guestRunAttached")}</p>
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-bg2 p-4 text-sm text-text2">

@@ -634,6 +634,7 @@
       "runPayback": "Payback: {value}",
       "months": "mo",
       "guestRunHint": "Sign in to attach a saved calculation, or run the calculator first.",
+      "guestRunAttached": "Your calculator result will be included with the request.",
       "goCalculator": "Open calculator →",
       "submit": "Submit",
       "sending": "Sending…"

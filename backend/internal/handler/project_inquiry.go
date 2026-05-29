@@ -24,14 +24,15 @@ func NewProjectInquiryHandler(inquiries *service.ProjectInquiryService, auth *se
 }
 
 type projectInquiryCreateBody struct {
-	Name               string `json:"name"`
-	Email              string `json:"email"`
-	Telegram           string `json:"telegram"`
-	ProjectTitle       string `json:"project_title"`
-	ProjectDescription string `json:"project_description"`
-	CalculatorRunID    string `json:"calculator_run_id"`
-	Locale             string `json:"locale"`
-	Website            string `json:"website"`
+	Name               string          `json:"name"`
+	Email              string          `json:"email"`
+	Telegram           string          `json:"telegram"`
+	ProjectTitle       string          `json:"project_title"`
+	ProjectDescription string          `json:"project_description"`
+	CalculatorRunID    string          `json:"calculator_run_id"`
+	CalculatorSnapshot json.RawMessage `json:"calculator_snapshot,omitempty"`
+	Locale             string          `json:"locale"`
+	Website            string          `json:"website"`
 }
 
 func (h *ProjectInquiryHandler) bodyToInput(req projectInquiryCreateBody) service.ProjectInquiryInput {
@@ -42,6 +43,7 @@ func (h *ProjectInquiryHandler) bodyToInput(req projectInquiryCreateBody) servic
 		ProjectTitle:       req.ProjectTitle,
 		ProjectDescription: req.ProjectDescription,
 		CalculatorRunID:    req.CalculatorRunID,
+		CalculatorSnapshot: req.CalculatorSnapshot,
 		Locale:             req.Locale,
 		Honeypot:           req.Website,
 	}
