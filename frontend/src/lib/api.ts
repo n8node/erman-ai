@@ -440,6 +440,43 @@ export async function submitProposalRequest(payload: {
   );
 }
 
+export type ProjectInquirySubmitPayload = {
+  name: string;
+  email: string;
+  telegram: string;
+  project_title?: string;
+  project_description: string;
+  calculator_run_id?: string;
+  locale?: string;
+  website?: string;
+};
+
+export type ProjectInquirySubmitResult = {
+  id?: string;
+  status: "pending_email" | "new" | string;
+  message?: string;
+};
+
+export async function submitProjectInquiryPublic(payload: ProjectInquirySubmitPayload) {
+  return apiFetch<ProjectInquirySubmitResult>("/public/project-inquiries", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function submitProjectInquiry(payload: ProjectInquirySubmitPayload) {
+  return apiFetch<ProjectInquirySubmitResult>("/project-inquiries", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyProjectInquiry(token: string) {
+  return apiFetch<{ id: string; status: string }>(
+    `/public/project-inquiries/verify?token=${encodeURIComponent(token)}`
+  );
+}
+
 export async function fetchPublicReport(token: string) {
   return apiFetch<PublicReport>(`/shared/${token}`);
 }
@@ -1009,6 +1046,60 @@ export async function updateAdminProposalRequestStatus(
       body: JSON.stringify({ status }),
     }
   );
+}
+
+export type AdminProjectInquiryRow = {
+  id: string;
+  user_id?: string | null;
+  user_email?: string | null;
+  calculator_run_id?: string | null;
+  name: string;
+  email: string;
+  telegram: string;
+  project_title: string;
+  project_description: string;
+  process_name?: string;
+  net_benefit_monthly?: number | null;
+  payback_months?: number | null;
+  recommendation?: string | null;
+  status: "pending_email" | "new" | "in_progress" | "done" | "spam";
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminProjectInquiryDetail = AdminProjectInquiryRow & {
+  input?: CalculatorInput;
+  output?: CalculatorOutput;
+};
+
+export async function fetchAdminProjectInquiries(params?: {
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiFetch<{
+    items: AdminProjectInquiryRow[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(`/admin/project-inquiries${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchAdminProjectInquiry(id: string) {
+  return apiFetch<AdminProjectInquiryDetail>(`/admin/project-inquiries/${id}`);
+}
+
+export async function updateAdminProjectInquiryStatus(
+  id: string,
+  status: AdminProjectInquiryRow["status"]
+) {
+  return apiFetch<{ id: string; status: string }>(`/admin/project-inquiries/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }
 
 export type ExternalProject = {

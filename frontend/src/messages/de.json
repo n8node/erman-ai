@@ -70,7 +70,9 @@
     "projects": "Erman AI Projekte",
     "projectHidden": "Für Benutzer ausgeblendet",
     "dashboard": "Dashboard",
-    "logout": "Logout"
+    "logout": "Logout",
+    "project": "Projekt",
+    "discussProject": "Projekt besprechen"
   },
   "dashboard": {
     "title": "Dashboard",

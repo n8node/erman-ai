@@ -70,7 +70,9 @@
     "projects": "Projets Erman AI",
     "projectHidden": "Masqué pour les utilisateurs",
     "dashboard": "Tableau de bord",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "project": "Projet",
+    "discussProject": "Discuter le projet"
   },
   "dashboard": {
     "title": "Tableau de bord",

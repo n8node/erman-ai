@@ -88,7 +88,9 @@
     "projects": "Erman AI Projects",
     "projectHidden": "Hidden from users",
     "dashboard": "Dashboard",
-    "logout": "Log out"
+    "logout": "Log out",
+    "project": "Project",
+    "discussProject": "Discuss project"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -142,6 +144,7 @@
       "plans": "Plans",
       "tooltips": "Tooltips",
       "proposalRequests": "Proposal requests",
+      "projectInquiries": "Discuss project",
       "calculatorBudget": "Calculator rates",
       "strategyLlm": "AI Strategy LLM",
       "emailSmtp": "Email / SMTP",
@@ -563,6 +566,96 @@
         "in_progress": "In progress",
         "done": "Done"
       }
+    },
+    "projectInquiries": {
+      "title": "Discuss project requests",
+      "subtitle": "Automation discussion requests with calculator data",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load requests",
+      "saveFailed": "Failed to update status",
+      "statusUpdated": "Status updated",
+      "empty": "No requests yet",
+      "colDate": "Date",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colTelegram": "Telegram",
+      "colProject": "Project",
+      "colDescription": "Description",
+      "colRun": "Calculation",
+      "colStatus": "Status",
+      "open": "Open",
+      "backToList": "Back to list",
+      "detailTitle": "Discussion request",
+      "requestInfo": "Request details",
+      "reportDisclaimer": "Attached Automation Calculator report",
+      "pagination": "Page {page} of {total} · {count} total",
+      "prev": "Previous",
+      "next": "Next",
+      "status": {
+        "pending_email": "Pending email",
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done",
+        "spam": "Spam"
+      }
+    }
+  },
+  "discuss": {
+    "title": "Discuss project",
+    "subtitle": "Send your calculation and description — we'll discuss automation based on your numbers, not generic slides",
+    "value": {
+      "title": "What you get",
+      "item1": "ROI review based on your calculator run",
+      "item2": "Timeline, risks, and feasibility assessment",
+      "item3": "Clear recommendation via Telegram: automate, wait, or skip"
+    },
+    "steps": {
+      "label": "Step {n}",
+      "calc": "Run the automation calculator",
+      "describe": "Describe the project and attach the calculation",
+      "talk": "Discuss based on your data in Telegram"
+    },
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "emailVerified": "Verified email from your account",
+      "emailGuestHint": "We'll send a confirmation link — we receive the request only after you click it",
+      "telegram": "Telegram",
+      "telegramPlaceholder": "@username",
+      "telegramHint": "Your username — we'll contact you on Telegram to discuss the project based on your calculation",
+      "projectTitle": "Project name",
+      "description": "Project description",
+      "descriptionPlaceholder": "Briefly describe the process, automation goal, and context. Attach a calculator run below if you have one.",
+      "calculatorRun": "Calculator run",
+      "noRun": "No calculation",
+      "unnamedRun": "Untitled",
+      "runPreview": "Selected calculation",
+      "runBenefit": "Savings: {value}",
+      "runPayback": "Payback: {value}",
+      "months": "mo",
+      "guestRunHint": "Sign in to attach a saved calculation, or run the calculator first.",
+      "goCalculator": "Open calculator →",
+      "submit": "Submit",
+      "sending": "Sending…"
+    },
+    "success": {
+      "title": "Request submitted",
+      "auth": "We received your request and will contact you on Telegram. A confirmation was sent to your email.",
+      "guest": "Check your inbox and click the confirmation link. Then we'll receive your request and contact you on Telegram.",
+      "telegramHint": "We'll reach you on Telegram {telegram}",
+      "backToCalculator": "← Back to calculator"
+    },
+    "errors": {
+      "submitFailed": "Failed to submit request"
+    },
+    "confirm": {
+      "loading": "Confirming request…",
+      "title": "Request confirmed",
+      "body": "Thank you! We received your request and will contact you on Telegram to discuss automation based on your data.",
+      "errorTitle": "Invalid link",
+      "errorBody": "This link expired or was already used. Please submit the form again.",
+      "back": "← Back to form",
+      "dashboard": "Go to dashboard →"
     }
   },
   "stub": {
@@ -698,6 +791,7 @@
     "exporting": "Exporting…",
     "pdfFailed": "PDF export failed",
     "createProposal": "Create proposal",
+    "discussProject": "Discuss project",
     "requestProposal": "Request proposal from Erman AI",
     "proposalRequesting": "Sending request…",
     "proposalRequestSent": "Request sent",

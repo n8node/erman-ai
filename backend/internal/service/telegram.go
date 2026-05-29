@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
 var (
@@ -134,4 +135,43 @@ func displayName(email string) string {
 		return email[:at]
 	}
 	return email
+}
+
+func (s *TelegramService) NotifyProjectInquiry(ctx context.Context, detail *repository.AdminProjectInquiryDetail, publicBaseURL string) {
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil || !cfg.Enabled {
+		return
+	}
+
+	calcLine := "Без расчёта"
+	if detail.ProcessName != "" {
+		calcLine = detail.ProcessName
+		if detail.NetBenefitMonthly != nil {
+			calcLine += fmt.Sprintf(" · %.0f ₽/мес", *detail.NetBenefitMonthly)
+		}
+		if detail.PaybackMonths != nil && *detail.PaybackMonths > 0 && *detail.PaybackMonths < 1e6 {
+			calcLine += fmt.Sprintf(" · окупаемость %.1f мес", *detail.PaybackMonths)
+		}
+	}
+
+	title := detail.ProjectTitle
+	if title == "" {
+		title = "—"
+	}
+
+	adminURL := strings.TrimRight(publicBaseURL, "/") + "/dashboard/admin/project-inquiries/" + detail.ID
+	text := fmt.Sprintf(
+		"📋 Новая заявка «Обсудить проект»\n\n"+
+			"Имя: %s\nEmail: %s\nTelegram: %s\n\n"+
+			"Проект: %s\n\n"+
+			"Описание:\n%s\n\n"+
+			"Расчёт: %s\n\n"+
+			"Открыть: %s",
+		detail.Name, detail.Email, detail.Telegram,
+		title,
+		truncateRunes(detail.ProjectDescription, 800),
+		calcLine,
+		adminURL,
+	)
+	s.sendAsync(cfg, text, "project_inquiry")
 }

@@ -13,6 +13,7 @@ import {
   Settings,
   Shield,
   ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 import {
   fetchAdminExternalProjects,
@@ -63,6 +64,8 @@ export function Sidebar({ user }: Props) {
     { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
   ];
 
+  const discussLink = { href: "/discuss", label: t("discussProject"), icon: MessageCircle };
+
   const accountLinks = [
     { href: "/billing", label: t("billing"), icon: CreditCard },
     { href: "/settings", label: t("settings"), icon: Settings },
@@ -104,6 +107,24 @@ export function Sidebar({ user }: Props) {
               </Link>
             </li>
           ))}
+        </ul>
+
+        <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("project")}
+        </p>
+        <ul className="space-y-0.5">
+          <li>
+            <Link
+              href={discussLink.href}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
+                isActive(discussLink.href) && "bg-bg2 font-medium text-text"
+              )}
+            >
+              <discussLink.icon size={16} />
+              {discussLink.label}
+            </Link>
+          </li>
         </ul>
 
         {sidebarProjects.length > 0 && (

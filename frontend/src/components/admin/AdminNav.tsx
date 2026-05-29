@@ -13,6 +13,7 @@ export function AdminNav() {
     { href: "/admin/users", label: t("users") },
     { href: "/admin/plans", label: t("plans") },
     { href: "/admin/proposal-requests", label: t("proposalRequests") },
+    { href: "/admin/project-inquiries", label: t("projectInquiries") },
     { href: "/admin/calculator-budget", label: t("calculatorBudget") },
     { href: "/admin/strategy-llm", label: t("strategyLlm") },
     { href: "/admin/email", label: t("emailSmtp") },

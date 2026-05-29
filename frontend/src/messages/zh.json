@@ -70,7 +70,9 @@
     "projects": "Erman AI 项目",
     "projectHidden": "对用户隐藏",
     "dashboard": "控制台",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "project": "项目",
+    "discussProject": "讨论项目"
   },
   "dashboard": {
     "title": "控制台",

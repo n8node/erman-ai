@@ -89,7 +89,9 @@
     "projects": "Проекты Erman AI",
     "projectHidden": "Скрыт для пользователей",
     "dashboard": "Дашборд",
-    "logout": "Выйти"
+    "logout": "Выйти",
+    "project": "Проект",
+    "discussProject": "Обсудить проект"
   },
   "dashboard": {
     "title": "Дашборд",
@@ -143,6 +145,7 @@
       "plans": "Тарифы",
       "tooltips": "Тултипы",
       "proposalRequests": "Запросы на КП",
+      "projectInquiries": "Обсудить проект",
       "calculatorBudget": "Ставки калькулятора",
       "strategyLlm": "AI Strategy LLM",
       "emailSmtp": "Email / SMTP",
@@ -564,6 +567,96 @@
         "in_progress": "В работе",
         "done": "Готово"
       }
+    },
+    "projectInquiries": {
+      "title": "Заявки «Обсудить проект»",
+      "subtitle": "Запросы на обсуждение автоматизации с приложенным расчётом",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить заявки",
+      "saveFailed": "Не удалось обновить статус",
+      "statusUpdated": "Статус обновлён",
+      "empty": "Пока нет заявок",
+      "colDate": "Дата",
+      "colName": "Имя",
+      "colEmail": "Email",
+      "colTelegram": "Telegram",
+      "colProject": "Проект",
+      "colDescription": "Описание",
+      "colRun": "Расчёт",
+      "colStatus": "Статус",
+      "open": "Открыть",
+      "backToList": "К списку",
+      "detailTitle": "Заявка на обсуждение",
+      "requestInfo": "Данные заявки",
+      "reportDisclaimer": "Приложенный расчёт Automation Calculator",
+      "pagination": "Страница {page} из {total} · всего {count}",
+      "prev": "Назад",
+      "next": "Далее",
+      "status": {
+        "pending_email": "Ждёт email",
+        "new": "Новая",
+        "in_progress": "В работе",
+        "done": "Готово",
+        "spam": "Спам"
+      }
+    }
+  },
+  "discuss": {
+    "title": "Обсудить проект",
+    "subtitle": "Отправьте расчёт и описание — обсудим автоматизацию на ваших цифрах, без общих презентаций",
+    "value": {
+      "title": "Что вы получите",
+      "item1": "Разбор ROI по вашему расчёту из калькулятора",
+      "item2": "Оценку сроков, рисков и реалистичности автоматизации",
+      "item3": "Конкретную рекомендацию: внедрять, отложить или не стоит — в Telegram"
+    },
+    "steps": {
+      "label": "Шаг {n}",
+      "calc": "Сделайте расчёт в калькуляторе",
+      "describe": "Опишите проект и приложите расчёт",
+      "talk": "Обсудим на базе ваших данных в Telegram"
+    },
+    "form": {
+      "name": "Имя",
+      "email": "Email",
+      "emailVerified": "Подтверждённый email из вашего аккаунта",
+      "emailGuestHint": "Отправим ссылку для подтверждения — заявка попадёт к нам только после клика",
+      "telegram": "Telegram",
+      "telegramPlaceholder": "@username",
+      "telegramHint": "Укажите username — мы свяжемся с вами в Telegram и обсудим проект на базе расчёта",
+      "projectTitle": "Название проекта",
+      "description": "Описание проекта",
+      "descriptionPlaceholder": "Кратко опишите процесс, цель автоматизации и контекст. Если есть расчёт из калькулятора — приложите его ниже или укажите в тексте.",
+      "calculatorRun": "Расчёт из калькулятора",
+      "noRun": "Без расчёта",
+      "unnamedRun": "Без названия",
+      "runPreview": "Выбранный расчёт",
+      "runBenefit": "Экономия: {value}",
+      "runPayback": "Окупаемость: {value}",
+      "months": "мес",
+      "guestRunHint": "Войдите или зарегистрируйтесь, чтобы приложить сохранённый расчёт. Или сначала сделайте расчёт в калькуляторе.",
+      "goCalculator": "Открыть калькулятор →",
+      "submit": "Отправить",
+      "sending": "Отправка…"
+    },
+    "success": {
+      "title": "Заявка отправлена",
+      "auth": "Мы получили заявку и свяжемся с вами в Telegram. Подтверждение также отправлено на email.",
+      "guest": "Проверьте почту и перейдите по ссылке для подтверждения. После этого мы получим заявку и свяжемся в Telegram.",
+      "telegramHint": "Напишем вам в Telegram {telegram}",
+      "backToCalculator": "← Вернуться к калькулятору"
+    },
+    "errors": {
+      "submitFailed": "Не удалось отправить заявку"
+    },
+    "confirm": {
+      "loading": "Подтверждаем заявку…",
+      "title": "Заявка подтверждена",
+      "body": "Спасибо! Мы получили вашу заявку и свяжемся с вами в Telegram для обсуждения проекта на базе ваших данных.",
+      "errorTitle": "Ссылка недействительна",
+      "errorBody": "Ссылка устарела или уже использована. Отправьте заявку заново.",
+      "back": "← К форме",
+      "dashboard": "На дашборд →"
     }
   },
   "stub": {
@@ -699,6 +792,7 @@
     "exporting": "Экспорт…",
     "pdfFailed": "Не удалось экспортировать PDF",
     "createProposal": "Создать КП",
+    "discussProject": "Обсудить проект",
     "requestProposal": "Запросить КП от Erman AI",
     "proposalRequesting": "Отправка запроса…",
     "proposalRequestSent": "Запрос отправлен",

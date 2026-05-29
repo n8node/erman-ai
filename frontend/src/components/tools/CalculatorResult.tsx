@@ -111,6 +111,23 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
           >
             {t("createProposal")}
           </Link>
+          <Link
+            href={`/discuss?run_id=${runId}${input.process_name ? `&project_name=${encodeURIComponent(input.process_name)}` : ""}`}
+            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2"
+          >
+            {t("discussProject")}
+          </Link>
+        </div>
+      )}
+
+      {isGuest && (
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <Link
+            href={`/discuss${input.process_name ? `?project_name=${encodeURIComponent(input.process_name)}` : ""}`}
+            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2"
+          >
+            {t("discussProject")}
+          </Link>
         </div>
       )}
 

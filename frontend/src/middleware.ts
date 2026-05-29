@@ -29,7 +29,7 @@ function isSharePath(pathname: string) {
 
 function isGuestToolPath(pathname: string) {
   const p = appPathname(pathname);
-  return p === "/" || p.startsWith("/tools");
+  return p === "/" || p.startsWith("/tools") || p === "/discuss" || p.startsWith("/discuss/");
 }
 
 function isAccountPath(pathname: string) {
