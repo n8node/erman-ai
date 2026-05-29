@@ -589,6 +589,8 @@
       "detailTitle": "Заявка на обсуждение",
       "requestInfo": "Данные заявки",
       "reportDisclaimer": "Приложенный расчёт Automation Calculator",
+      "openShareReport": "Открыть расчёт как у клиента",
+      "noReportAttached": "К заявке не приложен расчёт калькулятора",
       "pagination": "Страница {page} из {total} · всего {count}",
       "prev": "Назад",
       "next": "Далее",

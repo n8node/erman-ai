@@ -5,8 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   fetchAdminProjectInquiry,
+  fetchPublicReport,
   updateAdminProjectInquiryStatus,
   type AdminProjectInquiryDetail,
+  type CalculatorInput,
+  type CalculatorOutput,
 } from "@/lib/api";
 import { CalculatorShareReport } from "@/components/tools/CalculatorShareReport";
 import { TooltipProvider } from "@/components/ui/HelpTooltip";
@@ -26,22 +29,52 @@ export function AdminProjectInquiryDetailView({ id }: Props) {
   const t = useTranslations("admin.projectInquiries");
   const locale = useLocale();
   const [detail, setDetail] = useState<AdminProjectInquiryDetail | null>(null);
+  const [reportInput, setReportInput] = useState<CalculatorInput | null>(null);
+  const [reportOutput, setReportOutput] = useState<CalculatorOutput | null>(null);
+  const [reportProcessName, setReportProcessName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const loadReport = useCallback(async (data: AdminProjectInquiryDetail) => {
+    if (data.input && data.output) {
+      setReportInput(data.input);
+      setReportOutput(data.output);
+      setReportProcessName(data.process_name || data.input.process_name || "");
+      return;
+    }
+
+    if (data.share_token) {
+      try {
+        const report = await fetchPublicReport(data.share_token);
+        setReportInput(report.input);
+        setReportOutput(report.output);
+        setReportProcessName(report.process_name || report.input.process_name || "");
+        return;
+      } catch {
+        // fall through to empty state
+      }
+    }
+
+    setReportInput(null);
+    setReportOutput(null);
+    setReportProcessName("");
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setDetail(await fetchAdminProjectInquiry(id));
+      const data = await fetchAdminProjectInquiry(id);
+      setDetail(data);
+      await loadReport(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [id, t]);
+  }, [id, loadReport, t]);
 
   useEffect(() => {
     load();
@@ -78,7 +111,8 @@ export function AdminProjectInquiryDetailView({ id }: Props) {
 
   if (!detail) return null;
 
-  const hasCalc = detail.input && detail.output;
+  const hasReport = Boolean(reportInput && reportOutput);
+  const shareHref = detail.share_token ? `/share/${detail.share_token}` : null;
 
   return (
     <div className="space-y-6">
@@ -136,19 +170,33 @@ export function AdminProjectInquiryDetailView({ id }: Props) {
         </dl>
       </div>
 
-      {hasCalc && (
+      {hasReport ? (
         <TooltipProvider prefix="calculator" locale={locale}>
-          <div className="rounded-xl border border-border bg-bg p-8">
-            <p className="text-xs text-text3">{t("reportDisclaimer")}</p>
-            <div className="mt-8">
-              <CalculatorShareReport
-                input={detail.input!}
-                output={detail.output!}
-                processName={detail.process_name || detail.input!.process_name}
-              />
+          <div className="rounded-xl border border-border bg-bg p-8 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-text3">{t("reportDisclaimer")}</p>
+              {shareHref && (
+                <Link
+                  href={shareHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-accent hover:underline"
+                >
+                  {t("openShareReport")} →
+                </Link>
+              )}
             </div>
+            <CalculatorShareReport
+              input={reportInput!}
+              output={reportOutput!}
+              processName={reportProcessName}
+            />
           </div>
         </TooltipProvider>
+      ) : (
+        <div className="rounded-xl border border-border bg-bg2 p-6 text-sm text-text2">
+          {t("noReportAttached")}
+        </div>
       )}
     </div>
   );

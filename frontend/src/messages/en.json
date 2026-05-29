@@ -588,6 +588,8 @@
       "detailTitle": "Discussion request",
       "requestInfo": "Request details",
       "reportDisclaimer": "Attached Automation Calculator report",
+      "openShareReport": "Open client-facing report",
+      "noReportAttached": "No calculator report attached to this request",
       "pagination": "Page {page} of {total} · {count} total",
       "prev": "Previous",
       "next": "Next",

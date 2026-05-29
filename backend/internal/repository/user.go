@@ -115,6 +115,17 @@ func (r *UserRepository) GetPlanIDBySlug(ctx context.Context, slug string) (*str
 	return &id, nil
 }
 
+func (r *UserRepository) GetFirstSuperadminID(ctx context.Context) (string, error) {
+	var id string
+	err := r.pool.QueryRow(ctx, `
+		SELECT id FROM users WHERE role = 'superadmin' ORDER BY created_at ASC LIMIT 1
+	`).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return id, err
+}
+
 func (r *UserRepository) scanUser(row pgx.Row) (*model.User, error) {
 	var u model.User
 	err := row.Scan(

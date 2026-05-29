@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -61,6 +63,82 @@ func (s *ShareService) CreateShare(ctx context.Context, userID, runID, baseURL s
 
 	url := baseURL + "/dashboard/share/" + sr.Token
 	return &ShareResult{Token: sr.Token, ExpiresAt: sr.ExpiresAt, URL: url}, nil
+}
+
+type InquiryShareResult struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+	URL       string    `json:"url"`
+	RunID     string    `json:"run_id"`
+}
+
+// CreateInquiryShare creates a long-lived public share link for a project inquiry calculator attachment.
+func (s *ShareService) CreateInquiryShare(
+	ctx context.Context,
+	ownerUserID string,
+	runID *string,
+	snapshot json.RawMessage,
+	baseURL string,
+) (*InquiryShareResult, error) {
+	effectiveRunID, err := s.resolveInquiryRunID(ctx, ownerUserID, runID, snapshot)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := s.generateShareToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	expiresAt := time.Now().UTC().Add(365 * 24 * time.Hour)
+	sr, err := s.shared.Create(ctx, effectiveRunID, ownerUserID, token, expiresAt)
+	if err != nil {
+		return nil, err
+	}
+
+	url := strings.TrimRight(baseURL, "/") + "/dashboard/share/" + sr.Token
+	return &InquiryShareResult{
+		Token:     sr.Token,
+		ExpiresAt: sr.ExpiresAt,
+		URL:       url,
+		RunID:     effectiveRunID,
+	}, nil
+}
+
+func (s *ShareService) resolveInquiryRunID(
+	ctx context.Context,
+	ownerUserID string,
+	runID *string,
+	snapshot json.RawMessage,
+) (effectiveRunID string, err error) {
+	if runID != nil && *runID != "" {
+		run, err := s.runs.GetByID(ctx, *runID)
+		if err != nil {
+			return "", err
+		}
+		if run.ToolSlug != "calculator" || run.Status != model.RunStatusDone {
+			return "", ErrInvalidInput
+		}
+		return *runID, nil
+	}
+
+	if len(snapshot) == 0 {
+		return "", ErrInvalidInput
+	}
+
+	var snap struct {
+		Input  json.RawMessage `json:"input"`
+		Output json.RawMessage `json:"output"`
+	}
+	if err := json.Unmarshal(snapshot, &snap); err != nil || len(snap.Input) == 0 || len(snap.Output) == 0 {
+		return "", ErrInvalidInput
+	}
+
+	run, err := s.runs.Create(ctx, ownerUserID, "calculator", "free", snap.Input, snap.Output)
+	if err != nil {
+		return "", err
+	}
+	return run.ID, nil
 }
 
 type PublicSharePayload struct {

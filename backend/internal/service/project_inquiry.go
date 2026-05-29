@@ -53,6 +53,7 @@ type ProjectInquiryService struct {
 	tokens    *repository.InquiryVerificationTokenRepository
 	runs      *repository.ToolRunRepository
 	users     *repository.UserRepository
+	share     *ShareService
 	mail      *MailService
 	telegram  *TelegramService
 	cfg       *config.Config
@@ -64,6 +65,7 @@ func NewProjectInquiryService(
 	tokens *repository.InquiryVerificationTokenRepository,
 	runs *repository.ToolRunRepository,
 	users *repository.UserRepository,
+	share *ShareService,
 	mail *MailService,
 	telegram *TelegramService,
 	cfg *config.Config,
@@ -73,6 +75,7 @@ func NewProjectInquiryService(
 		tokens:    tokens,
 		runs:      runs,
 		users:     users,
+		share:     share,
 		mail:      mail,
 		telegram:  telegram,
 		cfg:       cfg,
@@ -168,6 +171,7 @@ func (s *ProjectInquiryService) CreateAuthenticated(
 	now := time.Now()
 	inq.EmailVerifiedAt = &now
 
+	s.attachCalculatorShare(ctx, inq.ID)
 	s.notifyAdmin(ctx, inq.ID)
 	s.sendReceivedConfirmation(ctx, normalized.locale, normalized.email, normalized.name, normalized.telegram)
 
@@ -187,6 +191,7 @@ func (s *ProjectInquiryService) Verify(ctx context.Context, rawToken string) (*m
 	}
 
 	_ = s.tokens.Delete(ctx, inquiryID)
+	s.attachCalculatorShare(ctx, inq.ID)
 	s.notifyAdmin(ctx, inq.ID)
 	s.sendReceivedConfirmation(ctx, inq.Locale, inq.Email, inq.Name, inq.Telegram)
 
@@ -212,6 +217,7 @@ func (s *ProjectInquiryService) ListAdmin(ctx context.Context, limit, offset int
 }
 
 func (s *ProjectInquiryService) GetAdminDetail(ctx context.Context, id string) (*repository.AdminProjectInquiryDetail, error) {
+	s.attachCalculatorShare(ctx, id)
 	return s.inquiries.GetAdminDetail(ctx, id)
 }
 
@@ -234,6 +240,58 @@ func (s *ProjectInquiryService) notifyAdmin(ctx context.Context, inquiryID strin
 		return
 	}
 	s.telegram.NotifyProjectInquiry(ctx, detail, s.cfg.PublicBaseURL())
+}
+
+func (s *ProjectInquiryService) attachCalculatorShare(ctx context.Context, inquiryID string) {
+	if s.share == nil {
+		return
+	}
+
+	row, err := s.inquiries.GetForShareAttach(ctx, inquiryID)
+	if err != nil {
+		slog.Warn("project inquiry share attach load failed", "id", inquiryID, "err", err)
+		return
+	}
+	if row.ShareToken != nil && *row.ShareToken != "" {
+		return
+	}
+	hasRun := row.CalculatorRunID != nil && *row.CalculatorRunID != ""
+	hasSnapshot := len(row.CalculatorSnapshot) > 0
+	if !hasRun && !hasSnapshot {
+		return
+	}
+
+	ownerUserID := ""
+	if row.UserID != nil && *row.UserID != "" {
+		ownerUserID = *row.UserID
+	} else {
+		id, err := s.users.GetFirstSuperadminID(ctx)
+		if err != nil {
+			slog.Warn("project inquiry share attach owner lookup failed", "id", inquiryID, "err", err)
+			return
+		}
+		ownerUserID = id
+	}
+
+	result, err := s.share.CreateInquiryShare(
+		ctx,
+		ownerUserID,
+		row.CalculatorRunID,
+		row.CalculatorSnapshot,
+		s.cfg.PublicBaseURL(),
+	)
+	if err != nil {
+		slog.Warn("project inquiry share attach failed", "id", inquiryID, "err", err)
+		return
+	}
+
+	var runID *string
+	if result.RunID != "" {
+		runID = &result.RunID
+	}
+	if err := s.inquiries.SetShareAttachment(ctx, inquiryID, runID, result.Token); err != nil {
+		slog.Warn("project inquiry share token save failed", "id", inquiryID, "err", err)
+	}
 }
 
 func (s *ProjectInquiryService) sendReceivedConfirmation(ctx context.Context, locale, email, name, telegram string) {

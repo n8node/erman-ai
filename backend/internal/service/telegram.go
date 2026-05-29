@@ -160,6 +160,11 @@ func (s *TelegramService) NotifyProjectInquiry(ctx context.Context, detail *repo
 	}
 
 	adminURL := strings.TrimRight(publicBaseURL, "/") + "/dashboard/admin/project-inquiries/" + detail.ID
+	shareURL := ""
+	if detail.ShareToken != nil && *detail.ShareToken != "" {
+		shareURL = strings.TrimRight(publicBaseURL, "/") + "/dashboard/share/" + *detail.ShareToken
+	}
+
 	text := fmt.Sprintf(
 		"📋 Новая заявка «Обсудить проект»\n\n"+
 			"Имя: %s\nEmail: %s\nTelegram: %s\n\n"+
@@ -173,5 +178,8 @@ func (s *TelegramService) NotifyProjectInquiry(ctx context.Context, detail *repo
 		calcLine,
 		adminURL,
 	)
+	if shareURL != "" {
+		text += fmt.Sprintf("\nРасчёт (как у клиента): %s", shareURL)
+	}
 	s.sendAsync(cfg, text, "project_inquiry")
 }

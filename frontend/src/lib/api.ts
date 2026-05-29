@@ -1069,6 +1069,7 @@ export type AdminProjectInquiryRow = {
 };
 
 export type AdminProjectInquiryDetail = AdminProjectInquiryRow & {
+  share_token?: string | null;
   input?: CalculatorInput;
   output?: CalculatorOutput;
 };

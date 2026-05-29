@@ -40,8 +40,17 @@ type AdminProjectInquiryRow struct {
 
 type AdminProjectInquiryDetail struct {
 	AdminProjectInquiryRow
-	Input  json.RawMessage `json:"input,omitempty"`
-	Output json.RawMessage `json:"output,omitempty"`
+	ShareToken *string         `json:"share_token,omitempty"`
+	Input      json.RawMessage `json:"input,omitempty"`
+	Output     json.RawMessage `json:"output,omitempty"`
+}
+
+type InquiryShareAttachRow struct {
+	ID                 string
+	UserID             *string
+	CalculatorRunID    *string
+	CalculatorSnapshot json.RawMessage
+	ShareToken         *string
 }
 
 func (r *ProjectInquiryRepository) Create(
@@ -138,6 +147,47 @@ func (r *ProjectInquiryRepository) ListAdmin(ctx context.Context, limit, offset 
 	return items, rows.Err()
 }
 
+func (r *ProjectInquiryRepository) GetForShareAttach(ctx context.Context, id string) (*InquiryShareAttachRow, error) {
+	const q = `
+		SELECT id, user_id, calculator_run_id, calculator_snapshot, share_token
+		FROM project_inquiries
+		WHERE id = $1
+	`
+	var row InquiryShareAttachRow
+	var snapshot []byte
+	err := r.pool.QueryRow(ctx, q, id).Scan(
+		&row.ID, &row.UserID, &row.CalculatorRunID, &snapshot, &row.ShareToken,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(snapshot) > 0 {
+		row.CalculatorSnapshot = snapshot
+	}
+	return &row, nil
+}
+
+func (r *ProjectInquiryRepository) SetShareAttachment(ctx context.Context, id string, runID *string, shareToken string) error {
+	const q = `
+		UPDATE project_inquiries
+		SET calculator_run_id = COALESCE($2, calculator_run_id),
+		    share_token = $3,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, runID, shareToken)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string) (*AdminProjectInquiryDetail, error) {
 	const q = `
 		SELECT pi.id, pi.user_id, u.email, pi.calculator_run_id,
@@ -146,12 +196,13 @@ func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string
 		       NULLIF(COALESCE(tr.output->>'net_benefit_monthly', pi.calculator_snapshot->'output'->>'net_benefit_monthly'), '')::double precision,
 		       NULLIF(COALESCE(tr.output->>'payback_months', pi.calculator_snapshot->'output'->>'payback_months'), '')::double precision,
 		       NULLIF(COALESCE(tr.output->>'recommendation', pi.calculator_snapshot->'output'->>'recommendation'), ''),
-		       pi.status, pi.created_at, pi.updated_at,
+		       pi.status, pi.created_at, pi.updated_at, pi.share_token,
 		       COALESCE(tr.input, pi.calculator_snapshot->'input'),
 		       COALESCE(tr.output, pi.calculator_snapshot->'output')
 		FROM project_inquiries pi
 		LEFT JOIN users u ON u.id = pi.user_id
-		LEFT JOIN tool_runs tr ON tr.id = pi.calculator_run_id
+		LEFT JOIN shared_reports sr ON sr.token = pi.share_token
+		LEFT JOIN tool_runs tr ON tr.id = COALESCE(pi.calculator_run_id, sr.run_id)
 		WHERE pi.id = $1
 	`
 	var item AdminProjectInquiryDetail
@@ -160,7 +211,7 @@ func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string
 		&item.ID, &item.UserID, &item.UserEmail, &item.CalculatorRunID,
 		&item.Name, &item.Email, &item.Telegram, &item.ProjectTitle, &item.ProjectDescription,
 		&item.ProcessName, &item.NetBenefitMonthly, &item.PaybackMonths, &item.Recommendation,
-		&item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&item.Status, &item.CreatedAt, &item.UpdatedAt, &item.ShareToken,
 		&input, &output,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
