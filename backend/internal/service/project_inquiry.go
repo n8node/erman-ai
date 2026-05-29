@@ -20,7 +20,11 @@ import (
 
 var (
 	ErrInquiryVerificationInvalid = errors.New("invalid or expired inquiry verification token")
-	telegramUsernamePattern       = regexp.MustCompile(`^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$`)
+	ErrInquiryInvalidTelegram     = errors.New("invalid telegram")
+	ErrInquiryMissingFields       = errors.New("missing required fields")
+	telegramUsernamePattern       = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{4,31}$`)
+	telegramPhonePattern          = regexp.MustCompile(`^\+?[0-9][0-9\s\-()]{6,18}$`)
+	telegramHandleFallback        = regexp.MustCompile(`^[a-zA-Z0-9_]{3,32}$`)
 )
 
 const inquiryVerificationTTL = 24 * time.Hour
@@ -271,10 +275,7 @@ func normalizeProjectInquiryInput(input ProjectInquiryInput) normalizedInquiry {
 		runID = &id
 	}
 
-	snapshot := json.RawMessage(nil)
-	if len(input.CalculatorSnapshot) > 0 {
-		snapshot = input.CalculatorSnapshot
-	}
+	snapshot := normalizeCalculatorSnapshot(input.CalculatorSnapshot)
 
 	return normalizedInquiry{
 		name:               strings.TrimSpace(input.Name),
@@ -293,23 +294,55 @@ func validateProjectInquiryInput(input ProjectInquiryInput) error {
 		return ErrInvalidInput
 	}
 	n := normalizeProjectInquiryInput(input)
-	if len(input.CalculatorSnapshot) > 0 && !json.Valid(input.CalculatorSnapshot) {
-		return ErrInvalidInput
-	}
 	if n.name == "" || n.email == "" || n.telegram == "" || n.projectDescription == "" {
-		return ErrInvalidInput
+		return ErrInquiryMissingFields
 	}
 	if !strings.Contains(n.email, "@") {
 		return ErrInvalidInput
 	}
-	handle := strings.TrimPrefix(n.telegram, "@")
-	if !telegramUsernamePattern.MatchString("@" + handle) {
-		return ErrInvalidInput
+	if !validateTelegramContact(n.telegram) {
+		return ErrInquiryInvalidTelegram
 	}
 	if len(n.projectDescription) > 5000 {
 		return ErrInvalidInput
 	}
 	return nil
+}
+
+func validateTelegramContact(telegram string) bool {
+	telegram = strings.TrimSpace(telegram)
+	if telegram == "" {
+		return false
+	}
+	lower := strings.ToLower(telegram)
+	if strings.Contains(lower, "t.me/") {
+		return true
+	}
+	handle := strings.TrimPrefix(telegram, "@")
+	if telegramUsernamePattern.MatchString(handle) {
+		return true
+	}
+	if telegramPhonePattern.MatchString(telegram) {
+		return true
+	}
+	return telegramHandleFallback.MatchString(handle)
+}
+
+func normalizeCalculatorSnapshot(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 || !json.Valid(raw) {
+		return nil
+	}
+	var snap struct {
+		Input  json.RawMessage `json:"input"`
+		Output json.RawMessage `json:"output"`
+	}
+	if err := json.Unmarshal(raw, &snap); err != nil {
+		return nil
+	}
+	if len(snap.Input) == 0 || len(snap.Output) == 0 || !json.Valid(snap.Input) || !json.Valid(snap.Output) {
+		return nil
+	}
+	return raw
 }
 
 func (s *ProjectInquiryService) verificationURL(rawToken string) string {

@@ -647,7 +647,10 @@
       "backToCalculator": "← Back to calculator"
     },
     "errors": {
-      "submitFailed": "Failed to submit request"
+      "submitFailed": "Failed to submit request",
+      "missingFields": "Please fill in all required fields",
+      "invalidTelegram": "Enter a Telegram username (5+ Latin characters) or phone number",
+      "invalidForm": "Please check the form data"
     },
     "confirm": {
       "loading": "Confirming request…",

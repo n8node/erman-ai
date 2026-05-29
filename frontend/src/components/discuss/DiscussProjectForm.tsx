@@ -16,6 +16,7 @@ import { GuestBanner } from "@/components/layout/GuestBanner";
 import {
   clearGuestCalculatorResult,
   loadGuestCalculatorResult,
+  sanitizeGuestCalculatorPayload,
   type GuestCalculatorResult,
 } from "@/lib/calculator-guest-result";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,30 @@ const fieldClass =
 function formatRub(n?: number | null) {
   if (n == null || !isFinite(n)) return "—";
   return new Intl.NumberFormat("ru-RU").format(Math.round(n)) + " ₽";
+}
+
+function isValidTelegram(value: string) {
+  const telegram = value.trim();
+  if (!telegram) return false;
+  const lower = telegram.toLowerCase();
+  if (lower.includes("t.me/")) return true;
+  const handle = telegram.replace(/^@/, "");
+  if (/^[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(handle)) return true;
+  if (/^\+?[0-9][0-9\s\-()]{6,18}$/.test(telegram)) return true;
+  return /^[a-zA-Z0-9_]{3,32}$/.test(handle);
+}
+
+function mapSubmitError(message: string, t: (key: string) => string) {
+  switch (message) {
+    case "missing required fields":
+      return t("errors.missingFields");
+    case "invalid telegram":
+      return t("errors.invalidTelegram");
+    case "invalid input":
+      return t("errors.invalidForm");
+    default:
+      return message || t("errors.submitFailed");
+  }
 }
 
 function formatPayback(n?: number | null, monthsLabel = "мес") {
@@ -136,17 +161,34 @@ function DiscussProjectFormInner() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedTelegram = telegram.trim();
+    const trimmedTitle = projectTitle.trim();
+    const trimmedDescription = projectDescription.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedTelegram || !trimmedDescription) {
+      setError(t("errors.missingFields"));
+      return;
+    }
+    if (!isValidTelegram(trimmedTelegram)) {
+      setError(t("errors.invalidTelegram"));
+      return;
+    }
+
     setLoading(true);
+    const snapshotPayload = guestSnapshot
+      ? sanitizeGuestCalculatorPayload(guestSnapshot.input, guestSnapshot.output)
+      : undefined;
     const payload = {
-      name: name.trim(),
-      email: email.trim(),
-      telegram: telegram.trim(),
-      project_title: projectTitle.trim(),
-      project_description: projectDescription.trim(),
+      name: trimmedName,
+      email: trimmedEmail,
+      telegram: trimmedTelegram,
+      project_title: trimmedTitle,
+      project_description: trimmedDescription,
       calculator_run_id: calculatorRunId || undefined,
-      calculator_snapshot: guestSnapshot
-        ? { input: guestSnapshot.input, output: guestSnapshot.output }
-        : undefined,
+      calculator_snapshot: snapshotPayload,
       locale,
       website: honeypot,
     };
@@ -160,7 +202,8 @@ function DiscussProjectFormInner() {
         setDone("guest");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.submitFailed"));
+      const message = err instanceof Error ? err.message : t("errors.submitFailed");
+      setError(mapSubmitError(message, t));
     } finally {
       setLoading(false);
     }

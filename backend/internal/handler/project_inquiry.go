@@ -179,6 +179,10 @@ func (h *ProjectInquiryHandler) writeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "invalid input")
+	case errors.Is(err, service.ErrInquiryMissingFields):
+		writeError(w, http.StatusBadRequest, "missing required fields")
+	case errors.Is(err, service.ErrInquiryInvalidTelegram):
+		writeError(w, http.StatusBadRequest, "invalid telegram")
 	case errors.Is(err, repository.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not found")
 	case errors.Is(err, service.ErrInquiryVerificationInvalid):

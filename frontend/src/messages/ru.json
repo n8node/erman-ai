@@ -648,7 +648,10 @@
       "backToCalculator": "← Вернуться к калькулятору"
     },
     "errors": {
-      "submitFailed": "Не удалось отправить заявку"
+      "submitFailed": "Не удалось отправить заявку",
+      "missingFields": "Заполните все обязательные поля",
+      "invalidTelegram": "Укажите Telegram username (от 5 символов, латиница) или номер телефона",
+      "invalidForm": "Проверьте данные в форме"
     },
     "confirm": {
       "loading": "Подтверждаем заявку…",

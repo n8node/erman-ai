@@ -9,11 +9,24 @@ export type GuestCalculatorResult = {
   savedAt: string;
 };
 
+export function sanitizeGuestCalculatorPayload(
+  input: CalculatorInput,
+  output: CalculatorOutput
+): { input: CalculatorInput; output: CalculatorOutput } {
+  return JSON.parse(
+    JSON.stringify(
+      { input, output },
+      (_key, value) => (typeof value === "number" && !Number.isFinite(value) ? null : value)
+    )
+  );
+}
+
 export function saveGuestCalculatorResult(input: CalculatorInput, output: CalculatorOutput) {
   if (typeof window === "undefined") return;
+  const sanitized = sanitizeGuestCalculatorPayload(input, output);
   const payload: GuestCalculatorResult = {
-    input,
-    output,
+    input: sanitized.input,
+    output: sanitized.output,
     savedAt: new Date().toISOString(),
   };
   localStorage.setItem(GUEST_RESULT_KEY, JSON.stringify(payload));
