@@ -36,6 +36,18 @@
     },
     "ermanReferral": "Inscription via invitation Erman AI"
   },
+  "guest": {
+    "banner": "Connectez-vous pour enregistrer l'historique, exporter en PDF et utiliser les outils IA.",
+    "login": "Se connecter",
+    "register": "S'inscrire",
+    "cancel": "Annuler",
+    "modalTitle": "Connexion requise",
+    "generateGate": "Connectez-vous ou inscrivez-vous pour lancer la génération.",
+    "accountGate": "Cette section est disponible après connexion.",
+    "historyTitle": "Historique",
+    "historyMessage": "L'historique est disponible après connexion.",
+    "calculatorSaveHint": "Connectez-vous pour enregistrer ce calcul et exporter en PDF."
+  },
   "onboarding": {
     "title": "Qui êtes-vous ?",
     "subtitle": "Cela nous aide à adapter l’expérience",

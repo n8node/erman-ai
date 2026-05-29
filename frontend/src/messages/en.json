@@ -53,6 +53,18 @@
       "loading": "Loading…"
     }
   },
+  "guest": {
+    "banner": "Sign in to save calculation history, export PDF, and run AI tools.",
+    "login": "Sign in",
+    "register": "Register",
+    "cancel": "Cancel",
+    "modalTitle": "Sign in required",
+    "generateGate": "Sign in or create an account to run generation. You can fill in the form now and continue after login.",
+    "accountGate": "This section is available after sign in.",
+    "historyTitle": "History",
+    "historyMessage": "Run history is available after sign in.",
+    "calculatorSaveHint": "Sign in to save this calculation, export PDF, and link it to other tools."
+  },
   "onboarding": {
     "title": "Who are you?",
     "subtitle": "This helps us tailor the experience",

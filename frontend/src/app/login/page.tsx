@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -19,7 +20,9 @@ export default async function LoginPage() {
         </div>
         <h1 className="text-base font-medium">{t("loginTitle")}</h1>
         <p className="mt-1 mb-6 text-sm text-text2">{t("loginSubtitle")}</p>
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );

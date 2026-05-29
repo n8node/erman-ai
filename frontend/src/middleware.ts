@@ -6,8 +6,35 @@ import { negotiateFromAcceptLanguage } from "./i18n/negotiate";
 /** Pages reachable without a session (basePath is stripped in middleware). */
 const publicPages = ["/login", "/register", "/verify-email"];
 
+const accountPrefixes = ["/billing", "/settings", "/api-keys"];
+const adminPrefix = "/admin";
+
 function isSharePath(pathname: string) {
   return pathname.startsWith("/share/") || pathname.startsWith("/dashboard/share/");
+}
+
+function isGuestToolPath(pathname: string) {
+  return pathname === "/" || pathname.startsWith("/tools");
+}
+
+function isAccountPath(pathname: string) {
+  return accountPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function isAdminPath(pathname: string) {
+  return pathname === adminPrefix || pathname.startsWith(`${adminPrefix}/`);
+}
+
+function loginRedirect(request: NextRequest, returnPath: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = "";
+  if (returnPath && returnPath !== "/login") {
+    url.searchParams.set("next", returnPath);
+  }
+  return NextResponse.redirect(url);
 }
 
 export function middleware(request: NextRequest) {
@@ -18,10 +45,16 @@ export function middleware(request: NextRequest) {
 
   if (isSharePath(pathname)) {
     response = NextResponse.next();
-  } else if (!token && !publicPages.includes(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    response = NextResponse.redirect(url);
+  } else if (!token) {
+    if (publicPages.includes(pathname)) {
+      response = NextResponse.next();
+    } else if (isAccountPath(pathname) || isAdminPath(pathname)) {
+      response = loginRedirect(request, pathname);
+    } else if (isGuestToolPath(pathname)) {
+      response = NextResponse.next();
+    } else {
+      response = loginRedirect(request, pathname);
+    }
   } else if (token && publicPages.includes(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

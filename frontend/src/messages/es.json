@@ -36,6 +36,18 @@
     },
     "ermanReferral": "Registro mediante invitación de Erman AI"
   },
+  "guest": {
+    "banner": "Inicia sesión para guardar el historial, exportar PDF y usar herramientas de IA.",
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "cancel": "Cancelar",
+    "modalTitle": "Inicio de sesión requerido",
+    "generateGate": "Inicia sesión o regístrate para ejecutar la generación.",
+    "accountGate": "Esta sección está disponible después de iniciar sesión.",
+    "historyTitle": "Historial",
+    "historyMessage": "El historial está disponible después de iniciar sesión.",
+    "calculatorSaveHint": "Inicia sesión para guardar este cálculo y exportar PDF."
+  },
   "onboarding": {
     "title": "¿Quién es usted?",
     "subtitle": "Esto nos ayuda a adaptar la experiencia",

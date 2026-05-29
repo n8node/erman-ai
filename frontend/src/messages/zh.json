@@ -36,6 +36,18 @@
     },
     "ermanReferral": "通过 Erman AI 邀请注册"
   },
+  "guest": {
+    "banner": "登录后可保存计算历史、导出 PDF 并使用 AI 工具。",
+    "login": "登录",
+    "register": "注册",
+    "cancel": "取消",
+    "modalTitle": "需要登录",
+    "generateGate": "登录或注册后即可开始生成。您现在可以填写表单，登录后继续。",
+    "accountGate": "此部分需要登录后访问。",
+    "historyTitle": "历史记录",
+    "historyMessage": "历史记录需要登录后查看。",
+    "calculatorSaveHint": "登录后可保存此计算、导出 PDF 并关联到其他工具。"
+  },
   "onboarding": {
     "title": "您是谁？",
     "subtitle": "这将帮助我们为您量身定制体验",

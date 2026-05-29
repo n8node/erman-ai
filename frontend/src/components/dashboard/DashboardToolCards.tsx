@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { fetchTools, type ToolListItem } from "@/lib/api";
+import { useIsGuest } from "@/context/AuthContext";
 import { ToolLimitBadge } from "./ToolLimitBadge";
 
 const CARD_TOOLS = [
@@ -16,13 +17,15 @@ const CARD_TOOLS = [
 export function DashboardToolCards() {
   const t = useTranslations("dashboard");
   const tLimits = useTranslations("toolLimits");
+  const isGuest = useIsGuest();
   const [tools, setTools] = useState<ToolListItem[]>([]);
 
   useEffect(() => {
+    if (isGuest) return;
     fetchTools()
       .then((data) => setTools(data.tools))
       .catch(() => {});
-  }, []);
+  }, [isGuest]);
 
   function toolMeta(slug: string) {
     return tools.find((x) => x.slug === slug);
@@ -40,7 +43,7 @@ export function DashboardToolCards() {
           >
             <div className="flex items-start justify-between gap-2">
               <h2 className="text-sm font-medium">{t(`tools.${slug}.name`)}</h2>
-              {meta && (
+              {!isGuest && meta && (
                 <ToolLimitBadge
                   tool={meta}
                   t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}

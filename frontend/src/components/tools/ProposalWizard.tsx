@@ -27,6 +27,9 @@ import {
 } from "@/lib/api-proposal";
 import { isLimitReached } from "@/lib/tool-limits";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { GuestBanner } from "@/components/layout/GuestBanner";
+import { GuestLoginModal } from "@/components/auth/GuestLoginModal";
+import { useAuthUser } from "@/context/AuthContext";
 import { HelpTooltip, LabelWithHelp } from "@/components/ui/HelpTooltip";
 import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { ProposalPollingView } from "./ProposalPollingView";
@@ -64,6 +67,8 @@ function ProposalWizardInner() {
   const [limitExceeded, setLimitExceeded] = useState(false);
   const [proposalTool, setProposalTool] = useState<ToolListItem | null>(null);
   const [calcRuns, setCalcRuns] = useState<RunListItem[]>([]);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const user = useAuthUser();
 
   function loadToolLimits() {
     return fetchTools()
@@ -77,18 +82,19 @@ function ProposalWizardInner() {
   }
 
   useEffect(() => {
+    if (!user) return;
     void loadToolLimits();
     listRuns({ tool_slug: "calculator", limit: 50 })
       .then((data) => setCalcRuns(data.items.filter((r) => r.status === "done")))
       .catch(() => {});
     fetchMe()
-      .then((user) => {
-        if (user?.email) {
-          setInput((prev) => ({ ...prev, sender_email: prev.sender_email || user.email }));
+      .then((me) => {
+        if (me?.email) {
+          setInput((prev) => ({ ...prev, sender_email: prev.sender_email || me.email }));
         }
       })
       .catch(() => undefined);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!calcRunParam) return;
@@ -126,6 +132,10 @@ function ProposalWizardInner() {
       setLoadingRun(false);
       return;
     }
+    if (!user) {
+      setLoadingRun(false);
+      return;
+    }
     setLoadingRun(true);
     getRun(runIdParam)
       .then((run) => {
@@ -150,7 +160,7 @@ function ProposalWizardInner() {
       })
       .catch(() => setError(t("errors.loadFailed")))
       .finally(() => setLoadingRun(false));
-  }, [runIdParam, t]);
+  }, [runIdParam, t, user]);
 
   function patch(partial: Partial<ProposalInput>) {
     setInput((prev) => ({ ...prev, ...partial }));
@@ -204,6 +214,10 @@ function ProposalWizardInner() {
   const proposalLimitReached = proposalTool ? isLimitReached(proposalTool) : limitExceeded;
 
   async function handleGenerate() {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
     if (proposalLimitReached) {
       setLimitExceeded(true);
       return;
@@ -280,12 +294,14 @@ function ProposalWizardInner() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <GuestBanner />
+      <GuestLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-base font-medium">{t("title")}</h1>
           <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
         </div>
-        {proposalTool && (
+        {proposalTool && user && (
           <ToolLimitBadge
             tool={proposalTool}
             t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}

@@ -3,7 +3,7 @@ import { Topbar } from "./Topbar";
 import type { User } from "@/lib/api";
 
 type Props = {
-  user: User;
+  user: User | null;
   children: React.ReactNode;
 };
 

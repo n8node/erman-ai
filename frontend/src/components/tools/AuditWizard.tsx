@@ -43,6 +43,9 @@ import {
 } from "@/lib/api-audit";
 import { isLimitReached } from "@/lib/tool-limits";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { GuestBanner } from "@/components/layout/GuestBanner";
+import { GuestLoginModal } from "@/components/auth/GuestLoginModal";
+import { useAuthUser } from "@/context/AuthContext";
 import { ChoiceOrCustom, MultiChoiceWithOther, RangeSelect } from "@/components/ui/ChoiceFields";
 import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { AuditPollingView } from "./AuditPollingView";
@@ -70,6 +73,8 @@ function AuditWizardInner() {
   const [limitExceeded, setLimitExceeded] = useState(false);
   const [auditTool, setAuditTool] = useState<ToolListItem | null>(null);
   const [expandedProcess, setExpandedProcess] = useState(0);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const user = useAuthUser();
 
   function loadToolLimits() {
     return fetchTools()
@@ -83,11 +88,16 @@ function AuditWizardInner() {
   }
 
   useEffect(() => {
+    if (!user) return;
     void loadToolLimits();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!runIdParam) {
+      setLoadingRun(false);
+      return;
+    }
+    if (!user) {
       setLoadingRun(false);
       return;
     }
@@ -110,7 +120,7 @@ function AuditWizardInner() {
       })
       .catch(() => setError(t("errors.loadFailed")))
       .finally(() => setLoadingRun(false));
-  }, [runIdParam, t]);
+  }, [runIdParam, t, user]);
 
   function patch(partial: Partial<AuditInput>) {
     setInput((prev) => ({ ...prev, ...partial }));
@@ -166,6 +176,10 @@ function AuditWizardInner() {
   const auditLimitReached = auditTool ? isLimitReached(auditTool) : limitExceeded;
 
   async function handleGenerate() {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
     if (!isAuditInputValid(input) || auditLimitReached) {
       if (auditLimitReached) setLimitExceeded(true);
       return;
@@ -252,12 +266,14 @@ function AuditWizardInner() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <GuestBanner />
+      <GuestLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-base font-medium">{t("title")}</h1>
           <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
         </div>
-        {auditTool && (
+        {auditTool && user && (
           <ToolLimitBadge
             tool={auditTool}
             t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}

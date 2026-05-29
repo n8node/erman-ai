@@ -2,9 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { CalculatorInput, CalculatorOutput, ProcessStep } from "@/lib/api";
 import { getRun, runCalculator } from "@/lib/api";
+import { useAuthUser } from "@/context/AuthContext";
+import { GuestBanner } from "@/components/layout/GuestBanner";
 import {
   clearCalculatorDraft,
   loadCalculatorDraft,
@@ -33,6 +35,8 @@ const fieldClass =
 
 export function CalculatorWizard() {
   const t = useTranslations("calculator");
+  const locale = useLocale();
+  const user = useAuthUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { config: budgetConfig } = useBudgetConfig();
@@ -58,6 +62,11 @@ export function CalculatorWizard() {
 
   useEffect(() => {
     if (runIdParam) {
+      if (!user) {
+        setLoadingRun(false);
+        setInitialized(true);
+        return;
+      }
       setLoadingRun(true);
       getRun(runIdParam)
         .then((run) => {
@@ -88,7 +97,7 @@ export function CalculatorWizard() {
       setDraftBanner(true);
     }
     setInitialized(true);
-  }, [runIdParam, t]);
+  }, [runIdParam, t, user]);
 
   useEffect(() => {
     if (!initialized || runIdParam || step === 3) return;
@@ -148,6 +157,19 @@ export function CalculatorWizard() {
       hours_saved_month: hmPreview,
     };
     try {
+      if (!user) {
+        const output = previewCalculator(payload, locale);
+        clearCalculatorDraft();
+        setDraftBanner(false);
+        setResult({
+          run_id: "",
+          input: payload,
+          output,
+        });
+        setStep(3);
+        router.replace("/tools/calculator");
+        return;
+      }
       const data = await runCalculator(payload);
       clearCalculatorDraft();
       setDraftBanner(false);
@@ -237,6 +259,7 @@ export function CalculatorWizard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <GuestBanner />
       <div>
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
@@ -505,7 +528,12 @@ export function CalculatorWizard() {
       {step === 3 && result && (
         <div className="space-y-4">
           <button type="button" onClick={handleNewCalculation} className="text-sm text-accent hover:underline">{t("wizard.recalculate")}</button>
-          <CalculatorResult runId={result.run_id} input={result.input} output={result.output} />
+          <CalculatorResult
+            runId={result.run_id}
+            input={result.input}
+            output={result.output}
+            isGuest={!user || !result.run_id}
+          />
         </div>
       )}
     </div>

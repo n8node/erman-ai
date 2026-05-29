@@ -546,7 +546,7 @@ export type { CalculatorBudgetConfig, CalculatorBudgetConfigRecord } from "./cal
 
 export async function fetchCalculatorBudgetConfig() {
   return apiFetch<import("./calculator-budget-config").CalculatorBudgetConfigRecord>(
-    "/tools/calculator/budget-config"
+    "/public/calculator/budget-config"
   );
 }
 

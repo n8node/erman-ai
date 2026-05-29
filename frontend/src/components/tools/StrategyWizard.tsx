@@ -26,6 +26,9 @@ import {
   type StrategyOutput,
 } from "@/lib/api-strategy";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
+import { GuestBanner } from "@/components/layout/GuestBanner";
+import { GuestLoginModal } from "@/components/auth/GuestLoginModal";
+import { useAuthUser } from "@/context/AuthContext";
 import { ToolLimitExceededAlert } from "./ToolLimitExceededAlert";
 import { StrategyStreamView } from "./StrategyStreamView";
 import { StrategyResult } from "./StrategyResult";
@@ -53,6 +56,8 @@ function StrategyWizardInner() {
   const [limitExceeded, setLimitExceeded] = useState(false);
   const [strategyTool, setStrategyTool] = useState<ToolListItem | null>(null);
   const [calcRuns, setCalcRuns] = useState<RunListItem[]>([]);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const user = useAuthUser();
 
   function loadToolLimits() {
     return fetchTools()
@@ -66,14 +71,19 @@ function StrategyWizardInner() {
   }
 
   useEffect(() => {
+    if (!user) return;
     void loadToolLimits();
     listRuns({ tool_slug: "calculator", limit: 50 })
       .then((data) => setCalcRuns(data.items.filter((r) => r.status === "done")))
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!runIdParam) {
+      setLoadingRun(false);
+      return;
+    }
+    if (!user) {
       setLoadingRun(false);
       return;
     }
@@ -96,7 +106,7 @@ function StrategyWizardInner() {
       })
       .catch(() => setError(t("errors.loadFailed")))
       .finally(() => setLoadingRun(false));
-  }, [runIdParam, t]);
+  }, [runIdParam, t, user]);
 
   function patch(partial: Partial<StrategyInput>) {
     setInput((prev) => ({ ...prev, ...partial }));
@@ -146,6 +156,10 @@ function StrategyWizardInner() {
   const strategyLimitReached = strategyTool ? isLimitReached(strategyTool) : limitExceeded;
 
   async function handleGenerate() {
+    if (!user) {
+      setLoginModalOpen(true);
+      return;
+    }
     if (strategyLimitReached) {
       setLimitExceeded(true);
       return;
@@ -214,12 +228,14 @@ function StrategyWizardInner() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <GuestBanner />
+      <GuestLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-base font-medium">{t("title")}</h1>
           <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
         </div>
-        {strategyTool && (
+        {strategyTool && user && (
           <ToolLimitBadge
             tool={strategyTool}
             t={(key, values) => tLimits(key, values as Record<string, string | number> | undefined)}

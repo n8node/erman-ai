@@ -1,5 +1,10 @@
 import { ProposalHistory } from "@/components/tools/ProposalHistory";
+import { GuestHistoryPlaceholder } from "@/components/layout/GuestHistoryPlaceholder";
 
 export default function ProposalHistoryPage() {
-  return <ProposalHistory />;
+  return (
+    <GuestHistoryPlaceholder>
+      <ProposalHistory />
+    </GuestHistoryPlaceholder>
+  );
 }

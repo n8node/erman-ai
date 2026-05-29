@@ -8,6 +8,8 @@ import {
   getBillingPlan,
   shareRun,
 } from "@/lib/api";
+import { usePathname } from "next/navigation";
+import { loginPathWithReturn } from "@/lib/return-url";
 import { LeadForm } from "./LeadForm";
 import { CalculatorReportView } from "./CalculatorReportView";
 import { ProposalRequestModal } from "./ProposalRequestModal";
@@ -17,10 +19,13 @@ type Props = {
   runId: string;
   input: CalculatorInput;
   output: CalculatorOutput;
+  isGuest?: boolean;
 };
 
-export function CalculatorResult({ runId, input, output }: Props) {
+export function CalculatorResult({ runId, input, output, isGuest = false }: Props) {
   const t = useTranslations("calculator");
+  const tGuest = useTranslations("guest");
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [plan, setPlan] = useState<Awaited<ReturnType<typeof getBillingPlan>> | null>(null);
   const [shareUrl, setShareUrl] = useState("");
@@ -31,6 +36,7 @@ export function CalculatorResult({ runId, input, output }: Props) {
   const [proposalDone, setProposalDone] = useState(false);
 
   useEffect(() => {
+    if (isGuest) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/me`, {
       credentials: "include",
     })
@@ -38,7 +44,7 @@ export function CalculatorResult({ runId, input, output }: Props) {
       .then(setUser)
       .catch(() => undefined);
     getBillingPlan().then(setPlan).catch(() => undefined);
-  }, []);
+  }, [isGuest]);
 
   const isPartner = user?.account_segment === "partner";
   const isDirect = user?.account_segment === "direct_lead";
@@ -84,20 +90,31 @@ export function CalculatorResult({ runId, input, output }: Props) {
         withTooltips
       />
 
+      {isGuest && (
+        <div className="rounded-lg border border-accent bg-accent-bg px-4 py-3 text-sm text-accent">
+          {tGuest("calculatorSaveHint")}{" "}
+          <Link href={loginPathWithReturn(pathname)} className="font-medium underline">
+            {tGuest("login")}
+          </Link>
+        </div>
+      )}
+
       {actionError && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{actionError}</div>
       )}
 
-      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-        <Link
-          href={`/tools/proposal?calculator_run_id=${runId}`}
-          className="rounded-lg bg-[#534ab7] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          {t("createProposal")}
-        </Link>
-      </div>
+      {!isGuest && (
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          <Link
+            href={`/tools/proposal?calculator_run_id=${runId}`}
+            className="rounded-lg bg-[#534ab7] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            {t("createProposal")}
+          </Link>
+        </div>
+      )}
 
-      {isPartner && (
+      {isPartner && !isGuest && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
           <button type="button" onClick={handleShare} disabled={loadingShare || !canShare} className="rounded-lg bg-text px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
             {loadingShare ? t("sharing") : t("publicLink")}
@@ -117,12 +134,14 @@ export function CalculatorResult({ runId, input, output }: Props) {
         </div>
       )}
 
-      <ProposalRequestModal
-        runId={runId}
-        open={proposalModalOpen}
-        onClose={() => setProposalModalOpen(false)}
-        onSuccess={() => setProposalDone(true)}
-      />
+      {!isGuest && (
+        <ProposalRequestModal
+          runId={runId}
+          open={proposalModalOpen}
+          onClose={() => setProposalModalOpen(false)}
+          onSuccess={() => setProposalDone(true)}
+        />
+      )}
 
       {proposalDone && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -137,7 +156,7 @@ export function CalculatorResult({ runId, input, output }: Props) {
         </div>
       )}
 
-      {isDirect && <LeadForm runId={runId} defaultEmail={user?.email} />}
+      {isDirect && !isGuest && <LeadForm runId={runId} defaultEmail={user?.email} />}
     </div>
   );
 }

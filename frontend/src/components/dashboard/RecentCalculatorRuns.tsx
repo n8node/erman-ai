@@ -6,18 +6,31 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { listRuns, type RunListItem } from "@/lib/api";
 import { ProcessNameWithStatus } from "@/components/tools/RecommendationStatus";
+import { useIsGuest } from "@/context/AuthContext";
 
 export function RecentCalculatorRuns() {
   const t = useTranslations("dashboard");
+  const tGuest = useTranslations("guest");
   const tc = useTranslations("calculator");
   const router = useRouter();
+  const isGuest = useIsGuest();
   const [items, setItems] = useState<RunListItem[]>([]);
 
   useEffect(() => {
+    if (isGuest) return;
     listRuns({ tool_slug: "calculator", limit: 5 })
       .then((data) => setItems(data.items))
       .catch(() => setItems([]));
-  }, []);
+  }, [isGuest]);
+
+  if (isGuest) {
+    return (
+      <div className="mt-10">
+        <h2 className="text-sm font-medium">{t("recentRuns.title")}</h2>
+        <p className="mt-2 text-sm text-text2">{tGuest("historyMessage")}</p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

@@ -36,6 +36,18 @@
     },
     "ermanReferral": "Anmeldung über Erman AI Einladung"
   },
+  "guest": {
+    "banner": "Melden Sie sich an, um den Verlauf zu speichern, PDF zu exportieren und KI-Tools zu nutzen.",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "cancel": "Abbrechen",
+    "modalTitle": "Anmeldung erforderlich",
+    "generateGate": "Melden Sie sich an oder registrieren Sie sich, um die Generierung zu starten.",
+    "accountGate": "Dieser Bereich ist nach der Anmeldung verfügbar.",
+    "historyTitle": "Verlauf",
+    "historyMessage": "Der Verlauf ist nach der Anmeldung verfügbar.",
+    "calculatorSaveHint": "Melden Sie sich an, um diese Berechnung zu speichern und PDF zu exportieren."
+  },
   "onboarding": {
     "title": "Wer bist du?",
     "subtitle": "So können wir das Erlebnis individuell gestalten",

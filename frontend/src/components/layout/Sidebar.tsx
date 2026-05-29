@@ -23,23 +23,27 @@ import type { User } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  user: User;
+  user: User | null;
 };
 
 export function Sidebar({ user }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const [projects, setProjects] = useState<ExternalProject[]>([]);
-  const isSuperAdmin = user.role === "superadmin";
+  const isSuperAdmin = user?.role === "superadmin";
 
   const loadProjects = useCallback(() => {
+    if (!user) {
+      setProjects([]);
+      return;
+    }
     const fetcher = isSuperAdmin
       ? fetchAdminExternalProjects
       : fetchExternalProjects;
     fetcher()
       .then((data) => setProjects(data.items))
       .catch(() => setProjects([]));
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, user]);
 
   useEffect(() => {
     loadProjects();
@@ -133,39 +137,43 @@ export function Sidebar({ user }: Props) {
           </>
         )}
 
-        <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
-          {t("account")}
-        </p>
-        <ul className="space-y-0.5">
-          {accountLinks.map(({ href, label, icon: Icon }) => (
-            <li key={href}>
-              <Link
-                href={href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
-                  isActive(href) && "bg-bg2 font-medium text-text"
-                )}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
-            </li>
-          ))}
-          {user.role === "superadmin" && (
-            <li>
-              <Link
-                href="/admin"
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
-                  isActive("/admin") && "bg-bg2 font-medium text-text"
-                )}
-              >
-                <Shield size={16} />
-                {t("admin")}
-              </Link>
-            </li>
-          )}
-        </ul>
+        {user && (
+          <>
+            <p className="mb-2 mt-6 px-2 text-[10px] font-medium uppercase tracking-wider text-text3">
+              {t("account")}
+            </p>
+            <ul className="space-y-0.5">
+              {accountLinks.map(({ href, label, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
+                      isActive(href) && "bg-bg2 font-medium text-text"
+                    )}
+                  >
+                    <Icon size={16} />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+              {user.role === "superadmin" && (
+                <li>
+                  <Link
+                    href="/admin"
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
+                      isActive("/admin") && "bg-bg2 font-medium text-text"
+                    )}
+                  >
+                    <Shield size={16} />
+                    {t("admin")}
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </>
+        )}
       </nav>
     </aside>
   );

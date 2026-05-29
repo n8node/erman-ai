@@ -109,6 +109,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/shared/{token}", shareHandler.GetPublic)
 		api.Get("/public/tooltips", tooltipHandler.ListAnonymous)
 		api.Get("/public/translations", translationHandler.ListPublic)
+		api.Get("/public/calculator/budget-config", budgetConfigHandler.GetPublic)
 		api.Post("/billing/yookassa/webhook", paymentWebhookHandler.YookassaWebhook)
 		api.Get("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
 		api.Post("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)

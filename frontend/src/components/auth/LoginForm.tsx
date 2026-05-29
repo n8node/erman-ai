@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError, login } from "@/lib/api";
+import { sanitizeReturnPath } from "@/lib/return-url";
 
 export function LoginForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = sanitizeReturnPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +23,11 @@ export function LoginForm() {
     setLoading(true);
     try {
       const user = await login(email, password);
-      router.push(user.onboarding_completed ? "/" : "/onboarding");
+      if (!user.onboarding_completed) {
+        router.push("/onboarding");
+      } else {
+        router.push(nextPath);
+      }
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.code === "email_not_verified") {
