@@ -170,14 +170,30 @@ function DiscussProjectFormInner() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        {steps.map((label, i) => (
-          <div key={label} className="rounded-lg border border-border bg-bg p-4">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-text3">
-              {t("steps.label", { n: i + 1 })}
-            </p>
-            <p className="mt-1 text-sm">{label}</p>
-          </div>
-        ))}
+        {steps.map((label, i) => {
+          if (i === 0) {
+            return (
+              <Link
+                key={label}
+                href="/tools/calculator"
+                className="rounded-lg border border-[#3b6d11]/30 bg-[#eaf3de] p-4 transition-colors hover:border-[#3b6d11]/50 hover:bg-[#e2efcf]"
+              >
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[#3b6d11]">
+                  {t("steps.label", { n: i + 1 })}
+                </p>
+                <p className="mt-1 text-sm font-medium text-[#3b6d11]">{label}</p>
+              </Link>
+            );
+          }
+          return (
+            <div key={label} className="rounded-lg border border-border bg-bg p-4">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-text3">
+                {t("steps.label", { n: i + 1 })}
+              </p>
+              <p className="mt-1 text-sm">{label}</p>
+            </div>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-bg p-6 space-y-5">
