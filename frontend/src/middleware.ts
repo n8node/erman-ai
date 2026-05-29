@@ -3,42 +3,60 @@ import type { NextRequest } from "next/server";
 import { LOCALE_COOKIE, isAppLocale } from "./i18n/locales";
 import { negotiateFromAcceptLanguage } from "./i18n/negotiate";
 
-/** Pages reachable without a session (basePath is stripped in middleware). */
+/** Must match next.config.ts basePath. */
+const BASE_PATH = "/dashboard";
+
+/** Pages reachable without a session (app paths, without basePath). */
 const publicPages = ["/login", "/register", "/verify-email"];
 
 const accountPrefixes = ["/billing", "/settings", "/api-keys"];
 const adminPrefix = "/admin";
 
+/** Normalize pathname — middleware may receive with or without basePath. */
+function appPathname(pathname: string): string {
+  if (pathname === BASE_PATH) return "/";
+  if (pathname.startsWith(`${BASE_PATH}/`)) {
+    const rest = pathname.slice(BASE_PATH.length);
+    return rest.startsWith("/") ? rest : `/${rest}`;
+  }
+  return pathname;
+}
+
 function isSharePath(pathname: string) {
-  return pathname.startsWith("/share/") || pathname.startsWith("/dashboard/share/");
+  const p = appPathname(pathname);
+  return p.startsWith("/share/");
 }
 
 function isGuestToolPath(pathname: string) {
-  return pathname === "/" || pathname.startsWith("/tools");
+  const p = appPathname(pathname);
+  return p === "/" || p.startsWith("/tools");
 }
 
 function isAccountPath(pathname: string) {
+  const p = appPathname(pathname);
   return accountPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (prefix) => p === prefix || p.startsWith(`${prefix}/`)
   );
 }
 
 function isAdminPath(pathname: string) {
-  return pathname === adminPrefix || pathname.startsWith(`${adminPrefix}/`);
+  const p = appPathname(pathname);
+  return p === adminPrefix || p.startsWith(`${adminPrefix}/`);
 }
 
 function loginRedirect(request: NextRequest, returnPath: string) {
   const url = request.nextUrl.clone();
   url.pathname = "/login";
   url.search = "";
-  if (returnPath && returnPath !== "/login") {
-    url.searchParams.set("next", returnPath);
+  const next = appPathname(returnPath);
+  if (next && next !== "/login") {
+    url.searchParams.set("next", next);
   }
   return NextResponse.redirect(url);
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const pathname = appPathname(request.nextUrl.pathname);
   const token = request.cookies.get("access_token");
 
   let response: NextResponse;
