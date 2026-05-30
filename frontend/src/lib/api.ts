@@ -789,6 +789,9 @@ export type TelegramSettings = {
   support_enabled: boolean;
   support_forum_chat_id: string;
   dashboard_url: string;
+  urgent_enabled: boolean;
+  urgent_email: string;
+  urgent_instruction: string;
   notify_registration: boolean;
   registration_template: string;
   notify_email_verified: boolean;
@@ -870,6 +873,67 @@ export async function sendAdminTelegramTest() {
 export function adminTelegramStartImageUrl(cacheBust?: number) {
   const q = cacheBust ? `?v=${cacheBust}` : "";
   return `${clientBase()}/admin/telegram/start-image${q}`;
+}
+
+export type MaxSettings = {
+  enabled: boolean;
+  bot_token: string;
+  bot_username: string;
+  notify_user_id: string;
+  notify_chat_id: string;
+  urgent_alerts_enabled: boolean;
+};
+
+export type MaxBotStatus = "disabled" | "misconfigured" | "online" | "offline";
+
+export type MaxRuntimeStatus = {
+  status: MaxBotStatus;
+  message: string;
+  bot_username?: string;
+  bot_user_id?: number;
+  last_error?: string;
+  last_check_at?: string;
+};
+
+export type MaxAdminView = {
+  settings: MaxSettings;
+  bot_token_set: boolean;
+  bot_token_hint?: string;
+  updated_at?: string;
+  runtime: MaxRuntimeStatus;
+};
+
+export type MaxAdminUpdateRequest = {
+  settings: MaxSettings;
+  bot_token?: string;
+};
+
+export type MaxTestResult = {
+  ok: boolean;
+  message: string;
+  runtime?: MaxRuntimeStatus;
+};
+
+export async function fetchAdminMaxSettings() {
+  return apiFetch<MaxAdminView>("/admin/max");
+}
+
+export async function updateAdminMaxSettings(payload: MaxAdminUpdateRequest) {
+  return apiFetch<MaxAdminView>("/admin/max", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchAdminMaxStatus() {
+  return apiFetch<MaxRuntimeStatus>("/admin/max/status");
+}
+
+export async function sendAdminMaxTest() {
+  return apiFetch<MaxTestResult>("/admin/max/test", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
 }
 
 export async function uploadAdminTelegramStartImage(file: File) {

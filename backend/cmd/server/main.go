@@ -60,12 +60,20 @@ func main() {
 		smtpRepo := repository.NewSMTPSettingsRepository(db.Pool)
 		telegramRepo := repository.NewTelegramSettingsRepository(db.Pool)
 		telegramSupportRepo := repository.NewTelegramSupportThreadRepository(db.Pool)
+		telegramUserStateRepo := repository.NewTelegramUserStateRepository(db.Pool)
+		telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
+		maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 		tokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 		smtpSvc := service.NewSMTPSettingsService(smtpRepo)
 		mailSvc := service.NewMailService(smtpSvc)
 		telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
 		telegramSettingsSvc := service.NewTelegramSettingsService(telegramRepo, telegramAssets)
-		telegramSvc := service.NewTelegramService(telegramSettingsSvc, telegramSupportRepo, telegramAssets, logger)
+		maxSettingsSvc := service.NewMaxSettingsService(maxSettingsRepo)
+		maxSvc := service.NewMaxService(maxSettingsSvc, logger)
+		telegramSvc := service.NewTelegramService(
+			telegramSettingsSvc, telegramSupportRepo, telegramUserStateRepo, telegramUrgentSendRepo,
+			mailSvc, maxSvc, telegramAssets, logger,
+		)
 		verifySvc := service.NewEmailVerificationService(userRepo, tokenRepo, mailSvc, telegramSvc, cfg)
 		authSvc := service.NewAuthService(userRepo, authMW, verifySvc, telegramSvc)
 		user, err := authSvc.SeedAdmin(ctx, *seedEmail, *seedPassword)

@@ -14,13 +14,17 @@ func startReplyMarkup(cfg model.TelegramSettings) ([]byte, error) {
 	if dashboardURL == "" {
 		dashboardURL = "https://erman.ai/dashboard/"
 	}
-	markup := map[string]any{
-		"inline_keyboard": [][]map[string]string{
-			{
-				{"text": "Консультация", "callback_data": telegramCallbackConsultation},
-				{"text": "Инструменты", "url": dashboardURL},
-			},
+	rows := [][]map[string]string{
+		{
+			{"text": "Консультация", "callback_data": telegramCallbackConsultation},
+			{"text": "Инструменты", "url": dashboardURL},
 		},
 	}
+	if cfg.UrgentEnabled {
+		rows = append(rows, []map[string]string{
+			{"text": "Срочно связаться", "callback_data": telegramCallbackUrgent},
+		})
+	}
+	markup := map[string]any{"inline_keyboard": rows}
 	return json.Marshal(markup)
 }

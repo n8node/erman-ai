@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
+	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/handler"
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/repository"
@@ -41,6 +43,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	paymentSettingsRepo := repository.NewPaymentSettingsRepository(db.Pool)
 	telegramSettingsRepo := repository.NewTelegramSettingsRepository(db.Pool)
 	telegramSupportThreadRepo := repository.NewTelegramSupportThreadRepository(db.Pool)
+	telegramUserStateRepo := repository.NewTelegramUserStateRepository(db.Pool)
+	telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
+	maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
@@ -52,7 +57,21 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
 	_ = telegramAssets.EnsureDir()
 	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo, telegramAssets)
-	telegramSvc := service.NewTelegramService(telegramSettingsSvc, telegramSupportThreadRepo, telegramAssets, logger)
+	maxSettingsSvc := service.NewMaxSettingsService(maxSettingsRepo)
+	maxSvc := service.NewMaxService(maxSettingsSvc, logger)
+	maxSettingsSvc.BindRuntimeStatus(func() model.MaxBotRuntimeStatus {
+		return maxSvc.CheckHealth(context.Background())
+	})
+	telegramSvc := service.NewTelegramService(
+		telegramSettingsSvc,
+		telegramSupportThreadRepo,
+		telegramUserStateRepo,
+		telegramUrgentSendRepo,
+		mailSvc,
+		maxSvc,
+		telegramAssets,
+		logger,
+	)
 	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
 	telegramSvc.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
@@ -92,6 +111,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	paymentHandler := handler.NewPaymentSettingsHandler(paymentSettingsSvc)
 	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentSettingsSvc, logger)
 	telegramHandler := handler.NewTelegramSettingsHandler(telegramSettingsSvc, telegramSvc)
+	maxHandler := handler.NewMaxSettingsHandler(maxSettingsSvc, maxSvc)
 	externalProjectHandler := handler.NewExternalProjectHandler(externalProjectSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
@@ -211,6 +231,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Post("/telegram/test", telegramHandler.SendTest)
 			admin.Post("/telegram/start-image", telegramHandler.UploadStartImage)
 			admin.Get("/telegram/start-image", telegramHandler.GetStartImage)
+			admin.Get("/max", maxHandler.GetAdmin)
+			admin.Put("/max", maxHandler.UpdateAdmin)
+			admin.Get("/max/status", maxHandler.GetStatus)
+			admin.Post("/max/test", maxHandler.SendTest)
 			admin.Get("/projects", externalProjectHandler.ListAdmin)
 			admin.Post("/projects", externalProjectHandler.Create)
 			admin.Put("/projects/{id}", externalProjectHandler.Update)

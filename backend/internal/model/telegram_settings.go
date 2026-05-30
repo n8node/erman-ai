@@ -18,6 +18,9 @@ type TelegramSettings struct {
 	SupportEnabled        bool   `json:"support_enabled"`
 	SupportForumChatID    string `json:"support_forum_chat_id"`
 	DashboardURL          string `json:"dashboard_url"`
+	UrgentEnabled         bool   `json:"urgent_enabled"`
+	UrgentEmail           string `json:"urgent_email"`
+	UrgentInstruction     string `json:"urgent_instruction"`
 	NotifyRegistration    bool   `json:"notify_registration"`
 	RegistrationTemplate  string `json:"registration_template"`
 	NotifyEmailVerified   bool   `json:"notify_email_verified"`
@@ -75,10 +78,19 @@ type TelegramTestResult struct {
 	Runtime *TelegramBotRuntimeStatus `json:"runtime,omitempty"`
 }
 
+func DefaultUrgentInstruction() string {
+	return "Если вы хотите срочно связаться со мной, напишите ниже ваше сообщение — оно будет разослано по моим контактам: email, Telegram, MAX, VK, Instagram.\n\n" +
+		"(Сейчас доставка настроена на email, Telegram и MAX; VK и Instagram подключим позже.)\n\n" +
+		"В ответ я смогу написать вам в Telegram или по контактам, которые вы укажете в сообщении."
+}
+
 func DefaultTelegramSettings() TelegramSettings {
 	return TelegramSettings{
 		StartText:             "Добро пожаловать в Erman AI!\n\nВыберите действие:",
 		DashboardURL:          "https://erman.ai/dashboard/",
+		UrgentEnabled:         true,
+		UrgentEmail:           "erman.ai@yandex.ru",
+		UrgentInstruction:     DefaultUrgentInstruction(),
 		NotifyRegistration:    true,
 		RegistrationTemplate:  "🆕 Новый пользователь\nEmail: {email}\nСегмент: {accountSegment}\nРеферал: {referral}",
 		NotifyEmailVerified:   true,

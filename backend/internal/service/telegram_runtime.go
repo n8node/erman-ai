@@ -17,11 +17,15 @@ const telegramHealthInterval = 30 * time.Second
 // TelegramService sends notifications and runs a background health supervisor
 // that starts with the backend process (container restart / server reboot).
 type TelegramService struct {
-	settings *TelegramSettingsService
-	threads  *repository.TelegramSupportThreadRepository
-	assets   *TelegramAssets
-	client   *http.Client
-	logger   *slog.Logger
+	settings    *TelegramSettingsService
+	threads     *repository.TelegramSupportThreadRepository
+	userState   *repository.TelegramUserStateRepository
+	urgentSends *repository.TelegramUrgentSendRepository
+	mail        *MailService
+	max         *MaxService
+	assets      *TelegramAssets
+	client      *http.Client
+	logger      *slog.Logger
 
 	mu                sync.RWMutex
 	runtime           model.TelegramBotRuntimeStatus
@@ -34,14 +38,27 @@ type TelegramService struct {
 	triggerCh         chan struct{}
 }
 
-func NewTelegramService(settings *TelegramSettingsService, threads *repository.TelegramSupportThreadRepository, assets *TelegramAssets, logger *slog.Logger) *TelegramService {
+func NewTelegramService(
+	settings *TelegramSettingsService,
+	threads *repository.TelegramSupportThreadRepository,
+	userState *repository.TelegramUserStateRepository,
+	urgentSends *repository.TelegramUrgentSendRepository,
+	mail *MailService,
+	max *MaxService,
+	assets *TelegramAssets,
+	logger *slog.Logger,
+) *TelegramService {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &TelegramService{
-		settings: settings,
-		threads:  threads,
-		assets:   assets,
+		settings:    settings,
+		threads:     threads,
+		userState:   userState,
+		urgentSends: urgentSends,
+		mail:        mail,
+		max:         max,
+		assets:      assets,
 		client:   &http.Client{Timeout: 60 * time.Second},
 		logger:   logger,
 		runtime: model.TelegramBotRuntimeStatus{

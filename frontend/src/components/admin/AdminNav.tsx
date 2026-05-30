@@ -19,6 +19,7 @@ export function AdminNav() {
     { href: "/admin/email", label: t("emailSmtp") },
     { href: "/admin/payments", label: t("payments") },
     { href: "/admin/telegram", label: t("telegram") },
+    { href: "/admin/max", label: t("max") },
     { href: "/admin/tooltips", label: t("tooltips") },
     { href: "/admin/translations", label: t("translations") },
     { href: "/admin/projects", label: t("projects") },

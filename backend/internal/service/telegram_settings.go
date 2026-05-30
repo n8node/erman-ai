@@ -170,6 +170,17 @@ func validateTelegramSettings(cfg model.TelegramSettings) error {
 			return fmt.Errorf("%w: support_forum_chat_id required when consultations enabled", ErrInvalidTelegramSettings)
 		}
 	}
+	if cfg.UrgentEnabled {
+		if strings.TrimSpace(cfg.BotToken) == "" {
+			return fmt.Errorf("%w: bot token required for urgent contact", ErrInvalidTelegramSettings)
+		}
+		if strings.TrimSpace(cfg.ChatID) == "" {
+			return fmt.Errorf("%w: chat_id required for urgent telegram alerts", ErrInvalidTelegramSettings)
+		}
+		if strings.TrimSpace(cfg.UrgentEmail) == "" {
+			return fmt.Errorf("%w: urgent_email required", ErrInvalidTelegramSettings)
+		}
+	}
 	if cfg.StartEnabled {
 		if strings.TrimSpace(cfg.BotToken) == "" {
 			return fmt.Errorf("%w: bot token required for /start handler", ErrInvalidTelegramSettings)

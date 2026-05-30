@@ -52,6 +52,9 @@ const DEFAULT_SETTINGS: TelegramSettings = {
   support_enabled: false,
   support_forum_chat_id: "",
   dashboard_url: "https://erman.ai/dashboard/",
+  urgent_enabled: true,
+  urgent_email: "erman.ai@yandex.ru",
+  urgent_instruction: "",
   notify_registration: true,
   registration_template: "",
   notify_email_verified: true,
@@ -421,6 +424,42 @@ export function AdminTelegramEditor() {
           <p className="text-xs text-green-800">{t("startPollingActive")}</p>
         )}
         <p className="text-xs text-text3">{t("startButtonsHint")}</p>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-text3">
+          {t("urgentSection")}
+        </h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.urgent_enabled}
+            onChange={(e) => patch({ urgent_enabled: e.target.checked })}
+            className="rounded border-border2"
+          />
+          {t("urgentEnabled")}
+        </label>
+        <p className="text-xs text-text3">{t("urgentHint")}</p>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("urgentEmail")}</label>
+          <input
+            type="email"
+            value={settings.urgent_email}
+            onChange={(e) => patch({ urgent_email: e.target.value })}
+            className={fieldClass}
+            placeholder="erman.ai@yandex.ru"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("urgentInstruction")}</label>
+          <textarea
+            value={settings.urgent_instruction}
+            onChange={(e) => patch({ urgent_instruction: e.target.value })}
+            className={templateClass}
+            rows={8}
+          />
+        </div>
+        <p className="text-xs text-text3">{t("urgentLimitHint")}</p>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">

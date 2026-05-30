@@ -25,6 +25,18 @@ func (s *TelegramService) handleCallbackQuery(ctx context.Context, cfg model.Tel
 	ack := ""
 	defer func() { _ = s.telegramAnswerCallbackQuery(ctx, token, cq.ID, ack) }()
 
+	if cq.Data == telegramCallbackUrgent {
+		var err error
+		ack, err = s.handleUrgentCallback(ctx, cfg, cq)
+		if err != nil {
+			return
+		}
+		if ack == "" {
+			ack = "Напишите сообщение ниже"
+		}
+		return
+	}
+
 	if cq.Data != telegramCallbackConsultation {
 		return
 	}
@@ -86,7 +98,7 @@ func (s *TelegramService) beginConsultation(ctx context.Context, cfg model.Teleg
 }
 
 func (s *TelegramService) handleUserMessage(ctx context.Context, cfg model.TelegramSettings, msg *telegramMessage) {
-	if msg == nil || msg.From == nil || msg.From.IsBot || s.threads == nil {
+	if msg == nil || msg.From == nil || msg.From.IsBot {
 		return
 	}
 	if !isPrivateChat(msg.Chat.ID) {
@@ -98,6 +110,20 @@ func (s *TelegramService) handleUserMessage(ctx context.Context, cfg model.Teleg
 
 	userChatID := formatChatID(msg.Chat.ID)
 	token := strings.TrimSpace(cfg.BotToken)
+
+	if s.userState != nil {
+		mode, err := s.userState.GetMode(ctx, userChatID)
+		if err != nil {
+			s.logger.Warn("telegram user mode lookup failed", "err", err)
+		} else if mode == model.TelegramUserModeUrgentWait {
+			s.handleUrgentUserMessage(ctx, cfg, msg)
+			return
+		}
+	}
+
+	if s.threads == nil {
+		return
+	}
 
 	thread, err := s.threads.GetByUserChatID(ctx, userChatID)
 	if err != nil && !errors.Is(err, repository.ErrNotFound) {
