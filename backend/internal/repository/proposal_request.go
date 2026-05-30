@@ -123,6 +123,12 @@ func (r *ProposalRequestRepository) GetAdminDetail(ctx context.Context, id strin
 	return &item, err
 }
 
+func (r *ProposalRequestRepository) ExistsByUserID(ctx context.Context, userID string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM proposal_requests WHERE user_id = $1)`, userID).Scan(&exists)
+	return exists, err
+}
+
 func (r *ProposalRequestRepository) CountAdmin(ctx context.Context) (int, error) {
 	var total int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM proposal_requests`).Scan(&total)

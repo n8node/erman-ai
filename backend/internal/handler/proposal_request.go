@@ -101,6 +101,8 @@ func (h *ProposalRequestHandler) writeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrProposalRequestPartnerOnly):
 		writeError(w, http.StatusForbidden, "proposal requests for partners only")
+	case errors.Is(err, service.ErrProposalRequestAlreadySubmitted):
+		writeError(w, http.StatusConflict, "proposal request already submitted")
 	case errors.Is(err, repository.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not found")
 	case errors.Is(err, service.ErrInvalidInput):

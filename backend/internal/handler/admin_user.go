@@ -94,7 +94,7 @@ func (h *AdminUserHandler) Impersonate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.mw.SetTokenCookie(w, result.Token, h.cfg.Environment == "production")
-	writeJSON(w, http.StatusOK, userResponse(result.User))
+	writeJSON(w, http.StatusOK, userResponse(result.User, false, false))
 }
 
 func (h *AdminUserHandler) writeUserError(w http.ResponseWriter, err error) {

@@ -756,11 +756,16 @@
       "telegramHint": "Напишем вам в Telegram {telegram}",
       "backToCalculator": "← Вернуться к калькулятору"
     },
+    "alreadySubmitted": {
+      "title": "Заявка уже отправлена",
+      "body": "Вы уже отправляли заявку на обсуждение проекта. Команда Erman AI свяжется с вами — повторная отправка недоступна."
+    },
     "errors": {
       "submitFailed": "Не удалось отправить заявку",
       "missingFields": "Заполните все обязательные поля",
       "invalidTelegram": "Укажите Telegram username (от 5 символов, латиница) или номер телефона",
-      "invalidForm": "Проверьте данные в форме"
+      "invalidForm": "Проверьте данные в форме",
+      "alreadySubmitted": "Вы уже отправляли заявку на обсуждение проекта"
     },
     "confirm": {
       "loading": "Подтверждаем заявку…",
@@ -910,9 +915,12 @@
     "pdfFailed": "Не удалось экспортировать PDF",
     "createProposal": "Создать КП",
     "discussProject": "Обсудить проект",
+    "discussProjectSent": "Заявка отправлена",
+    "discussProjectAlreadySent": "Вы уже отправляли заявку на обсуждение проекта",
     "requestProposal": "Запросить КП от Erman AI",
     "proposalRequesting": "Отправка запроса…",
     "proposalRequestSent": "Запрос отправлен",
+    "proposalRequestAlreadySent": "Вы уже отправляли запрос на КП",
     "proposalRequestSuccess": "Запрос на КП отправлен. Команда Erman AI свяжется с вами.",
     "proposalRequestFailed": "Не удалось отправить запрос на КП",
     "budgetEstimate": {

@@ -48,7 +48,13 @@ export function ProposalRequestModal({ runId, open, onClose, onSuccess }: Props)
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"));
+      const message = err instanceof Error ? err.message : t("failed");
+      if (message === "proposal request already submitted") {
+        onSuccess();
+        onClose();
+        return;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }

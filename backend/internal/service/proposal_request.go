@@ -11,7 +11,10 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
-var ErrProposalRequestPartnerOnly = errors.New("proposal requests for partners only")
+var (
+	ErrProposalRequestPartnerOnly    = errors.New("proposal requests for partners only")
+	ErrProposalRequestAlreadySubmitted = errors.New("proposal request already submitted")
+)
 
 type ProposalRequestList struct {
 	Items  []repository.AdminProposalRequestRow `json:"items"`
@@ -61,6 +64,14 @@ func (s *ProposalRequestService) Create(
 	}
 	if user.AccountSegment != model.AccountSegmentPartner {
 		return nil, ErrProposalRequestPartnerOnly
+	}
+
+	exists, err := s.requests.ExistsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrProposalRequestAlreadySubmitted
 	}
 
 	run, err := s.runs.GetByIDForUser(ctx, runID, userID)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,17 +9,32 @@ import (
 	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
 )
 
 type AuthHandler struct {
-	auth    *service.AuthService
-	mw      *middleware.Auth
-	cfg     *config.Config
+	auth         *service.AuthService
+	mw           *middleware.Auth
+	cfg          *config.Config
+	inquiries    *repository.ProjectInquiryRepository
+	proposalReqs *repository.ProposalRequestRepository
 }
 
-func NewAuthHandler(auth *service.AuthService, mw *middleware.Auth, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{auth: auth, mw: mw, cfg: cfg}
+func NewAuthHandler(
+	auth *service.AuthService,
+	mw *middleware.Auth,
+	cfg *config.Config,
+	inquiries *repository.ProjectInquiryRepository,
+	proposalReqs *repository.ProposalRequestRepository,
+) *AuthHandler {
+	return &AuthHandler{
+		auth:         auth,
+		mw:           mw,
+		cfg:          cfg,
+		inquiries:    inquiries,
+		proposalReqs: proposalReqs,
+	}
 }
 
 type credentialsRequest struct {
@@ -89,7 +105,7 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.mw.SetTokenCookie(w, result.Token, h.secureCookies())
-	writeJSON(w, http.StatusOK, userResponse(result.User))
+	writeJSON(w, http.StatusOK, h.userResponseWithFlags(r.Context(), result.User))
 }
 
 type resendVerificationRequest struct {
@@ -125,7 +141,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.mw.SetTokenCookie(w, result.Token, h.secureCookies())
-	writeJSON(w, http.StatusOK, userResponse(result.User))
+	writeJSON(w, http.StatusOK, h.userResponseWithFlags(r.Context(), result.User))
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, _ *http.Request) {
@@ -146,7 +162,22 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, userResponse(user))
+	hasInquiry, hasProposal := h.submissionFlags(r.Context(), user)
+	writeJSON(w, http.StatusOK, userResponse(user, hasInquiry, hasProposal))
+}
+
+func (h *AuthHandler) submissionFlags(ctx context.Context, user *model.User) (bool, bool) {
+	hasInquiry, _ := h.inquiries.ExistsByUserID(ctx, user.ID)
+	if !hasInquiry {
+		hasInquiry, _ = h.inquiries.ExistsByEmail(ctx, user.Email)
+	}
+	hasProposal, _ := h.proposalReqs.ExistsByUserID(ctx, user.ID)
+	return hasInquiry, hasProposal
+}
+
+func (h *AuthHandler) userResponseWithFlags(ctx context.Context, user *model.User) map[string]any {
+	hasInquiry, hasProposal := h.submissionFlags(ctx, user)
+	return userResponse(user, hasInquiry, hasProposal)
 }
 
 func (h *AuthHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +199,7 @@ func (h *AuthHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, userResponse(user))
+	writeJSON(w, http.StatusOK, h.userResponseWithFlags(r.Context(), user))
 }
 
 func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -241,7 +272,7 @@ func (h *AuthHandler) Onboarding(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, userResponse(user))
+	writeJSON(w, http.StatusOK, h.userResponseWithFlags(r.Context(), user))
 }
 
 func (h *AuthHandler) writeAuthError(w http.ResponseWriter, err error) {
@@ -273,7 +304,7 @@ func (h *AuthHandler) secureCookies() bool {
 	return h.cfg.Environment == "production"
 }
 
-func userResponse(u *model.User) map[string]any {
+func userResponse(u *model.User, hasProjectInquiry, hasProposalRequest bool) map[string]any {
 	return map[string]any{
 		"id":                    u.ID,
 		"email":                 u.Email,
@@ -285,5 +316,7 @@ func userResponse(u *model.User) map[string]any {
 		"email_verified":        u.EmailVerified(),
 		"is_blocked":            u.IsBlocked,
 		"created_at":            u.CreatedAt,
+		"has_project_inquiry":   hasProjectInquiry,
+		"has_proposal_request":  hasProposalRequest,
 	}
 }

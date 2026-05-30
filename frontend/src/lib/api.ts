@@ -9,6 +9,8 @@ export type User = {
   email_verified: boolean;
   is_blocked: boolean;
   created_at: string;
+  has_project_inquiry?: boolean;
+  has_proposal_request?: boolean;
 };
 
 export type RegisterPendingResponse = {

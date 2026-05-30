@@ -20,6 +20,7 @@ import {
   type GuestCalculatorResult,
 } from "@/lib/calculator-guest-result";
 import { cn } from "@/lib/utils";
+import { isGuestDiscussSubmitted, markGuestDiscussSubmitted } from "@/lib/submission-limits";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
@@ -48,6 +49,8 @@ function mapSubmitError(message: string, t: (key: string) => string) {
       return t("errors.invalidTelegram");
     case "invalid input":
       return t("errors.invalidForm");
+    case "project inquiry already submitted":
+      return t("errors.alreadySubmitted");
     default:
       return message || t("errors.submitFailed");
   }
@@ -82,8 +85,20 @@ function DiscussProjectFormInner() {
   const [guestSnapshot, setGuestSnapshot] = useState<GuestCalculatorResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<"auth" | "guest" | null>(null);
+  const [done, setDone] = useState<"auth" | "guest" | "already" | null>(() => {
+    if (user?.has_project_inquiry) return "already";
+    if (!user && isGuestDiscussSubmitted()) return "already";
+    return null;
+  });
   const [honeypot, setHoneypot] = useState("");
+
+  useEffect(() => {
+    if (user?.has_project_inquiry) {
+      setDone("already");
+    } else if (!user && isGuestDiscussSubmitted()) {
+      setDone("already");
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user?.email) {
@@ -198,6 +213,7 @@ function DiscussProjectFormInner() {
         setDone("auth");
       } else {
         await submitProjectInquiryPublic(payload);
+        markGuestDiscussSubmitted();
         clearGuestCalculatorResult();
         setDone("guest");
       }
@@ -210,13 +226,29 @@ function DiscussProjectFormInner() {
   }
 
   if (done) {
+    const isAlready = done === "already";
     return (
       <div className="mx-auto max-w-2xl space-y-6">
         <GuestBanner />
-        <div className="rounded-xl border border-green-200 bg-green-50 p-6 text-sm text-green-900">
-          <h2 className="text-base font-medium">{t("success.title")}</h2>
-          <p className="mt-2">{done === "guest" ? t("success.guest") : t("success.auth")}</p>
-          {telegram && (
+        <div
+          className={cn(
+            "rounded-xl border p-6 text-sm",
+            isAlready
+              ? "border-border bg-bg2 text-text2"
+              : "border-green-200 bg-green-50 text-green-900"
+          )}
+        >
+          <h2 className="text-base font-medium text-text">
+            {isAlready ? t("alreadySubmitted.title") : t("success.title")}
+          </h2>
+          <p className="mt-2">
+            {isAlready
+              ? t("alreadySubmitted.body")
+              : done === "guest"
+                ? t("success.guest")
+                : t("success.auth")}
+          </p>
+          {!isAlready && telegram && (
             <p className="mt-2 text-green-800">{t("success.telegramHint", { telegram: telegram.startsWith("@") ? telegram : `@${telegram}` })}</p>
           )}
         </div>

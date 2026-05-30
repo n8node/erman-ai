@@ -229,6 +229,21 @@ func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string
 	return &item, nil
 }
 
+func (r *ProjectInquiryRepository) ExistsByUserID(ctx context.Context, userID string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM project_inquiries WHERE user_id = $1)`, userID).Scan(&exists)
+	return exists, err
+}
+
+func (r *ProjectInquiryRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM project_inquiries WHERE LOWER(email) = LOWER($1))`,
+		email,
+	).Scan(&exists)
+	return exists, err
+}
+
 func (r *ProjectInquiryRepository) CountAdmin(ctx context.Context) (int, error) {
 	var total int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM project_inquiries`).Scan(&total)

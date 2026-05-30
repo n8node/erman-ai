@@ -6,14 +6,18 @@ import { useTranslations } from "next-intl";
 import {
   exportCalculatorPDF,
   getBillingPlan,
+  fetchMe,
   shareRun,
 } from "@/lib/api";
 import { usePathname } from "next/navigation";
 import { loginPathWithReturn } from "@/lib/return-url";
+import { useAuthUser } from "@/context/AuthContext";
+import { isGuestDiscussSubmitted } from "@/lib/submission-limits";
 import { LeadForm } from "./LeadForm";
 import { CalculatorReportView } from "./CalculatorReportView";
 import { ProposalRequestModal } from "./ProposalRequestModal";
 import type { CalculatorInput, CalculatorOutput, User } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 type Props = {
   runId: string;
@@ -26,22 +30,30 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
   const t = useTranslations("calculator");
   const tGuest = useTranslations("guest");
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
+  const authUser = useAuthUser();
+  const [user, setUser] = useState<User | null>(authUser);
   const [plan, setPlan] = useState<Awaited<ReturnType<typeof getBillingPlan>> | null>(null);
   const [shareUrl, setShareUrl] = useState("");
   const [actionError, setActionError] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
-  const [proposalDone, setProposalDone] = useState(false);
+  const [proposalDone, setProposalDone] = useState(Boolean(authUser?.has_proposal_request));
+  const [discussDone, setDiscussDone] = useState(
+    Boolean(authUser?.has_project_inquiry) || (isGuest && isGuestDiscussSubmitted())
+  );
 
   useEffect(() => {
-    if (isGuest) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api/v1"}/auth/me`, {
-      credentials: "include",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setUser)
+    if (isGuest) {
+      setDiscussDone(isGuestDiscussSubmitted());
+      return;
+    }
+    fetchMe()
+      .then((me) => {
+        setUser(me);
+        setProposalDone(Boolean(me.has_proposal_request));
+        setDiscussDone(Boolean(me.has_project_inquiry));
+      })
       .catch(() => undefined);
     getBillingPlan().then(setPlan).catch(() => undefined);
   }, [isGuest]);
@@ -50,6 +62,15 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
   const isDirect = user?.account_segment === "direct_lead";
   const canShare = Boolean(plan?.features?.share_report);
   const canPdf = Boolean(plan?.features?.export_pdf);
+  const discussHref = `/discuss?run_id=${runId}${input.process_name ? `&project_name=${encodeURIComponent(input.process_name)}` : ""}`;
+  const guestDiscussHref = `/discuss${input.process_name ? `?project_name=${encodeURIComponent(input.process_name)}` : ""}`;
+
+  function discussButtonClassName(disabled: boolean) {
+    return cn(
+      "rounded-lg border border-border2 px-4 py-2 text-sm",
+      disabled ? "cursor-not-allowed opacity-50" : "hover:bg-bg2"
+    );
+  }
 
   async function handleShare() {
     setActionError("");
@@ -111,23 +132,29 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
           >
             {t("createProposal")}
           </Link>
-          <Link
-            href={`/discuss?run_id=${runId}${input.process_name ? `&project_name=${encodeURIComponent(input.process_name)}` : ""}`}
-            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2"
-          >
-            {t("discussProject")}
-          </Link>
+          {discussDone ? (
+            <span className={discussButtonClassName(true)} title={t("discussProjectAlreadySent")}>
+              {t("discussProjectSent")}
+            </span>
+          ) : (
+            <Link href={discussHref} className={discussButtonClassName(false)}>
+              {t("discussProject")}
+            </Link>
+          )}
         </div>
       )}
 
       {isGuest && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-          <Link
-            href={`/discuss${input.process_name ? `?project_name=${encodeURIComponent(input.process_name)}` : ""}`}
-            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2"
-          >
-            {t("discussProject")}
-          </Link>
+          {discussDone ? (
+            <span className={discussButtonClassName(true)} title={t("discussProjectAlreadySent")}>
+              {t("discussProjectSent")}
+            </span>
+          ) : (
+            <Link href={guestDiscussHref} className={discussButtonClassName(false)}>
+              {t("discussProject")}
+            </Link>
+          )}
         </div>
       )}
 
@@ -143,7 +170,8 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
             type="button"
             onClick={() => setProposalModalOpen(true)}
             disabled={proposalDone}
-            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-50"
+            className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:cursor-not-allowed disabled:opacity-50"
+            title={proposalDone ? t("proposalRequestAlreadySent") : undefined}
           >
             {proposalDone ? t("proposalRequestSent") : t("requestProposal")}
           </button>

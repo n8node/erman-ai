@@ -101,7 +101,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	publicPageSvc := service.NewPublicPageService(publicPageRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW, telegramSvc)
 
-	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
+	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg, projectInquiryRepo, proposalReqRepo)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
 	runsHandler := handler.NewRunsHandler(runSvc)
 	tooltipHandler := handler.NewTooltipHandler(tooltipSvc, authSvc)

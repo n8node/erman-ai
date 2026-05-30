@@ -183,6 +183,8 @@ func (h *ProjectInquiryHandler) writeError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "missing required fields")
 	case errors.Is(err, service.ErrInquiryInvalidTelegram):
 		writeError(w, http.StatusBadRequest, "invalid telegram")
+	case errors.Is(err, service.ErrProjectInquiryAlreadySent):
+		writeError(w, http.StatusConflict, "project inquiry already submitted")
 	case errors.Is(err, repository.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not found")
 	case errors.Is(err, service.ErrInquiryVerificationInvalid):

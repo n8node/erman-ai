@@ -22,6 +22,7 @@ var (
 	ErrInquiryVerificationInvalid = errors.New("invalid or expired inquiry verification token")
 	ErrInquiryInvalidTelegram     = errors.New("invalid telegram")
 	ErrInquiryMissingFields       = errors.New("missing required fields")
+	ErrProjectInquiryAlreadySent  = errors.New("project inquiry already submitted")
 	telegramUsernamePattern       = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{4,31}$`)
 	telegramPhonePattern          = regexp.MustCompile(`^\+?[0-9][0-9\s\-()]{6,18}$`)
 	telegramHandleFallback        = regexp.MustCompile(`^[a-zA-Z0-9_]{3,32}$`)
@@ -89,6 +90,13 @@ func (s *ProjectInquiryService) CreatePublic(ctx context.Context, input ProjectI
 	}
 
 	normalized := normalizeProjectInquiryInput(input)
+	exists, err := s.inquiries.ExistsByEmail(ctx, normalized.email)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrProjectInquiryAlreadySent
+	}
 	inq, err := s.inquiries.Create(
 		ctx, nil, normalized.runID,
 		normalized.name, normalized.email, normalized.telegram,
@@ -137,6 +145,20 @@ func (s *ProjectInquiryService) CreateAuthenticated(
 	}
 	if !user.EmailVerified() {
 		return nil, errors.New("email not verified")
+	}
+
+	exists, err := s.inquiries.ExistsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		exists, err = s.inquiries.ExistsByEmail(ctx, user.Email)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if exists {
+		return nil, ErrProjectInquiryAlreadySent
 	}
 
 	normalized := normalizeProjectInquiryInput(input)
