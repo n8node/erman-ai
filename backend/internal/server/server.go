@@ -49,6 +49,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
 	publicPageRepo := repository.NewPublicPageRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
+	passwordResetTokenRepo := repository.NewPasswordResetTokenRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
@@ -76,7 +77,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
 	telegramSvc.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
-	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc, telegramSvc)
+	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetTokenRepo, mailSvc, cfg)
+	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc, passwordResetSvc, telegramSvc)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
@@ -152,6 +154,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			auth.Post("/register", authHandler.Register)
 			auth.Post("/verify-email", authHandler.VerifyEmail)
 			auth.Post("/resend-verification", authHandler.ResendVerification)
+			auth.Post("/forgot-password", authHandler.ForgotPassword)
+			auth.Post("/reset-password", authHandler.ResetPassword)
 			auth.Post("/login", authHandler.Login)
 			auth.Post("/logout", authHandler.Logout)
 

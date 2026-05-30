@@ -196,6 +196,20 @@ export async function resendVerification(email: string) {
   });
 }
 
+export async function requestPasswordReset(email: string) {
+  return apiFetch<{ status: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  return apiFetch<{ status: string }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
+
 export async function completeOnboarding(segment: "partner" | "direct_lead") {
   return apiFetch<User>("/auth/onboarding", {
     method: "POST",

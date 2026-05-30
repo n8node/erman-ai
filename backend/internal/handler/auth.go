@@ -41,6 +41,15 @@ type changePasswordRequest struct {
 	NewPassword     string `json:"new_password"`
 }
 
+type forgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type resetPasswordRequest struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
+}
+
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req credentialsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -162,6 +171,36 @@ func (h *AuthHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, userResponse(user))
 }
 
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := h.auth.RequestPasswordReset(r.Context(), req.Email); err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	if err := h.auth.ResetPassword(r.Context(), req.Token, req.NewPassword); err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
 func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -220,6 +259,10 @@ func (h *AuthHandler) writeAuthError(w http.ResponseWriter, err error) {
 	case errors.Is(err, service.ErrVerificationTokenInvalid):
 		writeError(w, http.StatusBadRequest, "invalid or expired verification link")
 	case errors.Is(err, service.ErrVerificationTooSoon):
+		writeError(w, http.StatusTooManyRequests, "please wait before requesting another email")
+	case errors.Is(err, service.ErrResetTokenInvalid):
+		writeError(w, http.StatusBadRequest, "invalid or expired reset link")
+	case errors.Is(err, service.ErrResetTooSoon):
 		writeError(w, http.StatusTooManyRequests, "please wait before requesting another email")
 	default:
 		writeError(w, http.StatusInternalServerError, "internal error")

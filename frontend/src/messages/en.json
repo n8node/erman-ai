@@ -18,6 +18,8 @@
     "hasAccount": "Already have an account?",
     "loginFailed": "Sign in failed",
     "registerFailed": "Registration failed",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordSuccess": "Password updated. Sign in with your new password.",
     "emailNotVerified": "Confirm your email — we already sent a link",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 8 characters",
@@ -50,6 +52,28 @@
       "confirming": "Confirming your email…",
       "backToLogin": "Back to sign in",
       "resendLink": "Confirm email or resend the message",
+      "loading": "Loading…"
+    },
+    "forgot": {
+      "title": "Reset password",
+      "subtitle": "Enter your email and we'll send a reset link",
+      "emailLabel": "Email",
+      "submit": "Send reset link",
+      "sent": "If an account exists, we sent a password reset email. Check your inbox and spam folder.",
+      "failed": "Could not send email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    },
+    "reset": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your Erman AI account",
+      "newPassword": "New password",
+      "submit": "Save password",
+      "failed": "Could not reset password",
+      "missingToken": "This link is invalid or expired",
+      "requestNewLink": "Request a new link",
+      "backToLogin": "Back to sign in",
       "loading": "Loading…"
     }
   },

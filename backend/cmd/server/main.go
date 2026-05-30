@@ -64,6 +64,7 @@ func main() {
 		telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
 		maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 		tokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
+		passwordResetTokenRepo := repository.NewPasswordResetTokenRepository(db.Pool)
 		smtpSvc := service.NewSMTPSettingsService(smtpRepo)
 		mailSvc := service.NewMailService(smtpSvc)
 		telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
@@ -75,7 +76,8 @@ func main() {
 			mailSvc, maxSvc, telegramAssets, logger,
 		)
 		verifySvc := service.NewEmailVerificationService(userRepo, tokenRepo, mailSvc, telegramSvc, cfg)
-		authSvc := service.NewAuthService(userRepo, authMW, verifySvc, telegramSvc)
+		passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetTokenRepo, mailSvc, cfg)
+		authSvc := service.NewAuthService(userRepo, authMW, verifySvc, passwordResetSvc, telegramSvc)
 		user, err := authSvc.SeedAdmin(ctx, *seedEmail, *seedPassword)
 		if err != nil {
 			logger.Error("seed admin failed", "error", err)

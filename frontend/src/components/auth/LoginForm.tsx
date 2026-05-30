@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError, login } from "@/lib/api";
 import { sanitizeReturnPath } from "@/lib/return-url";
@@ -12,10 +12,18 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeReturnPath(searchParams.get("next"));
+  const resetOk = searchParams.get("reset") === "ok";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (resetOk) {
+      setSuccess(t("resetPasswordSuccess"));
+    }
+  }, [resetOk, t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,6 +50,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {success && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+          {success}
+        </div>
+      )}
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
@@ -72,9 +85,17 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <label htmlFor="password" className="mb-1.5 block text-xs font-medium">
-          {t("password")}
-        </label>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label htmlFor="password" className="text-xs font-medium">
+            {t("password")}
+          </label>
+          <Link
+            href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+            className="text-xs text-accent hover:underline"
+          >
+            {t("forgotPassword")}
+          </Link>
+        </div>
         <input
           id="password"
           type="password"

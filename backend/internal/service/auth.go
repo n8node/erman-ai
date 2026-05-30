@@ -28,14 +28,15 @@ const bcryptCost = 12
 const tokenTTL = 7 * 24 * time.Hour
 
 type AuthService struct {
-	users    *repository.UserRepository
-	auth     *middleware.Auth
-	verify   *EmailVerificationService
-	telegram *TelegramService
+	users        *repository.UserRepository
+	auth         *middleware.Auth
+	verify       *EmailVerificationService
+	passwordReset *PasswordResetService
+	telegram     *TelegramService
 }
 
-func NewAuthService(users *repository.UserRepository, auth *middleware.Auth, verify *EmailVerificationService, telegram *TelegramService) *AuthService {
-	return &AuthService{users: users, auth: auth, verify: verify, telegram: telegram}
+func NewAuthService(users *repository.UserRepository, auth *middleware.Auth, verify *EmailVerificationService, passwordReset *PasswordResetService, telegram *TelegramService) *AuthService {
+	return &AuthService{users: users, auth: auth, verify: verify, passwordReset: passwordReset, telegram: telegram}
 }
 
 type AuthResult struct {
@@ -226,6 +227,14 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*AuthResul
 
 func (s *AuthService) ResendVerification(ctx context.Context, email string) error {
 	return s.verify.Resend(ctx, email)
+}
+
+func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) error {
+	return s.passwordReset.RequestReset(ctx, email)
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	return s.passwordReset.ResetPassword(ctx, token, newPassword)
 }
 
 func normalizeEmail(email string) string {
