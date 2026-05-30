@@ -15,3 +15,62 @@ body {
   background: var(--bg3);
   color: var(--text);
 }
+
+.public-page-content {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text2);
+}
+
+.public-page-content h2 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.public-page-content p {
+  margin-bottom: 0.85rem;
+}
+
+.public-page-content ul {
+  margin: 0.75rem 0 1rem 1.25rem;
+  list-style: disc;
+}
+
+.public-page-content li {
+  margin-bottom: 0.35rem;
+}
+
+.public-page-content a {
+  color: #185fa5;
+  text-decoration: underline;
+}
+
+.public-page-content .updated-at {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.public-page-content .legal-details {
+  display: grid;
+  grid-template-columns: minmax(140px, 38%) 1fr;
+  gap: 0.5rem 1rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+}
+
+.public-page-content .legal-details dt {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.public-page-content .legal-details dd {
+  margin: 0;
+  font-size: 13px;
+}

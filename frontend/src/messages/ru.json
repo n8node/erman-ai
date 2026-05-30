@@ -153,7 +153,8 @@
       "telegram": "Telegram",
       "max": "MAX",
       "translations": "Переводы",
-      "projects": "Проекты"
+      "projects": "Проекты",
+      "publicPages": "Публичные страницы"
     },
     "users": {
       "title": "Пользователи",
@@ -298,6 +299,29 @@
       "deleteConfirm": "Удалить проект «{title}»?",
       "enabledYes": "Да",
       "enabledNo": "Нет"
+    },
+    "publicPages": {
+      "title": "Публичные страницы",
+      "subtitle": "Юридические и информационные страницы в открытом доступе (about, privacy, terms и др.)",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить страницы",
+      "saveFailed": "Не удалось сохранить",
+      "deleteFailed": "Не удалось удалить",
+      "saved": "Страница сохранена",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить эту страницу?",
+      "newPage": "Новая страница",
+      "draft": "черновик",
+      "titleLabel": "Заголовок",
+      "slugLabel": "URL (slug)",
+      "publicUrl": "Публичный адрес",
+      "metaLabel": "Meta description",
+      "contentLabel": "Содержимое",
+      "contentHint": "Поддерживается HTML: h2, p, ul, li, a, strong, dl, dt, dd",
+      "published": "Опубликована",
+      "sortOrder": "Порядок"
     },
     "calculatorBudget": {
       "title": "Ставки оценки бюджета",

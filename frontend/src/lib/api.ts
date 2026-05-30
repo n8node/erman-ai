@@ -1218,3 +1218,48 @@ export async function deleteAdminExternalProject(id: string) {
     method: "DELETE",
   });
 }
+
+export type PublicPage = {
+  id: string;
+  slug: string;
+  title: string;
+  content_html: string;
+  meta_description: string;
+  is_published: boolean;
+  sort_order: number;
+  updated_at: string;
+  created_at: string;
+};
+
+export type PublicPageInput = {
+  slug: string;
+  title: string;
+  content_html: string;
+  meta_description: string;
+  is_published: boolean;
+  sort_order: number;
+};
+
+export async function fetchAdminPublicPages() {
+  return apiFetch<{ items: PublicPage[] }>("/admin/public-pages");
+}
+
+export async function createAdminPublicPage(payload: PublicPageInput) {
+  return apiFetch<PublicPage>("/admin/public-pages", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminPublicPage(id: string, payload: PublicPageInput) {
+  return apiFetch<PublicPage>(`/admin/public-pages/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminPublicPage(id: string) {
+  return apiFetch<{ status: string }>(`/admin/public-pages/${id}`, {
+    method: "DELETE",
+  });
+}

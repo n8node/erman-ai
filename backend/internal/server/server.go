@@ -47,6 +47,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
 	maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
+	publicPageRepo := repository.NewPublicPageRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
@@ -93,6 +94,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	auditSvc := service.NewAuditService(cfg, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger)
 	planSvc := service.NewPlanService(planRepo)
 	externalProjectSvc := service.NewExternalProjectService(externalProjectRepo)
+	publicPageSvc := service.NewPublicPageService(publicPageRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW, telegramSvc)
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg)
@@ -113,6 +115,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramHandler := handler.NewTelegramSettingsHandler(telegramSettingsSvc, telegramSvc)
 	maxHandler := handler.NewMaxSettingsHandler(maxSettingsSvc, maxSvc)
 	externalProjectHandler := handler.NewExternalProjectHandler(externalProjectSvc)
+	publicPageHandler := handler.NewPublicPageHandler(publicPageSvc)
 	shareHandler := handler.NewShareHandler(shareSvc, authSvc, billingSvc, cfg, runRepo)
 	leadHandler := handler.NewLeadHandler(leadSvc, authSvc)
 	proposalReqHandler := handler.NewProposalRequestHandler(proposalReqSvc)
@@ -136,6 +139,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/public/tooltips", tooltipHandler.ListAnonymous)
 		api.Get("/public/translations", translationHandler.ListPublic)
 		api.Get("/public/calculator/budget-config", budgetConfigHandler.GetPublic)
+		api.Get("/public/pages/slugs", publicPageHandler.ListSlugs)
+		api.Get("/public/pages/{slug}", publicPageHandler.GetPublic)
 		api.With(inquiryRL.Middleware).Post("/public/project-inquiries", projectInquiryHandler.CreatePublic)
 		api.Get("/public/project-inquiries/verify", projectInquiryHandler.Verify)
 		api.Post("/billing/yookassa/webhook", paymentWebhookHandler.YookassaWebhook)
@@ -239,6 +244,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Post("/projects", externalProjectHandler.Create)
 			admin.Put("/projects/{id}", externalProjectHandler.Update)
 			admin.Delete("/projects/{id}", externalProjectHandler.Delete)
+			admin.Get("/public-pages", publicPageHandler.ListAdmin)
+			admin.Post("/public-pages", publicPageHandler.CreateAdmin)
+			admin.Put("/public-pages/{id}", publicPageHandler.UpdateAdmin)
+			admin.Delete("/public-pages/{id}", publicPageHandler.DeleteAdmin)
 		})
 	})
 

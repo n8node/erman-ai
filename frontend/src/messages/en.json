@@ -152,7 +152,8 @@
       "telegram": "Telegram",
       "max": "MAX",
       "translations": "Translations",
-      "projects": "Projects"
+      "projects": "Projects",
+      "publicPages": "Public pages"
     },
     "users": {
       "title": "Users",
@@ -297,6 +298,29 @@
       "deleteConfirm": "Delete project \"{title}\"?",
       "enabledYes": "Yes",
       "enabledNo": "No"
+    },
+    "publicPages": {
+      "title": "Public pages",
+      "subtitle": "Legal and informational pages available without login",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load pages",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete",
+      "saved": "Page saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this page?",
+      "newPage": "New page",
+      "draft": "draft",
+      "titleLabel": "Title",
+      "slugLabel": "URL slug",
+      "publicUrl": "Public URL",
+      "metaLabel": "Meta description",
+      "contentLabel": "Content",
+      "contentHint": "HTML supported: h2, p, ul, li, a, strong, dl, dt, dd",
+      "published": "Published",
+      "sortOrder": "Sort order"
     },
     "calculatorBudget": {
       "title": "Budget estimate rates",

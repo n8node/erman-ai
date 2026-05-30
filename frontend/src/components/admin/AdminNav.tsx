@@ -23,6 +23,7 @@ export function AdminNav() {
     { href: "/admin/tooltips", label: t("tooltips") },
     { href: "/admin/translations", label: t("translations") },
     { href: "/admin/projects", label: t("projects") },
+    { href: "/admin/public-pages", label: t("publicPages") },
   ];
 
   return (
