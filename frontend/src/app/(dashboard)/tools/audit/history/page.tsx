@@ -4,9 +4,7 @@ import { GuestHistoryPlaceholder } from "@/components/layout/GuestHistoryPlaceho
 export default function AuditHistoryPage() {
   return (
     <GuestHistoryPlaceholder>
-      <div className="mx-auto max-w-5xl space-y-4">
-        <AuditHistory />
-      </div>
+      <AuditHistory />
     </GuestHistoryPlaceholder>
   );
 }
