@@ -319,9 +319,23 @@
       "publicUrl": "Публичный адрес",
       "metaLabel": "Meta description",
       "contentLabel": "Содержимое",
-      "contentHint": "Поддерживается HTML: h2, p, ul, li, a, strong, dl, dt, dd",
+      "contentHint": "Визуальный редактор TipTap. Для сложной разметки (dl, dt, dd) переключитесь на режим HTML.",
       "published": "Опубликована",
-      "sortOrder": "Порядок"
+      "sortOrder": "Порядок",
+      "editor": {
+        "visualMode": "Визуально",
+        "htmlMode": "HTML",
+        "bold": "Жирный",
+        "italic": "Курсив",
+        "heading": "Заголовок H2",
+        "bulletList": "Маркированный список",
+        "orderedList": "Нумерованный список",
+        "link": "Ссылка",
+        "unlink": "Убрать ссылку",
+        "undo": "Отменить",
+        "redo": "Повторить",
+        "linkPrompt": "URL ссылки"
+      }
     },
     "calculatorBudget": {
       "title": "Ставки оценки бюджета",

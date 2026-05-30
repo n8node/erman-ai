@@ -12,6 +12,7 @@ import {
   type PublicPageInput,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
@@ -249,11 +250,12 @@ export function AdminPublicPagesEditor() {
               {t("contentLabel")}
             </label>
             <p className="mb-2 text-xs text-text3">{t("contentHint")}</p>
-            <textarea
-              className={cn(fieldClass, "min-h-[420px] font-mono text-xs leading-relaxed")}
+            <RichTextEditor
+              key={isNew ? "new-page" : selectedId ?? "empty"}
+              editorKey={isNew ? "new-page" : selectedId ?? "empty"}
               value={draft.content_html}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, content_html: e.target.value }))
+              onChange={(content_html) =>
+                setDraft((d) => ({ ...d, content_html }))
               }
             />
           </div>

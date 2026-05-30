@@ -318,9 +318,23 @@
       "publicUrl": "Public URL",
       "metaLabel": "Meta description",
       "contentLabel": "Content",
-      "contentHint": "HTML supported: h2, p, ul, li, a, strong, dl, dt, dd",
+      "contentHint": "TipTap visual editor. Switch to HTML mode for advanced markup (dl, dt, dd).",
       "published": "Published",
-      "sortOrder": "Sort order"
+      "sortOrder": "Sort order",
+      "editor": {
+        "visualMode": "Visual",
+        "htmlMode": "HTML",
+        "bold": "Bold",
+        "italic": "Italic",
+        "heading": "Heading H2",
+        "bulletList": "Bullet list",
+        "orderedList": "Numbered list",
+        "link": "Link",
+        "unlink": "Remove link",
+        "undo": "Undo",
+        "redo": "Redo",
+        "linkPrompt": "Link URL"
+      }
     },
     "calculatorBudget": {
       "title": "Budget estimate rates",
