@@ -79,7 +79,7 @@ func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.R
 	}
 
 	rk := cfg.Robokassa
-	if !rk.Enabled || strings.TrimSpace(rk.Password2) == "" {
+	if !service.RobokassaConfigured(rk) {
 		writeError(w, http.StatusServiceUnavailable, "robokassa not configured")
 		return
 	}

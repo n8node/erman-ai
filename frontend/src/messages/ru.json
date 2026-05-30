@@ -502,6 +502,7 @@
       "password2Placeholder": "Пароль #2",
       "password2Hint": "Для проверки уведомлений через Result URL (не путать с паролем #1)",
       "testMode": "Тестовый режим (is_test=1)",
+      "robokassaEnabled": "Включить оплату тарифов через Robokassa",
       "saveRobokassa": "Сохранить Robokassa",
       "robokassaResultTitle": "Result URL для кабинета Robokassa",
       "robokassaResultHint": "Укажите метод POST или GET в технических настройках Robokassa. Сервер ответит текстом OK{InvId}.",

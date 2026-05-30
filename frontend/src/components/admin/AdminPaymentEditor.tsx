@@ -227,6 +227,9 @@ export function AdminPaymentEditor() {
               type="button"
               onClick={() => {
                 setActiveProvider(id);
+                if (id === "robokassa") {
+                  setRobokassa((p) => ({ ...p, enabled: true }));
+                }
                 setSuccess("");
               }}
               className={cn(
@@ -396,6 +399,16 @@ export function AdminPaymentEditor() {
             className="rounded border-border2"
           />
           {t("testMode")}
+        </label>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={robokassa.enabled}
+            onChange={(e) => setRobokassa((p) => ({ ...p, enabled: e.target.checked }))}
+            className="rounded border-border2"
+          />
+          {t("robokassaEnabled")}
         </label>
 
         <button

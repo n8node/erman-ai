@@ -87,6 +87,10 @@ func (s *PaymentSettingsService) Update(ctx context.Context, req model.PaymentAd
 		cfg.Yookassa.ReturnURL = s.defaultReturnURL()
 	}
 
+	if cfg.ActiveProvider == model.PaymentProviderRobokassa && robokassaConfigured(cfg.Robokassa) {
+		cfg.Robokassa.Enabled = true
+	}
+
 	updated, err := s.repo.Update(ctx, cfg)
 	if err != nil {
 		return nil, err
@@ -205,13 +209,28 @@ func (s *PaymentSettingsService) PaymentsEnabled(ctx context.Context) (bool, mod
 func IsPaymentEnabled(cfg model.PaymentSettings) bool {
 	switch cfg.ActiveProvider {
 	case model.PaymentProviderYookassa:
-		return cfg.Yookassa.Enabled && strings.TrimSpace(cfg.Yookassa.ShopID) != "" && strings.TrimSpace(cfg.Yookassa.SecretKey) != ""
+		return cfg.Yookassa.Enabled && yookassaConfigured(cfg.Yookassa)
 	case model.PaymentProviderRobokassa:
-		return cfg.Robokassa.Enabled && strings.TrimSpace(cfg.Robokassa.MerchantLogin) != "" &&
-			strings.TrimSpace(cfg.Robokassa.Password1) != "" && strings.TrimSpace(cfg.Robokassa.Password2) != ""
+		// Active Robokassa + credentials is enough (no separate enable toggle was required in admin UI).
+		return robokassaConfigured(cfg.Robokassa)
 	default:
 		return false
 	}
+}
+
+func yookassaConfigured(yk model.YookassaSettings) bool {
+	return strings.TrimSpace(yk.ShopID) != "" && strings.TrimSpace(yk.SecretKey) != ""
+}
+
+func robokassaConfigured(rk model.RobokassaSettings) bool {
+	return strings.TrimSpace(rk.MerchantLogin) != "" &&
+		strings.TrimSpace(rk.Password1) != "" &&
+		strings.TrimSpace(rk.Password2) != ""
+}
+
+// RobokassaConfigured reports whether Robokassa credentials are stored.
+func RobokassaConfigured(rk model.RobokassaSettings) bool {
+	return robokassaConfigured(rk)
 }
 
 func (s *PaymentSettingsService) buildAdminView(rec *model.PaymentSettingsRecord) *model.PaymentAdminView {
