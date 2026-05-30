@@ -15,6 +15,9 @@ type TelegramSettings struct {
 	StartEnabled          bool   `json:"start_enabled"`
 	StartText             string `json:"start_text"`
 	StartImageFilename    string `json:"start_image_filename"`
+	SupportEnabled        bool   `json:"support_enabled"`
+	SupportForumChatID    string `json:"support_forum_chat_id"`
+	DashboardURL          string `json:"dashboard_url"`
 	NotifyRegistration    bool   `json:"notify_registration"`
 	RegistrationTemplate  string `json:"registration_template"`
 	NotifyEmailVerified   bool   `json:"notify_email_verified"`
@@ -74,7 +77,8 @@ type TelegramTestResult struct {
 
 func DefaultTelegramSettings() TelegramSettings {
 	return TelegramSettings{
-		StartText:             "Добро пожаловать в Erman AI!\n\nЗдесь вы получите уведомления и сможете связаться с командой.",
+		StartText:             "Добро пожаловать в Erman AI!\n\nВыберите действие:",
+		DashboardURL:          "https://erman.ai/dashboard/",
 		NotifyRegistration:    true,
 		RegistrationTemplate:  "🆕 Новый пользователь\nEmail: {email}\nСегмент: {accountSegment}\nРеферал: {referral}",
 		NotifyEmailVerified:   true,

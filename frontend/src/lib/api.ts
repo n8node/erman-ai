@@ -786,6 +786,9 @@ export type TelegramSettings = {
   chat_id: string;
   start_enabled: boolean;
   start_text: string;
+  support_enabled: boolean;
+  support_forum_chat_id: string;
+  dashboard_url: string;
   notify_registration: boolean;
   registration_template: string;
   notify_email_verified: boolean;

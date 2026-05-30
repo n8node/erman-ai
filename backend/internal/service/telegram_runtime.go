@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
 const telegramHealthInterval = 30 * time.Second
@@ -17,6 +18,7 @@ const telegramHealthInterval = 30 * time.Second
 // that starts with the backend process (container restart / server reboot).
 type TelegramService struct {
 	settings *TelegramSettingsService
+	threads  *repository.TelegramSupportThreadRepository
 	assets   *TelegramAssets
 	client   *http.Client
 	logger   *slog.Logger
@@ -32,12 +34,13 @@ type TelegramService struct {
 	triggerCh         chan struct{}
 }
 
-func NewTelegramService(settings *TelegramSettingsService, assets *TelegramAssets, logger *slog.Logger) *TelegramService {
+func NewTelegramService(settings *TelegramSettingsService, threads *repository.TelegramSupportThreadRepository, assets *TelegramAssets, logger *slog.Logger) *TelegramService {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &TelegramService{
 		settings: settings,
+		threads:  threads,
 		assets:   assets,
 		client:   &http.Client{Timeout: 60 * time.Second},
 		logger:   logger,
@@ -71,7 +74,7 @@ func (s *TelegramService) ensurePollingFromSettings() {
 	if err != nil {
 		return
 	}
-	if !cfg.StartEnabled || strings.TrimSpace(cfg.BotToken) == "" {
+	if !s.botNeedsPolling(cfg) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -166,11 +169,10 @@ func (s *TelegramService) runHealthCheck() {
 	s.setRuntime(st)
 
 	cfg, _ := s.settings.GetEffective(context.Background())
-	if cfg.StartEnabled && strings.TrimSpace(cfg.BotToken) != "" {
+	if s.botNeedsPolling(cfg) {
 		if s.shouldRunPolling(cfg, st) {
 			s.syncPolling(true, cfg)
 		}
-		// Do not stop polling on transient health errors — only when /start is disabled.
 	} else {
 		s.stopPolling()
 	}
@@ -183,10 +185,7 @@ func (s *TelegramService) runHealthCheck() {
 }
 
 func (s *TelegramService) shouldRunPolling(cfg model.TelegramSettings, st model.TelegramBotRuntimeStatus) bool {
-	if !cfg.StartEnabled {
-		return false
-	}
-	if strings.TrimSpace(cfg.BotToken) == "" {
+	if !s.botNeedsPolling(cfg) {
 		return false
 	}
 	return st.Status == model.TelegramBotStatusOnline
@@ -204,10 +203,10 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 		}
 	}
 
-	if !cfg.Enabled && !cfg.StartEnabled {
+	if !cfg.Enabled && !cfg.StartEnabled && !cfg.SupportEnabled {
 		return model.TelegramBotRuntimeStatus{
 			Status:      model.TelegramBotStatusDisabled,
-			Message:     "Бот отключён (уведомления и /start выключены)",
+			Message:     "Бот отключён",
 			LastCheckAt: now,
 		}
 	}
@@ -232,9 +231,29 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 	}
 
 	var notifyWarn string
+	if cfg.SupportEnabled {
+		forumID := strings.TrimSpace(cfg.SupportForumChatID)
+		if forumID == "" {
+			return model.TelegramBotRuntimeStatus{
+				Status:      model.TelegramBotStatusMisconfigured,
+				Message:     "Не задан ID forum-группы для консультаций",
+				LastCheckAt: now,
+			}
+		}
+		if err := s.telegramGetChat(ctx, token, forumID); err != nil {
+			return model.TelegramBotRuntimeStatus{
+				Status:      model.TelegramBotStatusOffline,
+				Message:     "Бот не видит forum-группу",
+				BotUsername: me.Username,
+				LastError:   err.Error(),
+				LastCheckAt: now,
+			}
+		}
+	}
+
 	if cfg.Enabled {
 		if chatID == "" {
-			if !cfg.StartEnabled {
+			if !cfg.StartEnabled && !cfg.SupportEnabled {
 				return model.TelegramBotRuntimeStatus{
 					Status:      model.TelegramBotStatusMisconfigured,
 					Message:     "Не задан ID чата для уведомлений",
@@ -243,7 +262,7 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 			}
 			notifyWarn = "ID чата для уведомлений не задан"
 		} else if err := s.telegramGetChat(ctx, token, chatID); err != nil {
-			if !cfg.StartEnabled {
+			if !cfg.StartEnabled && !cfg.SupportEnabled {
 				return model.TelegramBotRuntimeStatus{
 					Status:      model.TelegramBotStatusOffline,
 					Message:     "Бот не видит указанный чат",

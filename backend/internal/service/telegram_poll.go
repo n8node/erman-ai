@@ -12,15 +12,24 @@ import (
 )
 
 type telegramUpdate struct {
-	UpdateID int64            `json:"update_id"`
-	Message  *telegramMessage `json:"message"`
+	UpdateID      int64                  `json:"update_id"`
+	Message       *telegramMessage       `json:"message"`
+	CallbackQuery *telegramCallbackQuery `json:"callback_query"`
+}
+
+type telegramCallbackQuery struct {
+	ID   string       `json:"id"`
+	From telegramUser `json:"from"`
+	Data string       `json:"data"`
 }
 
 type telegramMessage struct {
-	MessageID int64              `json:"message_id"`
-	Text      string             `json:"text"`
-	Chat      telegramChat       `json:"chat"`
-	Entities  []telegramEntity   `json:"entities"`
+	MessageID       int64            `json:"message_id"`
+	Text            string           `json:"text"`
+	Chat            telegramChat     `json:"chat"`
+	From            *telegramUser    `json:"from"`
+	Entities        []telegramEntity `json:"entities"`
+	MessageThreadID int              `json:"message_thread_id"`
 }
 
 type telegramChat struct {
@@ -33,9 +42,18 @@ type telegramEntity struct {
 	Length int    `json:"length"`
 }
 
+func (s *TelegramService) botNeedsPolling(cfg model.TelegramSettings) bool {
+	if strings.TrimSpace(cfg.BotToken) == "" {
+		return false
+	}
+	if cfg.StartEnabled {
+		return true
+	}
+	return s.supportConfigured(cfg)
+}
+
 func (s *TelegramService) syncPolling(healthy bool, cfg model.TelegramSettings) {
-	token := strings.TrimSpace(cfg.BotToken)
-	shouldPoll := healthy && cfg.StartEnabled && token != ""
+	shouldPoll := healthy && s.botNeedsPolling(cfg)
 
 	s.mu.Lock()
 	running := s.pollRunning
@@ -98,7 +116,7 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 		}
 
 		cfg, err := s.settings.GetEffective(context.Background())
-		if err != nil || !cfg.StartEnabled || strings.TrimSpace(cfg.BotToken) == "" {
+		if err != nil || !s.botNeedsPolling(cfg) {
 			time.Sleep(2 * time.Second)
 			continue
 		}
@@ -111,26 +129,42 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 		}
 
 		for _, upd := range updates {
-			if upd.Message != nil && isStartCommand(upd.Message) {
-				chatID := formatChatID(upd.Message.Chat.ID)
-				s.logger.Info("telegram /start received", "chat_id", chatID)
-				go func(targetChat string) {
-					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-					defer cancel()
-					current, err := s.settings.GetEffective(ctx)
-					if err != nil {
-						s.logger.Warn("telegram /start settings load failed", "err", err)
-						return
-					}
-					if err := s.sendStartReply(ctx, current, targetChat); err != nil {
-						s.logger.Warn("telegram /start reply failed", "chat_id", targetChat, "err", err)
-						return
-					}
-					s.logger.Info("telegram /start reply sent", "chat_id", targetChat)
-				}(chatID)
-			}
+			s.dispatchUpdate(cfg, upd)
 		}
 	}
+}
+
+func (s *TelegramService) dispatchUpdate(cfg model.TelegramSettings, upd telegramUpdate) {
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+
+	if upd.CallbackQuery != nil {
+		s.handleCallbackQuery(ctx, cfg, upd.CallbackQuery)
+		return
+	}
+	if upd.Message == nil {
+		return
+	}
+
+	if isStartCommand(upd.Message) {
+		chatID := formatChatID(upd.Message.Chat.ID)
+		s.logger.Info("telegram /start received", "chat_id", chatID)
+		if cfg.StartEnabled {
+			if err := s.sendStartReply(ctx, cfg, chatID); err != nil {
+				s.logger.Warn("telegram /start reply failed", "chat_id", chatID, "err", err)
+			} else {
+				s.logger.Info("telegram /start reply sent", "chat_id", chatID)
+			}
+		}
+		return
+	}
+
+	if isPrivateChat(upd.Message.Chat.ID) {
+		s.handleUserMessage(ctx, cfg, upd.Message)
+		return
+	}
+
+	s.handleForumMessage(ctx, cfg, upd.Message)
 }
 
 func (s *TelegramService) pollShouldStop(stopCh <-chan struct{}) bool {
@@ -153,8 +187,9 @@ func (s *TelegramService) fetchUpdates(cfg model.TelegramSettings) ([]telegramUp
 	defer cancel()
 
 	raw, err := s.telegramAPI(ctx, strings.TrimSpace(cfg.BotToken), "getUpdates", map[string]any{
-		"offset":  offset,
-		"timeout": 25,
+		"offset":          offset,
+		"timeout":         25,
+		"allowed_updates": []string{"message", "callback_query"},
 	})
 	if err != nil {
 		return nil, err
@@ -207,7 +242,6 @@ func isStartCommand(msg *telegramMessage) bool {
 		if e.Type != "bot_command" || e.Offset != 0 {
 			continue
 		}
-		// /start is ASCII; byte offset matches UTF-8 for these commands
 		end := e.Length
 		if end <= 0 || end > len(text) {
 			end = len(text)

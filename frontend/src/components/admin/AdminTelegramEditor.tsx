@@ -49,6 +49,9 @@ const DEFAULT_SETTINGS: TelegramSettings = {
   chat_id: "",
   start_enabled: false,
   start_text: "",
+  support_enabled: false,
+  support_forum_chat_id: "",
+  dashboard_url: "https://erman.ai/dashboard/",
   notify_registration: true,
   registration_template: "",
   notify_email_verified: true,
@@ -417,6 +420,47 @@ export function AdminTelegramEditor() {
         {runtime.polling_running && (
           <p className="text-xs text-green-800">{t("startPollingActive")}</p>
         )}
+        <p className="text-xs text-text3">{t("startButtonsHint")}</p>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-text3">
+          {t("supportSection")}
+        </h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.support_enabled}
+            onChange={(e) => patch({ support_enabled: e.target.checked })}
+            className="rounded border-border2"
+          />
+          {t("supportEnabled")}
+        </label>
+        <p className="text-xs text-text3">{t("supportHint")}</p>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">
+            {t("supportForumChatId")}
+          </label>
+          <p className="mb-2 text-xs text-text3">{t("supportForumChatIdHint")}</p>
+          <input
+            type="text"
+            value={settings.support_forum_chat_id}
+            onChange={(e) => patch({ support_forum_chat_id: e.target.value })}
+            className={fieldClass}
+            placeholder="-1001234567890"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("dashboardUrl")}</label>
+          <p className="mb-2 text-xs text-text3">{t("dashboardUrlHint")}</p>
+          <input
+            type="url"
+            value={settings.dashboard_url}
+            onChange={(e) => patch({ dashboard_url: e.target.value })}
+            className={fieldClass}
+            placeholder="https://erman.ai/dashboard/"
+          />
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-3">

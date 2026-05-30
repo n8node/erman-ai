@@ -19,6 +19,11 @@ func (s *TelegramService) sendStartReply(ctx context.Context, cfg model.Telegram
 		return ErrTelegramNotConfigured
 	}
 
+	markup, err := startReplyMarkup(cfg)
+	if err != nil {
+		return err
+	}
+
 	text := strings.TrimSpace(cfg.StartText)
 	imagePath := ""
 	if cfg.StartImageFilename != "" && s.assets != nil {
@@ -30,11 +35,11 @@ func (s *TelegramService) sendStartReply(ctx context.Context, cfg model.Telegram
 
 	if imagePath != "" {
 		caption, remainder := splitCaptionAndRemainder(text, model.TelegramCaptionMaxRunes)
-		if err := s.telegramSendPhotoFile(ctx, token, userChatID, imagePath, caption); err != nil {
+		if err := s.telegramSendPhotoFile(ctx, token, userChatID, imagePath, caption, markup); err != nil {
 			return err
 		}
 		if remainder != "" {
-			return s.telegramSendMessage(ctx, token, userChatID, remainder)
+			return s.telegramSendMessageOpts(ctx, token, userChatID, remainder, 0, nil)
 		}
 		return nil
 	}
@@ -42,7 +47,7 @@ func (s *TelegramService) sendStartReply(ctx context.Context, cfg model.Telegram
 	if text == "" {
 		return errors.New("start message is empty: add text or image in admin settings")
 	}
-	return s.telegramSendMessage(ctx, token, userChatID, truncateRunes(text, model.TelegramMessageMaxRunes))
+	return s.telegramSendMessageOpts(ctx, token, userChatID, text, 0, markup)
 }
 
 func splitCaptionAndRemainder(text string, captionMax int) (caption, remainder string) {

@@ -18,8 +18,15 @@ import (
 
 type telegramUser struct {
 	ID        int64  `json:"id"`
+	IsBot     bool   `json:"is_bot"`
 	Username  string `json:"username"`
 	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+type telegramForumTopic struct {
+	MessageThreadID int    `json:"message_thread_id"`
+	Name            string `json:"name"`
 }
 
 type telegramAPIResponse struct {
@@ -95,18 +102,71 @@ func (s *TelegramService) telegramGetChat(ctx context.Context, token, chatID str
 }
 
 func (s *TelegramService) telegramSendMessage(ctx context.Context, token, chatID, text string) error {
+	return s.telegramSendMessageOpts(ctx, token, chatID, text, 0, nil)
+}
+
+func (s *TelegramService) telegramSendMessageOpts(ctx context.Context, token, chatID, text string, threadID int, replyMarkup []byte) error {
 	text = strings.TrimSpace(text)
 	if text == "" {
 		return nil
 	}
-	_, err := s.telegramAPI(ctx, token, "sendMessage", map[string]string{
+	payload := map[string]any{
 		"chat_id": strings.TrimSpace(chatID),
 		"text":    truncateRunes(text, model.TelegramMessageMaxRunes),
+	}
+	if threadID > 0 {
+		payload["message_thread_id"] = threadID
+	}
+	if len(replyMarkup) > 0 {
+		payload["reply_markup"] = json.RawMessage(replyMarkup)
+	}
+	_, err := s.telegramAPI(ctx, token, "sendMessage", payload)
+	return err
+}
+
+func (s *TelegramService) telegramSendChatAction(ctx context.Context, token, chatID, action string) error {
+	_, err := s.telegramAPI(ctx, token, "sendChatAction", map[string]string{
+		"chat_id": strings.TrimSpace(chatID),
+		"action":  action,
 	})
 	return err
 }
 
-func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chatID, filePath, caption string) error {
+func (s *TelegramService) telegramAnswerCallbackQuery(ctx context.Context, token, callbackID, text string) error {
+	payload := map[string]string{"callback_query_id": callbackID}
+	if text != "" {
+		payload["text"] = text
+		payload["show_alert"] = "false"
+	}
+	_, err := s.telegramAPI(ctx, token, "answerCallbackQuery", payload)
+	return err
+}
+
+func (s *TelegramService) telegramCreateForumTopic(ctx context.Context, token, forumChatID, name string) (int, error) {
+	name = truncateRunes(strings.TrimSpace(name), 128)
+	raw, err := s.telegramAPI(ctx, token, "createForumTopic", map[string]any{
+		"chat_id": forumChatID,
+		"name":    name,
+	})
+	if err != nil {
+		return 0, err
+	}
+	var topic telegramForumTopic
+	if err := json.Unmarshal(raw, &topic); err != nil {
+		return 0, err
+	}
+	if topic.MessageThreadID <= 0 {
+		return 0, errors.New("telegram api: invalid topic id")
+	}
+	return topic.MessageThreadID, nil
+}
+
+func (s *TelegramService) telegramCopyMessage(ctx context.Context, token string, dest map[string]any) error {
+	_, err := s.telegramAPI(ctx, token, "copyMessage", dest)
+	return err
+}
+
+func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chatID, filePath, caption string, replyMarkup []byte) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -119,6 +179,9 @@ func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chat
 	_ = w.WriteField("chat_id", strings.TrimSpace(chatID))
 	if c := strings.TrimSpace(caption); c != "" {
 		_ = w.WriteField("caption", truncateRunes(c, model.TelegramCaptionMaxRunes))
+	}
+	if len(replyMarkup) > 0 {
+		_ = w.WriteField("reply_markup", string(replyMarkup))
 	}
 
 	part, err := w.CreateFormFile("photo", filepath.Base(filePath))

@@ -40,6 +40,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	smtpSettingsRepo := repository.NewSMTPSettingsRepository(db.Pool)
 	paymentSettingsRepo := repository.NewPaymentSettingsRepository(db.Pool)
 	telegramSettingsRepo := repository.NewTelegramSettingsRepository(db.Pool)
+	telegramSupportThreadRepo := repository.NewTelegramSupportThreadRepository(db.Pool)
 	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 
@@ -51,7 +52,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
 	_ = telegramAssets.EnsureDir()
 	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo, telegramAssets)
-	telegramSvc := service.NewTelegramService(telegramSettingsSvc, telegramAssets, logger)
+	telegramSvc := service.NewTelegramService(telegramSettingsSvc, telegramSupportThreadRepo, telegramAssets, logger)
 	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
 	telegramSvc.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
