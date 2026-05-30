@@ -7,7 +7,13 @@ import { negotiateFromAcceptLanguage } from "./i18n/negotiate";
 const BASE_PATH = "/dashboard";
 
 /** Pages reachable without a session (app paths, without basePath). */
-const publicPages = ["/login", "/register", "/verify-email"];
+const publicPages = [
+  "/login",
+  "/register",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+];
 
 const accountPrefixes = ["/billing", "/settings", "/api-keys"];
 const adminPrefix = "/admin";
@@ -16,6 +22,8 @@ const reservedSingleSegments = new Set([
   "login",
   "register",
   "verify-email",
+  "forgot-password",
+  "reset-password",
   "onboarding",
   "share",
   "tools",

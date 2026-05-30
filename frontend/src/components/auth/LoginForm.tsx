@@ -85,17 +85,9 @@ export function LoginForm() {
         />
       </div>
       <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <label htmlFor="password" className="text-xs font-medium">
-            {t("password")}
-          </label>
-          <Link
-            href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
-            className="text-xs text-accent hover:underline"
-          >
-            {t("forgotPassword")}
-          </Link>
-        </div>
+        <label htmlFor="password" className="mb-1.5 block text-xs font-medium">
+          {t("password")}
+        </label>
         <input
           id="password"
           type="password"
@@ -105,6 +97,18 @@ export function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         />
+        <div className="mt-2 text-right">
+          <Link
+            href={
+              email.trim()
+                ? `/forgot-password?email=${encodeURIComponent(email.trim())}`
+                : "/forgot-password"
+            }
+            className="text-xs text-accent hover:underline"
+          >
+            {t("forgotPassword")}
+          </Link>
+        </div>
       </div>
       <button
         type="submit"
