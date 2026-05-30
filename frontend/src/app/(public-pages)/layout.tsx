@@ -8,7 +8,7 @@ export default function PublicPagesLayout({
   return (
     <div className="min-h-screen bg-bg3">
       <header className="border-b border-border bg-bg">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex w-3/4 items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-text text-sm font-semibold text-white">
               E
@@ -20,7 +20,7 @@ export default function PublicPagesLayout({
           </Link>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-10">{children}</main>
+      <main className="mx-auto w-3/4 px-6 py-10">{children}</main>
     </div>
   );
 }
