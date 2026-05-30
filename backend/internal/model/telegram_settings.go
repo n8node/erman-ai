@@ -80,7 +80,6 @@ type TelegramTestResult struct {
 
 func DefaultUrgentInstruction() string {
 	return "Если вы хотите срочно связаться со мной, напишите ниже ваше сообщение — оно будет разослано по моим контактам: email, Telegram, MAX, VK, Instagram.\n\n" +
-		"(Сейчас доставка настроена на email, Telegram и MAX; VK и Instagram подключим позже.)\n\n" +
 		"В ответ я смогу написать вам в Telegram или по контактам, которые вы укажете в сообщении."
 }
 
