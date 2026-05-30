@@ -137,3 +137,8 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 	id, ok := ctx.Value(UserIDKey).(string)
 	return id, ok
 }
+
+func UserRoleFromContext(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(UserRoleKey).(string)
+	return role, ok
+}

@@ -129,7 +129,7 @@ func (s *BillingService) ListPublicPlans(ctx context.Context) ([]model.Plan, err
 	return s.plans.ListPublic(ctx)
 }
 
-func (s *BillingService) SwitchPlan(ctx context.Context, userID, planID string) (*model.Plan, error) {
+func (s *BillingService) SwitchPlan(ctx context.Context, userID, planID, role string) (*model.Plan, error) {
 	plan, err := s.plans.GetByID(ctx, planID)
 	if err != nil {
 		return nil, err
@@ -144,6 +144,11 @@ func (s *BillingService) SwitchPlan(ctx context.Context, userID, planID string) 
 	}
 	if user.PlanID != nil && *user.PlanID == planID {
 		return plan, nil
+	}
+
+	// Free plan or superadmin can switch without payment.
+	if plan.PriceMonthlyRUB > 0 && role != "superadmin" {
+		return nil, ErrPaymentRequired
 	}
 
 	if err := s.users.UpdatePlanID(ctx, userID, planID); err != nil {

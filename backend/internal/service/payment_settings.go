@@ -194,6 +194,26 @@ func (s *PaymentSettingsService) defaultReturnURL() string {
 	return s.cfg.PublicBaseURL() + "/dashboard/billing"
 }
 
+func (s *PaymentSettingsService) PaymentsEnabled(ctx context.Context) (bool, model.PaymentProvider, error) {
+	cfg, err := s.GetEffective(ctx)
+	if err != nil {
+		return false, "", err
+	}
+	return IsPaymentEnabled(cfg), cfg.ActiveProvider, nil
+}
+
+func IsPaymentEnabled(cfg model.PaymentSettings) bool {
+	switch cfg.ActiveProvider {
+	case model.PaymentProviderYookassa:
+		return cfg.Yookassa.Enabled && strings.TrimSpace(cfg.Yookassa.ShopID) != "" && strings.TrimSpace(cfg.Yookassa.SecretKey) != ""
+	case model.PaymentProviderRobokassa:
+		return cfg.Robokassa.Enabled && strings.TrimSpace(cfg.Robokassa.MerchantLogin) != "" &&
+			strings.TrimSpace(cfg.Robokassa.Password1) != "" && strings.TrimSpace(cfg.Robokassa.Password2) != ""
+	default:
+		return false
+	}
+}
+
 func (s *PaymentSettingsService) buildAdminView(rec *model.PaymentSettingsRecord) *model.PaymentAdminView {
 	yk := rec.Config.Yookassa
 	rk := rec.Config.Robokassa

@@ -1,13 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  ApiError,
+  createBillingCheckout,
   fetchBillingPlans,
+  fetchMe,
   getBillingPlan,
   switchBillingPlan,
   type BillingPlan,
   type PublicPlan,
+  type User,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -33,23 +38,31 @@ function formatLimit(n: number, t: ReturnType<typeof useTranslations>) {
 
 export function BillingPlansView() {
   const t = useTranslations("billing");
+  const searchParams = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
+
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [current, setCurrent] = useState<BillingPlan | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  const isSuperadmin = user?.role === "superadmin";
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [plansRes, currentPlan] = await Promise.all([
+      const [plansRes, currentPlan, me] = await Promise.all([
         fetchBillingPlans(),
         getBillingPlan(),
+        fetchMe(),
       ]);
       setPlans(plansRes.items);
       setCurrent(currentPlan);
+      setUser(me);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
@@ -61,6 +74,15 @@ export function BillingPlansView() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      setNotice(t("paymentSuccess"));
+      void load();
+    } else if (paymentStatus === "failed") {
+      setError(t("paymentFailed"));
+    }
+  }, [paymentStatus, load, t]);
+
   async function handleAction(plan: PublicPlan) {
     if (current?.plan_id === plan.id) return;
 
@@ -68,11 +90,35 @@ export function BillingPlansView() {
     setError("");
     setNotice("");
 
+    const isFree = plan.price_monthly_rub === 0;
+    const paymentsEnabled = Boolean(current?.payments_enabled);
+
     try {
-      await switchBillingPlan(plan.id);
-      setNotice(t("activated", { name: plan.name }));
-      await load();
+      if (isFree || isSuperadmin) {
+        await switchBillingPlan(plan.id);
+        setNotice(t("activated", { name: plan.name }));
+        await load();
+        return;
+      }
+
+      if (!paymentsEnabled) {
+        setError(t("paymentUnavailable"));
+        return;
+      }
+
+      const checkout = await createBillingCheckout(plan.id);
+      window.location.href = checkout.checkout_url;
     } catch (err) {
+      if (err instanceof ApiError && err.status === 402 && paymentsEnabled) {
+        try {
+          const checkout = await createBillingCheckout(plan.id);
+          window.location.href = checkout.checkout_url;
+          return;
+        } catch (checkoutErr) {
+          setError(checkoutErr instanceof Error ? checkoutErr.message : t("actionFailed"));
+          return;
+        }
+      }
       setError(err instanceof Error ? err.message : t("actionFailed"));
     } finally {
       setBusyId(null);
@@ -92,6 +138,9 @@ export function BillingPlansView() {
           <p className="mt-3 text-sm text-text2">
             {t("currentPlan")}: <span className="font-medium text-text">{current.plan_name}</span>
           </p>
+        )}
+        {isSuperadmin && (
+          <p className="mt-2 text-xs text-text3">{t("adminDirectSwitchHint")}</p>
         )}
       </div>
 
@@ -133,6 +182,15 @@ export function BillingPlansView() {
           const isCurrent = current?.plan_id === plan.id;
           const isFree = plan.price_monthly_rub === 0;
           const disabled = busyId === plan.id || isCurrent;
+
+          const buttonLabel =
+            busyId === plan.id
+              ? t("processing")
+              : isCurrent
+                ? t("currentButton")
+                : isFree || isSuperadmin
+                  ? t("activate")
+                  : t("purchase");
 
           return (
             <article
@@ -213,13 +271,7 @@ export function BillingPlansView() {
                     : "bg-text text-white"
                 )}
               >
-                {busyId === plan.id
-                  ? t("processing")
-                  : isCurrent
-                    ? t("currentButton")
-                    : isFree
-                      ? t("activate")
-                      : t("purchase")}
+                {buttonLabel}
               </button>
             </article>
           );

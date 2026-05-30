@@ -50,6 +50,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	publicPageRepo := repository.NewPublicPageRepository(db.Pool)
 	emailTokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 	passwordResetTokenRepo := repository.NewPasswordResetTokenRepository(db.Pool)
+	planCheckoutRepo := repository.NewPlanCheckoutRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
@@ -80,6 +81,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetTokenRepo, mailSvc, cfg)
 	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc, passwordResetSvc, telegramSvc)
 	billingSvc := service.NewBillingService(planRepo, runRepo, userRepo)
+	checkoutSvc := service.NewCheckoutService(planCheckoutRepo, userRepo, planRepo, paymentSettingsSvc, telegramSvc, cfg)
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
@@ -113,7 +115,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	adminUserHandler := handler.NewAdminUserHandler(adminUserSvc, authMW, cfg)
 	smtpHandler := handler.NewSMTPSettingsHandler(smtpSettingsSvc, mailSvc)
 	paymentHandler := handler.NewPaymentSettingsHandler(paymentSettingsSvc)
-	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentSettingsSvc, logger)
+	paymentWebhookHandler := handler.NewPaymentWebhookHandler(paymentSettingsSvc, checkoutSvc, logger)
 	telegramHandler := handler.NewTelegramSettingsHandler(telegramSettingsSvc, telegramSvc)
 	maxHandler := handler.NewMaxSettingsHandler(maxSettingsSvc, maxSvc)
 	externalProjectHandler := handler.NewExternalProjectHandler(externalProjectSvc)
@@ -123,7 +125,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	proposalReqHandler := handler.NewProposalRequestHandler(proposalReqSvc)
 	projectInquiryHandler := handler.NewProjectInquiryHandler(projectInquirySvc, authSvc, cfg)
 	inquiryRL := middleware.NewRateLimiter(5, time.Hour)
-	billingHandler := handler.NewBillingHandler(billingSvc, planRepo, runRepo)
+	billingHandler := handler.NewBillingHandler(billingSvc, checkoutSvc, planRepo, runRepo)
 	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc)
 
 	r.Use(chimw.RequestID)
@@ -193,6 +195,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Get("/billing/plan", billingHandler.Plan)
 			protected.Get("/billing/plans", billingHandler.ListPlans)
 			protected.Post("/billing/switch", billingHandler.SwitchPlan)
+			protected.Post("/billing/checkout", billingHandler.CreateCheckout)
 			protected.Get("/tooltips", tooltipHandler.ListPublic)
 			protected.Get("/projects", externalProjectHandler.ListPublic)
 		})

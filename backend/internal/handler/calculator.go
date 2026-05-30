@@ -244,13 +244,14 @@ func (h *LeadHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 type BillingHandler struct {
-	billing *service.BillingService
-	plans   *repository.PlanRepository
-	runs    *repository.ToolRunRepository
+	billing  *service.BillingService
+	checkout *service.CheckoutService
+	plans    *repository.PlanRepository
+	runs     *repository.ToolRunRepository
 }
 
-func NewBillingHandler(billing *service.BillingService, plans *repository.PlanRepository, runs *repository.ToolRunRepository) *BillingHandler {
-	return &BillingHandler{billing: billing, plans: plans, runs: runs}
+func NewBillingHandler(billing *service.BillingService, checkout *service.CheckoutService, plans *repository.PlanRepository, runs *repository.ToolRunRepository) *BillingHandler {
+	return &BillingHandler{billing: billing, checkout: checkout, plans: plans, runs: runs}
 }
 
 func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
@@ -281,12 +282,22 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 		toolUsage[slug] = map[string]int{"used": used, "limit": limit}
 	}
 
+	paymentsEnabled := false
+	var paymentProvider string
+	if h.checkout != nil {
+		var provider model.PaymentProvider
+		paymentsEnabled, provider = h.checkout.PaymentsEnabled(r.Context())
+		paymentProvider = string(provider)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"plan_id":     up.Plan.ID,
 		"plan_slug":   up.PlanSlug,
 		"plan_name":   up.Plan.Name,
 		"features":    up.Plan.Features,
 		"tool_limits": up.Plan.ToolLimits,
+		"payments_enabled": paymentsEnabled,
+		"payment_provider": paymentProvider,
 		"usage": map[string]any{
 			"share_report_used":  shareUsed,
 			"share_report_limit": shareLimit,
@@ -308,6 +319,36 @@ type switchPlanRequest struct {
 	PlanID string `json:"plan_id"`
 }
 
+type checkoutRequest struct {
+	PlanID string `json:"plan_id"`
+}
+
+func (h *BillingHandler) CreateCheckout(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req checkoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.PlanID == "" {
+		writeError(w, http.StatusBadRequest, "plan_id required")
+		return
+	}
+
+	result, err := h.checkout.Create(r.Context(), userID, req.PlanID)
+	if err != nil {
+		h.writeBillingError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}
+
 func (h *BillingHandler) SwitchPlan(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -325,7 +366,8 @@ func (h *BillingHandler) SwitchPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	plan, err := h.billing.SwitchPlan(r.Context(), userID, req.PlanID)
+	role, _ := middleware.UserRoleFromContext(r.Context())
+	plan, err := h.billing.SwitchPlan(r.Context(), userID, req.PlanID, role)
 	if err != nil {
 		h.writeBillingError(w, err)
 		return
@@ -343,6 +385,10 @@ func (h *BillingHandler) writeBillingError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, service.ErrPaymentRequired):
 		writeError(w, http.StatusPaymentRequired, "payment required")
+	case errors.Is(err, service.ErrCheckoutUnavailable):
+		writeError(w, http.StatusServiceUnavailable, "checkout unavailable")
+	case errors.Is(err, service.ErrUserBlocked):
+		writeError(w, http.StatusForbidden, "account blocked")
 	case errors.Is(err, service.ErrInvalidInput):
 		writeError(w, http.StatusBadRequest, "invalid plan")
 	case errors.Is(err, repository.ErrNotFound):

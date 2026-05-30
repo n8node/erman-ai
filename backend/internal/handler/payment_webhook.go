@@ -10,17 +10,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/service"
 )
 
 type PaymentWebhookHandler struct {
-	svc    *service.PaymentSettingsService
-	logger *slog.Logger
+	payments *service.PaymentSettingsService
+	checkout *service.CheckoutService
+	logger   *slog.Logger
 }
 
-func NewPaymentWebhookHandler(svc *service.PaymentSettingsService, logger *slog.Logger) *PaymentWebhookHandler {
-	return &PaymentWebhookHandler{svc: svc, logger: logger}
+func NewPaymentWebhookHandler(payments *service.PaymentSettingsService, checkout *service.CheckoutService, logger *slog.Logger) *PaymentWebhookHandler {
+	return &PaymentWebhookHandler{payments: payments, checkout: checkout, logger: logger}
 }
 
 func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +39,9 @@ func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.R
 		Type   string `json:"type"`
 		Event  string `json:"event"`
 		Object struct {
-			ID     string `json:"id"`
-			Status string `json:"status"`
+			ID       string            `json:"id"`
+			Status   string            `json:"status"`
+			Metadata map[string]string `json:"metadata"`
 		} `json:"object"`
 	}
 	if err := json.Unmarshal(body, &notification); err != nil {
@@ -55,11 +56,23 @@ func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.R
 		"status", notification.Object.Status,
 	)
 
+	if h.checkout != nil {
+		if err := h.checkout.HandleYookassaWebhook(
+			r.Context(),
+			notification.Event,
+			notification.Object.ID,
+			notification.Object.Status,
+			notification.Object.Metadata,
+		); err != nil {
+			h.logger.Warn("yookassa webhook fulfill failed", "error", err, "payment_id", notification.Object.ID)
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.Request) {
-	cfg, err := h.svc.GetEffective(r.Context())
+	cfg, err := h.payments.GetEffective(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "settings unavailable")
 		return
@@ -104,6 +117,14 @@ func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.R
 		"test_mode", rk.TestMode,
 	)
 
+	if h.checkout != nil {
+		if err := h.checkout.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
+			h.logger.Warn("robokassa fulfill failed", "error", err, "inv_id", invID)
+			writeError(w, http.StatusInternalServerError, "fulfillment failed")
+			return
+		}
+	}
+
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte("OK" + invID))
 }
@@ -112,17 +133,4 @@ func firstParam(q interface {
 	Get(string) string
 }, key string) string {
 	return strings.TrimSpace(q.Get(key))
-}
-
-// IsPaymentEnabled reports whether any configured provider accepts payments.
-func IsPaymentEnabled(cfg model.PaymentSettings) bool {
-	switch cfg.ActiveProvider {
-	case model.PaymentProviderYookassa:
-		return cfg.Yookassa.Enabled && strings.TrimSpace(cfg.Yookassa.ShopID) != "" && strings.TrimSpace(cfg.Yookassa.SecretKey) != ""
-	case model.PaymentProviderRobokassa:
-		return cfg.Robokassa.Enabled && strings.TrimSpace(cfg.Robokassa.MerchantLogin) != "" &&
-			strings.TrimSpace(cfg.Robokassa.Password1) != "" && strings.TrimSpace(cfg.Robokassa.Password2) != ""
-	default:
-		return false
-	}
 }

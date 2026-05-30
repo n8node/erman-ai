@@ -70,11 +70,19 @@ export type BillingPlan = {
   plan_name: string;
   features: Record<string, unknown>;
   tool_limits: Record<string, number>;
+  payments_enabled?: boolean;
+  payment_provider?: string;
   usage: {
     share_report_used: number;
     share_report_limit: number;
     tools?: Record<string, { used: number; limit: number }>;
   };
+};
+
+export type BillingCheckout = {
+  checkout_id: string;
+  provider: string;
+  checkout_url: string;
 };
 
 export type PublicPlan = {
@@ -423,6 +431,13 @@ export async function switchBillingPlan(planId: string) {
       body: JSON.stringify({ plan_id: planId }),
     }
   );
+}
+
+export async function createBillingCheckout(planId: string) {
+  return apiFetch<BillingCheckout>("/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ plan_id: planId }),
+  });
 }
 
 export async function submitLead(payload: {
