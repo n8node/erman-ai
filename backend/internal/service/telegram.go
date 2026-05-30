@@ -38,7 +38,10 @@ func (s *TelegramService) SendTest(ctx context.Context) (bool, string) {
 
 func (s *TelegramService) NotifyRegistration(ctx context.Context, user *model.User, referral string) {
 	cfg, err := s.settings.GetEffective(ctx)
-	if err != nil || !cfg.Enabled || !cfg.NotifyRegistration {
+	if err != nil {
+		return
+	}
+	if !cfg.NotifyRegistration && s.max == nil {
 		return
 	}
 	vars := map[string]string{
@@ -51,12 +54,15 @@ func (s *TelegramService) NotifyRegistration(ctx context.Context, user *model.Us
 		"inviteOwner":    "",
 	}
 	text := applyTemplate(cfg.RegistrationTemplate, vars)
-	s.sendAsync(cfg, text, "registration")
+	s.dispatchAdminNotification(ctx, text, "registration", cfg.Enabled && cfg.NotifyRegistration)
 }
 
 func (s *TelegramService) NotifyEmailVerified(ctx context.Context, user *model.User) {
 	cfg, err := s.settings.GetEffective(ctx)
-	if err != nil || !cfg.Enabled || !cfg.NotifyEmailVerified {
+	if err != nil {
+		return
+	}
+	if !cfg.NotifyEmailVerified && s.max == nil {
 		return
 	}
 	vars := map[string]string{
@@ -64,15 +70,18 @@ func (s *TelegramService) NotifyEmailVerified(ctx context.Context, user *model.U
 		"name":  displayName(user.Email),
 	}
 	text := applyTemplate(cfg.EmailVerifiedTemplate, vars)
-	s.sendAsync(cfg, text, "email_verified")
+	s.dispatchAdminNotification(ctx, text, "email_verified", cfg.Enabled && cfg.NotifyEmailVerified)
 }
 
 func (s *TelegramService) NotifyPayment(ctx context.Context, user *model.User, plan *model.Plan, amountRub int) {
-	cfg, err := s.settings.GetEffective(ctx)
-	if err != nil || !cfg.Enabled || !cfg.NotifyPayment {
+	if plan == nil {
 		return
 	}
-	if plan == nil {
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil {
+		return
+	}
+	if !cfg.NotifyPayment && s.max == nil {
 		return
 	}
 	vars := map[string]string{
@@ -83,15 +92,30 @@ func (s *TelegramService) NotifyPayment(ctx context.Context, user *model.User, p
 		"currency":  "₽",
 	}
 	text := applyTemplate(cfg.PaymentTemplate, vars)
-	s.sendAsync(cfg, text, "payment")
+	s.dispatchAdminNotification(ctx, text, "payment", cfg.Enabled && cfg.NotifyPayment)
 }
 
-func (s *TelegramService) sendAsync(cfg model.TelegramSettings, text, kind string) {
+func (s *TelegramService) dispatchAdminNotification(ctx context.Context, text, kind string, sendTelegram bool) {
+	if strings.TrimSpace(text) == "" {
+		return
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		if err := s.send(ctx, cfg, text); err != nil {
-			slog.Warn("telegram notification failed", "kind", kind, "err", err)
+		if sendTelegram {
+			cfg, err := s.settings.GetEffective(ctx)
+			if err == nil && cfg.Enabled {
+				if err := s.send(ctx, cfg, text); err != nil {
+					slog.Warn("telegram notification failed", "kind", kind, "err", err)
+				}
+			}
+		}
+		if s.max != nil {
+			if err := s.max.SendNotification(ctx, text); err != nil {
+				if !errors.Is(err, ErrMaxDisabled) && !errors.Is(err, ErrMaxNotConfigured) {
+					slog.Warn("max notification failed", "kind", kind, "err", err)
+				}
+			}
 		}
 	}()
 }
@@ -139,9 +163,7 @@ func displayName(email string) string {
 
 func (s *TelegramService) NotifyProjectInquiry(ctx context.Context, detail *repository.AdminProjectInquiryDetail, publicBaseURL string) {
 	cfg, err := s.settings.GetEffective(ctx)
-	if err != nil || !cfg.Enabled {
-		return
-	}
+	sendTelegram := err == nil && cfg.Enabled
 
 	calcLine := "Без расчёта"
 	if detail.ProcessName != "" {
@@ -181,5 +203,36 @@ func (s *TelegramService) NotifyProjectInquiry(ctx context.Context, detail *repo
 	if shareURL != "" {
 		text += fmt.Sprintf("\nРасчёт (как у клиента): %s", shareURL)
 	}
-	s.sendAsync(cfg, text, "project_inquiry")
+	s.dispatchAdminNotification(ctx, text, "project_inquiry", sendTelegram)
+}
+
+func (s *TelegramService) NotifyProposalRequest(ctx context.Context, detail *repository.AdminProposalRequestDetail, publicBaseURL string) {
+	cfg, err := s.settings.GetEffective(ctx)
+	sendTelegram := err == nil && cfg.Enabled
+
+	calcLine := detail.ProcessName
+	if calcLine == "" {
+		calcLine = "—"
+	}
+	if detail.NetBenefitMonthly != nil {
+		calcLine += fmt.Sprintf(" · %.0f ₽/мес", *detail.NetBenefitMonthly)
+	}
+	if detail.PaybackMonths != nil && *detail.PaybackMonths > 0 && *detail.PaybackMonths < 1e6 {
+		calcLine += fmt.Sprintf(" · окупаемость %.1f мес", *detail.PaybackMonths)
+	}
+
+	adminURL := strings.TrimRight(publicBaseURL, "/") + "/dashboard/admin/proposal-requests/" + detail.ID
+
+	text := fmt.Sprintf(
+		"📄 Новая заявка «КП от Erman AI»\n\n"+
+			"Имя: %s\nEmail: %s\nTelegram: %s\n\n"+
+			"Расчёт: %s\n\n"+
+			"Комментарий:\n%s\n\n"+
+			"Открыть: %s",
+		detail.RequesterName, detail.UserEmail, detail.Telegram,
+		calcLine,
+		truncateRunes(detail.BusinessNote, 800),
+		adminURL,
+	)
+	s.dispatchAdminNotification(ctx, text, "proposal_request", sendTelegram)
 }

@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 
+	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
@@ -22,14 +24,24 @@ type ProposalRequestService struct {
 	requests *repository.ProposalRequestRepository
 	runs     *repository.ToolRunRepository
 	users    *repository.UserRepository
+	telegram *TelegramService
+	cfg      *config.Config
 }
 
 func NewProposalRequestService(
 	requests *repository.ProposalRequestRepository,
 	runs *repository.ToolRunRepository,
 	users *repository.UserRepository,
+	telegram *TelegramService,
+	cfg *config.Config,
 ) *ProposalRequestService {
-	return &ProposalRequestService{requests: requests, runs: runs, users: users}
+	return &ProposalRequestService{
+		requests: requests,
+		runs:     runs,
+		users:    users,
+		telegram: telegram,
+		cfg:      cfg,
+	}
 }
 
 func (s *ProposalRequestService) Create(
@@ -59,7 +71,24 @@ func (s *ProposalRequestService) Create(
 		return nil, ErrInvalidInput
 	}
 
-	return s.requests.Create(ctx, userID, runID, requesterName, telegram, businessNote)
+	req, err := s.requests.Create(ctx, userID, runID, requesterName, telegram, businessNote)
+	if err != nil {
+		return nil, err
+	}
+	s.notifyAdmin(ctx, req.ID)
+	return req, nil
+}
+
+func (s *ProposalRequestService) notifyAdmin(ctx context.Context, requestID string) {
+	if s.telegram == nil || s.cfg == nil {
+		return
+	}
+	detail, err := s.requests.GetAdminDetail(ctx, requestID)
+	if err != nil {
+		slog.Warn("proposal request admin notify load failed", "id", requestID, "err", err)
+		return
+	}
+	s.telegram.NotifyProposalRequest(ctx, detail, s.cfg.PublicBaseURL())
 }
 
 func (s *ProposalRequestService) ListAdmin(ctx context.Context, limit, offset int) (*ProposalRequestList, error) {

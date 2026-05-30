@@ -132,6 +132,21 @@ func (s *MaxService) buildSendConfig(cfg model.MaxSettings) (maxSendConfig, erro
 	return out, nil
 }
 
+func (s *MaxService) SendNotification(ctx context.Context, text string) error {
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil {
+		return err
+	}
+	if !cfg.Enabled {
+		return ErrMaxDisabled
+	}
+	sendCfg, err := s.buildSendConfig(cfg)
+	if err != nil {
+		return err
+	}
+	return s.maxSendMessage(ctx, sendCfg, text)
+}
+
 func (s *MaxService) SendUrgentAlert(ctx context.Context, text string) error {
 	cfg, err := s.settings.GetEffective(ctx)
 	if err != nil {

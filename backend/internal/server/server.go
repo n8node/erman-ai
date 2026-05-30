@@ -85,7 +85,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	calcSvc := service.NewCalculatorService(cfg, runRepo, planRepo)
 	shareSvc := service.NewShareService(sharedRepo, runRepo, billingSvc)
 	leadSvc := service.NewLeadService(leadRepo, runRepo)
-	proposalReqSvc := service.NewProposalRequestService(proposalReqRepo, runRepo, userRepo)
+	proposalReqSvc := service.NewProposalRequestService(proposalReqRepo, runRepo, userRepo, telegramSvc, cfg)
 	projectInquirySvc := service.NewProjectInquiryService(projectInquiryRepo, inquiryTokenRepo, runRepo, userRepo, shareSvc, mailSvc, telegramSvc, cfg)
 	runSvc := service.NewRunService(runRepo, planRepo)
 	tooltipSvc := service.NewTooltipService(tooltipRepo)

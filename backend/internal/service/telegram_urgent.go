@@ -115,8 +115,8 @@ func (s *TelegramService) dispatchUrgentAlert(ctx context.Context, cfg model.Tel
 	}
 
 	if s.max != nil {
-		if err := s.max.SendUrgentAlert(ctx, alertText); err != nil {
-			if !errors.Is(err, ErrMaxDisabled) {
+		if err := s.max.SendNotification(ctx, alertText); err != nil {
+			if !errors.Is(err, ErrMaxDisabled) && !errors.Is(err, ErrMaxNotConfigured) {
 				s.logger.Warn("urgent max delivery failed", "err", err)
 			}
 		} else {
