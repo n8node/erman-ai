@@ -422,7 +422,9 @@ export async function getBillingPlan() {
 }
 
 export async function fetchBillingPlans() {
-  return apiFetch<{ items: PublicPlan[] }>("/billing/plans");
+  return apiFetch<{ items: PublicPlan[]; payments_enabled?: boolean; payment_provider?: string }>(
+    "/public/billing/plans"
+  );
 }
 
 export async function switchBillingPlan(planId: string) {

@@ -790,6 +790,9 @@
   "billing": {
     "title": "Plans",
     "subtitle": "Choose the plan that fits your workflow",
+    "guestHint": "Sign in or register to activate a plan or purchase a subscription.",
+    "loginToActivate": "Sign in to activate",
+    "loginToPurchase": "Sign in to purchase",
     "loading": "Loading…",
     "loadFailed": "Failed to load plans",
     "actionFailed": "Action failed",

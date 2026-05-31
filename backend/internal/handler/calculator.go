@@ -312,7 +312,20 @@ func (h *BillingHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to load plans")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": plans})
+
+	paymentsEnabled := false
+	var paymentProvider string
+	if h.checkout != nil {
+		var provider model.PaymentProvider
+		paymentsEnabled, provider = h.checkout.PaymentsEnabled(r.Context())
+		paymentProvider = string(provider)
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"items":             plans,
+		"payments_enabled":  paymentsEnabled,
+		"payment_provider":  paymentProvider,
+	})
 }
 
 type switchPlanRequest struct {

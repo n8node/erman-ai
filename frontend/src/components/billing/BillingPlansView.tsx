@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ApiError,
@@ -14,6 +14,7 @@ import {
   type PublicPlan,
   type User,
 } from "@/lib/api";
+import { loginPathWithReturn } from "@/lib/return-url";
 import { cn } from "@/lib/utils";
 
 const FEATURE_KEYS = [
@@ -38,12 +39,14 @@ function formatLimit(n: number, t: ReturnType<typeof useTranslations>) {
 
 export function BillingPlansView() {
   const t = useTranslations("billing");
+  const router = useRouter();
   const searchParams = useSearchParams();
   const paymentStatus = searchParams.get("payment");
 
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [current, setCurrent] = useState<BillingPlan | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -55,14 +58,19 @@ export function BillingPlansView() {
     setLoading(true);
     setError("");
     try {
-      const [plansRes, currentPlan, me] = await Promise.all([
-        fetchBillingPlans(),
-        getBillingPlan(),
-        fetchMe(),
-      ]);
+      const plansRes = await fetchBillingPlans();
       setPlans(plansRes.items);
-      setCurrent(currentPlan);
+      setPaymentsEnabled(Boolean(plansRes.payments_enabled));
+
+      const me = await fetchMe().catch(() => null);
       setUser(me);
+      if (me) {
+        const currentPlan = await getBillingPlan();
+        setCurrent(currentPlan);
+        setPaymentsEnabled(Boolean(currentPlan.payments_enabled ?? plansRes.payments_enabled));
+      } else {
+        setCurrent(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
@@ -86,12 +94,16 @@ export function BillingPlansView() {
   async function handleAction(plan: PublicPlan) {
     if (current?.plan_id === plan.id) return;
 
+    if (!user) {
+      router.push(loginPathWithReturn("/billing"));
+      return;
+    }
+
     setBusyId(plan.id);
     setError("");
     setNotice("");
 
     const isFree = plan.price_monthly_rub === 0;
-    const paymentsEnabled = Boolean(current?.payments_enabled);
 
     try {
       if (isFree || isSuperadmin) {
@@ -134,6 +146,9 @@ export function BillingPlansView() {
       <div>
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
+        {!user && (
+          <p className="mt-2 text-sm text-text2">{t("guestHint")}</p>
+        )}
         {current && (
           <p className="mt-3 text-sm text-text2">
             {t("currentPlan")}: <span className="font-medium text-text">{current.plan_name}</span>
@@ -183,8 +198,11 @@ export function BillingPlansView() {
           const isFree = plan.price_monthly_rub === 0;
           const disabled = busyId === plan.id || isCurrent;
 
-          const buttonLabel =
-            busyId === plan.id
+          const buttonLabel = !user
+            ? isFree
+              ? t("loginToActivate")
+              : t("loginToPurchase")
+            : busyId === plan.id
               ? t("processing")
               : isCurrent
                 ? t("currentButton")

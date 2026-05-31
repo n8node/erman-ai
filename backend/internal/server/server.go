@@ -145,6 +145,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/public/calculator/budget-config", budgetConfigHandler.GetPublic)
 		api.Get("/public/pages/slugs", publicPageHandler.ListSlugs)
 		api.Get("/public/pages/{slug}", publicPageHandler.GetPublic)
+		api.Get("/public/billing/plans", billingHandler.ListPlans)
 		api.With(inquiryRL.Middleware).Post("/public/project-inquiries", projectInquiryHandler.CreatePublic)
 		api.Get("/public/project-inquiries/verify", projectInquiryHandler.Verify)
 		api.Post("/billing/yookassa/webhook", paymentWebhookHandler.YookassaWebhook)

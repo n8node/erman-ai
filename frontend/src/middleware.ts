@@ -15,7 +15,7 @@ const publicPages = [
   "/reset-password",
 ];
 
-const accountPrefixes = ["/billing", "/settings", "/api-keys"];
+const accountPrefixes = ["/settings", "/api-keys"];
 const adminPrefix = "/admin";
 
 const reservedSingleSegments = new Set([
@@ -59,6 +59,11 @@ function appPathname(pathname: string): string {
 function isSharePath(pathname: string) {
   const p = appPathname(pathname);
   return p.startsWith("/share/");
+}
+
+function isGuestBillingPath(pathname: string) {
+  const p = appPathname(pathname);
+  return p === "/billing" || p.startsWith("/billing/");
 }
 
 function isGuestToolPath(pathname: string) {
@@ -143,7 +148,7 @@ export async function middleware(request: NextRequest) {
       response = NextResponse.next();
     } else if (isAccountPath(pathname) || isAdminPath(pathname)) {
       response = loginRedirect(request, pathname);
-    } else if (isGuestToolPath(pathname)) {
+    } else if (isGuestToolPath(pathname) || isGuestBillingPath(pathname)) {
       response = NextResponse.next();
     } else {
       response = loginRedirect(request, pathname);
