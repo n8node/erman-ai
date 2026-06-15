@@ -15,6 +15,9 @@ const publicPages = [
   "/reset-password",
 ];
 
+/** API routes that must work without a session. */
+const publicApiPaths = ["/api/locale"];
+
 const accountPrefixes = ["/settings", "/api-keys"];
 const adminPrefix = "/admin";
 
@@ -69,6 +72,11 @@ function isGuestBillingPath(pathname: string) {
 function isGuestToolPath(pathname: string) {
   const p = appPathname(pathname);
   return p === "/" || p.startsWith("/tools") || p === "/discuss" || p.startsWith("/discuss/");
+}
+
+function isPublicApiPath(pathname: string) {
+  const p = appPathname(pathname);
+  return publicApiPaths.includes(p);
 }
 
 function isAccountPath(pathname: string) {
@@ -144,7 +152,7 @@ export async function middleware(request: NextRequest) {
   } else if (await isPublicContentPath(pathname)) {
     response = NextResponse.next();
   } else if (!token) {
-    if (publicPages.includes(pathname)) {
+    if (publicPages.includes(pathname) || isPublicApiPath(pathname)) {
       response = NextResponse.next();
     } else if (isAccountPath(pathname) || isAdminPath(pathname)) {
       response = loginRedirect(request, pathname);

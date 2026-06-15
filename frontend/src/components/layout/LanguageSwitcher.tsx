@@ -34,11 +34,13 @@ export function LanguageSwitcher({ userEmail, className }: Props) {
     setSaving(true);
     setOpen(false);
     try {
-      await fetch("/dashboard/api/locale", {
+      const res = await fetch("/dashboard/api/locale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ locale: next }),
       });
+      if (!res.ok) return;
       if (userEmail) {
         await updateMe(userEmail, next).catch(() => undefined);
       }
