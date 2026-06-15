@@ -176,6 +176,7 @@
       "payments": "Платежи",
       "telegram": "Telegram",
       "max": "MAX",
+      "yandexMetrika": "Яндекс Метрика",
       "translations": "Переводы",
       "projects": "Проекты",
       "publicPages": "Публичные страницы"
@@ -605,6 +606,23 @@
       "testSend": "Отправить тест",
       "testing": "Отправка…",
       "testFailed": "Не удалось отправить тест"
+    },
+    "yandexMetrika": {
+      "title": "Яндекс Метрика",
+      "subtitle": "Код счётчика для всех страниц личного кабинета (Next.js)",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить настройки",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Настройки Яндекс Метрики сохранены",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "sectionTitle": "Счётчик",
+      "sectionHint": "Вставьте полный HTML-код счётчика из Яндекс Метрики. Он будет добавлен перед закрывающим тегом body на всех страницах личного кабинета.",
+      "enable": "Включить счётчик",
+      "counterCode": "Код счётчика",
+      "counterCodePlaceholder": "<!-- Yandex.Metrika counter -->…",
+      "counterCodeHint": "Скопируйте код из кабинета Яндекс Метрики целиком, включая теги script и noscript.",
+      "updatedAt": "Обновлено: {time}"
     },
     "strategyLlm": {
       "title": "AI Strategy — LLM",

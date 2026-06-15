@@ -969,6 +969,33 @@ export async function sendAdminMaxTest() {
   });
 }
 
+export type YandexMetrikaSettings = {
+  enabled: boolean;
+  counter_code: string;
+};
+
+export type YandexMetrikaAdminView = {
+  settings: YandexMetrikaSettings;
+  updated_at?: string;
+};
+
+export type YandexMetrikaAdminUpdateRequest = {
+  settings: YandexMetrikaSettings;
+};
+
+export async function fetchAdminYandexMetrikaSettings() {
+  return apiFetch<YandexMetrikaAdminView>("/admin/yandex-metrika");
+}
+
+export async function updateAdminYandexMetrikaSettings(
+  payload: YandexMetrikaAdminUpdateRequest
+) {
+  return apiFetch<YandexMetrikaAdminView>("/admin/yandex-metrika", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function uploadAdminTelegramStartImage(file: File) {
   const form = new FormData();
   form.append("image", file);

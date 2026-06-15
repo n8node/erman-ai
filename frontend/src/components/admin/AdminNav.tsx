@@ -20,6 +20,7 @@ export function AdminNav() {
     { href: "/admin/payments", label: t("payments") },
     { href: "/admin/telegram", label: t("telegram") },
     { href: "/admin/max", label: t("max") },
+    { href: "/admin/yandex-metrika", label: t("yandexMetrika") },
     { href: "/admin/tooltips", label: t("tooltips") },
     { href: "/admin/translations", label: t("translations") },
     { href: "/admin/projects", label: t("projects") },

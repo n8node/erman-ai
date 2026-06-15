@@ -175,6 +175,7 @@
       "payments": "Payments",
       "telegram": "Telegram",
       "max": "MAX",
+      "yandexMetrika": "Yandex Metrika",
       "translations": "Translations",
       "projects": "Projects",
       "publicPages": "Public pages"
@@ -604,6 +605,23 @@
       "testSend": "Send test",
       "testing": "Sending…",
       "testFailed": "Test send failed"
+    },
+    "yandexMetrika": {
+      "title": "Yandex Metrika",
+      "subtitle": "Counter code for all personal cabinet pages (Next.js)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Yandex Metrika settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "sectionTitle": "Counter",
+      "sectionHint": "Paste the full HTML snippet from Yandex Metrika. It will be injected before the closing body tag on all cabinet pages.",
+      "enable": "Enable counter",
+      "counterCode": "Counter code",
+      "counterCodePlaceholder": "<!-- Yandex.Metrika counter -->…",
+      "counterCodeHint": "Copy the entire snippet from Yandex Metrika, including script and noscript tags.",
+      "updatedAt": "Updated: {time}"
     },
     "strategyLlm": {
       "title": "AI Strategy — LLM",
