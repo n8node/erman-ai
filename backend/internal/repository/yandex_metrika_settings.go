@@ -36,21 +36,24 @@ func (r *YandexMetrikaSettingsRepository) Get(ctx context.Context) (*model.Yande
 }
 
 func (r *YandexMetrikaSettingsRepository) Update(ctx context.Context, config model.YandexMetrikaSettings) (*model.YandexMetrikaSettingsRecord, error) {
+	return r.Upsert(ctx, config)
+}
+
+func (r *YandexMetrikaSettingsRepository) Upsert(ctx context.Context, config model.YandexMetrikaSettings) (*model.YandexMetrikaSettingsRecord, error) {
 	raw, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
 	const q = `
-		UPDATE yandex_metrika_settings SET config = $1, updated_at = NOW()
-		WHERE id = 1
+		INSERT INTO yandex_metrika_settings (id, config, updated_at)
+		VALUES (1, $1, NOW())
+		ON CONFLICT (id) DO UPDATE
+		SET config = EXCLUDED.config, updated_at = NOW()
 		RETURNING config, updated_at
 	`
 	var out []byte
 	var rec model.YandexMetrikaSettingsRecord
 	err = r.pool.QueryRow(ctx, q, raw).Scan(&out, &rec.UpdatedAt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrNotFound
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -37,10 +37,8 @@ func main() {
 
 	ctx := context.Background()
 
-	if cfg.Environment == "development" {
-		if err := runMigrations(cfg.DatabaseURL); err != nil {
-			logger.Warn("migrations skipped or failed", "error", err)
-		}
+	if err := runMigrations(cfg.DatabaseURL); err != nil {
+		logger.Warn("migrations failed", "error", err, "environment", cfg.Environment)
 	}
 
 	db, err := repository.NewPostgres(ctx, cfg.DatabaseURL)
