@@ -18,6 +18,7 @@ import {
 import {
   fetchAdminExternalProjects,
   fetchExternalProjects,
+  fetchPublicExternalProjects,
   type ExternalProject,
 } from "@/lib/api";
 import type { User } from "@/lib/api";
@@ -34,13 +35,11 @@ export function Sidebar({ user }: Props) {
   const isSuperAdmin = user?.role === "superadmin";
 
   const loadProjects = useCallback(() => {
-    if (!user) {
-      setProjects([]);
-      return;
-    }
-    const fetcher = isSuperAdmin
-      ? fetchAdminExternalProjects
-      : fetchExternalProjects;
+    const fetcher = !user
+      ? fetchPublicExternalProjects
+      : isSuperAdmin
+        ? fetchAdminExternalProjects
+        : fetchExternalProjects;
     fetcher()
       .then((data) => setProjects(data.items))
       .catch(() => setProjects([]));

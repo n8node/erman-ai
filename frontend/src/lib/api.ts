@@ -1252,6 +1252,10 @@ export async function fetchExternalProjects() {
   return apiFetch<{ items: ExternalProject[] }>("/projects");
 }
 
+export async function fetchPublicExternalProjects() {
+  return apiFetch<{ items: ExternalProject[] }>("/public/projects");
+}
+
 export async function fetchAdminExternalProjects() {
   return apiFetch<{ items: ExternalProject[] }>("/admin/projects");
 }

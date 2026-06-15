@@ -149,6 +149,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/public/pages/slugs", publicPageHandler.ListSlugs)
 		api.Get("/public/pages/{slug}", publicPageHandler.GetPublic)
 		api.Get("/public/billing/plans", billingHandler.ListPlans)
+		api.Get("/public/projects", externalProjectHandler.ListPublic)
 		api.Get("/public/yandex-metrika", yandexMetrikaHandler.GetPublic)
 		api.With(inquiryRL.Middleware).Post("/public/project-inquiries", projectInquiryHandler.CreatePublic)
 		api.Get("/public/project-inquiries/verify", projectInquiryHandler.Verify)
