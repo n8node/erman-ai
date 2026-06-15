@@ -22,6 +22,8 @@
     "resetPasswordSuccess": "Пароль обновлён. Войдите с новым паролем.",
     "emailNotVerified": "Подтвердите email — письмо уже отправлено",
     "passwordMismatch": "Пароли не совпадают",
+    "privacyPolicyConsent": "Согласие с политикой обработки персональных данных",
+    "privacyConsentRequired": "Подтвердите согласие с политикой обработки персональных данных",
     "passwordTooShort": "Пароль должен быть не короче 8 символов",
     "passwordPolicy": {
       "show": "Показать пароль",

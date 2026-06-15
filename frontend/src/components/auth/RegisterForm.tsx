@@ -17,6 +17,7 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [privacyConsent, setPrivacyConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +33,10 @@ export function RegisterForm() {
     }
     if (password !== confirm) {
       setError(t("passwordMismatch"));
+      return;
+    }
+    if (!privacyConsent) {
+      setError(t("privacyConsentRequired"));
       return;
     }
     setLoading(true);
@@ -93,9 +98,29 @@ export function RegisterForm() {
         onChange={setConfirm}
         autoComplete="new-password"
       />
+      <label className="flex items-start gap-2.5 text-sm text-text2">
+        <input
+          type="checkbox"
+          checked={privacyConsent}
+          onChange={(e) => {
+            setPrivacyConsent(e.target.checked);
+            if (e.target.checked) setError("");
+          }}
+          className="mt-0.5 rounded border-border2"
+        />
+        <Link
+          href="/privacy-policy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {t("privacyPolicyConsent")}
+        </Link>
+      </label>
       <button
         type="submit"
-        disabled={loading || !passwordOk}
+        disabled={loading || !passwordOk || !privacyConsent}
         className="w-full rounded-lg bg-text px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
       >
         {loading ? t("loading") : t("register")}

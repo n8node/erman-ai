@@ -22,6 +22,8 @@
     "resetPasswordSuccess": "Password updated. Sign in with your new password.",
     "emailNotVerified": "Confirm your email — we already sent a link",
     "passwordMismatch": "Passwords do not match",
+    "privacyPolicyConsent": "Consent to the personal data processing policy",
+    "privacyConsentRequired": "Please accept the personal data processing policy",
     "passwordTooShort": "Password must be at least 8 characters",
     "passwordPolicy": {
       "show": "Show password",
