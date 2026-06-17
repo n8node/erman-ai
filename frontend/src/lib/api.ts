@@ -383,6 +383,22 @@ export async function exportStrategyPDF(runId: string) {
   return res.blob();
 }
 
+export async function exportLegalScanPDF(runId: string) {
+  const res = await fetch(`${clientBase()}/tools/legal-scan/export`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ run_id: runId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof data.error === "string" ? data.error : "export failed"
+    );
+  }
+  return res.blob();
+}
+
 export async function runProposal(input: import("./api-proposal").ProposalInput) {
   return apiFetch<import("./api-proposal").ProposalRunStart>("/tools/proposal/run", {
     method: "POST",

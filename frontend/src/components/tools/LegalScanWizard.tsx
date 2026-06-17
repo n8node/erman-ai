@@ -17,7 +17,6 @@ import {
   LEGAL_SCAN_CRAWL_PRESETS,
   LEGAL_SCAN_FEATURE_CHIPS,
   LEGAL_SCAN_INDUSTRY_OPTIONS,
-  LEGAL_SCAN_PLAN_PAGE_LIMITS,
   LEGAL_SCAN_SIZE_OPTIONS,
   clampCrawlForPlan,
   isLegalScanInputValid,
@@ -205,7 +204,7 @@ function LegalScanWizardInner() {
       const planSlug = billingPlan?.plan_slug;
       const payload: LegalScanInput = {
         ...input,
-        crawl: clampCrawlForPlan(input.crawl, planSlug),
+        crawl: clampCrawlForPlan(input.crawl, planSlug, billingPlan?.features),
       };
       const data = await runLegalScan(payload);
       setRunId(data.run_id);
@@ -256,8 +255,12 @@ function LegalScanWizardInner() {
   }
 
   const scanLimitReached = limitExceeded;
-  const planPageLimit = LEGAL_SCAN_PLAN_PAGE_LIMITS[billingPlan?.plan_slug ?? "free"] ?? 5;
-  const canExport = !!user;
+  const configuredPlanPageLimit = Number(billingPlan?.features?.legal_scan_max_pages ?? 5);
+  const planPageLimit =
+    Number.isFinite(configuredPlanPageLimit) && configuredPlanPageLimit > 0
+      ? configuredPlanPageLimit
+      : 5;
+  const canExport = Boolean(billingPlan?.features?.export_pdf);
 
   if (loadingRun) {
     return (

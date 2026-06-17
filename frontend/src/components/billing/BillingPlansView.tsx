@@ -26,7 +26,7 @@ const FEATURE_KEYS = [
   "white_label",
 ] as const;
 
-const TOOL_KEYS = ["calculator", "strategy", "proposal"] as const;
+const TOOL_KEYS = ["calculator", "strategy", "proposal", "legal-scan"] as const;
 
 function formatRub(n: number) {
   return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
@@ -35,6 +35,11 @@ function formatRub(n: number) {
 function formatLimit(n: number, t: ReturnType<typeof useTranslations>) {
   if (n === -1) return t("unlimited");
   return t("runsPerMonth", { count: n });
+}
+
+function legalScanMaxPages(features: Record<string, unknown>) {
+  const value = Number(features.legal_scan_max_pages ?? 0);
+  return Number.isFinite(value) && value > 0 ? value : 5;
 }
 
 export function BillingPlansView() {
@@ -177,6 +182,12 @@ export function BillingPlansView() {
                 </li>
               );
             })}
+            <li className="flex justify-between gap-3">
+              <span className="text-text2">{t("legalScanPages")}</span>
+              <span className="font-medium text-text">
+                {t("pagesPerScan", { count: legalScanMaxPages(current.features) })}
+              </span>
+            </li>
           </ul>
         </div>
       )}
@@ -253,6 +264,12 @@ export function BillingPlansView() {
                     </li>
                   ) : null
                 )}
+                <li className="flex justify-between gap-3">
+                  <span className="min-w-0">{t("legalScanPages")}</span>
+                  <span className="shrink-0 font-medium text-text">
+                    {t("pagesPerScan", { count: legalScanMaxPages(plan.features) })}
+                  </span>
+                </li>
               </ul>
 
               <ul className="mt-4 flex-1 space-y-1.5 border-t border-border pt-4 text-sm">

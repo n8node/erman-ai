@@ -77,6 +77,7 @@ function formToPayload(form: FormState, creating: boolean): PlanUpsertInput & { 
     features[key] = Boolean(features[key]);
   }
   features.share_report_limit = Number(features.share_report_limit ?? 0);
+  features.legal_scan_max_pages = Number(features.legal_scan_max_pages ?? 5);
 
   const payload: PlanUpsertInput & { slug?: string } = {
     name: form.name.trim(),
@@ -416,6 +417,20 @@ export function AdminPlansEditor() {
                   onChange={(e) => setFeature("share_report_limit", Number(e.target.value))}
                 />
                 <p className="mt-1 text-[10px] text-text3">{t("limitsHint")}</p>
+              </div>
+              <div className="max-w-xs">
+                <label className="mb-1.5 block text-xs font-medium">
+                  {t("features.legal_scan_max_pages")}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  className={fieldClass}
+                  value={Number(form.features.legal_scan_max_pages ?? 5)}
+                  onChange={(e) => setFeature("legal_scan_max_pages", Number(e.target.value))}
+                />
+                <p className="mt-1 text-[10px] text-text3">{t("legalScanPagesHint")}</p>
               </div>
             </section>
 

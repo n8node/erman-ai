@@ -7,16 +7,18 @@ import (
 
 	"github.com/erman-ai/erman-ai/internal/middleware"
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
 )
 
 type LegalScanHandler struct {
-	svc  *service.LegalScanService
-	auth *service.AuthService
+	svc     *service.LegalScanService
+	auth    *service.AuthService
+	billing *service.BillingService
 }
 
-func NewLegalScanHandler(svc *service.LegalScanService, auth *service.AuthService) *LegalScanHandler {
-	return &LegalScanHandler{svc: svc, auth: auth}
+func NewLegalScanHandler(svc *service.LegalScanService, auth *service.AuthService, billing *service.BillingService) *LegalScanHandler {
+	return &LegalScanHandler{svc: svc, auth: auth, billing: billing}
 }
 
 func (h *LegalScanHandler) Run(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +57,66 @@ func (h *LegalScanHandler) Run(w http.ResponseWriter, r *http.Request) {
 		"run_id": run.ID,
 		"status": run.Status,
 	})
+}
+
+func (h *LegalScanHandler) Export(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	if err := h.billing.CanExportPDF(r.Context(), userID); err != nil {
+		if errors.Is(err, service.ErrFeatureNotAvailable) {
+			writeError(w, http.StatusPaymentRequired, "pdf export requires pro plan")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "billing check failed")
+		return
+	}
+
+	var req exportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RunID == "" {
+		writeError(w, http.StatusBadRequest, "run_id required")
+		return
+	}
+
+	user, err := h.auth.GetMe(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	run, err := h.svc.GetRunForUser(r.Context(), req.RunID, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "run not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "run lookup failed")
+		return
+	}
+	if run.ToolSlug != "legal-scan" || run.Status != model.RunStatusDone {
+		writeError(w, http.StatusBadRequest, "legal scan run not ready")
+		return
+	}
+
+	in, out, err := service.ParseLegalScanRun(run)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "invalid run data")
+		return
+	}
+
+	pdfBytes, err := service.GenerateLegalScanPDF(in, out, user.Locale)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "pdf generation failed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `attachment; filename="legal-scan-report.pdf"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(pdfBytes)
 }
 
 type LegalRiskAdminHandler struct {

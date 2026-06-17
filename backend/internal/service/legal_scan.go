@@ -62,7 +62,7 @@ func (s *LegalScanService) StartRun(ctx context.Context, userID string, input mo
 		return nil, err
 	}
 
-	normalizeLegalScanCrawlConfig(&input.Crawl, up.PlanSlug)
+	normalizeLegalScanCrawlConfig(&input.Crawl, up.Plan)
 	if !input.Crawl.SameHostOnly {
 		input.Crawl.SameHostOnly = true
 	}
@@ -175,6 +175,22 @@ func (s *LegalScanService) failRun(ctx context.Context, runID, msg string) {
 		msg = msg[:500]
 	}
 	_ = s.runs.UpdateRunError(ctx, runID, msg)
+}
+
+func (s *LegalScanService) GetRunForUser(ctx context.Context, runID, userID string) (*model.ToolRun, error) {
+	return s.runs.GetByIDForUser(ctx, runID, userID)
+}
+
+func ParseLegalScanRun(run *model.ToolRun) (model.LegalScanInput, model.LegalScanOutput, error) {
+	var in model.LegalScanInput
+	var out model.LegalScanOutput
+	if err := json.Unmarshal(run.Input, &in); err != nil {
+		return in, out, err
+	}
+	if err := json.Unmarshal(run.Output, &out); err != nil {
+		return in, out, err
+	}
+	return in, out, nil
 }
 
 func normalizeLegalScanInput(in *model.LegalScanInput) {

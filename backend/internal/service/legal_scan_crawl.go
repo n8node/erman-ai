@@ -20,7 +20,7 @@ const (
 
 var legalScanPlanPageLimits = map[string]int{
 	"free":     5,
-	"pro":      20,
+	"pro":      30,
 	"business": 50,
 }
 
@@ -39,14 +39,14 @@ type legalScanCrawlOptions struct {
 	OnProgress   func(meta model.LegalScanCrawlMeta, layer1 model.LegalScanLayer1)
 }
 
-func normalizeLegalScanCrawlConfig(c *model.LegalScanCrawlConfig, planSlug string) {
+func normalizeLegalScanCrawlConfig(c *model.LegalScanCrawlConfig, plan model.Plan) {
 	if c.MaxPages <= 0 {
 		c.MaxPages = legalScanDefaultMaxPages
 	}
 	if c.MaxDepth < 0 {
 		c.MaxDepth = legalScanDefaultMaxDepth
 	}
-	planCap := legalScanPlanPageLimit(planSlug)
+	planCap := legalScanPlanPageLimit(plan)
 	if c.MaxPages > planCap {
 		c.MaxPages = planCap
 	}
@@ -55,8 +55,26 @@ func normalizeLegalScanCrawlConfig(c *model.LegalScanCrawlConfig, planSlug strin
 	}
 }
 
-func legalScanPlanPageLimit(planSlug string) int {
-	if lim, ok := legalScanPlanPageLimits[planSlug]; ok {
+func legalScanPlanPageLimit(plan model.Plan) int {
+	if plan.Features != nil {
+		if v, ok := plan.Features["legal_scan_max_pages"]; ok {
+			switch t := v.(type) {
+			case float64:
+				if t > 0 {
+					return int(t)
+				}
+			case int:
+				if t > 0 {
+					return t
+				}
+			case int64:
+				if t > 0 {
+					return int(t)
+				}
+			}
+		}
+	}
+	if lim, ok := legalScanPlanPageLimits[plan.Slug]; ok {
 		return lim
 	}
 	return legalScanPlanPageLimits["free"]

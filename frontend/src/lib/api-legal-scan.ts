@@ -122,7 +122,7 @@ export const LEGAL_SCAN_CRAWL_PRESETS = [
 
 export const LEGAL_SCAN_PLAN_PAGE_LIMITS: Record<string, number> = {
   free: 5,
-  pro: 20,
+  pro: 30,
   business: 50,
 };
 
@@ -149,9 +149,14 @@ export function isLegalScanInputValid(input: LegalScanInput): boolean {
 
 export function clampCrawlForPlan(
   crawl: LegalScanCrawlConfig,
-  planSlug?: string
+  planSlug?: string,
+  features?: Record<string, unknown>
 ): LegalScanCrawlConfig {
-  const cap = LEGAL_SCAN_PLAN_PAGE_LIMITS[planSlug ?? "free"] ?? 5;
+  const configuredCap = Number(features?.legal_scan_max_pages ?? 0);
+  const cap =
+    Number.isFinite(configuredCap) && configuredCap > 0
+      ? configuredCap
+      : LEGAL_SCAN_PLAN_PAGE_LIMITS[planSlug ?? "free"] ?? 5;
   return {
     ...crawl,
     max_pages: Math.min(Math.max(1, crawl.max_pages), cap),

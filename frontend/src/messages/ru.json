@@ -250,6 +250,7 @@
       "sectionLimits": "Лимиты инструментов",
       "sectionFeatures": "Функции",
       "limitsHint": "−1 = безлимит",
+      "legalScanPagesHint": "Максимум страниц за один Legal-скан (1–50).",
       "month": "мес",
       "badgePublic": "Публичный",
       "badgeArchived": "Архив",
@@ -267,7 +268,8 @@
         "white_label": "White-label",
         "hide_share_promo": "Скрыть промо на share-странице",
         "share_report": "Публичные ссылки на отчёт",
-        "share_report_limit": "Лимит share-ссылок / мес"
+        "share_report_limit": "Лимит share-ссылок / мес",
+        "legal_scan_max_pages": "Legal-скан: максимум страниц"
       }
     },
     "tooltips": {
@@ -901,10 +903,13 @@
     "usageTitle": "Использование в этом месяце",
     "usageRemaining": "{used} / {limit}",
     "usageUnlimited": "безлимит",
+    "legalScanPages": "Глубина Legal-скана",
+    "pagesPerScan": "до {count} стр. / скан",
     "tools": {
       "calculator": "Калькулятор автоматизации",
       "strategy": "AI-стратегия",
-      "proposal": "Генератор КП"
+      "proposal": "Генератор КП",
+      "legal-scan": "Legal-скан сайта"
     },
     "features": {
       "export_pdf": "Экспорт PDF",
@@ -1616,9 +1621,9 @@
         "medium": "средний",
         "low": "низкий"
       },
-      "toProposal": "Сформировать КП по рискам",
       "exportPdf": "Экспорт PDF",
-      "exportSoon": "Скоро",
+      "pdfLoading": "Генерация PDF…",
+      "pdfFailed": "Не удалось экспортировать PDF",
       "exportLocked": "PDF — после входа и тарифа Pro+",
       "restart": "Запустить заново"
     },

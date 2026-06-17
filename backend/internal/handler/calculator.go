@@ -271,7 +271,7 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 	shareLimit := h.billing.ShareReportLimit(&up.Plan)
 
 	toolUsage := make(map[string]map[string]int)
-	for _, slug := range []string{"calculator", "strategy", "proposal"} {
+	for _, slug := range []string{"calculator", "strategy", "proposal", "legal-scan"} {
 		limit := -1
 		if up.Plan.ToolLimits != nil {
 			if v, ok := up.Plan.ToolLimits[slug]; ok {
@@ -291,11 +291,11 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"plan_id":     up.Plan.ID,
-		"plan_slug":   up.PlanSlug,
-		"plan_name":   up.Plan.Name,
-		"features":    up.Plan.Features,
-		"tool_limits": up.Plan.ToolLimits,
+		"plan_id":          up.Plan.ID,
+		"plan_slug":        up.PlanSlug,
+		"plan_name":        up.Plan.Name,
+		"features":         up.Plan.Features,
+		"tool_limits":      up.Plan.ToolLimits,
 		"payments_enabled": paymentsEnabled,
 		"payment_provider": paymentProvider,
 		"usage": map[string]any{
@@ -322,9 +322,9 @@ func (h *BillingHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"items":             plans,
-		"payments_enabled":  paymentsEnabled,
-		"payment_provider":  paymentProvider,
+		"items":            plans,
+		"payments_enabled": paymentsEnabled,
+		"payment_provider": paymentProvider,
 	})
 }
 
@@ -412,8 +412,8 @@ func (h *BillingHandler) writeBillingError(w http.ResponseWriter, err error) {
 }
 
 type ToolsHandler struct {
-	plans *repository.PlanRepository
-	runs  *repository.ToolRunRepository
+	plans   *repository.PlanRepository
+	runs    *repository.ToolRunRepository
 	billing *service.BillingService
 }
 

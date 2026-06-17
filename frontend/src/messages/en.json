@@ -250,6 +250,7 @@
       "sectionLimits": "Tool limits",
       "sectionFeatures": "Features",
       "limitsHint": "−1 = unlimited",
+      "legalScanPagesHint": "Maximum pages per Legal Site Scan (1–50).",
       "month": "mo",
       "badgePublic": "Public",
       "badgeArchived": "Archived",
@@ -267,7 +268,8 @@
         "white_label": "White-label",
         "hide_share_promo": "Hide promo on share page",
         "share_report": "Public report links",
-        "share_report_limit": "Share links limit / month"
+        "share_report_limit": "Share links limit / month",
+        "legal_scan_max_pages": "Legal scan: max pages"
       }
     },
     "tooltips": {
@@ -901,10 +903,13 @@
     "usageTitle": "Usage this month",
     "usageRemaining": "{used} / {limit}",
     "usageUnlimited": "unlimited",
+    "legalScanPages": "Legal scan depth",
+    "pagesPerScan": "up to {count} pages / scan",
     "tools": {
       "calculator": "Automation Calculator",
       "strategy": "AI Strategy",
-      "proposal": "Proposal Generator"
+      "proposal": "Proposal Generator",
+      "legal-scan": "Legal Site Scan"
     },
     "features": {
       "export_pdf": "PDF export",
@@ -1616,9 +1621,9 @@
         "medium": "medium",
         "low": "low"
       },
-      "toProposal": "Create proposal from risks",
       "exportPdf": "Export PDF",
-      "exportSoon": "Coming soon",
+      "pdfLoading": "Generating PDF…",
+      "pdfFailed": "PDF export failed",
       "exportLocked": "PDF — after login and Pro+ plan",
       "restart": "Run again"
     },

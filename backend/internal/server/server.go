@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
-	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/handler"
 	"github.com/erman-ai/erman-ai/internal/middleware"
+	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -118,7 +118,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	strategyHandler := handler.NewStrategyHandler(strategySvc, authSvc, billingSvc)
 	proposalHandler := handler.NewProposalHandler(proposalSvc, authSvc, billingSvc)
 	auditHandler := handler.NewAuditHandler(auditSvc, authSvc)
-	legalScanHandler := handler.NewLegalScanHandler(legalScanSvc, authSvc)
+	legalScanHandler := handler.NewLegalScanHandler(legalScanSvc, authSvc, billingSvc)
 	legalRiskAdminHandler := handler.NewLegalRiskAdminHandler(legalRiskSvc)
 	legalScanLLMHandler := handler.NewLegalScanLLMSettingsHandler(legalScanLLMSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
@@ -198,6 +198,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/proposal/export", proposalHandler.Export)
 			protected.Post("/tools/audit/run", auditHandler.Run)
 			protected.Post("/tools/legal-scan/run", legalScanHandler.Run)
+			protected.Post("/tools/legal-scan/export", legalScanHandler.Export)
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
 			protected.Get("/runs", runsHandler.List)

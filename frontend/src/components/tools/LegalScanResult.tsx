@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { AlertTriangle, Check } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Check, Download, Lock } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { exportLegalScanPDF } from "@/lib/api";
 import {
   findRiskForCheckItem,
   type LegalScanInput,
@@ -128,6 +129,8 @@ function RiskCard({
 
 export function LegalScanResult({ input, output, runId, canExport, onRestart }: Props) {
   const t = useTranslations("legalScan.result");
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const checklist = output.layer1?.checklist ?? [];
   const shownRiskIds = new Set<string>();
   checklist.forEach((item) => {
@@ -145,6 +148,25 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
   const showLeakNote =
     input.site_features.forms &&
     (output.summary.turnover_fine_note || output.risks.some((r) => r.risk_id === "data_leak_exposure"));
+
+  async function handlePdf() {
+    if (!canExport) return;
+    setPdfError("");
+    setLoadingPdf(true);
+    try {
+      const blob = await exportLegalScanPDF(runId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "legal-scan-report.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : t("pdfFailed"));
+    } finally {
+      setLoadingPdf(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -286,24 +308,23 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
       <p className="px-0.5 text-xs leading-relaxed text-text3">{output.disclaimer}</p>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-5">
-        <Link
-          href={`/tools/proposal?legal_scan_run_id=${runId}`}
-          className="rounded-lg bg-text px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
-        >
-          {t("toProposal")}
-        </Link>
         {canExport ? (
           <button
             type="button"
-            disabled
-            className="rounded-lg border border-border2 px-5 py-2.5 text-sm font-medium text-text2 opacity-60"
-            title={t("exportSoon")}
+            onClick={handlePdf}
+            disabled={loadingPdf}
+            className="inline-flex items-center gap-2 rounded-lg border border-border2 px-5 py-2.5 text-sm font-medium text-text hover:bg-bg2 disabled:opacity-60"
           >
-            {t("exportPdf")}
+            <Download className="h-4 w-4" />
+            {loadingPdf ? t("pdfLoading") : t("exportPdf")}
           </button>
         ) : (
-          <span className="text-xs text-text3">{t("exportLocked")}</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-text3">
+            <Lock className="h-3.5 w-3.5" />
+            {t("exportLocked")}
+          </span>
         )}
+        {pdfError && <span className="text-xs text-error">{pdfError}</span>}
         <button
           type="button"
           onClick={onRestart}

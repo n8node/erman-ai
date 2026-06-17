@@ -2,6 +2,7 @@ package service
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -61,23 +62,10 @@ func TestRenderCalculatorReportHTML(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(html, "Обработка") && !contains(html, "Тест") {
+	if !strings.Contains(html, "Обработка") && !strings.Contains(html, "Тест") {
 		t.Fatalf("html missing process name")
 	}
-	if !contains(html, "Проверка") {
+	if !strings.Contains(html, "Проверка") {
 		t.Fatalf("html missing cyrillic step")
 	}
-}
-
-func contains(s, sub string) bool {
-	return len(s) >= len(sub) && (s == sub || len(sub) == 0 || indexOf(s, sub) >= 0)
-}
-
-func indexOf(s, sub string) int {
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return i
-		}
-	}
-	return -1
 }

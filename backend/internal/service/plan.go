@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"math"
 	"regexp"
 	"strings"
 
@@ -126,7 +127,30 @@ func normalizePlanInput(in *PlanInput, creating bool) error {
 	if in.Features == nil {
 		in.Features = map[string]any{}
 	}
+	normalizeNumericFeature(in.Features, "share_report_limit", -1, math.MaxInt32, 0)
+	normalizeNumericFeature(in.Features, "legal_scan_max_pages", 1, legalScanCrawlMaxPagesCap, 5)
 	return nil
+}
+
+func normalizeNumericFeature(features map[string]any, key string, min int, max int, fallback int) {
+	value := fallback
+	if v, ok := features[key]; ok {
+		switch t := v.(type) {
+		case float64:
+			value = int(t)
+		case int:
+			value = t
+		case int64:
+			value = int(t)
+		}
+	}
+	if value < min {
+		value = min
+	}
+	if max > 0 && value > max {
+		value = max
+	}
+	features[key] = value
 }
 
 func inputToPlan(in PlanInput) *model.Plan {
@@ -145,13 +169,14 @@ func inputToPlan(in PlanInput) *model.Plan {
 
 func DefaultPlanFeatures() map[string]any {
 	return map[string]any{
-		"export_pdf":          false,
-		"export_docx":         false,
-		"api_access":          false,
-		"priority_queue":      false,
-		"white_label":         false,
-		"hide_share_promo":    false,
-		"share_report":        false,
-		"share_report_limit":  float64(0),
+		"export_pdf":           false,
+		"export_docx":          false,
+		"api_access":           false,
+		"priority_queue":       false,
+		"white_label":          false,
+		"hide_share_promo":     false,
+		"share_report":         false,
+		"share_report_limit":   float64(0),
+		"legal_scan_max_pages": float64(5),
 	}
 }
