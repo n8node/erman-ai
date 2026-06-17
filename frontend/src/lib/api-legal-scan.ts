@@ -35,6 +35,9 @@ export type LegalScanCheckItem = {
   key: string;
   label: string;
   status: "pending" | "running" | "ok" | "risk";
+  evidence?: string;
+  page_urls?: string[];
+  found_data?: string[];
 };
 
 export type LegalScanLayer1 = {
@@ -51,6 +54,9 @@ export type LegalScanRiskItem = {
   fine_text: string;
   severity: "high" | "medium" | "low";
   how_to_fix: string;
+  evidence?: string;
+  page_urls?: string[];
+  found_data?: string[];
 };
 
 export type LegalScanSummary = {

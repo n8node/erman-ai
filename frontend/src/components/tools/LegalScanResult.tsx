@@ -44,6 +44,8 @@ function RiskCard({
   article,
   fineText,
   howToFix,
+  pageUrls,
+  foundData,
   t,
 }: {
   title: string;
@@ -52,6 +54,8 @@ function RiskCard({
   article?: string;
   fineText?: string;
   howToFix?: string;
+  pageUrls?: string[];
+  foundData?: string[];
   t: ReturnType<typeof useTranslations<"legalScan.result">>;
 }) {
   return (
@@ -73,6 +77,33 @@ function RiskCard({
         </span>
       </div>
       <p className="mb-2.5 text-[13.5px] text-text2">{explanation}</p>
+      {foundData && foundData.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {foundData.map((d) => (
+            <span
+              key={d}
+              className="rounded-md border border-border bg-bg2 px-2 py-0.5 font-mono text-[11.5px] text-text"
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
+      {pageUrls && pageUrls.length > 0 && (
+        <div className="mb-2.5 flex flex-col gap-1">
+          {pageUrls.map((url) => (
+            <a
+              key={url}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[12.5px] text-accent hover:underline"
+            >
+              {url}
+            </a>
+          ))}
+        </div>
+      )}
       {severity !== "none" && article && fineText && (
         <>
           <div className="flex flex-wrap gap-2 text-[12.5px]">
@@ -178,7 +209,9 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
                 key={item.key}
                 title={item.label}
                 severity="none"
-                explanation={t("noRiskExplanation")}
+                explanation={item.evidence || t("noRiskExplanation")}
+                pageUrls={item.page_urls}
+                foundData={item.found_data}
                 t={t}
               />
             );
@@ -190,10 +223,12 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
               key={item.key}
               title={risk?.title ?? item.label}
               severity={risk?.severity ?? "medium"}
-              explanation={risk?.explanation ?? t("riskDetectedGeneric")}
+              explanation={risk?.explanation ?? item.evidence ?? t("riskDetectedGeneric")}
               article={risk?.article}
               fineText={risk?.fine_text}
               howToFix={risk?.how_to_fix}
+              pageUrls={risk?.page_urls ?? item.page_urls}
+              foundData={risk?.found_data ?? item.found_data}
               t={t}
             />
           );
@@ -209,6 +244,8 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
           article={risk.article}
           fineText={risk.fine_text}
           howToFix={risk.how_to_fix}
+          pageUrls={risk.page_urls}
+          foundData={risk.found_data}
           t={t}
         />
       ))}

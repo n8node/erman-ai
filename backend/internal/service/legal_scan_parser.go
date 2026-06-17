@@ -8,13 +8,8 @@ import (
 )
 
 var (
-	reINN       = regexp.MustCompile(`\b\d{10}\b|\b\d{12}\b`)
-	reOGRN      = regexp.MustCompile(`\b\d{13}\b|\b\d{15}\b`)
-	reEmail     = regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}`)
-	rePhone     = regexp.MustCompile(`(?:\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}`)
-	reErid      = regexp.MustCompile(`(?i)(erid[=:][\w\-]+|data-erid|token=[\w\-]{10,})`)
-	reAdLabel   = regexp.MustCompile(`(?i)\bреклама\b`)
-	reFormHTTP  = regexp.MustCompile(`(?i)<form[^>]+action=["']http://`)
+	reAdLabel  = regexp.MustCompile(`(?i)\bреклама\b`)
+	reFormHTTP = regexp.MustCompile(`(?i)<form[^>]+action=["']http://`)
 )
 
 var legalScanChecks = []struct {
@@ -39,6 +34,7 @@ var legalScanChecks = []struct {
 func runLegalScanLayer1(page *fetchedPage, features model.LegalScanSiteFeatures) model.LegalScanLayer1 {
 	html := page.HTML
 	lower := strings.ToLower(html)
+	ev := extractScanEvidence(html, page.URL)
 
 	trackers := detectTrackers(lower)
 	hasTrackers := len(trackers) > 0
@@ -50,12 +46,12 @@ func runLegalScanLayer1(page *fetchedPage, features model.LegalScanSiteFeatures)
 		CookieBanner:      hasCookieBanner(lower),
 		CookiePolicy:      hasCookiePolicy(lower),
 		FormConsent:       hasFormConsent(lower),
-		RequisitesINN:     reINN.MatchString(html) || reOGRN.MatchString(html),
-		Contacts:          reEmail.MatchString(html) || rePhone.MatchString(html),
+		RequisitesINN:     len(ev.INNs) > 0 || len(ev.OGRNs) > 0,
+		Contacts:          len(ev.Emails) > 0 || len(ev.Phones) > 0,
 		Offer:             hasOffer(lower),
 		Terms:             hasTerms(lower),
 		ConsentWithdrawal: hasConsentWithdrawal(lower),
-		AdMarking:         reErid.MatchString(html) || reAdLabel.MatchString(html),
+		AdMarking:         len(ev.EridTokens) > 0 || reAdLabel.MatchString(html),
 		Trackers:          trackers,
 		HasTrackers:       hasTrackers,
 		FormsCollectPD:    hasPDForms(lower),
@@ -63,11 +59,8 @@ func runLegalScanLayer1(page *fetchedPage, features model.LegalScanSiteFeatures)
 		ForeignTrackers:   foreignTrackers,
 	}
 
-	if !features.Forms {
-		findings.FormsCollectPD = false
-	}
-
-	checklist := buildLegalScanChecklist(findings, features)
+	normalizeFindingsForFeatures(&findings, features)
+	checklist := buildLegalScanChecklist(findings, features, ev, page.URL)
 
 	return model.LegalScanLayer1{
 		FinalURL:  page.URL,
@@ -76,9 +69,18 @@ func runLegalScanLayer1(page *fetchedPage, features model.LegalScanSiteFeatures)
 	}
 }
 
-func buildLegalScanChecklist(f model.LegalScanFindings, features model.LegalScanSiteFeatures) []model.LegalScanCheckItem {
+func buildLegalScanChecklist(
+	f model.LegalScanFindings,
+	features model.LegalScanSiteFeatures,
+	ev scanEvidence,
+	pageURL string,
+) []model.LegalScanCheckItem {
 	items := make([]model.LegalScanCheckItem, 0, len(legalScanChecks))
 	for _, c := range legalScanChecks {
+		if !isLegalScanCheckApplicable(c.Key, features, f) {
+			continue
+		}
+
 		status := "ok"
 		switch c.Key {
 		case "ssl":
@@ -118,7 +120,7 @@ func buildLegalScanChecklist(f model.LegalScanFindings, features model.LegalScan
 				status = "risk"
 			}
 		case "withdraw":
-			if !f.ConsentWithdrawal {
+			if features.Forms && !f.ConsentWithdrawal {
 				status = "risk"
 			}
 		case "admark":
@@ -126,15 +128,22 @@ func buildLegalScanChecklist(f model.LegalScanFindings, features model.LegalScan
 				status = "risk"
 			}
 		case "trackers":
-			if f.HasTrackers {
-				status = "ok"
-			}
+			status = "ok"
 		case "formenc":
-			if f.FormsUnencrypted {
+			if features.Forms && f.FormsUnencrypted {
 				status = "risk"
 			}
 		}
-		items = append(items, model.LegalScanCheckItem{Key: c.Key, Label: c.Label, Status: status})
+
+		evidence, pageURLs, foundData := attachCheckEvidence(c.Key, status, ev, f, pageURL)
+		items = append(items, model.LegalScanCheckItem{
+			Key:       c.Key,
+			Label:     c.Label,
+			Status:    status,
+			Evidence:  evidence,
+			PageURLs:  pageURLs,
+			FoundData: foundData,
+		})
 	}
 	return items
 }
@@ -206,10 +215,10 @@ func detectTrackers(lower string) []string {
 		id  string
 		sig string
 	}{
-		{"yandex_metrika", "mc.yandex.ru"},
-		{"ga4", "googletagmanager.com"},
-		{"meta_pixel", "connect.facebook.net"},
-		{"vk_pixel", "vk.com/js/api/openapi.js"},
+		{"Яндекс.Метрика", "mc.yandex.ru"},
+		{"Google Analytics / GTM", "googletagmanager.com"},
+		{"Meta Pixel", "connect.facebook.net"},
+		{"VK Pixel", "vk.com/js/api/openapi.js"},
 	}
 	for _, c := range checks {
 		if strings.Contains(lower, c.sig) {

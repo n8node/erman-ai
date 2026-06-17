@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/erman-ai/erman-ai/internal/config"
-	"github.com/erman-ai/erman-ai/internal/i18n"
 	"github.com/erman-ai/erman-ai/internal/model"
-	"github.com/erman-ai/erman-ai/internal/prompts"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
@@ -124,93 +122,14 @@ func (s *LegalScanService) processRun(runID string) {
 	}
 	matched := matchLegalRisks(allRisks, layer1.Findings, input.SiteFeatures)
 
-	llmStored, err := s.llmCfg.GetStored(ctx)
-	if err != nil {
-		s.failRun(ctx, runID, "llm settings unavailable")
-		return
-	}
-	strategyStored, err := s.strategy.GetStored(ctx)
-	if err != nil {
-		s.failRun(ctx, runID, "llm keys unavailable")
-		return
-	}
-
-	settings := llmStored.Config.LegalScanLLMSettings
-	provider := settings.Provider
-	apiKey := s.llm.ResolveKey(provider, strategyStored.Config.OpenRouterAPIKey, strategyStored.Config.DeepSeekAPIKey)
-	if apiKey == "" {
-		s.failRun(ctx, runID, "llm api key not configured")
-		return
-	}
-
-	findingsJSON, _ := json.Marshal(layer1.Findings)
-	riskPayload := buildRiskTablePayload(matched)
-	riskJSON, _ := json.Marshal(riskPayload)
-
-	locale := i18n.NormalizeLocale(input.Locale)
-	systemPrompt := settings.SystemPrompt
-	if strings.TrimSpace(systemPrompt) == "" {
-		systemPrompt = prompts.LegalScanSystemPrompt(locale)
-	}
-
-	maxTokens := settings.MaxTokens
-	if maxTokens > 8192 {
-		maxTokens = 8192
-	}
-
-	req := LLMCompletionRequest{
-		Provider:     provider,
-		Model:        settings.ActiveModel(),
-		SystemPrompt: systemPrompt,
-		UserPrompt: prompts.LegalScanUserPrompt(
-			input.Industry,
-			input.SiteFeatures.TrafficFromAds,
-			string(findingsJSON),
-			string(riskJSON),
-		),
-		Temperature: settings.Temperature,
-		MaxTokens:   maxTokens,
-		APIKey:      apiKey,
-		BaseURL:     s.llm.BaseURL(provider),
-	}
-
-	var llmPart model.LegalScanOutput
-	if len(matched) == 0 {
-		llmPart = model.LegalScanOutput{
-			Summary: model.LegalScanSummary{},
-			Risks:   []model.LegalScanRiskItem{},
-			Disclaimer: legalScanDisclaimerRU,
-		}
-	} else {
-		result, err := s.llm.Complete(ctx, req)
-		if err != nil && isRetryableLLMError(err) {
-			result, err = s.llm.Complete(ctx, req)
-		}
-		if err != nil {
-			s.failRun(ctx, runID, err.Error())
-			return
-		}
-
-		raw, err := parseLegalScanLLMOutput(result.Content)
-		if err != nil {
-			s.logger.Warn("legal scan llm parse failed, using fallback", "run_id", runID, "error", err)
-			raw = &model.LegalScanLLMOutput{}
-		}
-		validated := validateLegalScanOutput(raw, matched)
-		llmPart = validated
-
-		_ = s.usageLog.Create(ctx, run.UserID, runID, result.Model, result.PromptTokens, result.CompletionTokens, 0)
-	}
+	reportPart := buildDeterministicLegalScanReport(layer1, matched, input.Industry)
 
 	final := model.LegalScanOutput{
 		Layer1:       layer1,
-		Summary:      llmPart.Summary,
-		Risks:        llmPart.Risks,
-		IndustryNote: llmPart.IndustryNote,
-		Disclaimer:   llmPart.Disclaimer,
-	}
-	if final.Summary.RisksCount == 0 {
-		final.Summary.RisksCount = len(final.Risks)
+		Summary:      reportPart.Summary,
+		Risks:        reportPart.Risks,
+		IndustryNote: reportPart.IndustryNote,
+		Disclaimer:   reportPart.Disclaimer,
 	}
 
 	outJSON, err := json.Marshal(final)
@@ -219,8 +138,7 @@ func (s *LegalScanService) processRun(runID string) {
 		return
 	}
 
-	modelUsed := settings.ActiveModel()
-	if err := s.runs.UpdateRunDone(ctx, runID, outJSON, 0, modelUsed); err != nil {
+	if err := s.runs.UpdateRunDone(ctx, runID, outJSON, 0, ""); err != nil {
 		s.logger.Error("legal scan save failed", "run_id", runID, "error", err)
 		s.failRun(context.Background(), runID, "failed to save output")
 	}

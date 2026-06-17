@@ -8,12 +8,18 @@ import (
 )
 
 func matchLegalRisks(risks []model.LegalRisk, findings model.LegalScanFindings, features model.LegalScanSiteFeatures) []model.LegalRisk {
+	normalized := findings
+	normalizeFindingsForFeatures(&normalized, features)
+
 	flags := legalScanFlagsMap(features)
-	findingsMap := legalScanFindingsMap(findings)
+	findingsMap := legalScanFindingsMap(normalized)
 
 	var matched []model.LegalRisk
 	for _, risk := range risks {
 		if !risk.IsActive {
+			continue
+		}
+		if !riskApplicableForFeatures(risk.RiskID, features) {
 			continue
 		}
 		if legalRiskTriggered(risk, findingsMap, flags) {
@@ -92,6 +98,23 @@ func severityOrder(s string) int {
 		return 1
 	default:
 		return 2
+	}
+}
+
+func riskApplicableForFeatures(riskID string, features model.LegalScanSiteFeatures) bool {
+	switch riskID {
+	case "no_consent", "no_rkn_notice", "data_leak_exposure":
+		return features.Forms
+	case "no_ad_marking":
+		return features.TrafficFromAds
+	case "no_offer":
+		return features.OnlineSales
+	case "no_foreign_loc":
+		return features.ForeignServices
+	case "no_cookie_banner":
+		return features.Forms || features.ForeignServices
+	default:
+		return true
 	}
 }
 

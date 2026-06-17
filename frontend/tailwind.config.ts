@@ -17,6 +17,12 @@ const config: Config = {
         "accent-bg": "#e6f1fb",
         ai: "#534ab7",
         "ai-bg": "#eeedfe",
+        success: "#3b6d11",
+        "success-bg": "#eaf3de",
+        error: "#a32d2d",
+        "error-bg": "#fcebeb",
+        warning: "#ba7517",
+        "warning-bg": "#faeeda",
       },
       fontFamily: {
         sans: [

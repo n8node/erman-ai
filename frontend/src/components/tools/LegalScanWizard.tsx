@@ -251,18 +251,20 @@ function LegalScanWizardInner() {
               className={cn(
                 "flex items-center gap-2",
                 step === n && "font-medium text-text",
-                step > n && "text-text2"
+                step > n && "font-medium text-success"
               )}
             >
               <span
                 className={cn(
                   "flex h-[23px] w-[23px] items-center justify-center rounded-full text-xs font-semibold",
-                  step >= n ? "bg-text text-white" : "bg-bg2 text-text3"
+                  step > n && "bg-success text-white",
+                  step === n && "bg-text text-white",
+                  step < n && "bg-bg2 text-text3"
                 )}
               >
-                {n}
+                {step > n ? "✓" : n}
               </span>
-              <span className={cn("text-[13.5px]", step < n && "text-text3")}>
+              <span className={cn("text-[13.5px]", step < n && "text-text3", step > n && "text-success")}>
                 {t(`steps.${n}`)}
               </span>
             </div>

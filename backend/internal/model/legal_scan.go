@@ -35,9 +35,12 @@ type LegalScanFindings struct {
 }
 
 type LegalScanCheckItem struct {
-	Key    string `json:"key"`
-	Label  string `json:"label"`
-	Status string `json:"status"` // pending, running, ok, risk
+	Key       string   `json:"key"`
+	Label     string   `json:"label"`
+	Status    string   `json:"status"` // pending, running, ok, risk
+	Evidence  string   `json:"evidence,omitempty"`
+	PageURLs  []string `json:"page_urls,omitempty"`
+	FoundData []string `json:"found_data,omitempty"`
 }
 
 type LegalScanLayer1 struct {
@@ -47,13 +50,16 @@ type LegalScanLayer1 struct {
 }
 
 type LegalScanRiskItem struct {
-	RiskID      string `json:"risk_id"`
-	Title       string `json:"title"`
-	Explanation string `json:"explanation"`
-	Article     string `json:"article"`
-	FineText    string `json:"fine_text"`
-	Severity    string `json:"severity"`
-	HowToFix    string `json:"how_to_fix"`
+	RiskID      string   `json:"risk_id"`
+	Title       string   `json:"title"`
+	Explanation string   `json:"explanation"`
+	Article     string   `json:"article"`
+	FineText    string   `json:"fine_text"`
+	Severity    string   `json:"severity"`
+	HowToFix    string   `json:"how_to_fix"`
+	Evidence    string   `json:"evidence,omitempty"`
+	PageURLs    []string `json:"page_urls,omitempty"`
+	FoundData   []string `json:"found_data,omitempty"`
 }
 
 type LegalScanSummary struct {
