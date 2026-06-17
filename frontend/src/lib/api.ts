@@ -56,8 +56,16 @@ export type RunDetail = {
   id: string;
   tool_slug: string;
   status: string;
-  input?: CalculatorInput | import("./api-strategy").StrategyInput | import("./api-audit").AuditInput;
-  output?: CalculatorOutput | import("./api-strategy").StrategyOutput | import("./api-audit").AuditOutput;
+  input?:
+    | CalculatorInput
+    | import("./api-strategy").StrategyInput
+    | import("./api-audit").AuditInput
+    | import("./api-legal-scan").LegalScanInput;
+  output?:
+    | CalculatorOutput
+    | import("./api-strategy").StrategyOutput
+    | import("./api-audit").AuditOutput
+    | import("./api-legal-scan").LegalScanOutput;
   created_at: string;
   updated_at?: string;
   completed_at?: string;

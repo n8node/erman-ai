@@ -26,6 +26,11 @@ import {
   type LegalScanOutput,
 } from "@/lib/api-legal-scan";
 import { isLimitReached } from "@/lib/tool-limits";
+import {
+  clearLegalScanDraft,
+  loadLegalScanDraft,
+  saveLegalScanDraft,
+} from "@/lib/legal-scan-draft";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
 import { GuestBanner } from "@/components/layout/GuestBanner";
 import { GuestLoginModal } from "@/components/auth/GuestLoginModal";
@@ -82,6 +87,15 @@ function LegalScanWizardInner() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const animRef = useRef(0);
   const user = useAuthUser();
+
+  useEffect(() => {
+    if (runIdParam) return;
+    const draft = loadLegalScanDraft();
+    if (draft) {
+      setInput(draft.input);
+      setCrawlPreset("custom");
+    }
+  }, [runIdParam]);
 
   const loadToolLimits = useCallback(() => {
     return fetchTools()
@@ -192,6 +206,7 @@ function LegalScanWizardInner() {
 
   async function handleScan() {
     if (!user) {
+      saveLegalScanDraft(input);
       setLoginModalOpen(true);
       return;
     }
@@ -207,6 +222,7 @@ function LegalScanWizardInner() {
         crawl: clampCrawlForPlan(input.crawl, planSlug, billingPlan?.features),
       };
       const data = await runLegalScan(payload);
+      clearLegalScanDraft();
       setRunId(data.run_id);
       setStep(2);
       router.replace(`/tools/legal-scan?run=${data.run_id}`);

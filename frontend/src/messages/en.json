@@ -1546,6 +1546,10 @@
     "title": "Legal Site Scan",
     "subtitle": "Check a client website for RF legal risks and get a fine estimate report",
     "loading": "Loading…",
+    "subnav": {
+      "new": "New scan",
+      "history": "History"
+    },
     "steps": {
       "1": "Site",
       "2": "Scanning",
@@ -1630,6 +1634,28 @@
     "errors": {
       "loadFailed": "Could not load result",
       "scanFailed": "Scan failed"
+    },
+    "history": {
+      "title": "Legal scan history",
+      "subtitle": "Saved website checks and their statuses",
+      "loading": "Loading…",
+      "loadFailed": "Could not load history",
+      "deleteFailed": "Could not delete",
+      "deleteConfirm": "Delete this scan from history?",
+      "empty": "No saved scans yet",
+      "emptyAction": "Run your first scan →",
+      "colSite": "Site",
+      "colStatus": "Status",
+      "colDate": "Date",
+      "open": "Open",
+      "continue": "Continue",
+      "delete": "Delete",
+      "status": {
+        "pending": "pending",
+        "processing": "scanning",
+        "done": "done",
+        "error": "error"
+      }
     }
   },
   "audit": {
