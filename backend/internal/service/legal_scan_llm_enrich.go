@@ -102,7 +102,8 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 	}
 
 	ev := mergeEvidenceFromPages(pages)
-	ev = applyValidatedEnrichmentToEvidence(ev, validateLegalScanEnrichment(raw, fetchedURLs))
+	ev = applyValidatedEnrichmentToEvidence(ev, validateLegalScanEnrichment(raw, pages, fetchedURLs))
+	ev = filterEvidenceDocumentURLs(ev, pages)
 
 	startURL := input.URL
 	if layer1.Crawl != nil && layer1.Crawl.StartURL != "" {
@@ -184,10 +185,14 @@ func parseLegalScanEnrichment(content string) (*legalScanLLMEnrichment, error) {
 	return &out, nil
 }
 
-func validateLegalScanEnrichment(raw *legalScanLLMEnrichment, allowedURLs []string) legalScanLLMEnrichment {
+func validateLegalScanEnrichment(raw *legalScanLLMEnrichment, pages []fetchedPage, allowedURLs []string) legalScanLLMEnrichment {
 	allowed := make(map[string]struct{}, len(allowedURLs))
 	for _, u := range allowedURLs {
 		allowed[normalizeLegalScanURL(u)] = struct{}{}
+	}
+	pageByURL := make(map[string]string, len(pages))
+	for _, p := range pages {
+		pageByURL[normalizeLegalScanURL(p.URL)] = p.HTML
 	}
 	isAllowedURL := func(u string) bool {
 		if u == "" {
@@ -196,6 +201,10 @@ func validateLegalScanEnrichment(raw *legalScanLLMEnrichment, allowedURLs []stri
 		_, ok := allowed[normalizeLegalScanURL(u)]
 		return ok
 	}
+	confirmsURL := func(u string, confirms func(string) bool) bool {
+		html, ok := pageByURL[normalizeLegalScanURL(u)]
+		return ok && confirms(html)
+	}
 
 	out := legalScanLLMEnrichment{
 		PrivacyURL:      raw.PrivacyURL,
@@ -203,16 +212,16 @@ func validateLegalScanEnrichment(raw *legalScanLLMEnrichment, allowedURLs []stri
 		OfferURL:        raw.OfferURL,
 		TermsURL:        raw.TermsURL,
 	}
-	if !isAllowedURL(out.PrivacyURL) {
+	if !isAllowedURL(out.PrivacyURL) || !confirmsURL(out.PrivacyURL, pageConfirmsPrivacyDocument) {
 		out.PrivacyURL = ""
 	}
-	if !isAllowedURL(out.CookiePolicyURL) {
+	if !isAllowedURL(out.CookiePolicyURL) || !confirmsURL(out.CookiePolicyURL, pageConfirmsCookiePolicyDocument) {
 		out.CookiePolicyURL = ""
 	}
-	if !isAllowedURL(out.OfferURL) {
+	if !isAllowedURL(out.OfferURL) || !confirmsURL(out.OfferURL, pageConfirmsOfferDocument) {
 		out.OfferURL = ""
 	}
-	if !isAllowedURL(out.TermsURL) {
+	if !isAllowedURL(out.TermsURL) || !confirmsURL(out.TermsURL, pageConfirmsTermsDocument) {
 		out.TermsURL = ""
 	}
 

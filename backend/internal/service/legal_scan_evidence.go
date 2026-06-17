@@ -72,8 +72,8 @@ func extractScanEvidence(html, baseURL string) scanEvidence {
 		}
 		path := strings.ToLower(href)
 		if strings.Contains(path, "/privacy") || strings.Contains(path, "/policy") ||
-			strings.Contains(path, "konfident") || strings.Contains(path, "personal") ||
-			strings.Contains(path, "politika") || strings.Contains(path, "pd") {
+			strings.Contains(path, "konfident") || strings.Contains(path, "politika") ||
+			strings.Contains(path, "privacy-policy") {
 			ev.PrivacyURLs = appendUnique(ev.PrivacyURLs, href)
 		}
 		if strings.Contains(path, "/offer") || strings.Contains(path, "/oferta") || strings.Contains(path, "/dogovor") || strings.Contains(path, "/legal") {
@@ -98,10 +98,10 @@ func extractScanEvidence(html, baseURL string) scanEvidence {
 
 func linkMatchesPrivacy(href, text string) bool {
 	combined := strings.ToLower(href + " " + text)
-	return strings.Contains(combined, "политик") ||
+	return strings.Contains(combined, "privacy") ||
 		strings.Contains(combined, "конфиденциальн") ||
-		strings.Contains(combined, "персональн") ||
-		strings.Contains(combined, "privacy")
+		(strings.Contains(combined, "политик") &&
+			(strings.Contains(combined, "персональн") || strings.Contains(combined, "обработк") || strings.Contains(combined, "пд")))
 }
 
 func linkMatchesCookiePolicy(href, text string) bool {

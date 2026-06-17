@@ -21,6 +21,7 @@ func mergeLegalScanPages(pages []fetchedPage, startURL string, startHTTPS bool) 
 		pageEv := extractScanEvidence(p.HTML, p.URL)
 		ev = mergeScanEvidence(ev, pageEv)
 	}
+	ev = filterEvidenceDocumentURLs(ev, pages)
 	return mergedLegalScanData{
 		combinedHTML: strings.Join(parts, "\n"),
 		evidence:     ev,
