@@ -107,6 +107,7 @@
     "strategy": "AI Strategy",
     "proposal": "Proposal",
     "audit": "Automation Audit",
+    "legalScan": "Legal Site Scan",
     "billing": "Billing",
     "apiKeys": "API Keys",
     "settings": "Settings",
@@ -142,6 +143,10 @@
       "audit": {
         "name": "Automation Audit",
         "description": "Multi-process audit with prioritization roadmap"
+      },
+      "legal-scan": {
+        "name": "Legal Site Scan",
+        "description": "RF legal risk scan for client websites"
       }
     }
   },
@@ -173,6 +178,8 @@
       "projectInquiries": "Discuss project",
       "calculatorBudget": "Calculator rates",
       "strategyLlm": "AI Strategy LLM",
+      "legalRisks": "Legal scan: risks",
+      "legalScanLlm": "Legal scan: model",
       "emailSmtp": "Email / SMTP",
       "payments": "Payments",
       "telegram": "Telegram",
@@ -656,6 +663,65 @@
       "activeModel": "Active model",
       "resetPrompt": "Reset to default",
       "keyMissing": "key not set",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
+      }
+    },
+    "legalRisks": {
+      "title": "Legal scan — risk table",
+      "subtitle": "Fines and articles for Legal Site Scan. Changes apply to new scans only.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load risk table",
+      "saveFailed": "Could not save",
+      "saved": "Saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "fields": {
+        "title": "Title",
+        "article": "Article",
+        "fineText": "Fine text",
+        "what": "Violation",
+        "howToFix": "How to fix",
+        "severity": "Severity",
+        "sortOrder": "Sort order",
+        "fineMin": "Fine min (₽)",
+        "fineMax": "Fine max (₽)",
+        "triggerFindings": "Finding triggers (JSON)",
+        "triggerFlags": "Flag triggers (JSON)",
+        "active": "Active",
+        "turnoverFine": "Turnover fine",
+        "contextOnly": "Context only (excluded from sum)"
+      },
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      }
+    },
+    "legalScanLlm": {
+      "title": "Legal scan — LLM model",
+      "subtitle": "Dedicated model for Legal Site Scan report packaging. API keys come from AI Strategy LLM settings.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load settings",
+      "saveFailed": "Could not save",
+      "saved": "Settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "keysHint": "OpenRouter / DeepSeek keys are configured under AI Strategy LLM.",
+      "keyMissing": "key not set",
+      "providerSection": "Provider",
+      "modelsSection": "Models and parameters",
+      "promptSection": "System prompt",
+      "openrouterModel": "OpenRouter model",
+      "deepseekModel": "DeepSeek model",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Active model",
+      "modelsEmpty": "Test connection in AI Strategy LLM first",
+      "resetPrompt": "Reset to default",
       "providers": {
         "openrouter": "OpenRouter",
         "deepseek": "DeepSeek"
@@ -1347,6 +1413,9 @@
         "solutionName": "Automation: {process}",
         "clientProblem": "Process «{process}»: potential savings {savings} ₽/mo after automation.",
         "processFallback": "process"
+      },
+      "legalScanPrefill": {
+        "solutionName": "Website compliance with RF requirements"
       }
     },
     "scenarios": {
@@ -1466,6 +1535,78 @@
       "sender_contact": "Sender name for signature and next-step block.",
       "sender_phone": "Contact phone in the document signature.",
       "sender_email": "Email for the client reply."
+    }
+  },
+  "legalScan": {
+    "title": "Legal Site Scan",
+    "subtitle": "Check a client website for RF legal risks and get a fine estimate report",
+    "loading": "Loading…",
+    "steps": {
+      "1": "Site",
+      "2": "Scanning",
+      "3": "Report"
+    },
+    "form": {
+      "section": "Client site",
+      "url": "Website URL",
+      "industry": "Industry",
+      "size": "Business size",
+      "features": "What's on the site",
+      "featuresHint": "refines the check",
+      "featuresNote": "Mark what you know about the client. The scanner detects the rest.",
+      "submit": "Run scan",
+      "scanning": "Starting…"
+    },
+    "industries": {
+      "ecommerce": "E-commerce",
+      "services": "Services / consulting",
+      "medicine": "Medicine & psychology",
+      "finance": "Finance & investments",
+      "education": "Online education",
+      "other": "Other"
+    },
+    "sizes": {
+      "sole": "Sole proprietor",
+      "small": "Small business (up to 50)",
+      "medium": "Mid-size (50–250)"
+    },
+    "features": {
+      "forms": "Collects data via forms",
+      "ads": "Traffic from ads",
+      "sales": "Online sales / payments",
+      "foreign": "Foreign services / analytics"
+    },
+    "scan": {
+      "scanning": "Scanning",
+      "ok": "ok",
+      "risk": "risk"
+    },
+    "result": {
+      "risksFound": "risks found",
+      "fixedFines": "potential fixed fines",
+      "fineUpTo": "up to {amount}",
+      "fineNone": "—",
+      "scanned": "scanned",
+      "leakTitle": "Separately — personal data leak risk:",
+      "leakSeparate": "These amounts are not included in the figure above.",
+      "risksTitle": "Identified risks",
+      "noRisks": "No critical risks found for the selected criteria.",
+      "article": "Article",
+      "fine": "Fine",
+      "severity": {
+        "high": "high",
+        "medium": "medium",
+        "low": "low"
+      },
+      "toProposal": "Create proposal from risks",
+      "exportPdf": "Export PDF",
+      "exportSoon": "Coming soon",
+      "exportLocked": "PDF — after login and Pro+ plan",
+      "restart": "Run again"
+    },
+    "errors": {
+      "loadFailed": "Could not load result",
+      "scanFailed": "Scan failed"
     }
   },
   "audit": {

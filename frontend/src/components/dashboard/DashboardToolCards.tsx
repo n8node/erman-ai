@@ -12,6 +12,7 @@ const CARD_TOOLS = [
   { slug: "strategy", href: "/tools/strategy" },
   { slug: "proposal", href: "/tools/proposal" },
   { slug: "audit", href: "/tools/audit" },
+  { slug: "legal-scan", href: "/tools/legal-scan" },
 ] as const;
 
 export function DashboardToolCards() {

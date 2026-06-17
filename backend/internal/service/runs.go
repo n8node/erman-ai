@@ -118,6 +118,12 @@ func summarizeRun(run model.ToolRun) RunListItem {
 				item.ProcessName = input.CompanyName
 			}
 		}
+		if run.ToolSlug == "legal-scan" {
+			var input model.LegalScanInput
+			if err := json.Unmarshal(run.Input, &input); err == nil {
+				item.ProcessName = input.URL
+			}
+		}
 		return item
 	}
 	var input model.CalculatorInput

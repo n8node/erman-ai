@@ -107,7 +107,7 @@
     "strategy": "AI-стратегия",
     "proposal": "Генерация КП",
     "audit": "Аудит автоматизации",
-    "audit": "Аудит автоматизации",
+    "legalScan": "Legal-скан сайта",
     "billing": "Биллинг",
     "apiKeys": "API-ключи",
     "settings": "Настройки",
@@ -143,6 +143,10 @@
       "audit": {
         "name": "Аудит автоматизации",
         "description": "Приоритетный аудит процессов и roadmap"
+      },
+      "legal-scan": {
+        "name": "Legal-скан сайта",
+        "description": "Юридические риски сайта клиента по законодательству РФ"
       }
     }
   },
@@ -174,6 +178,8 @@
       "projectInquiries": "Обсудить проект",
       "calculatorBudget": "Ставки калькулятора",
       "strategyLlm": "AI Strategy LLM",
+      "legalRisks": "Legal-скан: риски",
+      "legalScanLlm": "Legal-скан: модель",
       "emailSmtp": "Email / SMTP",
       "payments": "Платежи",
       "telegram": "Telegram",
@@ -657,6 +663,65 @@
       "activeModel": "Активная модель",
       "resetPrompt": "Сбросить к дефолту",
       "keyMissing": "ключ не задан",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
+      }
+    },
+    "legalRisks": {
+      "title": "Legal-скан — справочник рисков",
+      "subtitle": "Штрафы и статьи для Legal-скан сайта. Изменения применяются к новым сканам.",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить справочник",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Сохранено",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "edit": "Редактировать",
+      "cancel": "Отмена",
+      "fields": {
+        "title": "Заголовок",
+        "article": "Статья",
+        "fineText": "Текст штрафа",
+        "what": "Что нарушено",
+        "howToFix": "Как исправить",
+        "severity": "Серьёзность",
+        "sortOrder": "Порядок",
+        "fineMin": "Штраф min (₽)",
+        "fineMax": "Штраф max (₽)",
+        "triggerFindings": "Триггеры findings (JSON)",
+        "triggerFlags": "Триггеры flags (JSON)",
+        "active": "Активен",
+        "turnoverFine": "Оборотный штраф",
+        "contextOnly": "Только контекст (не в сумму)"
+      },
+      "severity": {
+        "high": "Высокая",
+        "medium": "Средняя",
+        "low": "Низкая"
+      }
+    },
+    "legalScanLlm": {
+      "title": "Legal-скан — модель LLM",
+      "subtitle": "Отдельная модель для упаковки отчёта Legal-скан. API-ключи берутся из раздела AI Strategy LLM.",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить настройки",
+      "saveFailed": "Не удалось сохранить",
+      "saved": "Настройки сохранены",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "keysHint": "Ключи OpenRouter / DeepSeek настраиваются в разделе «AI Strategy LLM».",
+      "keyMissing": "ключ не задан",
+      "providerSection": "Провайдер",
+      "modelsSection": "Модели и параметры",
+      "promptSection": "Системный промпт",
+      "openrouterModel": "Модель OpenRouter",
+      "deepseekModel": "Модель DeepSeek",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Активная модель",
+      "modelsEmpty": "Сначала проверьте соединение в AI Strategy LLM",
+      "resetPrompt": "Сбросить к дефолту",
       "providers": {
         "openrouter": "OpenRouter",
         "deepseek": "DeepSeek"
@@ -1348,6 +1413,9 @@
         "solutionName": "Автоматизация: {process}",
         "clientProblem": "Процесс «{process}»: потенциальная экономия {savings} ₽/мес после автоматизации.",
         "processFallback": "процесс"
+      },
+      "legalScanPrefill": {
+        "solutionName": "Приведение сайта в соответствие с требованиями РФ"
       }
     },
     "scenarios": {
@@ -1467,6 +1535,78 @@
       "sender_contact": "ФИО отправителя для подписи и блока «следующий шаг».",
       "sender_phone": "Контактный телефон в подписи документа.",
       "sender_email": "Email для ответа клиента."
+    }
+  },
+  "legalScan": {
+    "title": "Legal-скан сайта",
+    "subtitle": "Проверьте сайт клиента на юридические риски по законодательству РФ и получите отчёт со штрафами",
+    "loading": "Загрузка…",
+    "steps": {
+      "1": "Сайт",
+      "2": "Сканирование",
+      "3": "Отчёт"
+    },
+    "form": {
+      "section": "Сайт клиента",
+      "url": "Адрес сайта",
+      "industry": "Отрасль",
+      "size": "Размер бизнеса",
+      "features": "Что есть на сайте",
+      "featuresHint": "уточняет проверку",
+      "featuresNote": "Отметьте то, что знаете о клиенте. Остальное определит сканер автоматически.",
+      "submit": "Запустить скан",
+      "scanning": "Запуск…"
+    },
+    "industries": {
+      "ecommerce": "E-commerce / интернет-магазин",
+      "services": "Услуги / консалтинг",
+      "medicine": "Медицина и психология",
+      "finance": "Финансы и инвестиции",
+      "education": "Онлайн-образование",
+      "other": "Другое"
+    },
+    "sizes": {
+      "sole": "Самозанятый / ИП",
+      "small": "Малый бизнес (до 50 чел.)",
+      "medium": "Средний бизнес (50–250 чел.)"
+    },
+    "features": {
+      "forms": "Собирает данные через формы",
+      "ads": "Трафик с рекламы",
+      "sales": "Онлайн-продажи / оплата",
+      "foreign": "Иностранные сервисы / аналитика"
+    },
+    "scan": {
+      "scanning": "Сканируем",
+      "ok": "ок",
+      "risk": "риск"
+    },
+    "result": {
+      "risksFound": "рисков найдено",
+      "fixedFines": "потенциальные фикс. штрафы",
+      "fineUpTo": "до {amount}",
+      "fineNone": "—",
+      "scanned": "проверено",
+      "leakTitle": "Отдельно — риск утечки персональных данных:",
+      "leakSeparate": "Эти суммы не входят в число выше.",
+      "risksTitle": "Найденные риски",
+      "noRisks": "Критичных рисков по выбранным критериям не найдено.",
+      "article": "Статья",
+      "fine": "Штраф",
+      "severity": {
+        "high": "высокий",
+        "medium": "средний",
+        "low": "низкий"
+      },
+      "toProposal": "Сформировать КП по рискам",
+      "exportPdf": "Экспорт PDF",
+      "exportSoon": "Скоро",
+      "exportLocked": "PDF — после входа и тарифа Pro+",
+      "restart": "Запустить заново"
+    },
+    "errors": {
+      "loadFailed": "Не удалось загрузить результат",
+      "scanFailed": "Не удалось выполнить скан"
     }
   },
   "audit": {

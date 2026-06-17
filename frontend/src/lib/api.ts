@@ -397,6 +397,76 @@ export async function runAudit(input: import("./api-audit").AuditInput) {
   });
 }
 
+export type { LegalScanInput, LegalScanOutput } from "./api-legal-scan";
+
+export async function runLegalScan(input: import("./api-legal-scan").LegalScanInput) {
+  return apiFetch<{ run_id: string; status: string }>("/tools/legal-scan/run", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export type LegalRisk = {
+  risk_id: string;
+  title_ru: string;
+  title_en: string;
+  what_ru: string;
+  article: string;
+  fine_text_ru: string;
+  fine_min: number | null;
+  fine_max: number | null;
+  severity: "high" | "medium" | "low";
+  how_to_fix_ru: string;
+  how_to_fix_en: string;
+  trigger_findings: Record<string, boolean>;
+  trigger_flags: Record<string, boolean>;
+  is_turnover_fine: boolean;
+  is_context_only: boolean;
+  is_active: boolean;
+  sort_order: number;
+  updated_at: string;
+};
+
+export type LegalRiskUpdateRequest = Omit<LegalRisk, "risk_id" | "updated_at">;
+
+export async function fetchAdminLegalRisks() {
+  return apiFetch<{ items: LegalRisk[] }>("/admin/legal-risks");
+}
+
+export async function updateAdminLegalRisk(riskId: string, payload: LegalRiskUpdateRequest) {
+  return apiFetch<LegalRisk>(`/admin/legal-risks/${riskId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export type LegalScanLLMSettings = {
+  provider: LLMProvider;
+  openrouter_model: string;
+  deepseek_model: string;
+  system_prompt: string;
+  temperature: number;
+  max_tokens: number;
+};
+
+export type LegalScanLLMAdminView = {
+  settings: LegalScanLLMSettings;
+  providers: LLMProviderStatus[];
+  default_system_prompt: string;
+  updated_at?: string;
+};
+
+export async function fetchAdminLegalScanLLMSettings() {
+  return apiFetch<LegalScanLLMAdminView>("/admin/legal-scan-llm");
+}
+
+export async function updateAdminLegalScanLLMSettings(settings: LegalScanLLMSettings) {
+  return apiFetch<LegalScanLLMAdminView>("/admin/legal-scan-llm", {
+    method: "PUT",
+    body: JSON.stringify({ settings }),
+  });
+}
+
 export async function exportProposalPDF(runId: string) {
   const res = await fetch(`${clientBase()}/tools/proposal/export`, {
     method: "POST",

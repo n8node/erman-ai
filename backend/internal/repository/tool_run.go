@@ -51,6 +51,22 @@ func (r *ToolRunRepository) UpdateStatus(ctx context.Context, id string, status 
 	return nil
 }
 
+func (r *ToolRunRepository) UpdateRunProcessingOutput(ctx context.Context, id string, output json.RawMessage) error {
+	const q = `
+		UPDATE tool_runs
+		SET status = 'processing', output = $2, updated_at = NOW()
+		WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, output)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *ToolRunRepository) UpdateRunDone(ctx context.Context, id string, output json.RawMessage, tokens int64, modelUsed string) error {
 	const q = `
 		UPDATE tool_runs

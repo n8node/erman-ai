@@ -9,6 +9,7 @@ import {
   Brain,
   FileText,
   ClipboardList,
+  ShieldCheck,
   CreditCard,
   Settings,
   Shield,
@@ -61,6 +62,7 @@ export function Sidebar({ user }: Props) {
     { href: "/tools/strategy", label: t("strategy"), icon: Brain },
     { href: "/tools/proposal", label: t("proposal"), icon: FileText },
     { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
+    { href: "/tools/legal-scan", label: t("legalScan"), icon: ShieldCheck },
   ];
 
   const discussLink = { href: "/discuss", label: t("discussProject"), icon: MessageCircle };

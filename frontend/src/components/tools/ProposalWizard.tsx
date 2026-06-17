@@ -25,6 +25,11 @@ import {
   type ProposalOutput,
   type ProposalScenario,
 } from "@/lib/api-proposal";
+import {
+  buildProposalProblemFromLegalScan,
+  type LegalScanInput,
+  type LegalScanOutput,
+} from "@/lib/api-legal-scan";
 import { isLimitReached } from "@/lib/tool-limits";
 import { ToolLimitBadge } from "@/components/dashboard/ToolLimitBadge";
 import { GuestBanner } from "@/components/layout/GuestBanner";
@@ -55,6 +60,7 @@ function ProposalWizardInner() {
   const searchParams = useSearchParams();
   const runIdParam = searchParams.get("run");
   const calcRunParam = searchParams.get("calculator_run_id");
+  const legalScanRunParam = searchParams.get("legal_scan_run_id");
 
   const [input, setInput] = useState<ProposalInput>(DEFAULT_PROPOSAL_INPUT);
   const [paymentScheduleId, setPaymentScheduleId] = useState<PaymentScheduleId>("50_50");
@@ -126,6 +132,39 @@ function ProposalWizardInner() {
       })
       .catch(() => undefined);
   }, [calcRunParam, locale, t]);
+
+  useEffect(() => {
+    if (!legalScanRunParam) return;
+    getRun(legalScanRunParam)
+      .then((run) => {
+        if (run.status !== "done" || !run.input || !run.output) return;
+        const scanIn = run.input as unknown as LegalScanInput;
+        const scanOut = run.output as unknown as LegalScanOutput;
+        const url = scanOut.layer1?.final_url || scanIn.url;
+        setInput((prev) => {
+          let clientCompany = prev.client_company;
+          try {
+            if (!clientCompany) {
+              clientCompany = new URL(url).hostname.replace(/^www\./, "");
+            }
+          } catch {
+            clientCompany = clientCompany || url;
+          }
+          return {
+            ...prev,
+            proposal_scenario: "proactive_offer",
+            include_pricing: true,
+            client_company: clientCompany,
+            client_industry: prev.client_industry || scanIn.industry,
+            client_problem:
+              prev.client_problem || buildProposalProblemFromLegalScan(url, scanOut),
+            solution_name:
+              prev.solution_name || t("form.legalScanPrefill.solutionName"),
+          };
+        });
+      })
+      .catch(() => undefined);
+  }, [legalScanRunParam, t]);
 
   useEffect(() => {
     if (!runIdParam) {

@@ -15,6 +15,8 @@ export function AdminNav() {
     { href: "/admin/proposal-requests", label: t("proposalRequests") },
     { href: "/admin/project-inquiries", label: t("projectInquiries") },
     { href: "/admin/calculator-budget", label: t("calculatorBudget") },
+    { href: "/admin/legal-risks", label: t("legalRisks") },
+    { href: "/admin/legal-scan-llm", label: t("legalScanLlm") },
     { href: "/admin/strategy-llm", label: t("strategyLlm") },
     { href: "/admin/email", label: t("emailSmtp") },
     { href: "/admin/payments", label: t("payments") },
