@@ -79,10 +79,10 @@ func extractScanEvidence(html, baseURL string) scanEvidence {
 		if strings.Contains(path, "/privacy") || strings.Contains(path, "/policy") {
 			ev.PrivacyURLs = appendUnique(ev.PrivacyURLs, href)
 		}
-		if strings.Contains(path, "/offer") {
+		if strings.Contains(path, "/offer") || strings.Contains(path, "/oferta") || strings.Contains(path, "/dogovor") || strings.Contains(path, "/legal") {
 			ev.OfferURLs = appendUnique(ev.OfferURLs, href)
 		}
-		if strings.Contains(path, "/terms") {
+		if strings.Contains(path, "/terms") || strings.Contains(path, "/agreement") {
 			ev.TermsURLs = appendUnique(ev.TermsURLs, href)
 		}
 		if strings.Contains(path, "cookie") || strings.Contains(path, "куки") {
@@ -115,12 +115,24 @@ func linkMatchesCookiePolicy(href, text string) bool {
 
 func linkMatchesOffer(href, text string) bool {
 	combined := strings.ToLower(href + " " + text)
-	return strings.Contains(combined, "оферт") || strings.Contains(combined, "/offer")
+	patterns := []string{"оферт", "/offer", "условия продаж", "условия оказания", "договор", "/oferta", "/dogovor", "правила продаж"}
+	for _, p := range patterns {
+		if strings.Contains(combined, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func linkMatchesTerms(href, text string) bool {
 	combined := strings.ToLower(href + " " + text)
-	return strings.Contains(combined, "пользовательское") || strings.Contains(combined, "/terms")
+	patterns := []string{"пользовательское", "соглашение", "/terms", "/agreement", "условия использования", "правила пользования"}
+	for _, p := range patterns {
+		if strings.Contains(combined, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func resolveScanURL(href, base string) string {

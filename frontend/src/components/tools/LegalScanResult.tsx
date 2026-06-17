@@ -164,9 +164,36 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
             {t("scanned")}
             <br />
             <span className="font-semibold text-text2">{output.layer1.final_url || input.url}</span>
+            {output.layer1.crawl && output.layer1.crawl.pages_fetched > 1 && (
+              <>
+                <br />
+                <span className="text-text3">
+                  {t("pagesCrawled", {
+                    count: output.layer1.crawl.pages_fetched,
+                  })}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {output.layer1.crawl && output.layer1.crawl.fetched_urls.length > 1 && (
+        <details className="rounded-lg border border-border bg-bg2 px-4 py-3 text-xs text-text2">
+          <summary className="cursor-pointer font-medium text-text">
+            {t("crawledPages", { count: output.layer1.crawl.pages_fetched })}
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {output.layer1.crawl.fetched_urls.map((u) => (
+              <li key={u}>
+                <a href={u} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                  {u}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {showLeakNote && output.summary.turnover_fine_note && (
         <div className="flex gap-3 rounded-xl border border-[#fbdcd8] bg-[#fef3f2] px-4 py-3 text-sm text-[#b42318]">

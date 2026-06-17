@@ -15,7 +15,7 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
-const legalScanRunTimeout = 120 * time.Second
+const legalScanRunTimeout = 180 * time.Second
 
 type LegalScanService struct {
 	cfg      *config.Config
@@ -62,6 +62,11 @@ func (s *LegalScanService) StartRun(ctx context.Context, userID string, input mo
 		return nil, err
 	}
 
+	normalizeLegalScanCrawlConfig(&input.Crawl, up.PlanSlug)
+	if !input.Crawl.SameHostOnly {
+		input.Crawl.SameHostOnly = true
+	}
+
 	input.Locale = locale
 	inJSON, err := json.Marshal(input)
 	if err != nil {
@@ -93,7 +98,7 @@ func (s *LegalScanService) processRun(runID string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), legalScanRunTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), legalScanRunTimeoutFor(input.Crawl.MaxPages))
 	defer cancel()
 
 	if err := s.runs.UpdateStatus(ctx, runID, model.RunStatusProcessing); err != nil {
@@ -101,13 +106,32 @@ func (s *LegalScanService) processRun(runID string) {
 		return
 	}
 
-	page, err := fetchLegalScanSite(ctx, input.URL)
+	onProgress := func(meta model.LegalScanCrawlMeta, layer1 model.LegalScanLayer1) {
+		partial := model.LegalScanOutput{Layer1: layer1}
+		partialJSON, _ := json.Marshal(partial)
+		if err := s.runs.UpdateRunProcessingOutput(ctx, runID, partialJSON); err != nil {
+			s.logger.Error("legal scan partial output failed", "run_id", runID, "error", err)
+		}
+	}
+
+	crawlResult, err := crawlLegalScanSite(ctx, input.URL, input.SiteFeatures, legalScanCrawlOptions{
+		MaxPages:     input.Crawl.MaxPages,
+		MaxDepth:     input.Crawl.MaxDepth,
+		SameHostOnly: input.Crawl.SameHostOnly,
+		OnProgress:   onProgress,
+	})
 	if err != nil {
 		s.failRun(ctx, runID, err.Error())
 		return
 	}
 
-	layer1 := runLegalScanLayer1(page, input.SiteFeatures)
+	layer1 := runLegalScanLayer1FromPages(
+		crawlResult.Pages,
+		input.URL,
+		crawlResult.HTTPS,
+		input.SiteFeatures,
+		&crawlResult.Meta,
+	)
 
 	partial := model.LegalScanOutput{Layer1: layer1}
 	partialJSON, _ := json.Marshal(partial)
@@ -158,6 +182,15 @@ func normalizeLegalScanInput(in *model.LegalScanInput) {
 	}
 	in.Industry = strings.TrimSpace(in.Industry)
 	in.CompanySize = strings.TrimSpace(in.CompanySize)
+	if in.Crawl.MaxPages <= 0 {
+		in.Crawl.MaxPages = legalScanDefaultMaxPages
+	}
+	if in.Crawl.MaxDepth < 0 {
+		in.Crawl.MaxDepth = legalScanDefaultMaxDepth
+	}
+	if !in.Crawl.SameHostOnly {
+		in.Crawl.SameHostOnly = true
+	}
 }
 
 func validateLegalScanInput(in model.LegalScanInput) error {
@@ -170,6 +203,12 @@ func validateLegalScanInput(in model.LegalScanInput) error {
 	}
 	if in.Industry == "" {
 		return fmt.Errorf("%w: industry required", ErrInvalidInput)
+	}
+	if in.Crawl.MaxPages < 1 || in.Crawl.MaxPages > legalScanCrawlMaxPagesCap {
+		return fmt.Errorf("%w: max_pages out of range", ErrInvalidInput)
+	}
+	if in.Crawl.MaxDepth < 0 || in.Crawl.MaxDepth > 5 {
+		return fmt.Errorf("%w: max_depth out of range", ErrInvalidInput)
 	}
 	return nil
 }

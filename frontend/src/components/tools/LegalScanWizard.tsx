@@ -5,18 +5,24 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   fetchTools,
+  getBillingPlan,
   getRun,
   isToolLimitError,
   runLegalScan,
+  type BillingPlan,
   type ToolListItem,
 } from "@/lib/api";
 import {
   DEFAULT_LEGAL_SCAN_INPUT,
+  LEGAL_SCAN_CRAWL_PRESETS,
   LEGAL_SCAN_FEATURE_CHIPS,
   LEGAL_SCAN_INDUSTRY_OPTIONS,
+  LEGAL_SCAN_PLAN_PAGE_LIMITS,
   LEGAL_SCAN_SIZE_OPTIONS,
+  clampCrawlForPlan,
   isLegalScanInputValid,
   type LegalScanCheckItem,
+  type LegalScanCrawlMeta,
   type LegalScanInput,
   type LegalScanOutput,
 } from "@/lib/api-legal-scan";
@@ -65,12 +71,15 @@ function LegalScanWizardInner() {
     runId: string;
   } | null>(null);
   const [checklist, setChecklist] = useState<LegalScanCheckItem[]>(DEFAULT_CHECKLIST);
+  const [crawlMeta, setCrawlMeta] = useState<LegalScanCrawlMeta | null>(null);
+  const [crawlPreset, setCrawlPreset] = useState<string>("standard");
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingRun, setLoadingRun] = useState(!!runIdParam);
   const [error, setError] = useState("");
   const [limitExceeded, setLimitExceeded] = useState(false);
   const [scanTool, setScanTool] = useState<ToolListItem | null>(null);
+  const [billingPlan, setBillingPlan] = useState<BillingPlan | null>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const animRef = useRef(0);
   const user = useAuthUser();
@@ -89,6 +98,7 @@ function LegalScanWizardInner() {
   useEffect(() => {
     if (!user) return;
     void loadToolLimits();
+    getBillingPlan().then(setBillingPlan).catch(() => undefined);
   }, [user, loadToolLimits]);
 
   useEffect(() => {
@@ -133,10 +143,18 @@ function LegalScanWizardInner() {
         const partial = run.output as unknown as LegalScanOutput | null;
         if (partial?.layer1?.checklist?.length) {
           setChecklist(partial.layer1.checklist);
-          const done = partial.layer1.checklist.filter(
-            (c) => c.status === "ok" || c.status === "risk"
-          ).length;
-          setProgress(Math.round((done / partial.layer1.checklist.length) * 100));
+          if (partial.layer1.crawl) {
+            setCrawlMeta(partial.layer1.crawl);
+            const { pages_fetched, pages_requested } = partial.layer1.crawl;
+            if (pages_requested > 0) {
+              setProgress(Math.min(95, Math.round((pages_fetched / pages_requested) * 100)));
+            }
+          } else {
+            const done = partial.layer1.checklist.filter(
+              (c) => c.status === "ok" || c.status === "risk"
+            ).length;
+            setProgress(Math.round((done / partial.layer1.checklist.length) * 100));
+          }
         } else {
           setChecklist((prev) => {
             const idx = animRef.current % prev.length;
@@ -181,9 +199,15 @@ function LegalScanWizardInner() {
     setError("");
     setLoading(true);
     setChecklist(DEFAULT_CHECKLIST.map((c) => ({ ...c, status: "pending" })));
+    setCrawlMeta(null);
     setProgress(0);
     try {
-      const data = await runLegalScan(input);
+      const planSlug = billingPlan?.plan_slug;
+      const payload: LegalScanInput = {
+        ...input,
+        crawl: clampCrawlForPlan(input.crawl, planSlug),
+      };
+      const data = await runLegalScan(payload);
       setRunId(data.run_id);
       setStep(2);
       router.replace(`/tools/legal-scan?run=${data.run_id}`);
@@ -217,7 +241,22 @@ function LegalScanWizardInner() {
     }));
   }
 
+  function applyCrawlPreset(presetId: string) {
+    setCrawlPreset(presetId);
+    const preset = LEGAL_SCAN_CRAWL_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    setInput((prev) => ({
+      ...prev,
+      crawl: {
+        ...prev.crawl,
+        max_pages: preset.maxPages,
+        max_depth: preset.maxDepth,
+      },
+    }));
+  }
+
   const scanLimitReached = limitExceeded;
+  const planPageLimit = LEGAL_SCAN_PLAN_PAGE_LIMITS[billingPlan?.plan_slug ?? "free"] ?? 5;
   const canExport = !!user;
 
   if (loadingRun) {
@@ -350,6 +389,61 @@ function LegalScanWizardInner() {
             </div>
             <p className="mt-2 text-xs text-text3">{t("form.featuresNote")}</p>
           </div>
+          <div className="mb-4">
+            <label className="mb-2 block text-[13px] text-text2">{t("form.crawlDepth")}</label>
+            <div className="flex flex-wrap gap-2">
+              {LEGAL_SCAN_CRAWL_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => applyCrawlPreset(preset.id)}
+                  className={cn(
+                    "rounded-full border px-3.5 py-1.5 text-[13px] transition-colors",
+                    crawlPreset === preset.id
+                      ? "border-text bg-bg2 text-text font-medium"
+                      : "border-border2 bg-bg text-text2 hover:border-border"
+                  )}
+                >
+                  {t(preset.labelKey)}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs text-text3">{t("form.maxPages")}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={planPageLimit}
+                  className={fieldClass}
+                  value={input.crawl.max_pages}
+                  onChange={(e) => {
+                    setCrawlPreset("custom");
+                    const v = Math.min(planPageLimit, Math.max(1, Number(e.target.value) || 1));
+                    setInput((p) => ({ ...p, crawl: { ...p.crawl, max_pages: v } }));
+                  }}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text3">{t("form.maxDepth")}</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={5}
+                  className={fieldClass}
+                  value={input.crawl.max_depth}
+                  onChange={(e) => {
+                    setCrawlPreset("custom");
+                    const v = Math.min(5, Math.max(0, Number(e.target.value) || 0));
+                    setInput((p) => ({ ...p, crawl: { ...p.crawl, max_depth: v } }));
+                  }}
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-text3">
+              {t("form.crawlNote", { limit: planPageLimit })}
+            </p>
+          </div>
           <div className="mt-6 flex justify-end">
             <button
               type="button"
@@ -364,7 +458,12 @@ function LegalScanWizardInner() {
       )}
 
       {step === 2 && (
-        <LegalScanChecklist url={input.url} checklist={checklist} progress={progress} />
+        <LegalScanChecklist
+          url={input.url}
+          checklist={checklist}
+          progress={progress}
+          crawl={crawlMeta}
+        />
       )}
 
       {step === 3 && result && (

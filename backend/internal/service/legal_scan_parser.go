@@ -32,41 +32,7 @@ var legalScanChecks = []struct {
 }
 
 func runLegalScanLayer1(page *fetchedPage, features model.LegalScanSiteFeatures) model.LegalScanLayer1 {
-	html := page.HTML
-	lower := strings.ToLower(html)
-	ev := extractScanEvidence(html, page.URL)
-
-	trackers := detectTrackers(lower)
-	hasTrackers := len(trackers) > 0
-	foreignTrackers := detectForeignTrackers(lower)
-
-	findings := model.LegalScanFindings{
-		SSL:               page.HTTPS,
-		PrivacyPolicy:     hasPrivacyPolicy(lower),
-		CookieBanner:      hasCookieBanner(lower),
-		CookiePolicy:      hasCookiePolicy(lower),
-		FormConsent:       hasFormConsent(lower),
-		RequisitesINN:     len(ev.INNs) > 0 || len(ev.OGRNs) > 0,
-		Contacts:          len(ev.Emails) > 0 || len(ev.Phones) > 0,
-		Offer:             hasOffer(lower),
-		Terms:             hasTerms(lower),
-		ConsentWithdrawal: hasConsentWithdrawal(lower),
-		AdMarking:         len(ev.EridTokens) > 0 || reAdLabel.MatchString(html),
-		Trackers:          trackers,
-		HasTrackers:       hasTrackers,
-		FormsCollectPD:    hasPDForms(lower),
-		FormsUnencrypted:  reFormHTTP.MatchString(html),
-		ForeignTrackers:   foreignTrackers,
-	}
-
-	normalizeFindingsForFeatures(&findings, features)
-	checklist := buildLegalScanChecklist(findings, features, ev, page.URL)
-
-	return model.LegalScanLayer1{
-		FinalURL:  page.URL,
-		Findings:  findings,
-		Checklist: checklist,
-	}
+	return runLegalScanLayer1FromPages([]fetchedPage{*page}, page.URL, page.HTTPS, features, nil)
 }
 
 func buildLegalScanChecklist(
@@ -192,11 +158,11 @@ func hasPDForms(lower string) bool {
 }
 
 func hasOffer(lower string) bool {
-	return strings.Contains(lower, "оферт") || strings.Contains(lower, "/offer")
+	return hasOfferText(lower)
 }
 
 func hasTerms(lower string) bool {
-	return strings.Contains(lower, "пользовательское соглашение") || strings.Contains(lower, "/terms")
+	return hasTermsText(lower)
 }
 
 func hasConsentWithdrawal(lower string) bool {

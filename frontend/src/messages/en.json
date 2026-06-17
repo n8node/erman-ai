@@ -1554,6 +1554,10 @@
       "features": "What's on the site",
       "featuresHint": "refines the check",
       "featuresNote": "Mark what you know about the client. The scanner detects the rest.",
+      "crawlDepth": "Scan depth",
+      "maxPages": "Max pages",
+      "maxDepth": "Link depth",
+      "crawlNote": "The scanner crawls the site for legal pages, contacts, and company details. Your plan allows up to {limit} pages.",
       "submit": "Run scan",
       "scanning": "Starting…"
     },
@@ -1576,8 +1580,16 @@
       "sales": "Online sales / payments",
       "foreign": "Foreign services / analytics"
     },
+    "crawl": {
+      "presets": {
+        "quick": "Quick (1 page)",
+        "standard": "Standard (10 pages)",
+        "deep": "Deep (30 pages)"
+      }
+    },
     "scan": {
       "scanning": "Scanning",
+      "pagesProgress": "Pages checked: {done} of {total}",
       "ok": "ok",
       "risk": "risk"
     },
@@ -1587,6 +1599,8 @@
       "fineUpTo": "up to {amount}",
       "fineNone": "—",
       "scanned": "scanned",
+      "pagesCrawled": "site pages: {count}",
+      "crawledPages": "Pages checked ({count})",
       "leakTitle": "Separately — personal data leak risk:",
       "leakSeparate": "These amounts are not included in the figure above.",
       "checksTitle": "Check results",

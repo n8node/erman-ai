@@ -2,25 +2,36 @@
 
 import { Check, AlertCircle, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { LegalScanCheckItem } from "@/lib/api-legal-scan";
+import type { LegalScanCheckItem, LegalScanCrawlMeta } from "@/lib/api-legal-scan";
 import { cn } from "@/lib/utils";
 
 type Props = {
   url: string;
   checklist: LegalScanCheckItem[];
   progress: number;
+  crawl?: LegalScanCrawlMeta | null;
 };
 
-export function LegalScanChecklist({ url, checklist, progress }: Props) {
+export function LegalScanChecklist({ url, checklist, progress, crawl }: Props) {
   const t = useTranslations("legalScan.scan");
 
   return (
     <div className="rounded-xl border border-border bg-bg p-6 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-text" />
-        <p className="text-sm">
-          {t("scanning")} <span className="font-semibold">{url}</span>…
-        </p>
+        <div className="text-sm">
+          <p>
+            {t("scanning")} <span className="font-semibold">{url}</span>…
+          </p>
+          {crawl && crawl.pages_requested > 1 && (
+            <p className="mt-1 text-xs text-text3">
+              {t("pagesProgress", {
+                done: crawl.pages_fetched,
+                total: crawl.pages_requested,
+              })}
+            </p>
+          )}
+        </div>
       </div>
       <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-bg2">
         <div

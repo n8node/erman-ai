@@ -7,12 +7,29 @@ type LegalScanSiteFeatures struct {
 	ForeignServices    bool `json:"foreign_services"`
 }
 
+type LegalScanCrawlConfig struct {
+	MaxPages     int  `json:"max_pages"`
+	MaxDepth     int  `json:"max_depth"`
+	SameHostOnly bool `json:"same_host_only"`
+}
+
 type LegalScanInput struct {
 	URL          string                `json:"url"`
 	Industry     string                `json:"industry"`
 	CompanySize  string                `json:"company_size"`
 	SiteFeatures LegalScanSiteFeatures `json:"site_features"`
+	Crawl        LegalScanCrawlConfig  `json:"crawl"`
 	Locale       string                `json:"locale,omitempty"`
+}
+
+type LegalScanCrawlMeta struct {
+	StartURL       string   `json:"start_url"`
+	PagesRequested int      `json:"pages_requested"`
+	PagesFetched   int      `json:"pages_fetched"`
+	MaxDepth       int      `json:"max_depth"`
+	FetchedURLs    []string `json:"fetched_urls"`
+	SkippedCount   int      `json:"skipped_count"`
+	DurationMs     int      `json:"duration_ms"`
 }
 
 type LegalScanFindings struct {
@@ -45,6 +62,7 @@ type LegalScanCheckItem struct {
 
 type LegalScanLayer1 struct {
 	FinalURL  string               `json:"final_url"`
+	Crawl     *LegalScanCrawlMeta  `json:"crawl,omitempty"`
 	Findings  LegalScanFindings    `json:"findings"`
 	Checklist []LegalScanCheckItem `json:"checklist"`
 }

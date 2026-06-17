@@ -5,11 +5,28 @@ export type LegalScanSiteFeatures = {
   foreign_services: boolean;
 };
 
+export type LegalScanCrawlConfig = {
+  max_pages: number;
+  max_depth: number;
+  same_host_only?: boolean;
+};
+
+export type LegalScanCrawlMeta = {
+  start_url: string;
+  pages_requested: number;
+  pages_fetched: number;
+  max_depth: number;
+  fetched_urls: string[];
+  skipped_count: number;
+  duration_ms: number;
+};
+
 export type LegalScanInput = {
   url: string;
   industry: string;
   company_size: string;
   site_features: LegalScanSiteFeatures;
+  crawl: LegalScanCrawlConfig;
 };
 
 export type LegalScanFindings = {
@@ -42,6 +59,7 @@ export type LegalScanCheckItem = {
 
 export type LegalScanLayer1 = {
   final_url: string;
+  crawl?: LegalScanCrawlMeta;
   findings: LegalScanFindings;
   checklist: LegalScanCheckItem[];
 };
@@ -96,6 +114,18 @@ export const LEGAL_SCAN_FEATURE_CHIPS = [
   { key: "foreign_services" as const, labelKey: "features.foreign" },
 ];
 
+export const LEGAL_SCAN_CRAWL_PRESETS = [
+  { id: "quick", maxPages: 1, maxDepth: 0, labelKey: "crawl.presets.quick" },
+  { id: "standard", maxPages: 10, maxDepth: 2, labelKey: "crawl.presets.standard" },
+  { id: "deep", maxPages: 30, maxDepth: 3, labelKey: "crawl.presets.deep" },
+] as const;
+
+export const LEGAL_SCAN_PLAN_PAGE_LIMITS: Record<string, number> = {
+  free: 5,
+  pro: 20,
+  business: 50,
+};
+
 export const DEFAULT_LEGAL_SCAN_INPUT: LegalScanInput = {
   url: "",
   industry: "services",
@@ -106,10 +136,28 @@ export const DEFAULT_LEGAL_SCAN_INPUT: LegalScanInput = {
     online_sales: false,
     foreign_services: false,
   },
+  crawl: {
+    max_pages: 10,
+    max_depth: 2,
+    same_host_only: true,
+  },
 };
 
 export function isLegalScanInputValid(input: LegalScanInput): boolean {
   return input.url.trim().length >= 4 && input.industry.trim().length > 0;
+}
+
+export function clampCrawlForPlan(
+  crawl: LegalScanCrawlConfig,
+  planSlug?: string
+): LegalScanCrawlConfig {
+  const cap = LEGAL_SCAN_PLAN_PAGE_LIMITS[planSlug ?? "free"] ?? 5;
+  return {
+    ...crawl,
+    max_pages: Math.min(Math.max(1, crawl.max_pages), cap),
+    max_depth: Math.min(Math.max(0, crawl.max_depth), 5),
+    same_host_only: crawl.same_host_only !== false,
+  };
 }
 
 export function buildProposalProblemFromLegalScan(
