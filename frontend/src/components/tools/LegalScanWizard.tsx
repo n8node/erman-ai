@@ -221,11 +221,15 @@ function LegalScanWizardInner() {
   const canExport = !!user;
 
   if (loadingRun) {
-    return <p className="text-sm text-text2">{t("loading")}</p>;
+    return (
+      <div className="mx-auto max-w-5xl">
+        <p className="text-sm text-text2">{t("loading")}</p>
+      </div>
+    );
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl space-y-6">
       <GuestBanner />
       {scanTool && user && (
         <ToolLimitBadge
@@ -378,7 +382,13 @@ function LegalScanWizardInner() {
 
 export function LegalScanWizard() {
   return (
-    <Suspense fallback={<p className="text-sm text-text2">…</p>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl">
+          <p className="text-sm text-text2">…</p>
+        </div>
+      }
+    >
       <LegalScanWizardInner />
     </Suspense>
   );

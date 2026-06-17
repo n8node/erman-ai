@@ -33,8 +33,10 @@ export function LegalScanChecklist({ url, checklist, progress }: Props) {
           <div
             key={item.key}
             className={cn(
-              "flex items-center gap-3 border-b border-border/60 py-2.5 text-[13.5px] last:border-0",
-              item.status === "risk" ? "text-text" : item.status === "ok" ? "text-text2" : "text-text3"
+              "flex items-center gap-3 border-b py-2.5 text-[13.5px] last:border-0",
+              item.status === "ok" && "border-success/20 bg-success-bg/40 text-success -mx-2 px-2 rounded-md",
+              item.status === "risk" && "border-border/60 text-text",
+              item.status !== "ok" && item.status !== "risk" && "border-border/60 text-text3"
             )}
           >
             <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center">
@@ -49,7 +51,7 @@ export function LegalScanChecklist({ url, checklist, progress }: Props) {
                 <span className="h-1.5 w-1.5 rounded-full bg-border2" />
               )}
             </span>
-            <span className="flex-1">{item.label}</span>
+            <span className={cn("flex-1", item.status === "ok" && "font-medium")}>{item.label}</span>
             {item.status === "ok" && (
               <span className="text-xs font-semibold text-success">{t("ok")}</span>
             )}

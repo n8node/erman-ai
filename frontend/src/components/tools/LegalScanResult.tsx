@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { AlertTriangle, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { LegalScanInput, LegalScanOutput } from "@/lib/api-legal-scan";
+import {
+  findRiskForCheckItem,
+  type LegalScanInput,
+  type LegalScanOutput,
+  type LegalScanRiskItem,
+} from "@/lib/api-legal-scan";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -22,16 +27,85 @@ const severityClass = {
   high: "border-l-[#e0492f]",
   medium: "border-l-[#f0a728]",
   low: "border-l-[#9aa0a6]",
+  none: "border-l-success",
 };
 
 const badgeClass = {
   high: "bg-[#fef3f2] text-[#b42318] border-[#fbdcd8]",
   medium: "bg-[#fffaeb] text-[#b25e09] border-[#fbe6c2]",
   low: "bg-bg2 text-text2 border-border",
+  none: "bg-success-bg text-success border-success/30",
 };
+
+function RiskCard({
+  title,
+  severity,
+  explanation,
+  article,
+  fineText,
+  howToFix,
+  t,
+}: {
+  title: string;
+  severity: LegalScanRiskItem["severity"] | "none";
+  explanation: string;
+  article?: string;
+  fineText?: string;
+  howToFix?: string;
+  t: ReturnType<typeof useTranslations<"legalScan.result">>;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[10px] border border-border border-l-[3px] bg-bg p-4 shadow-sm",
+        severityClass[severity]
+      )}
+    >
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-[14.5px] font-semibold">{title}</span>
+        <span
+          className={cn(
+            "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+            badgeClass[severity]
+          )}
+        >
+          {t(`severity.${severity}`)}
+        </span>
+      </div>
+      <p className="mb-2.5 text-[13.5px] text-text2">{explanation}</p>
+      {severity !== "none" && article && fineText && (
+        <>
+          <div className="flex flex-wrap gap-2 text-[12.5px]">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg2 px-2 py-1 text-text2">
+              {t("article")}: <b className="text-text">{article}</b>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg2 px-2 py-1 text-text2">
+              {t("fine")}: <b className="text-error">{fineText}</b>
+            </span>
+          </div>
+          {howToFix && (
+            <div className="mt-2.5 flex items-start gap-2 text-[13px] text-text">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" strokeWidth={2.4} />
+              <span>{howToFix}</span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export function LegalScanResult({ input, output, runId, canExport, onRestart }: Props) {
   const t = useTranslations("legalScan.result");
+  const checklist = output.layer1?.checklist ?? [];
+  const shownRiskIds = new Set<string>();
+  checklist.forEach((item) => {
+    if (item.status === "risk") {
+      const matched = findRiskForCheckItem(item.key, output.risks);
+      if (matched) shownRiskIds.add(matched.risk_id);
+    }
+  });
+  const extraRisks = output.risks.filter((r) => !shownRiskIds.has(r.risk_id));
   const fineDisplay =
     output.summary.fine_max_total > 0
       ? t("fineUpTo", { amount: formatRub(output.summary.fine_max_total) })
@@ -72,9 +146,13 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
         </div>
       )}
 
-      <div className="flex items-baseline justify-between px-0.5">
-        <h3 className="text-[15px] font-semibold">{t("risksTitle")}</h3>
-        <div className="flex gap-3 text-xs text-text3">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 px-0.5">
+        <h3 className="text-[15px] font-semibold">{t("checksTitle")}</h3>
+        <div className="flex flex-wrap gap-3 text-xs text-text3">
+          <span className="inline-flex items-center gap-1.5">
+            <i className="h-2 w-2 rounded-full bg-success" />
+            {t("severity.none")}
+          </span>
           <span className="inline-flex items-center gap-1.5">
             <i className="h-2 w-2 rounded-full bg-[#e0492f]" />
             {t("severity.high")}
@@ -90,44 +168,50 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
         </div>
       </div>
 
-      {output.risks.length === 0 ? (
+      {checklist.length === 0 ? (
         <div className="rounded-xl border border-border bg-bg p-6 text-sm text-text2">{t("noRisks")}</div>
       ) : (
-        output.risks.map((risk) => (
-          <div
-            key={risk.risk_id}
-            className={cn(
-              "rounded-[10px] border border-border border-l-[3px] bg-bg p-4 shadow-sm",
-              severityClass[risk.severity]
-            )}
-          >
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="text-[14.5px] font-semibold">{risk.title}</span>
-              <span
-                className={cn(
-                  "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-                  badgeClass[risk.severity]
-                )}
-              >
-                {t(`severity.${risk.severity}`)}
-              </span>
-            </div>
-            <p className="mb-2.5 text-[13.5px] text-text2">{risk.explanation}</p>
-            <div className="flex flex-wrap gap-2 text-[12.5px]">
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg2 px-2 py-1 text-text2">
-                {t("article")}: <b className="text-text">{risk.article}</b>
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg2 px-2 py-1 text-text2">
-                {t("fine")}: <b className="text-error">{risk.fine_text}</b>
-              </span>
-            </div>
-            <div className="mt-2.5 flex items-start gap-2 text-[13px] text-text">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" strokeWidth={2.4} />
-              <span>{risk.how_to_fix}</span>
-            </div>
-          </div>
-        ))
+        checklist.map((item) => {
+          if (item.status === "ok") {
+            return (
+              <RiskCard
+                key={item.key}
+                title={item.label}
+                severity="none"
+                explanation={t("noRiskExplanation")}
+                t={t}
+              />
+            );
+          }
+
+          const risk = findRiskForCheckItem(item.key, output.risks);
+          return (
+            <RiskCard
+              key={item.key}
+              title={risk?.title ?? item.label}
+              severity={risk?.severity ?? "medium"}
+              explanation={risk?.explanation ?? t("riskDetectedGeneric")}
+              article={risk?.article}
+              fineText={risk?.fine_text}
+              howToFix={risk?.how_to_fix}
+              t={t}
+            />
+          );
+        })
       )}
+
+      {extraRisks.map((risk) => (
+        <RiskCard
+          key={risk.risk_id}
+          title={risk.title}
+          severity={risk.severity}
+          explanation={risk.explanation}
+          article={risk.article}
+          fineText={risk.fine_text}
+          howToFix={risk.how_to_fix}
+          t={t}
+        />
+      ))}
 
       {output.industry_note && (
         <div className="rounded-[10px] border border-border bg-bg2 px-4 py-3.5 text-[13px] text-text2">

@@ -1589,11 +1589,15 @@
       "scanned": "scanned",
       "leakTitle": "Separately — personal data leak risk:",
       "leakSeparate": "These amounts are not included in the figure above.",
+      "checksTitle": "Check results",
       "risksTitle": "Identified risks",
-      "noRisks": "No critical risks found for the selected criteria.",
+      "noRisks": "Check data unavailable.",
+      "noRiskExplanation": "No risk detected for this check.",
+      "riskDetectedGeneric": "A potential risk was identified — we recommend manual review.",
       "article": "Article",
       "fine": "Fine",
       "severity": {
+        "none": "no risk",
         "high": "high",
         "medium": "medium",
         "low": "low"

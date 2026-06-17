@@ -116,3 +116,23 @@ export function buildProposalProblemFromLegalScan(
   const header = `На сайте ${url} выявлено ${output.summary.risks_count} юридических рисков.`;
   return [header, ...lines].join("\n");
 }
+
+/** Maps layer1 checklist keys to risk_id entries in the report. */
+export const CHECKLIST_TO_RISK_IDS: Record<string, string[]> = {
+  ssl: ["no_ssl"],
+  privacy: ["no_privacy_policy"],
+  cookie: ["no_cookie_banner"],
+  consent: ["no_consent"],
+  req: ["no_requisites"],
+  offer: ["no_offer"],
+  admark: ["no_ad_marking"],
+};
+
+export function findRiskForCheckItem(
+  checkKey: string,
+  risks: LegalScanRiskItem[]
+): LegalScanRiskItem | undefined {
+  const ids = CHECKLIST_TO_RISK_IDS[checkKey];
+  if (!ids?.length) return undefined;
+  return risks.find((r) => ids.includes(r.risk_id));
+}
