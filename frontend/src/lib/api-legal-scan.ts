@@ -177,6 +177,34 @@ export function buildProposalProblemFromLegalScan(
 }
 
 /** Maps layer1 checklist keys to risk_id entries in the report. */
+export const LEGAL_SCAN_CHECKLIST_KEYS = [
+  "ssl",
+  "privacy",
+  "cookie",
+  "cookiepol",
+  "consent",
+  "req",
+  "contacts",
+  "offer",
+  "terms",
+  "withdraw",
+  "admark",
+  "trackers",
+  "formenc",
+] as const;
+
+export function localizeLegalScanChecklist(
+  items: LegalScanCheckItem[],
+  labelForKey: (key: string) => string
+): LegalScanCheckItem[] {
+  return items.map((item) => {
+    if (!(LEGAL_SCAN_CHECKLIST_KEYS as readonly string[]).includes(item.key)) {
+      return item;
+    }
+    return { ...item, label: labelForKey(item.key) };
+  });
+}
+
 export const CHECKLIST_TO_RISK_IDS: Record<string, string[]> = {
   ssl: ["no_ssl"],
   privacy: ["no_privacy_policy"],

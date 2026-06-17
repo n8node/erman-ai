@@ -72,7 +72,9 @@
     "dashboard": "Dashboard",
     "logout": "Logout",
     "project": "Projekt",
-    "discussProject": "Projekt besprechen"
+    "discussProject": "Projekt besprechen",
+    "audit": "Automatisierungsaudit",
+    "legalScan": "Legal-Website-Scan"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -94,6 +96,14 @@
       "proposal": {
         "name": "Vorschlagsgenerator",
         "description": "Kommerzieller Vorschlagsgenerator"
+      },
+      "audit": {
+        "name": "Automatisierungsaudit",
+        "description": "Multi-Prozess-Audit mit Priorisierungs-Roadmap"
+      },
+      "legal-scan": {
+        "name": "Legal Site Scan",
+        "description": "RF legal risk scan for client websites"
       }
     }
   },
@@ -409,7 +419,8 @@
     "tools": {
       "calculator": "Automatisierungsrechner",
       "strategy": "KI-Strategie",
-      "proposal": "Vorschlagsgenerator"
+      "proposal": "Vorschlagsgenerator",
+      "legal-scan": "Legal Site Scan"
     },
     "features": {
       "export_pdf": "PDF-Export",
@@ -418,7 +429,16 @@
       "share_report": "Öffentliche Freigabe-Links",
       "priority_queue": "Vorrangwarteschlange",
       "white_label": "White label"
-    }
+    },
+    "guestHint": "Sign in or register to activate a plan or purchase a subscription.",
+    "loginToActivate": "Sign in to activate",
+    "loginToPurchase": "Sign in to purchase",
+    "paymentSuccess": "Zahlung erhalten. Ihr Plan wird innerhalb einer Minute aktualisiert — aktualisieren Sie ihn, wenn sich die Limits nicht geändert haben.",
+    "paymentFailed": "Die Zahlung wurde nicht abgeschlossen. Versuchen Sie es erneut oder wählen Sie einen anderen Plan.",
+    "paymentUnavailable": "Der Online-Checkout ist vorübergehend nicht verfügbar. E-Mail hello@erman.ai",
+    "adminDirectSwitchHint": "Als Administrator können Sie jeden Plan ohne Bezahlung aktivieren.",
+    "legalScanPages": "Rechtliche Scantiefe",
+    "pagesPerScan": "bis zu {count} Seiten / Scan"
   },
   "calculator": {
     "title": "Automatisierungsrechner",
@@ -627,7 +647,11 @@
       "automate": "Automatisierung empfohlen — Amortisation unter 12 Monaten und positiver ROI",
       "consider": "Automatisierung erwägen — moderate Amortisation oder ROI",
       "not_recommended": "Automatisierung bei den aktuellen Parametern nicht empfohlen"
-    }
+    },
+    "discussProject": "Projekt besprechen",
+    "discussProjectSent": "Anfrage gesendet",
+    "discussProjectAlreadySent": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht",
+    "proposalRequestAlreadySent": "Sie haben bereits eine Angebotsanfrage eingereicht"
   },
   "strategy": {
     "title": "KI-Strategie",
@@ -914,6 +938,9 @@
         "solutionName": "Automatisierung: {process}",
         "clientProblem": "Prozess «{process}»: potenzielle Einsparung {savings} ₽/Monat nach der Automatisierung.",
         "processFallback": "Prozess"
+      },
+      "legalScanPrefill": {
+        "solutionName": "Website-Konformität mit RF-Anforderungen"
       }
     },
     "scenarios": {
@@ -1033,6 +1060,454 @@
       "sender_contact": "Name des Absenders für Signatur und nächsten Schritt.",
       "sender_phone": "Telefon in der Dokumentsignatur.",
       "sender_email": "E-Mail für die Antwort des Kunden."
+    }
+  },
+  "legalScan": {
+    "title": "Legal-Website-Scan",
+    "subtitle": "Überprüfen Sie eine Kundenwebsite auf RF-Rechtsrisiken und erhalten Sie einen Bericht über eine feine Schätzung",
+    "loading": "Lädt…",
+    "subnav": {
+      "new": "Neuer Scan",
+      "history": "Verlauf"
+    },
+    "steps": {
+      "1": "Website",
+      "2": "Scan läuft",
+      "3": "Bericht"
+    },
+    "form": {
+      "section": "Kundenstandort",
+      "url": "URL der Webseite",
+      "industry": "Industrie",
+      "size": "Unternehmensgröße",
+      "features": "Was ist auf der Website?",
+      "featuresHint": "verfeinert den Scheck",
+      "featuresNote": "Markieren Sie, was Sie über den Kunden wissen. Der Scanner erkennt den Rest.",
+      "crawlDepth": "Scantiefe",
+      "maxPages": "Max. Seitenanzahl",
+      "maxDepth": "Verbindungstiefe",
+      "crawlNote": "Der Scanner durchsucht die Website nach rechtlichen Seiten, Kontakten und Unternehmensdetails. Dein Abo erlaubt bis zu {limit} Seiten.",
+      "submit": "Scan ausführen",
+      "scanning": "Wird gestartet"
+    },
+    "industries": {
+      "ecommerce": "E-Commerce",
+      "services": "Dienstleistungen, Beratung",
+      "medicine": "Medizin, Psychologie",
+      "finance": "Finanzen und Investments",
+      "education": "Online-Bildung",
+      "other": "Sonstiges (bitte nähere Angaben machen)"
+    },
+    "sizes": {
+      "sole": "Alleinverd.",
+      "small": "Kleinunternehmen (bis zu 50)",
+      "medium": "Mittelgroß (50–250)"
+    },
+    "features": {
+      "forms": "Sammelt Daten über Formulare",
+      "ads": "Traffic von Anzeigen",
+      "sales": "Online-Verkäufe / Zahlungen",
+      "foreign": "Ausländische Dienstleistungen / Analytik"
+    },
+    "crawl": {
+      "presets": {
+        "quick": "Quick (1 Seite)",
+        "standard": "Standard (10 Seiten)",
+        "deep": "Tiefgründig (30 Seiten)"
+      }
+    },
+    "scan": {
+      "scanning": "Scannen !",
+      "pagesProgress": "Geprüfte Seiten: {done} von {total}",
+      "ok": "o.B.",
+      "risk": "Risiko, riskieren, riskiere, riskieren Sie, Sie riskieren"
+    },
+    "checklist": {
+      "ssl": "SSL-Zertifikat und HTTPS",
+      "privacy": "Richtlinie zur Verarbeitung von personenbezogenen Daten",
+      "cookie": "Cookie-Banner",
+      "cookiepol": "Separate Cookie-Richtlinie",
+      "consent": "Zustimmung zu Formularen",
+      "req": "Firmendaten (INN/OGRN)",
+      "contacts": "Kontaktinformationen",
+      "offer": "Öffentliches Angebot",
+      "terms": "Nutzungsbedingungen",
+      "withdraw": "Widerruf der Einwilligung/ Datenlöschung",
+      "admark": "Anzeigenkennzeichnung (erid)",
+      "trackers": "Tracker und Analysen",
+      "formenc": "Formularverschlüsselung"
+    },
+    "result": {
+      "risksFound": "gefundene Risiken",
+      "fixedFines": "mögliche feste Bußgelder",
+      "fineUpTo": "bis {amount}",
+      "fineNone": "—",
+      "scanned": "gescannt",
+      "pagesCrawled": "seiten der Website: {count}",
+      "crawledPages": "Geprüfte Seiten ({count})",
+      "leakTitle": "Als Referenz, mögliche Haftung für ein personenbezogenes Datenleck:",
+      "leakSeparate": "These amounts are not included in the calculation above and do not mean a leak was detected.",
+      "checksTitle": "Ergebnisse überprüfen",
+      "risksTitle": "Identifizierte Risiken",
+      "noRisks": "Überprüfen Sie, ob Daten nicht verfügbar sind.",
+      "noRiskExplanation": "Bei dieser Prüfung wurde kein Risiko festgestellt.",
+      "riskDetectedGeneric": "Ein potenzielles Risiko wurde identifiziert — wir empfehlen eine manuelle Überprüfung.",
+      "article": "Artikel",
+      "fine": "Fein",
+      "severity": {
+        "none": "zu keinem Risiko",
+        "high": "hoch",
+        "medium": "mittel",
+        "low": "niedrig"
+      },
+      "exportPdf": "Exportiere PDF",
+      "pdfLoading": "PDF generieren",
+      "pdfFailed": "PDF-Dateiexport fehlgeschlagen",
+      "exportLocked": "PDF — nach Login und Pro+ Plan",
+      "restart": "Erneut ausführen"
+    },
+    "errors": {
+      "loadFailed": "Ergebnis konnte nicht geladen werden",
+      "scanFailed": "Der Scan ist fehlgeschlagen"
+    },
+    "history": {
+      "title": "Legaler Scanverlauf",
+      "subtitle": "Gespeicherte Website-Checks und deren Status",
+      "loading": "Lädt…",
+      "loadFailed": "Verlauf konnte nicht geladen werden",
+      "deleteFailed": "Konnte nicht gelöscht werden.",
+      "deleteConfirm": "Diesen Scan aus dem Verlauf löschen?",
+      "empty": "Noch keine gespeicherten Scans",
+      "emptyAction": "Machen Sie Ihren ersten Prüfung",
+      "colSite": "Grundstück",
+      "colStatus": "Status",
+      "colDate": "Datum",
+      "open": "Öffnen",
+      "continue": "Weiter",
+      "delete": "Löschen",
+      "status": {
+        "pending": "ausstehend",
+        "processing": "Scannen",
+        "done": "erledigt",
+        "error": "Fehler"
+      }
+    }
+  },
+  "audit": {
+    "title": "Automatisierungsaudit",
+    "subtitle": "Vergleichen Sie mehrere Prozesse und erhalten Sie einen priorisierten Automatisierungsplan",
+    "loadingRun": "Lädt…",
+    "subnav": {
+      "new": "neuen Audits",
+      "history": "Geschichte"
+    },
+    "formSteps": {
+      "company": "Unternehmen",
+      "processes": "Prozesse",
+      "review": "Erstellen"
+    },
+    "form": {
+      "companySection": "Unternehmenskontext",
+      "processesSection": "Zu auditierende Prozesse",
+      "reviewSection": "Überprüfung vor Generierung",
+      "companyName": "Firmenname",
+      "primaryGoal": "Primäres Automatisierungsziel",
+      "customGoal": "Custom goal",
+      "companySize": "Firmengröße",
+      "headcount": "Operative Mitarbeiterzahl",
+      "budget": "Automatisierungsbudget",
+      "timeline": "Entscheidungshorizont",
+      "dataDuplication": "Datenduplizierung über Systeme hinweg",
+      "priorityCriteria": "Priorisierungskriterien",
+      "itSystems": "900 Systeme im Einsatz",
+      "otherSystem": "anderes System",
+      "otherSystemPlaceholder": "z.B. Notion, Bitrix…",
+      "select": "Auswählen..",
+      "next": "Weiter",
+      "back": "Zurück",
+      "generate": "Bericht erstellen",
+      "generating": "Wird gestartet",
+      "newAudit": "neuen Audits",
+      "processesHint": "Füge {min} zu {max} Prozessen hinzu. Verwenden Sie Vorlagen für eine schnellere Eingabe.",
+      "processNumber": "Prozess {n}",
+      "incomplete": "Bitte füllen Sie die erforderlichen Felder aus",
+      "removeProcess": "Prozess entfernen"
+    },
+    "goals": {
+      "reduce_costs": "Senken Sie die Kosten",
+      "speed": "Prozesse beschleunigen",
+      "quality": "Fehler reduzieren",
+      "scale": "Skalierung ohne Einstellung",
+      "control": "Transparenz und Kontrolle"
+    },
+    "criteria": {
+      "cost_savings": "Kostensenkung",
+      "speed": "Drehzahl",
+      "quality": "Qualität",
+      "scalability": "Skalierbarkeit",
+      "control": "Regelung",
+      "quick_wins": "Schnelle Erfolge"
+    },
+    "headcount": {
+      "1-10": "1–10 Personen",
+      "11-30": "11/30",
+      "31-100": "31 - 100",
+      "101-500": "101–500",
+      "500+": "500+"
+    },
+    "budget": {
+      "up_to_500k": "bis zu 500.000 ₽",
+      "500k_2m": "500K – 2M ₽",
+      "2m_5m": "2M – 5M ₽",
+      "5m_plus": "5 MIO."
+    },
+    "timeline": {
+      "3months": "3 Monate",
+      "6months": "6 Monate",
+      "1year": "1 Jahr",
+      "2years": "2 Jahre"
+    },
+    "duplication": {
+      "none": "Fast keiner.",
+      "some": "in bestimmten Fällen",
+      "many": "Oft",
+      "critical": "Kritische Störung"
+    },
+    "systems": {
+      "crm": "CRM",
+      "erp": "ERP",
+      "1c": "1C",
+      "spreadsheets": "Tabellenkalkulation",
+      "email": "Mail",
+      "messengers": "Messenger",
+      "website": "Webseite",
+      "helpdesk": "Helpdesk",
+      "warehouse": "Warehouse / WMS"
+    },
+    "departments": {
+      "sales": "Sales",
+      "operations": "Operations",
+      "finance": "Finance",
+      "hr": "HR",
+      "marketing": "Marketing",
+      "logistics": "Logistik",
+      "support": "Support",
+      "it": "IT",
+      "other": "Sonstiges (bitte nähere Angaben machen)"
+    },
+    "bottlenecks": {
+      "manual_data_entry": "Die manuelle Datenerfassung",
+      "approvals": "Zustimmungen",
+      "integrations": "Systemintegrationen",
+      "errors_rework": "Fehler und Nacharbeit",
+      "waiting": "Warte- / Leerlaufzeit",
+      "other": "Sonstiges (bitte nähere Angaben machen)"
+    },
+    "templates": {
+      "incoming_leads": "Eingehende Leads",
+      "order_processing": "Auftragsbearbeitung",
+      "customer_support": "Kundenbetreuung",
+      "invoicing": "Rechnungsstellung",
+      "hr_onboarding": "Mitarbeiter Onboarding",
+      "inventory": "Inventar",
+      "reporting": "Berichterstattung",
+      "custom": "Benutzerdefinierter Prozess"
+    },
+    "levels": {
+      "high": "Hoch",
+      "medium": "Medium",
+      "low": "Niedrig"
+    },
+    "process": {
+      "name": "Prozessname",
+      "department": "Abteilung / Inhaber",
+      "customDepartment": "Abteilung angeben",
+      "frequency": "Häufigkeit pro Monat",
+      "minutes": "Zeit pro Zyklus",
+      "fte": "Beteiligte Personen",
+      "hourlyRate": "Stündliche Kosten",
+      "errorRate": "Fehler- / Nacharbeitsrate",
+      "errorCost": "Kosten pro Fehler",
+      "systems": "Eingesetzte Systeme:",
+      "bottleneck": "Hauptengpass",
+      "customBottleneck": "Engpass beschreiben",
+      "standardization": "Prozessstandardisierung",
+      "readiness": "Automatisierungsbereitschaft",
+      "impact": "Voraussichtliche Auswirkungen",
+      "integrationComplexity": "Integrationskomplexität (1–5)"
+    },
+    "ranges": {
+      "frequency": {
+        "1-10": "1–10 / Monat",
+        "11-50": "11:50",
+        "51-200": "51 - 200",
+        "201-500": "201 – 500 Mitarbeiter",
+        "500+": "500+"
+      },
+      "minutes": {
+        "5-15": "5 - 15 Min",
+        "16-30": "16-30 min",
+        "31-60": "31-60 Min.",
+        "61-120": "1-2 Stunden) vergehen.",
+        "120+": "2 h"
+      },
+      "fte": {
+        "1": "1 Person",
+        "2-3": "2 – 3",
+        "4-10": "10 12",
+        "11+": "11+"
+      },
+      "hourly": {
+        "300-500": "300–500 ₽/h",
+        "501-800": "501–800 ₽/h",
+        "801-1200": "801–1200 ₽/h",
+        "1201-2000": "1201–2000 ₽/h",
+        "2000+": "2000+ ₽/h"
+      },
+      "errorRate": {
+        "0-2": "0-2",
+        "3-5": "3 – 5",
+        "6-10": "6 – 10",
+        "11-20": "11 – 20",
+        "20+": "&gt; 20%"
+      },
+      "errorCost": {
+        "500-2000": "500-2.000 ₽",
+        "2001-5000": "2-5.000 ₽",
+        "5001-15000": "5-15.000 ₽",
+        "15001-50000": "15-50.000 ₽",
+        "50000+": "50.000+"
+      }
+    },
+    "polling": {
+      "title": "Erstellung des Auditberichts",
+      "hint": "Normalerweise dauert bis 3 Minuten",
+      "failed": "Bericht konnte nicht generiert werden"
+    },
+    "errors": {
+      "startFailed": "Audit konnte nicht gestartet werden",
+      "loadFailed": "Ergebnis konnte nicht geladen werden!"
+    },
+    "result": {
+      "document": "Automatisierungsauditbericht",
+      "subtitle": "Priorisierter Automatisierungsplan",
+      "metrics": {
+        "totalCost": "monatliche Gesamtbelastung",
+        "totalSavings": "Mögliche monatliche Einsparungen",
+        "processCount": "Geprüfte Prozesse"
+      },
+      "sections": {
+        "summary": "Zusammenfassung",
+        "context": "Unternehmenskontext",
+        "quickWins": "Schnelle Erfolge",
+        "priority": "Automatisierungsprioritäten",
+        "roadmap": "Fahrplan",
+        "risks": "Risken",
+        "nextSteps": "Nächste Schritte (30 Tage)",
+        "metrics": "Zu verfolgende Metriken"
+      },
+      "table": {
+        "rank": "es",
+        "process": "Prozess",
+        "score": "Ergebnis",
+        "savings": "Einsparungen / Monat",
+        "quickWin": "Quick Win",
+        "yes": "Ja"
+      },
+      "roadmap": {
+        "processes": "Prozesse"
+      },
+      "severity": {
+        "low": "niedrig",
+        "medium": "mittel",
+        "high": "hoch"
+      }
+    },
+    "history": {
+      "loading": "Lädt…",
+      "empty": "Noch keine Audits",
+      "createFirst": "Erstes Audit erstellen →",
+      "view": "Öffnen",
+      "continue": "Weiter",
+      "columns": {
+        "date": "Datum",
+        "company": "Unternehmen",
+        "status": "Status",
+        "action": "Handlung"
+      },
+      "status": {
+        "done": "Fertig",
+        "error": "Error",
+        "processing": "Generieren",
+        "pending": "Queued"
+      }
+    }
+  },
+  "discuss": {
+    "title": "Discuss project",
+    "subtitle": "Senden Sie Ihre Berechnung und Beschreibung — wir besprechen die Automatisierung basierend auf Ihren Zahlen, nicht auf generischen Folien",
+    "value": {
+      "title": "Das erhalten Sie",
+      "item1": "ROI-Überprüfung basierend auf Ihrem Taschenrechnerlauf",
+      "item2": "Zeitrahmen, Risiken und Machbarkeitsbewertung",
+      "item3": "Klare Empfehlung per Telegramm: automatisieren, warten oder überspringen"
+    },
+    "steps": {
+      "label": "Schritt {n}",
+      "calc": "Automatisierungsrechner ausführen",
+      "describe": "Beschreiben Sie das Projekt und fügen Sie die Berechnung bei",
+      "talk": "Diskutieren Sie basierend auf Ihren Daten in Telegram"
+    },
+    "form": {
+      "name": "Name",
+      "email": "Mail",
+      "emailVerified": "Verifizierte E-Mail von Ihrem Konto",
+      "emailGuestHint": "Wir senden einen Bestätigungslink — wir erhalten die Anfrage erst, nachdem Sie darauf geklickt haben",
+      "telegram": "Telegram",
+      "telegramPlaceholder": "Benutzername",
+      "telegramHint": "Ihr Benutzername — wir werden Sie auf Telegram kontaktieren, um das Projekt auf der Grundlage Ihrer Berechnung zu besprechen",
+      "projectTitle": "Project name",
+      "description": "Projektbeschreibung",
+      "descriptionPlaceholder": "Beschreiben Sie kurz den Prozess, das Automatisierungsziel und den Kontext. Fügen Sie unten einen Taschenrechner hinzu, falls Sie einen haben.",
+      "calculatorRun": "Rechnerlauf",
+      "noRun": "-keine Berechnung",
+      "unnamedRun": "Ohne Titel",
+      "runPreview": "Ausgewählte Berechnung",
+      "runBenefit": "Ersparnis: {value}",
+      "runPayback": "Amortisation: {value}",
+      "months": "m??",
+      "guestRunHint": "Melden Sie sich an, um eine gespeicherte Berechnung anzuhängen, oder führen Sie zuerst den Rechner aus.",
+      "guestRunAttached": "Ihr Rechnerergebnis wird der Anfrage beigefügt.",
+      "goCalculator": "Kalkulator öffnen",
+      "submit": "Senden",
+      "sending": "Senden…"
+    },
+    "success": {
+      "title": "Anfrage sent",
+      "auth": "Wir haben Ihre Anfrage erhalten und werden Sie über Telegram kontaktieren. Eine Bestätigung wurde an Ihre E-Mail-Adresse gesendet.",
+      "guest": "Überprüfe deinen Posteingang und klicke auf den Bestätigungslink. Dann erhalten wir Ihre Anfrage und kontaktieren Sie über Telegram.",
+      "telegramHint": "Wir erreichen dich unter Telegramm {telegram}",
+      "backToCalculator": "← Zurück zum Taschenrechner"
+    },
+    "alreadySubmitted": {
+      "title": "Anfrage bereits eingereicht",
+      "body": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht. Das Erman AI-Team wird sich mit Ihnen in Verbindung setzen — wiederholte Einsendungen sind nicht verfügbar."
+    },
+    "errors": {
+      "submitFailed": "Anfrage konnte nicht gesendet werden",
+      "missingFields": "Bitte füllen Sie alle erforderlichen Felder aus",
+      "invalidTelegram": "Geben Sie einen Telegramm-Benutzernamen (5+ lateinische Zeichen) oder eine Telefonnummer ein",
+      "invalidForm": "bitte überprüfen Sie das Formular",
+      "alreadySubmitted": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht"
+    },
+    "confirm": {
+      "loading": "Anfrage wird bestätigt...",
+      "title": "Anfrage bestätigt",
+      "body": "Vielen Dank! Wir haben Ihre Anfrage erhalten und werden Sie über Telegram kontaktieren, um die Automatisierung auf der Grundlage Ihrer Daten zu besprechen.",
+      "errorTitle": "Ungültiger Link",
+      "errorBody": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Bitte senden Sie das Formular erneut.",
+      "back": "Zurück zum Formular",
+      "dashboard": "Zum Dashboard"
     }
   }
 }

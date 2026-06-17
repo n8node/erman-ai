@@ -3,6 +3,7 @@
 import { Check, AlertCircle, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { LegalScanCheckItem, LegalScanCrawlMeta } from "@/lib/api-legal-scan";
+import { LEGAL_SCAN_CHECKLIST_KEYS } from "@/lib/api-legal-scan";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -14,6 +15,12 @@ type Props = {
 
 export function LegalScanChecklist({ url, checklist, progress, crawl }: Props) {
   const t = useTranslations("legalScan.scan");
+  const tChecklist = useTranslations("legalScan.checklist");
+
+  const checklistLabel = (item: LegalScanCheckItem) =>
+    (LEGAL_SCAN_CHECKLIST_KEYS as readonly string[]).includes(item.key)
+      ? tChecklist(item.key)
+      : item.label;
 
   return (
     <div className="rounded-xl border border-border bg-bg p-6 shadow-sm">
@@ -62,7 +69,9 @@ export function LegalScanChecklist({ url, checklist, progress, crawl }: Props) {
                 <span className="h-1.5 w-1.5 rounded-full bg-border2" />
               )}
             </span>
-            <span className={cn("flex-1", item.status === "ok" && "font-medium")}>{item.label}</span>
+            <span className={cn("flex-1", item.status === "ok" && "font-medium")}>
+              {checklistLabel(item)}
+            </span>
             {item.status === "ok" && (
               <span className="text-xs font-semibold text-success">{t("ok")}</span>
             )}

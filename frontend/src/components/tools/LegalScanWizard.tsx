@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import {
   DEFAULT_LEGAL_SCAN_INPUT,
+  LEGAL_SCAN_CHECKLIST_KEYS,
   LEGAL_SCAN_CRAWL_PRESETS,
   LEGAL_SCAN_FEATURE_CHIPS,
   LEGAL_SCAN_INDUSTRY_OPTIONS,
@@ -43,21 +44,11 @@ import { cn } from "@/lib/utils";
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
 
-const DEFAULT_CHECKLIST: LegalScanCheckItem[] = [
-  { key: "ssl", label: "SSL-сертификат и HTTPS", status: "pending" },
-  { key: "privacy", label: "Политика обработки ПД", status: "pending" },
-  { key: "cookie", label: "Cookie-баннер", status: "pending" },
-  { key: "cookiepol", label: "Отдельная политика cookie", status: "pending" },
-  { key: "consent", label: "Согласие у форм", status: "pending" },
-  { key: "req", label: "Реквизиты (ИНН/ОГРН)", status: "pending" },
-  { key: "contacts", label: "Контактные данные", status: "pending" },
-  { key: "offer", label: "Публичная оферта", status: "pending" },
-  { key: "terms", label: "Пользовательское соглашение", status: "pending" },
-  { key: "withdraw", label: "Отзыв согласия / удаление данных", status: "pending" },
-  { key: "admark", label: "Маркировка рекламы (erid)", status: "pending" },
-  { key: "trackers", label: "Трекеры и аналитика", status: "pending" },
-  { key: "formenc", label: "Шифрование форм", status: "pending" },
-];
+const DEFAULT_CHECKLIST: LegalScanCheckItem[] = LEGAL_SCAN_CHECKLIST_KEYS.map((key) => ({
+  key,
+  label: key,
+  status: "pending",
+}));
 
 function LegalScanWizardInner() {
   const t = useTranslations("legalScan");

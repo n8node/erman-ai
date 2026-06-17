@@ -72,7 +72,9 @@
     "dashboard": "控制台",
     "logout": "退出登录",
     "project": "项目",
-    "discussProject": "讨论项目"
+    "discussProject": "讨论项目",
+    "audit": "自动化审计",
+    "legalScan": "网站法律合规扫描"
   },
   "dashboard": {
     "title": "控制台",
@@ -94,6 +96,14 @@
       "proposal": {
         "name": "方案生成器",
         "description": "商业方案生成器"
+      },
+      "audit": {
+        "name": "自动化审计",
+        "description": "具有优先级路线图的多流程审核"
+      },
+      "legal-scan": {
+        "name": "合法站点扫描",
+        "description": "客户网站的射频法律风险扫描"
       }
     }
   },
@@ -427,7 +437,8 @@
     "tools": {
       "calculator": "自动化计算器",
       "strategy": "AI 战略",
-      "proposal": "方案生成器"
+      "proposal": "方案生成器",
+      "legal-scan": "合法站点扫描"
     },
     "features": {
       "export_pdf": "导出 PDF",
@@ -436,7 +447,16 @@
       "share_report": "公开分享链接",
       "priority_queue": "优先队列",
       "white_label": "白标"
-    }
+    },
+    "guestHint": "登录或注册以激活套餐或购买订阅。",
+    "loginToActivate": "登录以激活",
+    "loginToPurchase": "登录以购买",
+    "paymentSuccess": "已收到付款。您的套餐将在一分钟内更新—如果限制未更改，请刷新。",
+    "paymentFailed": "付款未完成。请重试或选择其他方案。",
+    "paymentUnavailable": "在线结账暂时不可用。电子邮件hello@erman.ai",
+    "adminDirectSwitchHint": "作为管理员，您可以无需付款即可激活任何套餐。",
+    "legalScanPages": "法律扫描深度",
+    "pagesPerScan": "高达__ PH0 __页/扫描"
   },
   "calculator": {
     "title": "自动化计算器",
@@ -645,7 +665,11 @@
       "automate": "建议自动化——回本周期少于12个月且ROI为正",
       "consider": "可考虑自动化——回本周期或ROI适中",
       "not_recommended": "当前参数下不建议自动化"
-    }
+    },
+    "discussProject": "讨论项目",
+    "discussProjectSent": "请求已发送",
+    "discussProjectAlreadySent": "您已经提交了项目讨论请求",
+    "proposalRequestAlreadySent": "您已经提交了提案请求"
   },
   "strategy": {
     "title": "AI 战略",
@@ -932,6 +956,9 @@
         "solutionName": "自动化：{process}",
         "clientProblem": "流程「{process}」：自动化后潜在节省 {savings} ₽/月。",
         "processFallback": "流程"
+      },
+      "legalScanPrefill": {
+        "solutionName": "网站符合RF要求"
       }
     },
     "scenarios": {
@@ -1051,6 +1078,454 @@
       "sender_contact": "发件人姓名，用于签名与下一步。",
       "sender_phone": "文档签名中的联系电话。",
       "sender_email": "客户回复邮箱。"
+    }
+  },
+  "legalScan": {
+    "title": "网站法律合规扫描",
+    "subtitle": "查看客户网站以了解RF法律风险并获取精细估算报告",
+    "loading": "加载中…",
+    "subnav": {
+      "new": "新建扫描",
+      "history": "历史"
+    },
+    "steps": {
+      "1": "站点",
+      "2": "扫描中",
+      "3": "报告"
+    },
+    "form": {
+      "section": "客户端/网站",
+      "url": "网站地址",
+      "industry": "行业",
+      "size": "业务规模",
+      "features": "网站上有什么",
+      "featuresHint": "细化支票",
+      "featuresNote": "标记您对客户的了解。扫描仪检测到其余部分。",
+      "crawlDepth": "扫描深度:",
+      "maxPages": "頁數上限",
+      "maxDepth": "链接深度",
+      "crawlNote": "扫描仪在网站上抓取合法页面、联系人和公司详细信息。您的计划最多允许__ PH0 __页。",
+      "submit": "运行扫描",
+      "scanning": "正在启动..."
+    },
+    "industries": {
+      "ecommerce": "电子商务",
+      "services": "服务/咨询",
+      "medicine": "医学和心理学",
+      "finance": "投资理财",
+      "education": "网络教育",
+      "other": "其他"
+    },
+    "sizes": {
+      "sole": "独资经营者",
+      "small": "小型企业（最多50家）",
+      "medium": "中型（ 50–250 ）"
+    },
+    "features": {
+      "forms": "通过表单收集数据",
+      "ads": "来自广告的流量",
+      "sales": "在线销售/付款",
+      "foreign": "对外服务/分析"
+    },
+    "crawl": {
+      "presets": {
+        "quick": "快速（ 1页）",
+        "standard": "标准（ 10页）",
+        "deep": "深（ 30页）"
+      }
+    },
+    "scan": {
+      "scanning": "扫描中",
+      "pagesProgress": "已检查页面：第__ PH0 __页，共__ PH1 __页",
+      "ok": "确定",
+      "risk": "risk"
+    },
+    "checklist": {
+      "ssl": "SSL证书和HTTPS",
+      "privacy": "个人数据处理政策",
+      "cookie": "Cookie横幅",
+      "cookiepol": "单独的Cookie政策",
+      "consent": "同意表格",
+      "req": "公司详情（ INN/OGRN ）",
+      "contacts": "联系信息",
+      "offer": "公开报价",
+      "terms": "使用条款",
+      "withdraw": "撤回同意/删除数据",
+      "admark": "广告标签（ erid ）",
+      "trackers": "跟踪器和分析",
+      "formenc": "表单加密"
+    },
+    "result": {
+      "risksFound": "发现的风险",
+      "fixedFines": "潜在的固定罚款",
+      "fineUpTo": "高达__ PH0 __",
+      "fineNone": "—",
+      "scanned": "已扫描",
+      "pagesCrawled": "网站页面： __ PH0 __",
+      "crawledPages": "已检查页面（ __ PH0 __ ）",
+      "leakTitle": "作为参考，个人数据泄露的可能责任：",
+      "leakSeparate": "这些金额不包括在上述计算中，并不意味着检测到泄漏。",
+      "checksTitle": "核查结果",
+      "risksTitle": "已识别风险",
+      "noRisks": "检查数据不可用。",
+      "noRiskExplanation": "此检查未检测到风险。",
+      "riskDetectedGeneric": "已识别出潜在风险—我们建议人工审核。",
+      "article": "文章",
+      "fine": "优秀",
+      "severity": {
+        "none": "无跌倒风险",
+        "high": "高",
+        "medium": "中",
+        "low": "低"
+      },
+      "exportPdf": "导出 PDF",
+      "pdfLoading": "生成 PDF 中",
+      "pdfFailed": "导出失败",
+      "exportLocked": "PDF —登录和Pro +计划后",
+      "restart": "再次运行"
+    },
+    "errors": {
+      "loadFailed": "无法加载结果",
+      "scanFailed": "扫描失败"
+    },
+    "history": {
+      "title": "法律扫描历史记录",
+      "subtitle": "已保存的网站检查及其状态",
+      "loading": "加载中…",
+      "loadFailed": "无法加载历史记录",
+      "deleteFailed": "无法删除",
+      "deleteConfirm": "从历史记录中删除此扫描？",
+      "empty": "尚未保存扫描",
+      "emptyAction": "运行您的第一次扫描 →",
+      "colSite": "站点",
+      "colStatus": "状态",
+      "colDate": "更改日期",
+      "open": "开启",
+      "continue": "继续",
+      "delete": "删除",
+      "status": {
+        "pending": "暂挂",
+        "processing": "scanning",
+        "done": "done",
+        "error": "error"
+      }
+    }
+  },
+  "audit": {
+    "title": "Automation Audit",
+    "subtitle": "Compare multiple processes and get a prioritized automation plan",
+    "loadingRun": "加载中…",
+    "subnav": {
+      "new": "New audit",
+      "history": "历史"
+    },
+    "formSteps": {
+      "company": "公司",
+      "processes": "生产工序",
+      "review": "生成"
+    },
+    "form": {
+      "companySection": "公司背景",
+      "processesSection": "要审核的流程",
+      "reviewSection": "生成前审核",
+      "companyName": "公司名称",
+      "primaryGoal": "主要自动化目标",
+      "customGoal": "自定义目标",
+      "companySize": "公司规模",
+      "headcount": "运营人员编制",
+      "budget": "自动化预算",
+      "timeline": "决策视野",
+      "dataDuplication": "跨系统的数据复制",
+      "priorityCriteria": "优先级标准",
+      "itSystems": "正在使用的系统",
+      "otherSystem": "其他系统",
+      "otherSystemPlaceholder": "例如Notion、Bitrix……",
+      "select": "选择…",
+      "next": "下一頁",
+      "back": "回到",
+      "generate": "生成报告",
+      "generating": "正在启动...",
+      "newAudit": "新审核",
+      "processesHint": "将__ PH0 __添加到__ PH1 __流程。使用模板以加快输入速度。",
+      "processNumber": "流程__ PH0 __",
+      "incomplete": "必填字段",
+      "removeProcess": "移除流程"
+    },
+    "goals": {
+      "reduce_costs": "降低成本。",
+      "speed": "加快流程",
+      "quality": "减少错误",
+      "scale": "无需招聘即可扩展",
+      "control": "透明度和控制权"
+    },
+    "criteria": {
+      "cost_savings": "节省开支",
+      "speed": "速度",
+      "quality": "装备品质",
+      "scalability": "可扩展性",
+      "control": "制高",
+      "quick_wins": "速赢"
+    },
+    "headcount": {
+      "1-10": "1–10人",
+      "11-30": "11:30",
+      "31-100": "31–100",
+      "101-500": "101 – 500人",
+      "500+": "500+"
+    },
+    "budget": {
+      "up_to_500k": "高达50万₽",
+      "500k_2m": "50万- 200万美元",
+      "2m_5m": "200万-500万₽",
+      "5m_plus": "卷尺（5m）"
+    },
+    "timeline": {
+      "3months": "3 months",
+      "6months": "6 months",
+      "1year": "1 year",
+      "2years": "2 years"
+    },
+    "duplication": {
+      "none": "Almost none",
+      "some": "Some cases",
+      "many": "Often",
+      "critical": "严重问题"
+    },
+    "systems": {
+      "crm": "CRM 客户关系管理",
+      "erp": "ERP",
+      "1c": "1C",
+      "spreadsheets": "电子表格",
+      "email": "电子邮箱",
+      "messengers": "信差",
+      "website": "網站",
+      "helpdesk": "服务",
+      "warehouse": "仓库/WMS"
+    },
+    "departments": {
+      "sales": "销售",
+      "operations": "烟火行动",
+      "finance": "finance",
+      "hr": "人力资源",
+      "marketing": "市场营销",
+      "logistics": "物流",
+      "support": "技术支持",
+      "it": "IT",
+      "other": "其他"
+    },
+    "bottlenecks": {
+      "manual_data_entry": "手动数据输入",
+      "approvals": "审批",
+      "integrations": "系统集成",
+      "errors_rework": "错误和返工",
+      "waiting": "等待/空闲时间",
+      "other": "其他"
+    },
+    "templates": {
+      "incoming_leads": "传入的线索",
+      "order_processing": "订单处理",
+      "customer_support": "客户支持",
+      "invoicing": "发票",
+      "hr_onboarding": "员工入职",
+      "inventory": "库存",
+      "reporting": "报告",
+      "custom": "自定义处理"
+    },
+    "levels": {
+      "high": "高",
+      "medium": "中粗线",
+      "low": "低"
+    },
+    "process": {
+      "name": "工序名称",
+      "department": "部门/所有者",
+      "customDepartment": "指定部门",
+      "frequency": "每月频率",
+      "minutes": "每个周期的时间",
+      "fte": "卷人",
+      "hourlyRate": "每小时成本",
+      "errorRate": "错误/返工率",
+      "errorCost": "每个错误的成本",
+      "systems": "使用的系统",
+      "bottleneck": "主要瓶颈",
+      "customBottleneck": "描述瓶颈",
+      "standardization": "过程标准化",
+      "readiness": "Automation readiness",
+      "impact": "Expected impact",
+      "integrationComplexity": "集成复杂性(1–5)"
+    },
+    "ranges": {
+      "frequency": {
+        "1-10": "1–10 / month",
+        "11-50": "11–50",
+        "51-200": "51–200",
+        "201-500": "201-500 名",
+        "500+": "500+"
+      },
+      "minutes": {
+        "5-15": "5–15分钟",
+        "16-30": "16–30分钟",
+        "31-60": "31–60分钟",
+        "61-120": "1–2小时",
+        "120+": "2小时"
+      },
+      "fte": {
+        "1": "1 人",
+        "2-3": "2–3",
+        "4-10": "4-10",
+        "11+": "11岁以上"
+      },
+      "hourly": {
+        "300-500": "300–500 ₽/小时",
+        "501-800": "501–800 ₽/小时",
+        "801-1200": "801–1200 ₽/小时",
+        "1201-2000": "1201–2000 ₽/小时",
+        "2000+": "2000 h"
+      },
+      "errorRate": {
+        "0-2": "0 ... 2",
+        "3-5": "35",
+        "6-10": "6 至 10 个",
+        "11-20": "11–20",
+        "20+": "20"
+      },
+      "errorCost": {
+        "500-2000": "50-2000 ₽",
+        "2001-5000": "2–5K ₽",
+        "5001-15000": "5–15K ₽",
+        "15001-50000": "15–50K ₽",
+        "50000+": "5万"
+      }
+    },
+    "polling": {
+      "title": "正在准备审核报告",
+      "hint": "一般需要〜3分钟",
+      "failed": "生成报告失败"
+    },
+    "errors": {
+      "startFailed": "审核开始失败",
+      "loadFailed": "加载结果失败"
+    },
+    "result": {
+      "document": "自动化审计报告",
+      "subtitle": "已确定优先级的自动化计划",
+      "metrics": {
+        "totalCost": "月度总额",
+        "totalSavings": "每月可能节省的费用",
+        "processCount": "已审核流程"
+      },
+      "sections": {
+        "summary": "执行摘要",
+        "context": "公司背景",
+        "quickWins": "速赢",
+        "priority": "自动化优先级",
+        "roadmap": "路线图",
+        "risks": "风险",
+        "nextSteps": "后续步骤（ 30天）",
+        "metrics": "要跟踪的指标"
+      },
+      "table": {
+        "rank": "#",
+        "process": "装备处理",
+        "score": "得分",
+        "savings": "每月节省金额",
+        "quickWin": "速赢",
+        "yes": "是"
+      },
+      "roadmap": {
+        "processes": "生产工序"
+      },
+      "severity": {
+        "low": "低",
+        "medium": "中",
+        "high": "高"
+      }
+    },
+    "history": {
+      "loading": "加载中…",
+      "empty": "No audits yet",
+      "createFirst": "Create first audit →",
+      "view": "开启",
+      "continue": "继续",
+      "columns": {
+        "date": "更改日期",
+        "company": "公司",
+        "status": "状态",
+        "action": "节日行动"
+      },
+      "status": {
+        "done": "完成",
+        "error": "错误",
+        "processing": "展成",
+        "pending": "已在队列中"
+      }
+    }
+  },
+  "discuss": {
+    "title": "讨论项目",
+    "subtitle": "发送您的计算和描述—我们将根据您的数字而不是通用幻灯片讨论自动化",
+    "value": {
+      "title": "您将收到的信息",
+      "item1": "基于计算器运行的投资回报率审核",
+      "item2": "时间表、风险和可行性评估",
+      "item3": "通过Telegram明确推荐：自动、等待或跳过"
+    },
+    "steps": {
+      "label": "第__ PH0 __步",
+      "calc": "运行自动化计算器",
+      "describe": "描述项目并附上计算",
+      "talk": "根据您在Telegram中的数据进行讨论"
+    },
+    "form": {
+      "name": "姓名",
+      "email": "电子邮箱",
+      "emailVerified": "来自您账号的已验证电子邮箱",
+      "emailGuestHint": "我们将发送确认链接，只有在您点击请求后，我们才会收到该请求",
+      "telegram": "电报",
+      "telegramPlaceholder": "@username",
+      "telegramHint": "您的用户名—我们将通过Telegram与您联系，根据您的计算讨论项目",
+      "projectTitle": "项目名称",
+      "description": "项目描述",
+      "descriptionPlaceholder": "简要描述流程、自动化目标和背景。如果您有计算器，请在下面附上计算器。",
+      "calculatorRun": "计算器运行",
+      "noRun": "不计算",
+      "unnamedRun": "无标题",
+      "runPreview": "所选计算",
+      "runBenefit": "优惠： __ PH0 __",
+      "runPayback": "回报： __ PH0 __",
+      "months": "周一",
+      "guestRunHint": "登录以附加已保存的计算，或先运行计算器。",
+      "guestRunAttached": "您的计算器结果将包含在请求中。",
+      "goCalculator": "打开计算器 →",
+      "submit": "提交",
+      "sending": "发送中…"
+    },
+    "success": {
+      "title": "已提交请求",
+      "auth": "我们已收到您的申请，并将通过Telegram与您联系。确认信息已发送至您的电子邮箱。",
+      "guest": "请查看您的收件箱，然后点击确认链接。然后，我们将收到您的请求，并通过Telegram与您联系。",
+      "telegramHint": "我们会通过Telegram __ PH0 __联系您",
+      "backToCalculator": "← 返回计算器"
+    },
+    "alreadySubmitted": {
+      "title": "申请已提交",
+      "body": "您已经提交了项目讨论请求。Erman AI团队将与您联系—重复提交不可用。"
+    },
+    "errors": {
+      "submitFailed": "Failed to submit request",
+      "missingFields": "Please fill in all required fields",
+      "invalidTelegram": "Enter a Telegram username (5+ Latin characters) or phone number",
+      "invalidForm": "Please check the form data",
+      "alreadySubmitted": "您已经提交了项目讨论请求"
+    },
+    "confirm": {
+      "loading": "正在确认请求…",
+      "title": "请求已确认",
+      "body": "谢谢！我们收到了您的请求，并将通过Telegram与您联系，根据您的数据讨论自动化问题。",
+      "errorTitle": "无效的链接",
+      "errorBody": "此链接已过期或已被使用。请重新提交表格。",
+      "back": "返回到形式",
+      "dashboard": "转到账户中心"
     }
   }
 }

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { exportLegalScanPDF } from "@/lib/api";
 import {
   findRiskForCheckItem,
+  LEGAL_SCAN_CHECKLIST_KEYS,
   type LegalScanInput,
   type LegalScanOutput,
   type LegalScanRiskItem,
@@ -129,9 +130,14 @@ function RiskCard({
 
 export function LegalScanResult({ input, output, runId, canExport, onRestart }: Props) {
   const t = useTranslations("legalScan.result");
+  const tChecklist = useTranslations("legalScan.checklist");
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState("");
   const checklist = output.layer1?.checklist ?? [];
+  const checklistLabel = (key: string, fallback: string) =>
+    (LEGAL_SCAN_CHECKLIST_KEYS as readonly string[]).includes(key)
+      ? tChecklist(key)
+      : fallback;
   const shownRiskIds = new Set<string>();
   checklist.forEach((item) => {
     if (item.status === "risk") {
@@ -256,7 +262,7 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
             return (
               <RiskCard
                 key={item.key}
-                title={item.label}
+                title={checklistLabel(item.key, item.label)}
                 severity="none"
                 explanation={item.evidence || t("noRiskExplanation")}
                 pageUrls={item.page_urls}
@@ -270,7 +276,7 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
           return (
             <RiskCard
               key={item.key}
-              title={risk?.title ?? item.label}
+              title={risk?.title ?? checklistLabel(item.key, item.label)}
               severity={risk?.severity ?? "medium"}
               explanation={risk?.explanation ?? item.evidence ?? t("riskDetectedGeneric")}
               article={risk?.article}

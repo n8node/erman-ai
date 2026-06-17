@@ -72,7 +72,9 @@
     "dashboard": "Panel",
     "logout": "Cerrar sesión",
     "project": "Proyecto",
-    "discussProject": "Discutir proyecto"
+    "discussProject": "Discutir proyecto",
+    "audit": "Auditoría de mosaicos de automatización",
+    "legalScan": "Análisis legal del sitio"
   },
   "dashboard": {
     "title": "Panel",
@@ -94,6 +96,14 @@
       "proposal": {
         "name": "Generador de propuestas",
         "description": "Generador de propuestas comerciales"
+      },
+      "audit": {
+        "name": "Auditoría de mosaicos de automatización",
+        "description": "Auditoría multiproceso con hoja de ruta de priorización"
+      },
+      "legal-scan": {
+        "name": "Análisis legal del sitio",
+        "description": "Análisis de riesgos legales de RF para sitios web de clientes"
       }
     }
   },
@@ -427,7 +437,8 @@
     "tools": {
       "calculator": "Calculadora de automatización",
       "strategy": "Estrategia de IA",
-      "proposal": "Generador de propuestas"
+      "proposal": "Generador de propuestas",
+      "legal-scan": "Análisis legal del sitio"
     },
     "features": {
       "export_pdf": "Exportación PDF",
@@ -436,7 +447,16 @@
       "share_report": "Enlaces públicos compartidos",
       "priority_queue": "Cola prioritaria",
       "white_label": "Marca blanca"
-    }
+    },
+    "guestHint": "Inicia sesión o regístrate para activar un plan o comprar una suscripción.",
+    "loginToActivate": "Inicia sesión para activarlo",
+    "loginToPurchase": "Inicia sesión para comprar",
+    "paymentSuccess": "Pago recibido. Tu plan se actualizará en un minuto. Actualiza si los límites no han cambiado.",
+    "paymentFailed": "El pago no se ha completado. Inténtalo de nuevo o elige otro plan.",
+    "paymentUnavailable": "El pago en línea no está disponible temporalmente. Envíe un correo electrónico a hello@erman.ai",
+    "adminDirectSwitchHint": "As an admin, you can activate any plan without payment.",
+    "legalScanPages": "Legal scan depth",
+    "pagesPerScan": "up to {count} pages / scan"
   },
   "calculator": {
     "title": "Calculadora de automatización",
@@ -645,7 +665,11 @@
       "automate": "Se recomienda la automatización — recuperación en menos de 12 meses y ROI positivo",
       "consider": "Considere la automatización — recuperación o ROI moderados",
       "not_recommended": "La automatización no se recomienda con los parámetros actuales"
-    }
+    },
+    "discussProject": "Discutir este proyecto",
+    "discussProjectSent": "Request sent",
+    "discussProjectAlreadySent": "Ya ha enviado una solicitud de discusión de proyecto",
+    "proposalRequestAlreadySent": "Ya has enviado una solicitud de propuesta"
   },
   "strategy": {
     "title": "Estrategia de IA",
@@ -932,6 +956,9 @@
         "solutionName": "Automatización: {process}",
         "clientProblem": "Proceso «{process}»: ahorro potencial de {savings} ₽/mes tras la automatización.",
         "processFallback": "proceso"
+      },
+      "legalScanPrefill": {
+        "solutionName": "Cumplimiento del sitio web con los requisitos de RF"
       }
     },
     "scenarios": {
@@ -1051,6 +1078,454 @@
       "sender_contact": "Nombre del remitente para firma y siguiente paso.",
       "sender_phone": "Teléfono en la firma del documento.",
       "sender_email": "Email para respuesta del cliente."
+    }
+  },
+  "legalScan": {
+    "title": "Análisis legal del sitio",
+    "subtitle": "Consulte el sitio web de un cliente para ver los riesgos legales de RF y obtenga un informe de estimación de multa",
+    "loading": "Cargando…",
+    "subnav": {
+      "new": "Nuevo scan",
+      "history": "Historia"
+    },
+    "steps": {
+      "1": "Sitio",
+      "2": "Escanear",
+      "3": "Informe"
+    },
+    "form": {
+      "section": "Client site",
+      "url": "Website URL",
+      "industry": "Industria",
+      "size": "Tamaño de la empresa",
+      "features": "Lo nuevo en este sitio",
+      "featuresHint": "refina el cheque",
+      "featuresNote": "Marque lo que sabe sobre el cliente. El escáner detecta el resto.",
+      "crawlDepth": "Profundidad de escaneo",
+      "maxPages": "Páginas de Máximas",
+      "maxDepth": "Profundidad del enlace",
+      "crawlNote": "El escáner rastrea el sitio en busca de páginas legales, contactos y detalles de la empresa. Tu plan permite hasta {limit} páginas.",
+      "submit": "Iniciar exploración",
+      "scanning": "Iniciando..."
+    },
+    "industries": {
+      "ecommerce": "Comercio electrónico",
+      "services": "Consultoría de servicios",
+      "medicine": "Medicina y psicología",
+      "finance": "Finanzas e inversiones",
+      "education": "Educación en línea",
+      "other": "Otros"
+    },
+    "sizes": {
+      "sole": "propietario único",
+      "small": "Pequeñas empresas (hasta 50)",
+      "medium": "Tamaño mediano (50–250)"
+    },
+    "features": {
+      "forms": "Recopila datos a través de formularios",
+      "ads": "Tráfico de anuncios",
+      "sales": "Ventas / pagos en línea",
+      "foreign": "Servicios extranjeros/ analítica"
+    },
+    "crawl": {
+      "presets": {
+        "quick": "orgasmic babe (1)",
+        "standard": "Estándar (10 páginas)",
+        "deep": "Profundo (30 páginas)"
+      }
+    },
+    "scan": {
+      "scanning": "Escanear",
+      "pagesProgress": "Páginas marcadas: {done} de {total}",
+      "ok": "aceptar",
+      "risk": "Riesgo"
+    },
+    "checklist": {
+      "ssl": "Certificado SSL (https)",
+      "privacy": "POLÍTICA SOBRE TRATAMIENTO DE DATOS PERSONALES",
+      "cookie": "Banner de cookies",
+      "cookiepol": "Política de cookies independiente",
+      "consent": "Consentimiento en formularios",
+      "req": "Datos de la empresa (INN/OGRN)",
+      "contacts": "Información de contacto",
+      "offer": "Oferta pública",
+      "terms": "Términos de uso",
+      "withdraw": "Retiro del consentimiento/eliminación de datos",
+      "admark": "Etiquetado de anuncios (erid)",
+      "trackers": "Rastreadores y análisis",
+      "formenc": "Cifrado de formularios"
+    },
+    "result": {
+      "risksFound": "riesgos encontrados",
+      "fixedFines": "posibles multas fijas",
+      "fineUpTo": "hasta {amount}",
+      "fineNone": "—",
+      "scanned": "escaneado",
+      "pagesCrawled": "páginas del sitio: {count}",
+      "crawledPages": "Páginas marcadas ({count})",
+      "leakTitle": "Como referencia, posible responsabilidad por una fuga de datos personales:",
+      "leakSeparate": "Estas cantidades no están incluidas en el cálculo anterior y no significan que se haya detectado una fuga.",
+      "checksTitle": "Comprobar resultados",
+      "risksTitle": "Identified risks",
+      "noRisks": "Check data unavailable.",
+      "noRiskExplanation": "No risk detected for this check.",
+      "riskDetectedGeneric": "A potential risk was identified — we recommend manual review.",
+      "article": "Article",
+      "fine": "Fine",
+      "severity": {
+        "none": "no risk",
+        "high": "Alta",
+        "medium": "medio",
+        "low": "baja"
+      },
+      "exportPdf": "Exportar a PDF",
+      "pdfLoading": "Generando pdf.",
+      "pdfFailed": "Fallo en la exportación",
+      "exportLocked": "PDF — después del inicio de sesión y el plan Pro+",
+      "restart": "Vuelve a correr"
+    },
+    "errors": {
+      "loadFailed": "No se ha podido cargar el resultado",
+      "scanFailed": "Fallo en el escaneo"
+    },
+    "history": {
+      "title": "Historial legal de escaneo",
+      "subtitle": "Comprobaciones del sitio web guardadas y sus estados",
+      "loading": "Cargando…",
+      "loadFailed": "No se ha podido cargar el historial",
+      "deleteFailed": "No se ha podido borrar",
+      "deleteConfirm": "¿Eliminar este escaneo del historial?",
+      "empty": "Aún no hay escaneos guardados",
+      "emptyAction": "SU PRIMERA EXPLORACIÓN",
+      "colSite": "Sitio",
+      "colStatus": "Sincronizar el estado de confirmación de la reserva con el pedido Woo correspondiente",
+      "colDate": "Fecha",
+      "open": "Abrir",
+      "continue": "Continuar",
+      "delete": "Eliminar",
+      "status": {
+        "pending": "pendiente",
+        "processing": "escaneando",
+        "done": "hecho",
+        "error": "error"
+      }
+    }
+  },
+  "audit": {
+    "title": "Auditoría de mosaicos de automatización",
+    "subtitle": "Compara varios procesos y obtén un plan de automatización priorizado",
+    "loadingRun": "Cargando…",
+    "subnav": {
+      "new": "Nueva auditoría",
+      "history": "Historia"
+    },
+    "formSteps": {
+      "company": "Empresa",
+      "processes": "Procesos",
+      "review": "Generar"
+    },
+    "form": {
+      "companySection": "Contexto de la empresa",
+      "processesSection": "Procesos a auditar",
+      "reviewSection": "Revisión antes de la generación",
+      "companyName": "Nombre de la empresa",
+      "primaryGoal": "Objetivo principal de automatización",
+      "customGoal": "Objetivo personalizado",
+      "companySize": "Tamaño de la empresa",
+      "headcount": "Plantilla operativa",
+      "budget": "Presupuesto de automatización",
+      "timeline": "Horizonte de decisión",
+      "dataDuplication": "Duplicación de datos entre sistemas",
+      "priorityCriteria": "Criterios de priorización:",
+      "itSystems": "LOS SISTEMAS EMPLEADOS EN LA ACTUALIDAD SON:",
+      "otherSystem": "Other system",
+      "otherSystemPlaceholder": "e.g. Notion, Bitrix…",
+      "select": "Select…",
+      "next": "Next",
+      "back": "Back",
+      "generate": "Generate report",
+      "generating": "Iniciando...",
+      "newAudit": "Nueva auditoría",
+      "processesHint": "Agrega {min} a {max} procesos. Utilice plantillas para una entrada más rápida.",
+      "processNumber": "Proceso {n}",
+      "incomplete": "Rellene los campos obligatorios",
+      "removeProcess": "Se eliminó tarea del proceso"
+    },
+    "goals": {
+      "reduce_costs": "Reduce los costes",
+      "speed": "Acelerar los procesos clave.",
+      "quality": "Reducir errores.",
+      "scale": "Escalar sin contratar",
+      "control": "Transparencia y control"
+    },
+    "criteria": {
+      "cost_savings": "Ahorro de costes",
+      "speed": "Speed",
+      "quality": "Calidad",
+      "scalability": "Escalabilidad",
+      "control": "Control",
+      "quick_wins": "Resultados rápidos"
+    },
+    "headcount": {
+      "1-10": "1–10 personas",
+      "11-30": "11–30",
+      "31-100": "31 100",
+      "101-500": "101-500",
+      "500+": "Más de 500"
+    },
+    "budget": {
+      "up_to_500k": "hasta 500K ₽",
+      "500k_2m": "$500k - $2M+",
+      "2m_5m": "2 000 000-5 000 000 €",
+      "5m_plus": "5 millones"
+    },
+    "timeline": {
+      "3months": "3 meses",
+      "6months": "6 meses",
+      "1year": "1 año",
+      "2years": "2 años"
+    },
+    "duplication": {
+      "none": "Casi ninguno.",
+      "some": "Algunos casos",
+      "many": "A menudo",
+      "critical": "Cuestiones de especial importancia:"
+    },
+    "systems": {
+      "crm": "CRM",
+      "erp": "ERP",
+      "1c": "1C",
+      "spreadsheets": "Hojas de cálculo",
+      "email": "Correo Electrónico",
+      "messengers": "Messengers",
+      "website": "Sitio web",
+      "helpdesk": "Atención a usuarios",
+      "warehouse": "Almacén / SGA"
+    },
+    "departments": {
+      "sales": "Ventas",
+      "operations": "Operaciones",
+      "finance": "Finanzas",
+      "hr": "DDHH",
+      "marketing": "Marketing",
+      "logistics": "Unidades de logística",
+      "support": "Soporte",
+      "it": "IT",
+      "other": "Otros"
+    },
+    "bottlenecks": {
+      "manual_data_entry": "Manual data entry",
+      "approvals": "Approvals",
+      "integrations": "System integrations",
+      "errors_rework": "Errors and rework",
+      "waiting": "Waiting / idle time",
+      "other": "Otros"
+    },
+    "templates": {
+      "incoming_leads": "Clientes potenciales entrantes",
+      "order_processing": "Procesamiento de Pedidos",
+      "customer_support": "Atención al cliente",
+      "invoicing": "Facturación",
+      "hr_onboarding": "Incorporación de empleados",
+      "inventory": "Inventario",
+      "reporting": "Notificación",
+      "custom": "Procesado personalizado"
+    },
+    "levels": {
+      "high": "Alto",
+      "medium": "Medio",
+      "low": "Bajo"
+    },
+    "process": {
+      "name": "Nombre de proceso",
+      "department": "Propietario del departamento",
+      "customDepartment": "Especificar departamento",
+      "frequency": "frecuencia por mes",
+      "minutes": "Tiempo por ciclo",
+      "fte": "Cantidad de personas involucradas en el mismo",
+      "hourlyRate": "Coste por hora",
+      "errorRate": "Tasa de error / retrabajo",
+      "errorCost": "Coste por error",
+      "systems": "Sistemas empleados:",
+      "bottleneck": "Cuello de botella principal",
+      "customBottleneck": "Describir el cuello de botella",
+      "standardization": "Estandarización de procesos.",
+      "readiness": "Preparación para la automatización",
+      "impact": "Impacto previsto",
+      "integrationComplexity": "Complejidad de la integración (1–5)"
+    },
+    "ranges": {
+      "frequency": {
+        "1-10": "1–10 / mes",
+        "11-50": "11 - 50",
+        "51-200": "51 200-",
+        "201-500": "201-500",
+        "500+": "Más de 500"
+      },
+      "minutes": {
+        "5-15": "5-15 min",
+        "16-30": "16–30 min",
+        "31-60": "31-60 min",
+        "61-120": "1 - 2 h",
+        "120+": "2 h"
+      },
+      "fte": {
+        "1": "1 persona",
+        "2-3": "2–3",
+        "4-10": "4   10",
+        "11+": "11+"
+      },
+      "hourly": {
+        "300-500": "300–500 ₽/h",
+        "501-800": "501–800 ₽/h",
+        "801-1200": "801–1200 ₽/h",
+        "1201-2000": "1201–2000 ₽/h",
+        "2000+": "2000 h"
+      },
+      "errorRate": {
+        "0-2": "0 – 2",
+        "3-5": "3–5",
+        "6-10": "6–10%",
+        "11-20": "11–20%",
+        "20+": "20%+"
+      },
+      "errorCost": {
+        "500-2000": "500–2K ₽",
+        "2001-5000": "2–5K ₽",
+        "5001-15000": "5–15K ₽",
+        "15001-50000": "15–50K ₽",
+        "50000+": "50K"
+      }
+    },
+    "polling": {
+      "title": "Preparación del informe de auditoría",
+      "hint": "Por lo general toma ~ 3 minutos",
+      "failed": "Error al generar el informe de errores."
+    },
+    "errors": {
+      "startFailed": "Error al iniciar la auditoría",
+      "loadFailed": "¡No se pudo cargar el resultado!"
+    },
+    "result": {
+      "document": "Informe de auditoría de automatización",
+      "subtitle": "Plan de automatización priorizado",
+      "metrics": {
+        "totalCost": "Coste total mensual",
+        "totalSavings": "Posibles ahorros mensuales",
+        "processCount": "Los procesos son auditados;"
+      },
+      "sections": {
+        "summary": "Resumen ejecutivo",
+        "context": "Contexto de la empresa",
+        "quickWins": "Resultados rápidos",
+        "priority": "Prioridades de automatización",
+        "roadmap": "Hoja de ruta",
+        "risks": "Riesgos",
+        "nextSteps": "Próximos pasos (30 días)",
+        "metrics": "Métricas para realizar un seguimiento"
+      },
+      "table": {
+        "rank": "N.º",
+        "process": "Proceso",
+        "score": "Puntuación",
+        "savings": "Ahorros / mes",
+        "quickWin": "Quick win",
+        "yes": "Sí"
+      },
+      "roadmap": {
+        "processes": "Procesos"
+      },
+      "severity": {
+        "low": "baja",
+        "medium": "medio",
+        "high": "Alta"
+      }
+    },
+    "history": {
+      "loading": "Cargando…",
+      "empty": "Aún no hay auditorías",
+      "createFirst": "Crear primera auditoría →",
+      "view": "Abrir",
+      "continue": "Continuar",
+      "columns": {
+        "date": "Fecha",
+        "company": "Empresa",
+        "status": "Sincronizar el estado de confirmación de la reserva con el pedido Woo correspondiente",
+        "action": "Acción"
+      },
+      "status": {
+        "done": "Terminado",
+        "error": "Error",
+        "processing": "Generando",
+        "pending": "En cola"
+      }
+    }
+  },
+  "discuss": {
+    "title": "Discutir este proyecto",
+    "subtitle": "Envíe su cálculo y descripción: discutiremos la automatización en función de sus números, no de diapositivas genéricas",
+    "value": {
+      "title": "Lo que consigue",
+      "item1": "Revisión del ROI basada en la ejecución de la calculadora",
+      "item2": "Cronograma, riesgos y evaluación de factibilidad",
+      "item3": "Recomendación clara a través de Telegram: automatizar, esperar u omitir"
+    },
+    "steps": {
+      "label": "Paso {n}",
+      "calc": "Run the automation calculator",
+      "describe": "Describe the project and attach the calculation",
+      "talk": "Discutir sobre la base de sus datos en Telegram"
+    },
+    "form": {
+      "name": "Nombre",
+      "email": "Correo Electrónico",
+      "emailVerified": "Correo electrónico verificado desde tu cuenta",
+      "emailGuestHint": "Te enviaremos un enlace de confirmación. Recibiremos la solicitud solo después de que hagas clic en ella.",
+      "telegram": "Telegram",
+      "telegramPlaceholder": "@username",
+      "telegramHint": "Su nombre de usuario: nos pondremos en contacto con usted en Telegram para discutir el proyecto en función de su cálculo",
+      "projectTitle": "Nombre del proyecto",
+      "description": "Descripción del proyecto",
+      "descriptionPlaceholder": "Describa brevemente el proceso, el objetivo de automatización y el contexto. Adjunte una calculadora a continuación si tiene una.",
+      "calculatorRun": "Ejecución de la calculadora",
+      "noRun": "Sin cálculo",
+      "unnamedRun": "Sin título",
+      "runPreview": "Cálculo seleccionado",
+      "runBenefit": "Ahorros: {value}",
+      "runPayback": "Reembolso: {value}",
+      "months": "mes",
+      "guestRunHint": "Inicie sesión para adjuntar un cálculo guardado o ejecute primero la calculadora.",
+      "guestRunAttached": "El resultado de la calculadora se incluirá con la solicitud.",
+      "goCalculator": "Abrir calculadora",
+      "submit": "Enviar",
+      "sending": "Enviando"
+    },
+    "success": {
+      "title": "Petición enviada",
+      "auth": "Hemos recibido su solicitud y nos pondremos en contacto con usted a través de Telegram. Se ha enviado una confirmación a tu correo electrónico.",
+      "guest": "Revisa tu bandeja de entrada y haz clic en el enlace de confirmación. A continuación, recibiremos tu solicitud y nos pondremos en contacto contigo a través de Telegram.",
+      "telegramHint": "Nos pondremos en contacto contigo a través de Telegram {telegram}",
+      "backToCalculator": "← Volver a la calculadora"
+    },
+    "alreadySubmitted": {
+      "title": "Solicitud ya enviada",
+      "body": "Ya ha enviado una solicitud de discusión del proyecto. El equipo de IA de Erman se pondrá en contacto con usted; no hay presentaciones repetidas disponibles."
+    },
+    "errors": {
+      "submitFailed": "No se ha podido enviar la solicitud manual.",
+      "missingFields": "Por favor, rellene todos los campos obligatorios",
+      "invalidTelegram": "Introduce un nombre de usuario o número de teléfono de Telegram (más de 5 caracteres latinos)",
+      "invalidForm": "Rogamos compruebe los datos.",
+      "alreadySubmitted": "Ya ha enviado una solicitud de discusión de proyecto"
+    },
+    "confirm": {
+      "loading": "Confirmación de la solicitud",
+      "title": "Solicitud confirmada",
+      "body": "¡Gracias! Recibimos su solicitud y nos pondremos en contacto con usted en Telegram para hablar sobre la automatización basada en sus datos.",
+      "errorTitle": "Enlace inválido",
+      "errorBody": "Este enlace ha caducado o ya se ha utilizado. Por favor, envíe el formulario de nuevo.",
+      "back": "Volver al formulario",
+      "dashboard": "Ir al panel de control"
     }
   }
 }

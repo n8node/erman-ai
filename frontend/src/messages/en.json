@@ -1602,6 +1602,21 @@
       "ok": "ok",
       "risk": "risk"
     },
+    "checklist": {
+      "ssl": "SSL certificate and HTTPS",
+      "privacy": "Personal data processing policy",
+      "cookie": "Cookie banner",
+      "cookiepol": "Separate cookie policy",
+      "consent": "Consent on forms",
+      "req": "Company details (INN/OGRN)",
+      "contacts": "Contact information",
+      "offer": "Public offer",
+      "terms": "Terms of use",
+      "withdraw": "Consent withdrawal / data deletion",
+      "admark": "Ad labeling (erid)",
+      "trackers": "Trackers and analytics",
+      "formenc": "Form encryption"
+    },
     "result": {
       "risksFound": "risks found",
       "fixedFines": "potential fixed fines",
