@@ -176,14 +176,12 @@ func attachCheckEvidence(
 		}
 	case "privacy":
 		pageURLs = ev.PrivacyURLs
-		if status == "ok" {
-			if len(pageURLs) > 0 {
-				evidence = "Найдена политика обработки персональных данных."
-			} else {
-				evidence = "На странице есть упоминание политики конфиденциальности."
-			}
+		if status == "ok" && len(pageURLs) > 0 {
+			evidence = "Найдена политика обработки персональных данных — см. ссылку ниже."
+		} else if status == "ok" {
+			evidence = "Упоминание политики есть, но прямая ссылка на документ не найдена."
 		} else {
-			evidence = "Ссылка на политику обработки ПД не найдена на проверенной странице."
+			evidence = "Ссылка на политику обработки ПД не найдена на проверенных страницах."
 		}
 	case "cookie":
 		foundData = ev.Trackers
@@ -199,9 +197,9 @@ func attachCheckEvidence(
 	case "cookiepol":
 		pageURLs = ev.CookiePolicyURLs
 		if status == "ok" && len(pageURLs) > 0 {
-			evidence = "Найдена отдельная политика cookie."
+			evidence = "Найдена отдельная политика cookie — см. ссылку ниже."
 		} else if status == "ok" {
-			evidence = "Упоминание политики cookie найдено на странице."
+			evidence = "Упоминание политики cookie есть, но прямая ссылка не найдена."
 		} else {
 			evidence = "Отдельная политика cookie не найдена."
 		}
@@ -212,40 +210,35 @@ func attachCheckEvidence(
 			evidence = "Формы сбора персональных данных без явного согласия на обработку."
 		}
 	case "req":
-		foundData = appendUnique(nil, ev.INNs...)
-		foundData = appendUnique(foundData, ev.OGRNs...)
+		foundData = appendUnique(nil, ev.Requisites...)
 		if status == "ok" && len(foundData) > 0 {
-			evidence = fmt.Sprintf("На странице найдены реквизиты: %s.", strings.Join(foundData, ", "))
+			evidence = "На сайте найдены реквизиты."
 		} else if status == "ok" {
 			evidence = "Реквизиты продавца указаны на странице."
 		} else {
-			evidence = "ИНН или ОГРН не найдены на проверенной странице."
+			evidence = "ИНН или ОГРН с корректной контрольной суммой не найдены на проверенных страницах."
 		}
 	case "contacts":
 		foundData = appendUnique(nil, ev.Emails...)
 		foundData = appendUnique(foundData, ev.Phones...)
 		if status == "ok" && len(foundData) > 0 {
-			evidence = fmt.Sprintf("Контакты на странице: %s.", strings.Join(foundData, ", "))
+			evidence = "Контактные данные найдены на сайте."
 		} else if status == "ok" {
 			evidence = "Контактные данные указаны на странице."
 		} else {
-			evidence = "Email или телефон для связи не найдены на проверенной странице."
+			evidence = "Email или телефон для связи не найдены на проверенных страницах."
 		}
 	case "offer":
 		pageURLs = ev.OfferURLs
 		if status == "ok" && len(pageURLs) > 0 {
-			evidence = "Найдена публичная оферта."
-		} else if status == "ok" {
-			evidence = "Условия продажи/оферта упоминаются на странице."
+			evidence = "Найдена публичная оферта — см. ссылку ниже."
 		} else {
-			evidence = "Публичная оферта не найдена."
+			evidence = "Публичная оферта не найдена (нет страницы с условиями продажи)."
 		}
 	case "terms":
 		pageURLs = ev.TermsURLs
 		if status == "ok" && len(pageURLs) > 0 {
-			evidence = "Найдено пользовательское соглашение."
-		} else if status == "ok" {
-			evidence = "Пользовательское соглашение упоминается на странице."
+			evidence = "Найдено пользовательское соглашение — см. ссылку ниже."
 		} else {
 			evidence = "Пользовательское соглашение не найдено."
 		}

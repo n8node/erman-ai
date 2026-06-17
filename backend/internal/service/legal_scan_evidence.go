@@ -11,10 +11,6 @@ import (
 var (
 	reHref        = regexp.MustCompile(`(?i)href\s*=\s*["']([^"']+)["']`)
 	reHrefText    = regexp.MustCompile(`(?i)<a[^>]+href\s*=\s*["']([^"']+)["'][^>]*>([^<]{0,120})`)
-	reINNFind     = regexp.MustCompile(`\b(\d{10}|\d{12})\b`)
-	reOGRNFind    = regexp.MustCompile(`\b(\d{13}|\d{15})\b`)
-	reEmailFind   = regexp.MustCompile(`[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}`)
-	rePhoneFind   = regexp.MustCompile(`(?:\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}`)
 	reEridFind    = regexp.MustCompile(`(?i)(erid[=:][\w\-]+|data-erid[^"'\s>]+)`)
 	reTrackerSigs = []struct {
 		id  string
@@ -32,8 +28,7 @@ type scanEvidence struct {
 	CookiePolicyURLs []string
 	OfferURLs        []string
 	TermsURLs        []string
-	INNs             []string
-	OGRNs            []string
+	Requisites       []string
 	Emails           []string
 	Phones           []string
 	Trackers         []string
@@ -42,11 +37,11 @@ type scanEvidence struct {
 
 func extractScanEvidence(html, baseURL string) scanEvidence {
 	lower := strings.ToLower(html)
+	reqs := extractValidatedRequisites(html)
 	ev := scanEvidence{
-		INNs:       uniqueStrings(reINNFind.FindAllString(html, 5)),
-		OGRNs:      uniqueStrings(reOGRNFind.FindAllString(html, 5)),
-		Emails:     uniqueStrings(reEmailFind.FindAllString(html, 5)),
-		Phones:     uniqueStrings(rePhoneFind.FindAllString(html, 5)),
+		Requisites: formatLabeledValues(reqs),
+		Emails:     extractContactEmails(html),
+		Phones:     extractContactPhones(html),
 		EridTokens: uniqueStrings(reEridFind.FindAllString(html, 5)),
 	}
 
@@ -76,7 +71,9 @@ func extractScanEvidence(html, baseURL string) scanEvidence {
 			continue
 		}
 		path := strings.ToLower(href)
-		if strings.Contains(path, "/privacy") || strings.Contains(path, "/policy") {
+		if strings.Contains(path, "/privacy") || strings.Contains(path, "/policy") ||
+			strings.Contains(path, "konfident") || strings.Contains(path, "personal") ||
+			strings.Contains(path, "politika") || strings.Contains(path, "pd") {
 			ev.PrivacyURLs = appendUnique(ev.PrivacyURLs, href)
 		}
 		if strings.Contains(path, "/offer") || strings.Contains(path, "/oferta") || strings.Contains(path, "/dogovor") || strings.Contains(path, "/legal") {

@@ -97,7 +97,7 @@ function RiskCard({
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[12.5px] text-accent hover:underline"
+              className="break-all text-[12.5px] text-accent hover:underline"
             >
               {url}
             </a>

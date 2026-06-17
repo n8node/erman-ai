@@ -35,8 +35,7 @@ func mergeScanEvidence(a, b scanEvidence) scanEvidence {
 		CookiePolicyURLs: appendUnique(a.CookiePolicyURLs, b.CookiePolicyURLs...),
 		OfferURLs:        appendUnique(a.OfferURLs, b.OfferURLs...),
 		TermsURLs:        appendUnique(a.TermsURLs, b.TermsURLs...),
-		INNs:             appendUnique(a.INNs, b.INNs...),
-		OGRNs:            appendUnique(a.OGRNs, b.OGRNs...),
+		Requisites:       appendUnique(a.Requisites, b.Requisites...),
 		Emails:           appendUnique(a.Emails, b.Emails...),
 		Phones:           appendUnique(a.Phones, b.Phones...),
 		Trackers:         appendUnique(a.Trackers, b.Trackers...),
@@ -76,10 +75,10 @@ func buildLegalScanLayer1(
 	hasTrackers := len(trackers) > 0
 	foreignTrackers := detectForeignTrackers(lower)
 
-	hasOffer := hasOfferText(lower) || len(ev.OfferURLs) > 0
-	hasTerms := hasTermsText(lower) || len(ev.TermsURLs) > 0
-	hasPrivacy := hasPrivacyPolicy(lower) || len(ev.PrivacyURLs) > 0
-	hasCookiePol := hasCookiePolicy(lower) || len(ev.CookiePolicyURLs) > 0
+	hasOffer := len(ev.OfferURLs) > 0
+	hasTerms := len(ev.TermsURLs) > 0
+	hasPrivacy := len(ev.PrivacyURLs) > 0
+	hasCookiePol := len(ev.CookiePolicyURLs) > 0
 
 	findings := model.LegalScanFindings{
 		SSL:               merged.startHTTPS,
@@ -87,7 +86,7 @@ func buildLegalScanLayer1(
 		CookieBanner:      hasCookieBanner(lower),
 		CookiePolicy:      hasCookiePol,
 		FormConsent:       hasFormConsent(lower),
-		RequisitesINN:     len(ev.INNs) > 0 || len(ev.OGRNs) > 0,
+		RequisitesINN:     len(ev.Requisites) > 0,
 		Contacts:          len(ev.Emails) > 0 || len(ev.Phones) > 0,
 		Offer:             hasOffer,
 		Terms:             hasTerms,

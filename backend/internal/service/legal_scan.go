@@ -133,6 +133,8 @@ func (s *LegalScanService) processRun(runID string) {
 		&crawlResult.Meta,
 	)
 
+	layer1 = s.enrichLayer1WithLLM(ctx, run, crawlResult.Pages, layer1, input)
+
 	partial := model.LegalScanOutput{Layer1: layer1}
 	partialJSON, _ := json.Marshal(partial)
 	if err := s.runs.UpdateRunProcessingOutput(ctx, runID, partialJSON); err != nil {

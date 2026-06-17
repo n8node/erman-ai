@@ -68,3 +68,46 @@ OUTPUT_SCHEMA:
 }`)
 	return b.String()
 }
+
+const DefaultLegalScanEnrichSystemPrompt = `You enrich a crawled website legal scan with structured facts ONLY from the provided page snippets and URL list.
+
+STRICT RULES:
+1. Return ONLY URLs that appear in ALLOWED_URLS. Never invent URLs.
+2. Return ONLY emails and phones that literally appear in PAGE_SNIPPETS. Never invent contacts.
+3. Return ONLY INN/OGRN/OGRNIP numbers that appear in snippets and pass Russian checksum rules (the backend re-validates).
+4. Label requisites as INN (10 or 12 digits), OGRN (13 digits), or OGRNIP (15 digits).
+5. If uncertain — return empty string or empty array. Do not guess.
+
+Write field values in {{LANGUAGE}} where applicable.
+
+Return strictly JSON per OUTPUT_SCHEMA, no markdown.`
+
+func LegalScanEnrichSystemPrompt(locale string) string {
+	lang := i18n.LanguageName(locale)
+	if lang == "" {
+		lang = "Russian"
+	}
+	return strings.ReplaceAll(DefaultLegalScanEnrichSystemPrompt, "{{LANGUAGE}}", lang)
+}
+
+func LegalScanEnrichUserPrompt(findingsJSON, allowedURLs, snippets string) string {
+	var b strings.Builder
+	b.WriteString("FINDINGS:\n")
+	b.WriteString(findingsJSON)
+	b.WriteString("\n\nALLOWED_URLS:\n")
+	b.WriteString(allowedURLs)
+	b.WriteString("\n\nPAGE_SNIPPETS:\n")
+	b.WriteString(snippets)
+	b.WriteString(`
+
+OUTPUT_SCHEMA:
+{
+  "privacy_url": string,
+  "cookie_policy_url": string,
+  "offer_url": string,
+  "terms_url": string,
+  "contacts": [{"type": "email"|"phone", "value": string}],
+  "requisites": [{"type": "INN"|"OGRN"|"OGRNIP", "value": string}]
+}`)
+	return b.String()
+}
