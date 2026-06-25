@@ -34,7 +34,50 @@
       "special": "Sonderzeichen (!@#$…)",
       "invalid": "Passwort erfüllt die Anforderungen nicht"
     },
-    "ermanReferral": "Anmeldung über Erman AI Einladung"
+    "ermanReferral": "Anmeldung über Erman AI Einladung",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordSuccess": "Password updated. Sign in with your new password.",
+    "emailNotVerified": "Confirm your email — we already sent a link",
+    "privacyPolicyConsent": "Consent to the personal data processing policy",
+    "privacyConsentRequired": "Please accept the personal data processing policy",
+    "verify": {
+      "title": "Confirm your email",
+      "subtitle": "We sent a confirmation link. Open the email and follow the link.",
+      "sentTo": "We sent an email to {email}. Check your inbox and spam folder.",
+      "checkInbox": "Check your inbox and open the link from the email.",
+      "emailLabel": "Email",
+      "resend": "Resend confirmation email",
+      "resent": "If an account exists, a new email was sent.",
+      "resendFailed": "Could not resend email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "verifyFailed": "This link is invalid or expired",
+      "confirming": "Confirming your email…",
+      "backToLogin": "Back to sign in",
+      "resendLink": "Confirm email or resend the message",
+      "loading": "Loading…"
+    },
+    "forgot": {
+      "title": "Reset password",
+      "subtitle": "Enter your email and we'll send a reset link",
+      "emailLabel": "Email",
+      "submit": "Send reset link",
+      "sent": "If an account exists, we sent a password reset email. Check your inbox and spam folder.",
+      "failed": "Could not send email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    },
+    "reset": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your Erman AI account",
+      "newPassword": "New password",
+      "submit": "Save password",
+      "failed": "Could not reset password",
+      "missingToken": "This link is invalid or expired",
+      "requestNewLink": "Request a new link",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    }
   },
   "guest": {
     "banner": "Melden Sie sich an, um den Verlauf zu speichern, PDF zu exportieren und KI-Tools zu nutzen.",
@@ -73,8 +116,8 @@
     "logout": "Logout",
     "project": "Projekt",
     "discussProject": "Projekt besprechen",
-    "audit": "Automatisierungsaudit",
-    "legalScan": "Legal-Website-Scan"
+    "audit": "Automation Audit",
+    "legalScan": "Legal Site Scan"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -98,8 +141,8 @@
         "description": "Kommerzieller Vorschlagsgenerator"
       },
       "audit": {
-        "name": "Automatisierungsaudit",
-        "description": "Multi-Prozess-Audit mit Priorisierungs-Roadmap"
+        "name": "Automation Audit",
+        "description": "Multi-process audit with prioritization roadmap"
       },
       "legal-scan": {
         "name": "Legal Site Scan",
@@ -134,7 +177,17 @@
       "proposalRequests": "Ausschreibung",
       "calculatorBudget": "Rechnertarife",
       "strategyLlm": "KI-Strategie",
-      "projects": "Projekte"
+      "projects": "Projekte",
+      "projectInquiries": "Discuss project",
+      "legalRisks": "Legal scan: risks",
+      "legalScanLlm": "Legal scan: model",
+      "emailSmtp": "Email / SMTP",
+      "payments": "Payments",
+      "telegram": "Telegram",
+      "max": "MAX",
+      "yandexMetrika": "Yandex Metrika",
+      "translations": "Translations",
+      "publicPages": "Public pages"
     },
     "users": {
       "title": "Benutzer",
@@ -163,7 +216,13 @@
       "impersonateConfirm": "Als {email} anmelden? Ihre aktuelle Sitzung wird ersetzt.",
       "pagination": "Seite {page} von {total} · {count} insgesamt",
       "prev": "Vorherige",
-      "next": "Nächste"
+      "next": "Nächste",
+      "colStatus": "Status",
+      "status": {
+        "verified": "Verified",
+        "pending": "Email pending",
+        "blocked": "Blocked"
+      }
     },
     "plans": {
       "title": "Preisgestaltungspakete",
@@ -208,8 +267,10 @@
         "white_label": "White label",
         "hide_share_promo": "Aktion auf der Freigabeseite ausblenden",
         "share_report": "Öffentliche Berichtslinks",
-        "share_report_limit": "Link-Limit/ Monat teilen"
-      }
+        "share_report_limit": "Link-Limit/ Monat teilen",
+        "legal_scan_max_pages": "Legal scan: max pages"
+      },
+      "legalScanPagesHint": "Maximum pages per Legal Site Scan (1–50)."
     },
     "tooltips": {
       "title": "Tooltips",
@@ -382,6 +443,363 @@
         "in_progress": "In Bearbeitung",
         "done": "Fertig"
       }
+    },
+    "translations": {
+      "title": "Translations",
+      "subtitle": "Search and edit UI lexemes for all supported languages",
+      "loading": "Loading…",
+      "loadFailed": "Could not load translations",
+      "saveFailed": "Could not save",
+      "saved": "Changes saved",
+      "save": "Save overrides",
+      "saving": "Saving…",
+      "searchPlaceholder": "Search by key or text…",
+      "allNamespaces": "All namespaces",
+      "colKey": "Lexeme key",
+      "colValue": "Translation",
+      "pagination": "{from}–{to} of {total}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "publicPages": {
+      "title": "Public pages",
+      "subtitle": "Legal and informational pages available without login",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load pages",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete",
+      "saved": "Page saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this page?",
+      "newPage": "New page",
+      "draft": "draft",
+      "titleLabel": "Title",
+      "slugLabel": "URL slug",
+      "publicUrl": "Public URL",
+      "metaLabel": "Meta description",
+      "contentLabel": "Content",
+      "contentHint": "TipTap visual editor. Switch to HTML mode for advanced markup (dl, dt, dd).",
+      "published": "Published",
+      "sortOrder": "Sort order",
+      "editor": {
+        "visualMode": "Visual",
+        "htmlMode": "HTML",
+        "bold": "Bold",
+        "italic": "Italic",
+        "heading": "Heading H2",
+        "bulletList": "Bullet list",
+        "orderedList": "Numbered list",
+        "link": "Link",
+        "unlink": "Remove link",
+        "undo": "Undo",
+        "redo": "Redo",
+        "linkPrompt": "Link URL"
+      }
+    },
+    "emailSmtp": {
+      "title": "Email / SMTP",
+      "subtitle": "External SMTP server for verification and notification emails (e.g. Yandex 360)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Email settings saved",
+      "save": "Save email settings",
+      "saving": "Saving…",
+      "enableSending": "Enable email sending in the system",
+      "presetSection": "Quick preset",
+      "yandexPreset": "Apply Yandex SMTP",
+      "senderSection": "Sender settings",
+      "fromEmail": "Sender email",
+      "fromName": "Sender name",
+      "forceFromEmail": "Always use this sender address",
+      "forceFromName": "Always use this sender name",
+      "replyToFromEmail": "Use this address as Reply-to",
+      "connectionSection": "SMTP connection",
+      "host": "SMTP Host",
+      "port": "SMTP Port",
+      "encryption": "Encryption",
+      "autoTls": "Use Auto TLS",
+      "auth": "Authentication",
+      "username": "SMTP Username",
+      "password": "SMTP Password",
+      "passwordPlaceholder": "SMTP password",
+      "passwordPlaceholderExisting": "New password (current: {hint})",
+      "testSection": "Test send",
+      "testEmailPlaceholder": "email for test message",
+      "testSend": "Send",
+      "testing": "Sending…",
+      "testFailed": "Test send failed"
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "Connect YooKassa and Robokassa for plan checkout",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Payment settings saved",
+      "saving": "Saving…",
+      "copy": "Copy",
+      "copied": "Copied",
+      "activeProviderTitle": "Active payment provider",
+      "activeProviderHint": "Plans are charged through the selected gateway. Both providers can be configured at once.",
+      "providerYookassa": "YooKassa",
+      "providerRobokassa": "Robokassa",
+      "yookassaTitle": "YooKassa",
+      "yookassaSubtitle": "Credentials from YooKassa dashboard → Settings → Integration",
+      "shopId": "Shop ID",
+      "shopIdHint": "Found in YooKassa shop settings",
+      "secretKey": "Secret API key",
+      "secretHint": "Stored encrypted in the database",
+      "secretPlaceholder": "Secret key",
+      "secretPlaceholderExisting": "New key (current: {hint})",
+      "returnUrl": "Return URL after payment",
+      "returnUrlHint": "Where to redirect the user after successful payment",
+      "yookassaEnabled": "Enable plan payments via YooKassa",
+      "saveYookassa": "Save",
+      "testSection": "Connection check",
+      "yookassaTestHint": "Sends a request to YooKassa API to verify Shop ID and secret key",
+      "testConnection": "Test connection",
+      "testing": "Testing…",
+      "testFailed": "Connection test failed",
+      "yookassaInstructions": "Setup guide",
+      "yookassaStep1": "Register at YooKassa and create a shop",
+      "yookassaStep2": "Copy Shop ID from shop settings",
+      "yookassaStep3": "Generate a secret API key in Integration settings",
+      "yookassaStep4": "Paste credentials above and save",
+      "yookassaStep5": "In YooKassa dashboard add an HTTP notification (webhook) with URL:",
+      "yookassaStep6": "Click Test connection",
+      "yookassaStep7": "Enable plan payments via YooKassa",
+      "robokassaTitle": "Robokassa",
+      "robokassaSubtitle": "Alternative to YooKassa. Credentials from Robokassa technical settings",
+      "merchantLogin": "Merchant login",
+      "merchantLoginHint": "MerchantLogin in Robokassa dashboard",
+      "password1": "Password #1",
+      "password1Placeholder": "Password #1",
+      "password1Hint": "For payment link generation. Stored encrypted",
+      "password2": "Password #2",
+      "password2Placeholder": "Password #2",
+      "password2Hint": "For Result URL notifications (not the same as Password #1)",
+      "testMode": "Test mode (is_test=1)",
+      "robokassaEnabled": "Enable plan payments via Robokassa",
+      "saveRobokassa": "Save Robokassa",
+      "robokassaResultTitle": "Result URL for Robokassa dashboard (WordPress)",
+      "robokassaResultHint": "Set in Robokassa technical settings. The WordPress plugin handles site payments. Use POST or GET as required by the plugin. Response: OK{InvId}.",
+      "robokassaResult2Title": "ResultUrl2 for dashboard plan checkout",
+      "robokassaResult2Hint": "Added automatically to Erman AI plan payment links. Robokassa sends a JWS POST to this URL. Response: HTTP 200.",
+      "robokassaNoteMd5": "Select MD5 signature algorithm in Robokassa dashboard",
+      "robokassaNoteShp": "Custom Shp_* parameters must be included in the signature — current implementation does not pass them",
+      "robokassaNoteWordPress": "Dashboard plan payments also trigger this Result URL — WordPress should respond OK{InvId} even when the order is unknown",
+      "robokassaNoteResult2Auto": "ResultUrl2 is added to every dashboard checkout link automatically",
+      "robokassaNoteResult2Test": "ResultUrl2 is not sent in test mode (IsTest=1) — verify with a live payment",
+      "robokassaDocs": "Robokassa documentation",
+      "robokassaTestHint": "Checks that login and both passwords are filled in"
+    },
+    "telegram": {
+      "title": "Telegram notifications",
+      "subtitle": "Registration and plan payment notifications are sent to the configured chat",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Telegram settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "runtimeTitle": "Bot status",
+      "runtimeHint": "The supervisor starts with the backend on container boot and rechecks connectivity every 30 seconds.",
+      "lastCheck": "Last check: {time}",
+      "supervisorStopped": "Supervisor stopped — restart the backend or click Recheck.",
+      "restart": "Recheck and restart",
+      "restarting": "Checking…",
+      "restarted": "Health check completed",
+      "restartFailed": "Failed to restart health check",
+      "startSection": "/start command",
+      "startEnabled": "Reply to /start in bot DM",
+      "startHint": "With an image, text is the caption (max 1024 chars); overflow is sent as a second message. Without image, one message up to 4096 chars. Photo: JPEG/PNG/WebP, max 10 MB.",
+      "startText": "Welcome text",
+      "startOverflowHint": "overflow as 2nd message",
+      "startImage": "Image",
+      "startImageHint": "16:9 or square works best. Telegram may compress on send.",
+      "startImageUpload": "Upload image",
+      "startImageRemove": "Remove image",
+      "imageUploading": "Uploading…",
+      "imageUploaded": "Image uploaded",
+      "imageUploadFailed": "Failed to upload image",
+      "imageRemoved": "Image removed",
+      "startPollingActive": "Listening for /start (long polling)",
+      "startButtonsHint": "Welcome message includes Consultation and Tools buttons (dashboard link).",
+      "supportSection": "Consultation via forum group",
+      "supportEnabled": "Enable Consultation button and topic relay",
+      "supportHint": "Create a supergroup with topics (forum mode), add the bot as admin with “Manage topics”. Client messages open a topic; your reply in the topic is delivered to the client in DM (they see “typing…” before each reply).",
+      "supportForumChatId": "Forum group ID",
+      "supportForumChatIdHint": "Numeric group ID, usually starts with -100. Forward a group message to @userinfobot or use getChat.",
+      "dashboardUrl": "Tools button URL",
+      "dashboardUrlHint": "URL for the Tools button on /start.",
+      "enableNotifications": "Enable Telegram notifications",
+      "botToken": "Bot token",
+      "botTokenHint": "Get from @BotFather in Telegram. Stored in DB (superadmin access only).",
+      "tokenPlaceholder": "Bot token",
+      "tokenPlaceholderExisting": "New token (current: {hint})",
+      "showToken": "Show token",
+      "hideToken": "Hide token",
+      "chatId": "Chat ID",
+      "chatIdHint": "Numeric ID (DM or group). Find via @userinfobot or getUpdates API.",
+      "notifyRegistration": "Send a message on each registration",
+      "registrationVars": "Template: {email} {name} {referral} {accountSegment} — invite aliases: {inviteCode} {inviteScope}",
+      "notifyEmailVerified": "Send when email is confirmed",
+      "emailVerifiedVars": "Email confirmed template: {email} {name}",
+      "notifyPayment": "Send a message on successful plan payment",
+      "paymentVars": "Template: {userEmail} {userName} {planName} {amount} {currency}. Sent on successful plan payment or when admin assigns a plan.",
+      "verifySection": "Verification",
+      "verifyHint": "Sends a test message to the configured chat",
+      "testSend": "Send test message",
+      "testing": "Sending…",
+      "testFailed": "Test send failed",
+      "urgentSection": "Urgent contact (/start button)",
+      "urgentEnabled": "Show “Contact urgently” button",
+      "urgentHint": "After tap, the user sends one message — it goes to email, your Telegram chat, and MAX (VK/Instagram mentioned to users; delivery coming later). Max 2 requests per user per UTC day.",
+      "urgentEmail": "Email for urgent messages",
+      "urgentInstruction": "Text after “Contact urgently” tap",
+      "urgentLimitHint": "Limit of 2 messages per user per UTC day is enforced in the backend."
+    },
+    "max": {
+      "title": "MAX bot",
+      "subtitle": "Urgent alerts via platform-api.max.ru",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "MAX settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "runtimeTitle": "MAX bot status",
+      "runtimeHint": "Health check via GET /me. Set recipient user_id or chat_id for urgent alerts.",
+      "lastCheck": "Last check: {time}",
+      "enable": "Enable MAX integration",
+      "botToken": "Bot token",
+      "botTokenHint": "From dev.max.ru → Chat bots → Integration. Use Authorization header (not query).",
+      "tokenPlaceholder": "MAX token",
+      "tokenPlaceholderExisting": "New token (current: {hint})",
+      "botUsername": "Bot username (reference)",
+      "notifyUserId": "Recipient user ID",
+      "notifyUserIdHint": "Your MAX user_id for urgent messages. Message the bot first, then obtain your id.",
+      "notifyChatId": "Recipient chat ID (alternative)",
+      "notifyChatIdHint": "Optional if user_id is set. Use for group chats.",
+      "urgentAlerts": "Send urgent contact messages to MAX",
+      "verifySection": "Verification",
+      "verifyHint": "Sends a test message to the configured recipient",
+      "testSend": "Send test",
+      "testing": "Sending…",
+      "testFailed": "Test send failed"
+    },
+    "yandexMetrika": {
+      "title": "Yandex Metrika",
+      "subtitle": "Counter code for all personal cabinet pages (Next.js)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Yandex Metrika settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "sectionTitle": "Counter",
+      "sectionHint": "Paste the full HTML snippet from Yandex Metrika. It will be injected before the closing body tag on all cabinet pages.",
+      "enable": "Enable counter",
+      "counterCode": "Counter code",
+      "counterCodePlaceholder": "<!-- Yandex.Metrika counter -->…",
+      "counterCodeHint": "Copy the entire snippet from Yandex Metrika, including script and noscript tags.",
+      "updatedAt": "Updated: {time}"
+    },
+    "legalRisks": {
+      "title": "Legal scan — risk table",
+      "subtitle": "Fines and articles for Legal Site Scan. Changes apply to new scans only.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load risk table",
+      "saveFailed": "Could not save",
+      "saved": "Saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "fields": {
+        "title": "Title",
+        "article": "Article",
+        "fineText": "Fine text",
+        "what": "Violation",
+        "howToFix": "How to fix",
+        "severity": "Severity",
+        "sortOrder": "Sort order",
+        "fineMin": "Fine min (₽)",
+        "fineMax": "Fine max (₽)",
+        "triggerFindings": "Finding triggers (JSON)",
+        "triggerFlags": "Flag triggers (JSON)",
+        "active": "Active",
+        "turnoverFine": "Turnover fine",
+        "contextOnly": "Context only (excluded from sum)"
+      },
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      }
+    },
+    "legalScanLlm": {
+      "title": "Legal scan — LLM model",
+      "subtitle": "Dedicated model for Legal Site Scan report packaging. API keys come from AI Strategy LLM settings.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load settings",
+      "saveFailed": "Could not save",
+      "saved": "Settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "keysHint": "OpenRouter / DeepSeek keys are configured under AI Strategy LLM.",
+      "keyMissing": "key not set",
+      "providerSection": "Provider",
+      "modelsSection": "Models and parameters",
+      "promptSection": "System prompt",
+      "openrouterModel": "OpenRouter model",
+      "deepseekModel": "DeepSeek model",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Active model",
+      "modelsEmpty": "Test connection in AI Strategy LLM first",
+      "resetPrompt": "Reset to default",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
+      }
+    },
+    "projectInquiries": {
+      "title": "Discuss project requests",
+      "subtitle": "Automation discussion requests with calculator data",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load requests",
+      "saveFailed": "Failed to update status",
+      "statusUpdated": "Status updated",
+      "empty": "No requests yet",
+      "colDate": "Date",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colTelegram": "Telegram",
+      "colProject": "Project",
+      "colDescription": "Description",
+      "colRun": "Calculation",
+      "colStatus": "Status",
+      "open": "Open",
+      "backToList": "Back to list",
+      "detailTitle": "Discussion request",
+      "requestInfo": "Request details",
+      "reportDisclaimer": "Attached Automation Calculator report",
+      "openShareReport": "Open client-facing report",
+      "noReportAttached": "No calculator report attached to this request",
+      "pagination": "Page {page} of {total} · {count} total",
+      "prev": "Previous",
+      "next": "Next",
+      "status": {
+        "pending_email": "Pending email",
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done",
+        "spam": "Spam"
+      }
     }
   },
   "stub": {
@@ -433,12 +851,12 @@
     "guestHint": "Sign in or register to activate a plan or purchase a subscription.",
     "loginToActivate": "Sign in to activate",
     "loginToPurchase": "Sign in to purchase",
-    "paymentSuccess": "Zahlung erhalten. Ihr Plan wird innerhalb einer Minute aktualisiert — aktualisieren Sie ihn, wenn sich die Limits nicht geändert haben.",
-    "paymentFailed": "Die Zahlung wurde nicht abgeschlossen. Versuchen Sie es erneut oder wählen Sie einen anderen Plan.",
-    "paymentUnavailable": "Der Online-Checkout ist vorübergehend nicht verfügbar. E-Mail hello@erman.ai",
-    "adminDirectSwitchHint": "Als Administrator können Sie jeden Plan ohne Bezahlung aktivieren.",
-    "legalScanPages": "Rechtliche Scantiefe",
-    "pagesPerScan": "bis zu {count} Seiten / Scan"
+    "paymentSuccess": "Payment received. Your plan will update within a minute — refresh if limits have not changed.",
+    "paymentFailed": "Payment was not completed. Try again or choose another plan.",
+    "paymentUnavailable": "Online checkout is temporarily unavailable. Email hello@erman.ai",
+    "adminDirectSwitchHint": "As an admin, you can activate any plan without payment.",
+    "legalScanPages": "Legal scan depth",
+    "pagesPerScan": "up to {count} pages / scan"
   },
   "calculator": {
     "title": "Automatisierungsrechner",
@@ -648,10 +1066,10 @@
       "consider": "Automatisierung erwägen — moderate Amortisation oder ROI",
       "not_recommended": "Automatisierung bei den aktuellen Parametern nicht empfohlen"
     },
-    "discussProject": "Projekt besprechen",
-    "discussProjectSent": "Anfrage gesendet",
-    "discussProjectAlreadySent": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht",
-    "proposalRequestAlreadySent": "Sie haben bereits eine Angebotsanfrage eingereicht"
+    "discussProject": "Discuss project",
+    "discussProjectSent": "Request sent",
+    "discussProjectAlreadySent": "You have already submitted a project discussion request",
+    "proposalRequestAlreadySent": "You have already submitted a proposal request"
   },
   "strategy": {
     "title": "KI-Strategie",
@@ -940,7 +1358,7 @@
         "processFallback": "Prozess"
       },
       "legalScanPrefill": {
-        "solutionName": "Website-Konformität mit RF-Anforderungen"
+        "solutionName": "Website compliance with RF requirements"
       }
     },
     "scenarios": {
@@ -1062,225 +1480,292 @@
       "sender_email": "E-Mail für die Antwort des Kunden."
     }
   },
-  "legalScan": {
-    "title": "Legal-Website-Scan",
-    "subtitle": "Überprüfen Sie eine Kundenwebsite auf RF-Rechtsrisiken und erhalten Sie einen Bericht über eine feine Schätzung",
-    "loading": "Lädt…",
-    "subnav": {
-      "new": "Neuer Scan",
-      "history": "Verlauf"
+  "discuss": {
+    "title": "Discuss project",
+    "subtitle": "Send your calculation and description — we'll discuss automation based on your numbers, not generic slides",
+    "value": {
+      "title": "What you get",
+      "item1": "ROI review based on your calculator run",
+      "item2": "Timeline, risks, and feasibility assessment",
+      "item3": "Clear recommendation via Telegram: automate, wait, or skip"
     },
     "steps": {
-      "1": "Website",
-      "2": "Scan läuft",
-      "3": "Bericht"
+      "label": "Step {n}",
+      "calc": "Run the automation calculator",
+      "describe": "Describe the project and attach the calculation",
+      "talk": "Discuss based on your data in Telegram"
     },
     "form": {
-      "section": "Kundenstandort",
-      "url": "URL der Webseite",
-      "industry": "Industrie",
-      "size": "Unternehmensgröße",
-      "features": "Was ist auf der Website?",
-      "featuresHint": "verfeinert den Scheck",
-      "featuresNote": "Markieren Sie, was Sie über den Kunden wissen. Der Scanner erkennt den Rest.",
-      "crawlDepth": "Scantiefe",
-      "maxPages": "Max. Seitenanzahl",
-      "maxDepth": "Verbindungstiefe",
-      "crawlNote": "Der Scanner durchsucht die Website nach rechtlichen Seiten, Kontakten und Unternehmensdetails. Dein Abo erlaubt bis zu {limit} Seiten.",
-      "submit": "Scan ausführen",
-      "scanning": "Wird gestartet"
+      "name": "Name",
+      "email": "Email",
+      "emailVerified": "Verified email from your account",
+      "emailGuestHint": "We'll send a confirmation link — we receive the request only after you click it",
+      "telegram": "Telegram",
+      "telegramPlaceholder": "@username",
+      "telegramHint": "Your username — we'll contact you on Telegram to discuss the project based on your calculation",
+      "projectTitle": "Project name",
+      "description": "Project description",
+      "descriptionPlaceholder": "Briefly describe the process, automation goal, and context. Attach a calculator run below if you have one.",
+      "calculatorRun": "Calculator run",
+      "noRun": "No calculation",
+      "unnamedRun": "Untitled",
+      "runPreview": "Selected calculation",
+      "runBenefit": "Savings: {value}",
+      "runPayback": "Payback: {value}",
+      "months": "mo",
+      "guestRunHint": "Sign in to attach a saved calculation, or run the calculator first.",
+      "guestRunAttached": "Your calculator result will be included with the request.",
+      "goCalculator": "Open calculator →",
+      "submit": "Submit",
+      "sending": "Sending…"
+    },
+    "success": {
+      "title": "Request submitted",
+      "auth": "We received your request and will contact you on Telegram. A confirmation was sent to your email.",
+      "guest": "Check your inbox and click the confirmation link. Then we'll receive your request and contact you on Telegram.",
+      "telegramHint": "We'll reach you on Telegram {telegram}",
+      "backToCalculator": "← Back to calculator"
+    },
+    "alreadySubmitted": {
+      "title": "Request already submitted",
+      "body": "You have already submitted a project discussion request. The Erman AI team will contact you — repeat submissions are not available."
+    },
+    "errors": {
+      "submitFailed": "Failed to submit request",
+      "missingFields": "Please fill in all required fields",
+      "invalidTelegram": "Enter a Telegram username (5+ Latin characters) or phone number",
+      "invalidForm": "Please check the form data",
+      "alreadySubmitted": "You have already submitted a project discussion request"
+    },
+    "confirm": {
+      "loading": "Confirming request…",
+      "title": "Request confirmed",
+      "body": "Thank you! We received your request and will contact you on Telegram to discuss automation based on your data.",
+      "errorTitle": "Invalid link",
+      "errorBody": "This link expired or was already used. Please submit the form again.",
+      "back": "← Back to form",
+      "dashboard": "Go to dashboard →"
+    }
+  },
+  "legalScan": {
+    "title": "Legal Site Scan",
+    "subtitle": "Check a client website for RF legal risks and get a fine estimate report",
+    "loading": "Loading…",
+    "subnav": {
+      "new": "New scan",
+      "history": "History"
+    },
+    "steps": {
+      "1": "Site",
+      "2": "Scanning",
+      "3": "Report"
+    },
+    "form": {
+      "section": "Client site",
+      "url": "Website URL",
+      "industry": "Industry",
+      "size": "Business size",
+      "features": "What's on the site",
+      "featuresHint": "refines the check",
+      "featuresNote": "Mark what you know about the client. The scanner detects the rest.",
+      "crawlDepth": "Scan depth",
+      "maxPages": "Max pages",
+      "maxDepth": "Link depth",
+      "crawlNote": "The scanner crawls the site for legal pages, contacts, and company details. Your plan allows up to {limit} pages.",
+      "submit": "Run scan",
+      "scanning": "Starting…"
     },
     "industries": {
-      "ecommerce": "E-Commerce",
-      "services": "Dienstleistungen, Beratung",
-      "medicine": "Medizin, Psychologie",
-      "finance": "Finanzen und Investments",
-      "education": "Online-Bildung",
-      "other": "Sonstiges (bitte nähere Angaben machen)"
+      "ecommerce": "E-commerce",
+      "services": "Services / consulting",
+      "medicine": "Medicine & psychology",
+      "finance": "Finance & investments",
+      "education": "Online education",
+      "other": "Other"
     },
     "sizes": {
-      "sole": "Alleinverd.",
-      "small": "Kleinunternehmen (bis zu 50)",
-      "medium": "Mittelgroß (50–250)"
+      "sole": "Sole proprietor",
+      "small": "Small business (up to 50)",
+      "medium": "Mid-size (50–250)"
     },
     "features": {
-      "forms": "Sammelt Daten über Formulare",
-      "ads": "Traffic von Anzeigen",
-      "sales": "Online-Verkäufe / Zahlungen",
-      "foreign": "Ausländische Dienstleistungen / Analytik"
+      "forms": "Collects data via forms",
+      "ads": "Traffic from ads",
+      "sales": "Online sales / payments",
+      "foreign": "Foreign services / analytics"
     },
     "crawl": {
       "presets": {
-        "quick": "Quick (1 Seite)",
-        "standard": "Standard (10 Seiten)",
-        "deep": "Tiefgründig (30 Seiten)"
+        "quick": "Quick (1 page)",
+        "standard": "Standard (10 pages)",
+        "deep": "Deep (30 pages)"
       }
     },
     "scan": {
-      "scanning": "Scannen !",
-      "pagesProgress": "Geprüfte Seiten: {done} von {total}",
-      "ok": "o.B.",
-      "risk": "Risiko, riskieren, riskiere, riskieren Sie, Sie riskieren"
+      "scanning": "Scanning",
+      "pagesProgress": "Pages checked: {done} of {total}",
+      "ok": "ok",
+      "risk": "risk"
     },
     "checklist": {
-      "ssl": "SSL-Zertifikat und HTTPS",
-      "privacy": "Richtlinie zur Verarbeitung von personenbezogenen Daten",
-      "cookie": "Cookie-Banner",
-      "cookiepol": "Separate Cookie-Richtlinie",
-      "consent": "Zustimmung zu Formularen",
-      "req": "Firmendaten (INN/OGRN)",
-      "contacts": "Kontaktinformationen",
-      "offer": "Öffentliches Angebot",
-      "terms": "Nutzungsbedingungen",
-      "withdraw": "Widerruf der Einwilligung/ Datenlöschung",
-      "admark": "Anzeigenkennzeichnung (erid)",
-      "trackers": "Tracker und Analysen",
-      "formenc": "Formularverschlüsselung"
+      "ssl": "SSL certificate and HTTPS",
+      "privacy": "Personal data processing policy",
+      "cookie": "Cookie banner",
+      "cookiepol": "Separate cookie policy",
+      "consent": "Consent on forms",
+      "req": "Company details (INN/OGRN)",
+      "contacts": "Contact information",
+      "offer": "Public offer",
+      "terms": "Terms of use",
+      "withdraw": "Consent withdrawal / data deletion",
+      "admark": "Ad labeling (erid)",
+      "trackers": "Trackers and analytics",
+      "formenc": "Form encryption"
     },
     "result": {
-      "risksFound": "gefundene Risiken",
-      "fixedFines": "mögliche feste Bußgelder",
-      "fineUpTo": "bis {amount}",
+      "risksFound": "risks found",
+      "fixedFines": "potential fixed fines",
+      "fineUpTo": "up to {amount}",
       "fineNone": "—",
-      "scanned": "gescannt",
-      "pagesCrawled": "seiten der Website: {count}",
-      "crawledPages": "Geprüfte Seiten ({count})",
-      "leakTitle": "Als Referenz, mögliche Haftung für ein personenbezogenes Datenleck:",
+      "scanned": "scanned",
+      "pagesCrawled": "site pages: {count}",
+      "crawledPages": "Pages checked ({count})",
+      "leakTitle": "For reference, possible liability for a personal data leak:",
       "leakSeparate": "These amounts are not included in the calculation above and do not mean a leak was detected.",
-      "checksTitle": "Ergebnisse überprüfen",
-      "risksTitle": "Identifizierte Risiken",
-      "noRisks": "Überprüfen Sie, ob Daten nicht verfügbar sind.",
-      "noRiskExplanation": "Bei dieser Prüfung wurde kein Risiko festgestellt.",
-      "riskDetectedGeneric": "Ein potenzielles Risiko wurde identifiziert — wir empfehlen eine manuelle Überprüfung.",
-      "article": "Artikel",
-      "fine": "Fein",
+      "checksTitle": "Check results",
+      "risksTitle": "Identified risks",
+      "noRisks": "Check data unavailable.",
+      "noRiskExplanation": "No risk detected for this check.",
+      "riskDetectedGeneric": "A potential risk was identified — we recommend manual review.",
+      "article": "Article",
+      "fine": "Fine",
       "severity": {
-        "none": "zu keinem Risiko",
-        "high": "hoch",
-        "medium": "mittel",
-        "low": "niedrig"
+        "none": "no risk",
+        "high": "high",
+        "medium": "medium",
+        "low": "low"
       },
-      "exportPdf": "Exportiere PDF",
-      "pdfLoading": "PDF generieren",
-      "pdfFailed": "PDF-Dateiexport fehlgeschlagen",
-      "exportLocked": "PDF — nach Login und Pro+ Plan",
-      "restart": "Erneut ausführen"
+      "exportPdf": "Export PDF",
+      "pdfLoading": "Generating PDF…",
+      "pdfFailed": "PDF export failed",
+      "exportLocked": "PDF — after login and Pro+ plan",
+      "restart": "Run again"
     },
     "errors": {
-      "loadFailed": "Ergebnis konnte nicht geladen werden",
-      "scanFailed": "Der Scan ist fehlgeschlagen"
+      "loadFailed": "Could not load result",
+      "scanFailed": "Scan failed"
     },
     "history": {
-      "title": "Legaler Scanverlauf",
-      "subtitle": "Gespeicherte Website-Checks und deren Status",
-      "loading": "Lädt…",
-      "loadFailed": "Verlauf konnte nicht geladen werden",
-      "deleteFailed": "Konnte nicht gelöscht werden.",
-      "deleteConfirm": "Diesen Scan aus dem Verlauf löschen?",
-      "empty": "Noch keine gespeicherten Scans",
-      "emptyAction": "Machen Sie Ihren ersten Prüfung",
-      "colSite": "Grundstück",
+      "title": "Legal scan history",
+      "subtitle": "Saved website checks and their statuses",
+      "loading": "Loading…",
+      "loadFailed": "Could not load history",
+      "deleteFailed": "Could not delete",
+      "deleteConfirm": "Delete this scan from history?",
+      "empty": "No saved scans yet",
+      "emptyAction": "Run your first scan →",
+      "colSite": "Site",
       "colStatus": "Status",
-      "colDate": "Datum",
-      "open": "Öffnen",
-      "continue": "Weiter",
-      "delete": "Löschen",
+      "colDate": "Date",
+      "open": "Open",
+      "continue": "Continue",
+      "delete": "Delete",
       "status": {
-        "pending": "ausstehend",
-        "processing": "Scannen",
-        "done": "erledigt",
-        "error": "Fehler"
+        "pending": "pending",
+        "processing": "scanning",
+        "done": "done",
+        "error": "error"
       }
     }
   },
   "audit": {
-    "title": "Automatisierungsaudit",
-    "subtitle": "Vergleichen Sie mehrere Prozesse und erhalten Sie einen priorisierten Automatisierungsplan",
-    "loadingRun": "Lädt…",
+    "title": "Automation Audit",
+    "subtitle": "Compare multiple processes and get a prioritized automation plan",
+    "loadingRun": "Loading…",
     "subnav": {
-      "new": "neuen Audits",
-      "history": "Geschichte"
+      "new": "New audit",
+      "history": "History"
     },
     "formSteps": {
-      "company": "Unternehmen",
-      "processes": "Prozesse",
-      "review": "Erstellen"
+      "company": "Company",
+      "processes": "Processes",
+      "review": "Generate"
     },
     "form": {
-      "companySection": "Unternehmenskontext",
-      "processesSection": "Zu auditierende Prozesse",
-      "reviewSection": "Überprüfung vor Generierung",
-      "companyName": "Firmenname",
-      "primaryGoal": "Primäres Automatisierungsziel",
+      "companySection": "Company context",
+      "processesSection": "Processes to audit",
+      "reviewSection": "Review before generation",
+      "companyName": "Company name",
+      "primaryGoal": "Primary automation goal",
       "customGoal": "Custom goal",
-      "companySize": "Firmengröße",
-      "headcount": "Operative Mitarbeiterzahl",
-      "budget": "Automatisierungsbudget",
-      "timeline": "Entscheidungshorizont",
-      "dataDuplication": "Datenduplizierung über Systeme hinweg",
-      "priorityCriteria": "Priorisierungskriterien",
-      "itSystems": "900 Systeme im Einsatz",
-      "otherSystem": "anderes System",
-      "otherSystemPlaceholder": "z.B. Notion, Bitrix…",
-      "select": "Auswählen..",
-      "next": "Weiter",
-      "back": "Zurück",
-      "generate": "Bericht erstellen",
-      "generating": "Wird gestartet",
-      "newAudit": "neuen Audits",
-      "processesHint": "Füge {min} zu {max} Prozessen hinzu. Verwenden Sie Vorlagen für eine schnellere Eingabe.",
-      "processNumber": "Prozess {n}",
-      "incomplete": "Bitte füllen Sie die erforderlichen Felder aus",
-      "removeProcess": "Prozess entfernen"
+      "companySize": "Company size",
+      "headcount": "Operational headcount",
+      "budget": "Automation budget",
+      "timeline": "Decision horizon",
+      "dataDuplication": "Data duplication across systems",
+      "priorityCriteria": "Prioritization criteria",
+      "itSystems": "Systems in use",
+      "otherSystem": "Other system",
+      "otherSystemPlaceholder": "e.g. Notion, Bitrix…",
+      "select": "Select…",
+      "next": "Next",
+      "back": "Back",
+      "generate": "Generate report",
+      "generating": "Starting…",
+      "newAudit": "New audit",
+      "processesHint": "Add {min} to {max} processes. Use templates for faster input.",
+      "processNumber": "Process {n}",
+      "incomplete": "Fill required fields",
+      "removeProcess": "Remove process"
     },
     "goals": {
-      "reduce_costs": "Senken Sie die Kosten",
-      "speed": "Prozesse beschleunigen",
-      "quality": "Fehler reduzieren",
-      "scale": "Skalierung ohne Einstellung",
-      "control": "Transparenz und Kontrolle"
+      "reduce_costs": "Reduce costs",
+      "speed": "Speed up processes",
+      "quality": "Reduce errors",
+      "scale": "Scale without hiring",
+      "control": "Transparency and control"
     },
     "criteria": {
-      "cost_savings": "Kostensenkung",
-      "speed": "Drehzahl",
-      "quality": "Qualität",
-      "scalability": "Skalierbarkeit",
-      "control": "Regelung",
-      "quick_wins": "Schnelle Erfolge"
+      "cost_savings": "Cost savings",
+      "speed": "Speed",
+      "quality": "Quality",
+      "scalability": "Scalability",
+      "control": "Control",
+      "quick_wins": "Quick wins"
     },
     "headcount": {
-      "1-10": "1–10 Personen",
-      "11-30": "11/30",
-      "31-100": "31 - 100",
+      "1-10": "1–10 people",
+      "11-30": "11–30",
+      "31-100": "31–100",
       "101-500": "101–500",
       "500+": "500+"
     },
     "budget": {
-      "up_to_500k": "bis zu 500.000 ₽",
+      "up_to_500k": "up to 500K ₽",
       "500k_2m": "500K – 2M ₽",
       "2m_5m": "2M – 5M ₽",
-      "5m_plus": "5 MIO."
+      "5m_plus": "5M+ ₽"
     },
     "timeline": {
-      "3months": "3 Monate",
-      "6months": "6 Monate",
-      "1year": "1 Jahr",
-      "2years": "2 Jahre"
+      "3months": "3 months",
+      "6months": "6 months",
+      "1year": "1 year",
+      "2years": "2 years"
     },
     "duplication": {
-      "none": "Fast keiner.",
-      "some": "in bestimmten Fällen",
-      "many": "Oft",
-      "critical": "Kritische Störung"
+      "none": "Almost none",
+      "some": "Some cases",
+      "many": "Often",
+      "critical": "Critical issue"
     },
     "systems": {
       "crm": "CRM",
       "erp": "ERP",
       "1c": "1C",
-      "spreadsheets": "Tabellenkalkulation",
-      "email": "Mail",
-      "messengers": "Messenger",
-      "website": "Webseite",
+      "spreadsheets": "Spreadsheets",
+      "email": "Email",
+      "messengers": "Messengers",
+      "website": "Website",
       "helpdesk": "Helpdesk",
       "warehouse": "Warehouse / WMS"
     },
@@ -1290,71 +1775,71 @@
       "finance": "Finance",
       "hr": "HR",
       "marketing": "Marketing",
-      "logistics": "Logistik",
+      "logistics": "Logistics",
       "support": "Support",
       "it": "IT",
-      "other": "Sonstiges (bitte nähere Angaben machen)"
+      "other": "Other"
     },
     "bottlenecks": {
-      "manual_data_entry": "Die manuelle Datenerfassung",
-      "approvals": "Zustimmungen",
-      "integrations": "Systemintegrationen",
-      "errors_rework": "Fehler und Nacharbeit",
-      "waiting": "Warte- / Leerlaufzeit",
-      "other": "Sonstiges (bitte nähere Angaben machen)"
+      "manual_data_entry": "Manual data entry",
+      "approvals": "Approvals",
+      "integrations": "System integrations",
+      "errors_rework": "Errors and rework",
+      "waiting": "Waiting / idle time",
+      "other": "Other"
     },
     "templates": {
-      "incoming_leads": "Eingehende Leads",
-      "order_processing": "Auftragsbearbeitung",
-      "customer_support": "Kundenbetreuung",
-      "invoicing": "Rechnungsstellung",
-      "hr_onboarding": "Mitarbeiter Onboarding",
-      "inventory": "Inventar",
-      "reporting": "Berichterstattung",
-      "custom": "Benutzerdefinierter Prozess"
+      "incoming_leads": "Incoming leads",
+      "order_processing": "Order processing",
+      "customer_support": "Customer support",
+      "invoicing": "Invoicing",
+      "hr_onboarding": "Employee onboarding",
+      "inventory": "Inventory",
+      "reporting": "Reporting",
+      "custom": "Custom process"
     },
     "levels": {
-      "high": "Hoch",
+      "high": "High",
       "medium": "Medium",
-      "low": "Niedrig"
+      "low": "Low"
     },
     "process": {
-      "name": "Prozessname",
-      "department": "Abteilung / Inhaber",
-      "customDepartment": "Abteilung angeben",
-      "frequency": "Häufigkeit pro Monat",
-      "minutes": "Zeit pro Zyklus",
-      "fte": "Beteiligte Personen",
-      "hourlyRate": "Stündliche Kosten",
-      "errorRate": "Fehler- / Nacharbeitsrate",
-      "errorCost": "Kosten pro Fehler",
-      "systems": "Eingesetzte Systeme:",
-      "bottleneck": "Hauptengpass",
-      "customBottleneck": "Engpass beschreiben",
-      "standardization": "Prozessstandardisierung",
-      "readiness": "Automatisierungsbereitschaft",
-      "impact": "Voraussichtliche Auswirkungen",
-      "integrationComplexity": "Integrationskomplexität (1–5)"
+      "name": "Process name",
+      "department": "Department / owner",
+      "customDepartment": "Specify department",
+      "frequency": "Frequency per month",
+      "minutes": "Time per cycle",
+      "fte": "People involved",
+      "hourlyRate": "Hourly cost",
+      "errorRate": "Error / rework rate",
+      "errorCost": "Cost per error",
+      "systems": "Systems used",
+      "bottleneck": "Main bottleneck",
+      "customBottleneck": "Describe bottleneck",
+      "standardization": "Process standardization",
+      "readiness": "Automation readiness",
+      "impact": "Expected impact",
+      "integrationComplexity": "Integration complexity (1–5)"
     },
     "ranges": {
       "frequency": {
-        "1-10": "1–10 / Monat",
-        "11-50": "11:50",
-        "51-200": "51 - 200",
-        "201-500": "201 – 500 Mitarbeiter",
+        "1-10": "1–10 / month",
+        "11-50": "11–50",
+        "51-200": "51–200",
+        "201-500": "201–500",
         "500+": "500+"
       },
       "minutes": {
-        "5-15": "5 - 15 Min",
-        "16-30": "16-30 min",
-        "31-60": "31-60 Min.",
-        "61-120": "1-2 Stunden) vergehen.",
-        "120+": "2 h"
+        "5-15": "5–15 min",
+        "16-30": "16–30 min",
+        "31-60": "31–60 min",
+        "61-120": "1–2 h",
+        "120+": "2+ h"
       },
       "fte": {
-        "1": "1 Person",
-        "2-3": "2 – 3",
-        "4-10": "10 12",
+        "1": "1 person",
+        "2-3": "2–3",
+        "4-10": "4–10",
         "11+": "11+"
       },
       "hourly": {
@@ -1365,149 +1850,82 @@
         "2000+": "2000+ ₽/h"
       },
       "errorRate": {
-        "0-2": "0-2",
-        "3-5": "3 – 5",
-        "6-10": "6 – 10",
-        "11-20": "11 – 20",
-        "20+": "&gt; 20%"
+        "0-2": "0–2%",
+        "3-5": "3–5%",
+        "6-10": "6–10%",
+        "11-20": "11–20%",
+        "20+": "20%+"
       },
       "errorCost": {
-        "500-2000": "500-2.000 ₽",
-        "2001-5000": "2-5.000 ₽",
-        "5001-15000": "5-15.000 ₽",
-        "15001-50000": "15-50.000 ₽",
-        "50000+": "50.000+"
+        "500-2000": "500–2K ₽",
+        "2001-5000": "2–5K ₽",
+        "5001-15000": "5–15K ₽",
+        "15001-50000": "15–50K ₽",
+        "50000+": "50K+ ₽"
       }
     },
     "polling": {
-      "title": "Erstellung des Auditberichts",
-      "hint": "Normalerweise dauert bis 3 Minuten",
-      "failed": "Bericht konnte nicht generiert werden"
+      "title": "Preparing audit report",
+      "hint": "Usually takes 1–3 minutes",
+      "failed": "Failed to generate report"
     },
     "errors": {
-      "startFailed": "Audit konnte nicht gestartet werden",
-      "loadFailed": "Ergebnis konnte nicht geladen werden!"
+      "startFailed": "Failed to start audit",
+      "loadFailed": "Failed to load result"
     },
     "result": {
-      "document": "Automatisierungsauditbericht",
-      "subtitle": "Priorisierter Automatisierungsplan",
+      "document": "Automation Audit Report",
+      "subtitle": "Prioritized automation plan",
       "metrics": {
-        "totalCost": "monatliche Gesamtbelastung",
-        "totalSavings": "Mögliche monatliche Einsparungen",
-        "processCount": "Geprüfte Prozesse"
+        "totalCost": "Total monthly cost",
+        "totalSavings": "Potential monthly savings",
+        "processCount": "Processes audited"
       },
       "sections": {
-        "summary": "Zusammenfassung",
-        "context": "Unternehmenskontext",
-        "quickWins": "Schnelle Erfolge",
-        "priority": "Automatisierungsprioritäten",
-        "roadmap": "Fahrplan",
-        "risks": "Risken",
-        "nextSteps": "Nächste Schritte (30 Tage)",
-        "metrics": "Zu verfolgende Metriken"
+        "summary": "Executive summary",
+        "context": "Company context",
+        "quickWins": "Quick wins",
+        "priority": "Automation priorities",
+        "roadmap": "Roadmap",
+        "risks": "Risks",
+        "nextSteps": "Next steps (30 days)",
+        "metrics": "Metrics to track"
       },
       "table": {
-        "rank": "es",
-        "process": "Prozess",
-        "score": "Ergebnis",
-        "savings": "Einsparungen / Monat",
-        "quickWin": "Quick Win",
-        "yes": "Ja"
+        "rank": "#",
+        "process": "Process",
+        "score": "Score",
+        "savings": "Savings / mo",
+        "quickWin": "Quick win",
+        "yes": "Yes"
       },
       "roadmap": {
-        "processes": "Prozesse"
+        "processes": "Processes"
       },
       "severity": {
-        "low": "niedrig",
-        "medium": "mittel",
-        "high": "hoch"
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
       }
     },
     "history": {
-      "loading": "Lädt…",
-      "empty": "Noch keine Audits",
-      "createFirst": "Erstes Audit erstellen →",
-      "view": "Öffnen",
-      "continue": "Weiter",
+      "loading": "Loading…",
+      "empty": "No audits yet",
+      "createFirst": "Create first audit →",
+      "view": "Open",
+      "continue": "Continue",
       "columns": {
-        "date": "Datum",
-        "company": "Unternehmen",
+        "date": "Date",
+        "company": "Company",
         "status": "Status",
-        "action": "Handlung"
+        "action": "Action"
       },
       "status": {
-        "done": "Fertig",
+        "done": "Done",
         "error": "Error",
-        "processing": "Generieren",
+        "processing": "Generating",
         "pending": "Queued"
       }
-    }
-  },
-  "discuss": {
-    "title": "Discuss project",
-    "subtitle": "Senden Sie Ihre Berechnung und Beschreibung — wir besprechen die Automatisierung basierend auf Ihren Zahlen, nicht auf generischen Folien",
-    "value": {
-      "title": "Das erhalten Sie",
-      "item1": "ROI-Überprüfung basierend auf Ihrem Taschenrechnerlauf",
-      "item2": "Zeitrahmen, Risiken und Machbarkeitsbewertung",
-      "item3": "Klare Empfehlung per Telegramm: automatisieren, warten oder überspringen"
-    },
-    "steps": {
-      "label": "Schritt {n}",
-      "calc": "Automatisierungsrechner ausführen",
-      "describe": "Beschreiben Sie das Projekt und fügen Sie die Berechnung bei",
-      "talk": "Diskutieren Sie basierend auf Ihren Daten in Telegram"
-    },
-    "form": {
-      "name": "Name",
-      "email": "Mail",
-      "emailVerified": "Verifizierte E-Mail von Ihrem Konto",
-      "emailGuestHint": "Wir senden einen Bestätigungslink — wir erhalten die Anfrage erst, nachdem Sie darauf geklickt haben",
-      "telegram": "Telegram",
-      "telegramPlaceholder": "Benutzername",
-      "telegramHint": "Ihr Benutzername — wir werden Sie auf Telegram kontaktieren, um das Projekt auf der Grundlage Ihrer Berechnung zu besprechen",
-      "projectTitle": "Project name",
-      "description": "Projektbeschreibung",
-      "descriptionPlaceholder": "Beschreiben Sie kurz den Prozess, das Automatisierungsziel und den Kontext. Fügen Sie unten einen Taschenrechner hinzu, falls Sie einen haben.",
-      "calculatorRun": "Rechnerlauf",
-      "noRun": "-keine Berechnung",
-      "unnamedRun": "Ohne Titel",
-      "runPreview": "Ausgewählte Berechnung",
-      "runBenefit": "Ersparnis: {value}",
-      "runPayback": "Amortisation: {value}",
-      "months": "m??",
-      "guestRunHint": "Melden Sie sich an, um eine gespeicherte Berechnung anzuhängen, oder führen Sie zuerst den Rechner aus.",
-      "guestRunAttached": "Ihr Rechnerergebnis wird der Anfrage beigefügt.",
-      "goCalculator": "Kalkulator öffnen",
-      "submit": "Senden",
-      "sending": "Senden…"
-    },
-    "success": {
-      "title": "Anfrage sent",
-      "auth": "Wir haben Ihre Anfrage erhalten und werden Sie über Telegram kontaktieren. Eine Bestätigung wurde an Ihre E-Mail-Adresse gesendet.",
-      "guest": "Überprüfe deinen Posteingang und klicke auf den Bestätigungslink. Dann erhalten wir Ihre Anfrage und kontaktieren Sie über Telegram.",
-      "telegramHint": "Wir erreichen dich unter Telegramm {telegram}",
-      "backToCalculator": "← Zurück zum Taschenrechner"
-    },
-    "alreadySubmitted": {
-      "title": "Anfrage bereits eingereicht",
-      "body": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht. Das Erman AI-Team wird sich mit Ihnen in Verbindung setzen — wiederholte Einsendungen sind nicht verfügbar."
-    },
-    "errors": {
-      "submitFailed": "Anfrage konnte nicht gesendet werden",
-      "missingFields": "Bitte füllen Sie alle erforderlichen Felder aus",
-      "invalidTelegram": "Geben Sie einen Telegramm-Benutzernamen (5+ lateinische Zeichen) oder eine Telefonnummer ein",
-      "invalidForm": "bitte überprüfen Sie das Formular",
-      "alreadySubmitted": "Sie haben bereits eine Projektdiskussionsanfrage eingereicht"
-    },
-    "confirm": {
-      "loading": "Anfrage wird bestätigt...",
-      "title": "Anfrage bestätigt",
-      "body": "Vielen Dank! Wir haben Ihre Anfrage erhalten und werden Sie über Telegram kontaktieren, um die Automatisierung auf der Grundlage Ihrer Daten zu besprechen.",
-      "errorTitle": "Ungültiger Link",
-      "errorBody": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Bitte senden Sie das Formular erneut.",
-      "back": "Zurück zum Formular",
-      "dashboard": "Zum Dashboard"
     }
   }
 }

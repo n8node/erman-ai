@@ -34,7 +34,50 @@
       "special": "特殊字符 (!@#$…)",
       "invalid": "密码不符合要求"
     },
-    "ermanReferral": "通过 Erman AI 邀请注册"
+    "ermanReferral": "通过 Erman AI 邀请注册",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordSuccess": "Password updated. Sign in with your new password.",
+    "emailNotVerified": "Confirm your email — we already sent a link",
+    "privacyPolicyConsent": "Consent to the personal data processing policy",
+    "privacyConsentRequired": "Please accept the personal data processing policy",
+    "verify": {
+      "title": "Confirm your email",
+      "subtitle": "We sent a confirmation link. Open the email and follow the link.",
+      "sentTo": "We sent an email to {email}. Check your inbox and spam folder.",
+      "checkInbox": "Check your inbox and open the link from the email.",
+      "emailLabel": "Email",
+      "resend": "Resend confirmation email",
+      "resent": "If an account exists, a new email was sent.",
+      "resendFailed": "Could not resend email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "verifyFailed": "This link is invalid or expired",
+      "confirming": "Confirming your email…",
+      "backToLogin": "Back to sign in",
+      "resendLink": "Confirm email or resend the message",
+      "loading": "Loading…"
+    },
+    "forgot": {
+      "title": "Reset password",
+      "subtitle": "Enter your email and we'll send a reset link",
+      "emailLabel": "Email",
+      "submit": "Send reset link",
+      "sent": "If an account exists, we sent a password reset email. Check your inbox and spam folder.",
+      "failed": "Could not send email",
+      "tooSoon": "Please wait a few minutes before requesting again",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    },
+    "reset": {
+      "title": "New password",
+      "subtitle": "Choose a new password for your Erman AI account",
+      "newPassword": "New password",
+      "submit": "Save password",
+      "failed": "Could not reset password",
+      "missingToken": "This link is invalid or expired",
+      "requestNewLink": "Request a new link",
+      "backToLogin": "Back to sign in",
+      "loading": "Loading…"
+    }
   },
   "guest": {
     "banner": "登录后可保存计算历史、导出 PDF 并使用 AI 工具。",
@@ -74,7 +117,7 @@
     "project": "项目",
     "discussProject": "讨论项目",
     "audit": "自动化审计",
-    "legalScan": "网站法律合规扫描"
+    "legalScan": "合法站点扫描"
   },
   "dashboard": {
     "title": "控制台",
@@ -135,7 +178,16 @@
       "calculatorBudget": "计算器费率",
       "strategyLlm": "AI 战略 LLM",
       "translations": "翻译",
-      "projects": "项目"
+      "projects": "项目",
+      "projectInquiries": "Discuss project",
+      "legalRisks": "Legal scan: risks",
+      "legalScanLlm": "Legal scan: model",
+      "emailSmtp": "Email / SMTP",
+      "payments": "Payments",
+      "telegram": "Telegram",
+      "max": "MAX",
+      "yandexMetrika": "Yandex Metrika",
+      "publicPages": "Public pages"
     },
     "users": {
       "title": "用户",
@@ -164,7 +216,13 @@
       "impersonateConfirm": "以 {email} 的身份登录？您当前的会话将被替换。",
       "pagination": "第 {page} / {total} 页 · 共 {count} 条",
       "prev": "上一页",
-      "next": "下一页"
+      "next": "下一页",
+      "colStatus": "Status",
+      "status": {
+        "verified": "Verified",
+        "pending": "Email pending",
+        "blocked": "Blocked"
+      }
     },
     "plans": {
       "title": "定价套餐",
@@ -209,8 +267,10 @@
         "white_label": "白标",
         "hide_share_promo": "在分享页隐藏推广",
         "share_report": "公开报告链接",
-        "share_report_limit": "每月分享链接上限"
-      }
+        "share_report_limit": "每月分享链接上限",
+        "legal_scan_max_pages": "Legal scan: max pages"
+      },
+      "legalScanPagesHint": "Maximum pages per Legal Site Scan (1–50)."
     },
     "tooltips": {
       "title": "提示文案",
@@ -400,6 +460,346 @@
         "in_progress": "进行中",
         "done": "已完成"
       }
+    },
+    "publicPages": {
+      "title": "Public pages",
+      "subtitle": "Legal and informational pages available without login",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load pages",
+      "saveFailed": "Failed to save",
+      "deleteFailed": "Failed to delete",
+      "saved": "Page saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this page?",
+      "newPage": "New page",
+      "draft": "draft",
+      "titleLabel": "Title",
+      "slugLabel": "URL slug",
+      "publicUrl": "Public URL",
+      "metaLabel": "Meta description",
+      "contentLabel": "Content",
+      "contentHint": "TipTap visual editor. Switch to HTML mode for advanced markup (dl, dt, dd).",
+      "published": "Published",
+      "sortOrder": "Sort order",
+      "editor": {
+        "visualMode": "Visual",
+        "htmlMode": "HTML",
+        "bold": "Bold",
+        "italic": "Italic",
+        "heading": "Heading H2",
+        "bulletList": "Bullet list",
+        "orderedList": "Numbered list",
+        "link": "Link",
+        "unlink": "Remove link",
+        "undo": "Undo",
+        "redo": "Redo",
+        "linkPrompt": "Link URL"
+      }
+    },
+    "emailSmtp": {
+      "title": "Email / SMTP",
+      "subtitle": "External SMTP server for verification and notification emails (e.g. Yandex 360)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Email settings saved",
+      "save": "Save email settings",
+      "saving": "Saving…",
+      "enableSending": "Enable email sending in the system",
+      "presetSection": "Quick preset",
+      "yandexPreset": "Apply Yandex SMTP",
+      "senderSection": "Sender settings",
+      "fromEmail": "Sender email",
+      "fromName": "Sender name",
+      "forceFromEmail": "Always use this sender address",
+      "forceFromName": "Always use this sender name",
+      "replyToFromEmail": "Use this address as Reply-to",
+      "connectionSection": "SMTP connection",
+      "host": "SMTP Host",
+      "port": "SMTP Port",
+      "encryption": "Encryption",
+      "autoTls": "Use Auto TLS",
+      "auth": "Authentication",
+      "username": "SMTP Username",
+      "password": "SMTP Password",
+      "passwordPlaceholder": "SMTP password",
+      "passwordPlaceholderExisting": "New password (current: {hint})",
+      "testSection": "Test send",
+      "testEmailPlaceholder": "email for test message",
+      "testSend": "Send",
+      "testing": "Sending…",
+      "testFailed": "Test send failed"
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "Connect YooKassa and Robokassa for plan checkout",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Payment settings saved",
+      "saving": "Saving…",
+      "copy": "Copy",
+      "copied": "Copied",
+      "activeProviderTitle": "Active payment provider",
+      "activeProviderHint": "Plans are charged through the selected gateway. Both providers can be configured at once.",
+      "providerYookassa": "YooKassa",
+      "providerRobokassa": "Robokassa",
+      "yookassaTitle": "YooKassa",
+      "yookassaSubtitle": "Credentials from YooKassa dashboard → Settings → Integration",
+      "shopId": "Shop ID",
+      "shopIdHint": "Found in YooKassa shop settings",
+      "secretKey": "Secret API key",
+      "secretHint": "Stored encrypted in the database",
+      "secretPlaceholder": "Secret key",
+      "secretPlaceholderExisting": "New key (current: {hint})",
+      "returnUrl": "Return URL after payment",
+      "returnUrlHint": "Where to redirect the user after successful payment",
+      "yookassaEnabled": "Enable plan payments via YooKassa",
+      "saveYookassa": "Save",
+      "testSection": "Connection check",
+      "yookassaTestHint": "Sends a request to YooKassa API to verify Shop ID and secret key",
+      "testConnection": "Test connection",
+      "testing": "Testing…",
+      "testFailed": "Connection test failed",
+      "yookassaInstructions": "Setup guide",
+      "yookassaStep1": "Register at YooKassa and create a shop",
+      "yookassaStep2": "Copy Shop ID from shop settings",
+      "yookassaStep3": "Generate a secret API key in Integration settings",
+      "yookassaStep4": "Paste credentials above and save",
+      "yookassaStep5": "In YooKassa dashboard add an HTTP notification (webhook) with URL:",
+      "yookassaStep6": "Click Test connection",
+      "yookassaStep7": "Enable plan payments via YooKassa",
+      "robokassaTitle": "Robokassa",
+      "robokassaSubtitle": "Alternative to YooKassa. Credentials from Robokassa technical settings",
+      "merchantLogin": "Merchant login",
+      "merchantLoginHint": "MerchantLogin in Robokassa dashboard",
+      "password1": "Password #1",
+      "password1Placeholder": "Password #1",
+      "password1Hint": "For payment link generation. Stored encrypted",
+      "password2": "Password #2",
+      "password2Placeholder": "Password #2",
+      "password2Hint": "For Result URL notifications (not the same as Password #1)",
+      "testMode": "Test mode (is_test=1)",
+      "robokassaEnabled": "Enable plan payments via Robokassa",
+      "saveRobokassa": "Save Robokassa",
+      "robokassaResultTitle": "Result URL for Robokassa dashboard (WordPress)",
+      "robokassaResultHint": "Set in Robokassa technical settings. The WordPress plugin handles site payments. Use POST or GET as required by the plugin. Response: OK{InvId}.",
+      "robokassaResult2Title": "ResultUrl2 for dashboard plan checkout",
+      "robokassaResult2Hint": "Added automatically to Erman AI plan payment links. Robokassa sends a JWS POST to this URL. Response: HTTP 200.",
+      "robokassaNoteMd5": "Select MD5 signature algorithm in Robokassa dashboard",
+      "robokassaNoteShp": "Custom Shp_* parameters must be included in the signature — current implementation does not pass them",
+      "robokassaNoteWordPress": "Dashboard plan payments also trigger this Result URL — WordPress should respond OK{InvId} even when the order is unknown",
+      "robokassaNoteResult2Auto": "ResultUrl2 is added to every dashboard checkout link automatically",
+      "robokassaNoteResult2Test": "ResultUrl2 is not sent in test mode (IsTest=1) — verify with a live payment",
+      "robokassaDocs": "Robokassa documentation",
+      "robokassaTestHint": "Checks that login and both passwords are filled in"
+    },
+    "telegram": {
+      "title": "Telegram notifications",
+      "subtitle": "Registration and plan payment notifications are sent to the configured chat",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Telegram settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "runtimeTitle": "Bot status",
+      "runtimeHint": "The supervisor starts with the backend on container boot and rechecks connectivity every 30 seconds.",
+      "lastCheck": "Last check: {time}",
+      "supervisorStopped": "Supervisor stopped — restart the backend or click Recheck.",
+      "restart": "Recheck and restart",
+      "restarting": "Checking…",
+      "restarted": "Health check completed",
+      "restartFailed": "Failed to restart health check",
+      "startSection": "/start command",
+      "startEnabled": "Reply to /start in bot DM",
+      "startHint": "With an image, text is the caption (max 1024 chars); overflow is sent as a second message. Without image, one message up to 4096 chars. Photo: JPEG/PNG/WebP, max 10 MB.",
+      "startText": "Welcome text",
+      "startOverflowHint": "overflow as 2nd message",
+      "startImage": "Image",
+      "startImageHint": "16:9 or square works best. Telegram may compress on send.",
+      "startImageUpload": "Upload image",
+      "startImageRemove": "Remove image",
+      "imageUploading": "Uploading…",
+      "imageUploaded": "Image uploaded",
+      "imageUploadFailed": "Failed to upload image",
+      "imageRemoved": "Image removed",
+      "startPollingActive": "Listening for /start (long polling)",
+      "startButtonsHint": "Welcome message includes Consultation and Tools buttons (dashboard link).",
+      "supportSection": "Consultation via forum group",
+      "supportEnabled": "Enable Consultation button and topic relay",
+      "supportHint": "Create a supergroup with topics (forum mode), add the bot as admin with “Manage topics”. Client messages open a topic; your reply in the topic is delivered to the client in DM (they see “typing…” before each reply).",
+      "supportForumChatId": "Forum group ID",
+      "supportForumChatIdHint": "Numeric group ID, usually starts with -100. Forward a group message to @userinfobot or use getChat.",
+      "dashboardUrl": "Tools button URL",
+      "dashboardUrlHint": "URL for the Tools button on /start.",
+      "enableNotifications": "Enable Telegram notifications",
+      "botToken": "Bot token",
+      "botTokenHint": "Get from @BotFather in Telegram. Stored in DB (superadmin access only).",
+      "tokenPlaceholder": "Bot token",
+      "tokenPlaceholderExisting": "New token (current: {hint})",
+      "showToken": "Show token",
+      "hideToken": "Hide token",
+      "chatId": "Chat ID",
+      "chatIdHint": "Numeric ID (DM or group). Find via @userinfobot or getUpdates API.",
+      "notifyRegistration": "Send a message on each registration",
+      "registrationVars": "Template: {email} {name} {referral} {accountSegment} — invite aliases: {inviteCode} {inviteScope}",
+      "notifyEmailVerified": "Send when email is confirmed",
+      "emailVerifiedVars": "Email confirmed template: {email} {name}",
+      "notifyPayment": "Send a message on successful plan payment",
+      "paymentVars": "Template: {userEmail} {userName} {planName} {amount} {currency}. Sent on successful plan payment or when admin assigns a plan.",
+      "verifySection": "Verification",
+      "verifyHint": "Sends a test message to the configured chat",
+      "testSend": "Send test message",
+      "testing": "Sending…",
+      "testFailed": "Test send failed",
+      "urgentSection": "Urgent contact (/start button)",
+      "urgentEnabled": "Show “Contact urgently” button",
+      "urgentHint": "After tap, the user sends one message — it goes to email, your Telegram chat, and MAX (VK/Instagram mentioned to users; delivery coming later). Max 2 requests per user per UTC day.",
+      "urgentEmail": "Email for urgent messages",
+      "urgentInstruction": "Text after “Contact urgently” tap",
+      "urgentLimitHint": "Limit of 2 messages per user per UTC day is enforced in the backend."
+    },
+    "max": {
+      "title": "MAX bot",
+      "subtitle": "Urgent alerts via platform-api.max.ru",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "MAX settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "runtimeTitle": "MAX bot status",
+      "runtimeHint": "Health check via GET /me. Set recipient user_id or chat_id for urgent alerts.",
+      "lastCheck": "Last check: {time}",
+      "enable": "Enable MAX integration",
+      "botToken": "Bot token",
+      "botTokenHint": "From dev.max.ru → Chat bots → Integration. Use Authorization header (not query).",
+      "tokenPlaceholder": "MAX token",
+      "tokenPlaceholderExisting": "New token (current: {hint})",
+      "botUsername": "Bot username (reference)",
+      "notifyUserId": "Recipient user ID",
+      "notifyUserIdHint": "Your MAX user_id for urgent messages. Message the bot first, then obtain your id.",
+      "notifyChatId": "Recipient chat ID (alternative)",
+      "notifyChatIdHint": "Optional if user_id is set. Use for group chats.",
+      "urgentAlerts": "Send urgent contact messages to MAX",
+      "verifySection": "Verification",
+      "verifyHint": "Sends a test message to the configured recipient",
+      "testSend": "Send test",
+      "testing": "Sending…",
+      "testFailed": "Test send failed"
+    },
+    "yandexMetrika": {
+      "title": "Yandex Metrika",
+      "subtitle": "Counter code for all personal cabinet pages (Next.js)",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save",
+      "saved": "Yandex Metrika settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "sectionTitle": "Counter",
+      "sectionHint": "Paste the full HTML snippet from Yandex Metrika. It will be injected before the closing body tag on all cabinet pages.",
+      "enable": "Enable counter",
+      "counterCode": "Counter code",
+      "counterCodePlaceholder": "<!-- Yandex.Metrika counter -->…",
+      "counterCodeHint": "Copy the entire snippet from Yandex Metrika, including script and noscript tags.",
+      "updatedAt": "Updated: {time}"
+    },
+    "legalRisks": {
+      "title": "Legal scan — risk table",
+      "subtitle": "Fines and articles for Legal Site Scan. Changes apply to new scans only.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load risk table",
+      "saveFailed": "Could not save",
+      "saved": "Saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "fields": {
+        "title": "Title",
+        "article": "Article",
+        "fineText": "Fine text",
+        "what": "Violation",
+        "howToFix": "How to fix",
+        "severity": "Severity",
+        "sortOrder": "Sort order",
+        "fineMin": "Fine min (₽)",
+        "fineMax": "Fine max (₽)",
+        "triggerFindings": "Finding triggers (JSON)",
+        "triggerFlags": "Flag triggers (JSON)",
+        "active": "Active",
+        "turnoverFine": "Turnover fine",
+        "contextOnly": "Context only (excluded from sum)"
+      },
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      }
+    },
+    "legalScanLlm": {
+      "title": "Legal scan — LLM model",
+      "subtitle": "Dedicated model for Legal Site Scan report packaging. API keys come from AI Strategy LLM settings.",
+      "loading": "Loading…",
+      "loadFailed": "Could not load settings",
+      "saveFailed": "Could not save",
+      "saved": "Settings saved",
+      "save": "Save",
+      "saving": "Saving…",
+      "keysHint": "OpenRouter / DeepSeek keys are configured under AI Strategy LLM.",
+      "keyMissing": "key not set",
+      "providerSection": "Provider",
+      "modelsSection": "Models and parameters",
+      "promptSection": "System prompt",
+      "openrouterModel": "OpenRouter model",
+      "deepseekModel": "DeepSeek model",
+      "temperature": "Temperature",
+      "maxTokens": "Max tokens",
+      "activeModel": "Active model",
+      "modelsEmpty": "Test connection in AI Strategy LLM first",
+      "resetPrompt": "Reset to default",
+      "providers": {
+        "openrouter": "OpenRouter",
+        "deepseek": "DeepSeek"
+      }
+    },
+    "projectInquiries": {
+      "title": "Discuss project requests",
+      "subtitle": "Automation discussion requests with calculator data",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load requests",
+      "saveFailed": "Failed to update status",
+      "statusUpdated": "Status updated",
+      "empty": "No requests yet",
+      "colDate": "Date",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colTelegram": "Telegram",
+      "colProject": "Project",
+      "colDescription": "Description",
+      "colRun": "Calculation",
+      "colStatus": "Status",
+      "open": "Open",
+      "backToList": "Back to list",
+      "detailTitle": "Discussion request",
+      "requestInfo": "Request details",
+      "reportDisclaimer": "Attached Automation Calculator report",
+      "openShareReport": "Open client-facing report",
+      "noReportAttached": "No calculator report attached to this request",
+      "pagination": "Page {page} of {total} · {count} total",
+      "prev": "Previous",
+      "next": "Next",
+      "status": {
+        "pending_email": "Pending email",
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done",
+        "spam": "Spam"
+      }
     }
   },
   "stub": {
@@ -452,7 +852,7 @@
     "loginToActivate": "登录以激活",
     "loginToPurchase": "登录以购买",
     "paymentSuccess": "已收到付款。您的套餐将在一分钟内更新—如果限制未更改，请刷新。",
-    "paymentFailed": "付款未完成。请重试或选择其他方案。",
+    "paymentFailed": "Payment was not completed. Try again or choose another plan.",
     "paymentUnavailable": "在线结账暂时不可用。电子邮件hello@erman.ai",
     "adminDirectSwitchHint": "作为管理员，您可以无需付款即可激活任何套餐。",
     "legalScanPages": "法律扫描深度",
@@ -1081,17 +1481,17 @@
     }
   },
   "legalScan": {
-    "title": "网站法律合规扫描",
+    "title": "Legal Site Scan",
     "subtitle": "查看客户网站以了解RF法律风险并获取精细估算报告",
     "loading": "加载中…",
     "subnav": {
-      "new": "新建扫描",
+      "new": "新的搜索",
       "history": "历史"
     },
     "steps": {
       "1": "站点",
       "2": "扫描中",
-      "3": "报告"
+      "3": "Report"
     },
     "form": {
       "section": "客户端/网站",
@@ -1100,7 +1500,7 @@
       "size": "业务规模",
       "features": "网站上有什么",
       "featuresHint": "细化支票",
-      "featuresNote": "标记您对客户的了解。扫描仪检测到其余部分。",
+      "featuresNote": "Mark what you know about the client. The scanner detects the rest.",
       "crawlDepth": "扫描深度:",
       "maxPages": "頁數上限",
       "maxDepth": "链接深度",
@@ -1109,7 +1509,7 @@
       "scanning": "正在启动..."
     },
     "industries": {
-      "ecommerce": "电子商务",
+      "ecommerce": "E-commerce",
       "services": "服务/咨询",
       "medicine": "医学和心理学",
       "finance": "投资理财",
@@ -1118,7 +1518,7 @@
     },
     "sizes": {
       "sole": "独资经营者",
-      "small": "小型企业（最多50家）",
+      "small": "Small business (up to 50)",
       "medium": "中型（ 50–250 ）"
     },
     "features": {
@@ -1130,7 +1530,7 @@
     "crawl": {
       "presets": {
         "quick": "快速（ 1页）",
-        "standard": "标准（ 10页）",
+        "standard": "Standard (10 pages)",
         "deep": "深（ 30页）"
       }
     },
@@ -1138,19 +1538,19 @@
       "scanning": "扫描中",
       "pagesProgress": "已检查页面：第__ PH0 __页，共__ PH1 __页",
       "ok": "确定",
-      "risk": "risk"
+      "risk": "风险"
     },
     "checklist": {
       "ssl": "SSL证书和HTTPS",
       "privacy": "个人数据处理政策",
-      "cookie": "Cookie横幅",
+      "cookie": "Cookie banner",
       "cookiepol": "单独的Cookie政策",
       "consent": "同意表格",
       "req": "公司详情（ INN/OGRN ）",
       "contacts": "联系信息",
       "offer": "公开报价",
       "terms": "使用条款",
-      "withdraw": "撤回同意/删除数据",
+      "withdraw": "Consent withdrawal / data deletion",
       "admark": "广告标签（ erid ）",
       "trackers": "跟踪器和分析",
       "formenc": "表单加密"
@@ -1166,7 +1566,7 @@
       "leakTitle": "作为参考，个人数据泄露的可能责任：",
       "leakSeparate": "这些金额不包括在上述计算中，并不意味着检测到泄漏。",
       "checksTitle": "核查结果",
-      "risksTitle": "已识别风险",
+      "risksTitle": "Identified risks",
       "noRisks": "检查数据不可用。",
       "noRiskExplanation": "此检查未检测到风险。",
       "riskDetectedGeneric": "已识别出潜在风险—我们建议人工审核。",
@@ -1174,7 +1574,7 @@
       "fine": "优秀",
       "severity": {
         "none": "无跌倒风险",
-        "high": "高",
+        "high": "high",
         "medium": "中",
         "low": "低"
       },
@@ -1182,7 +1582,7 @@
       "pdfLoading": "生成 PDF 中",
       "pdfFailed": "导出失败",
       "exportLocked": "PDF —登录和Pro +计划后",
-      "restart": "再次运行"
+      "restart": "Run again"
     },
     "errors": {
       "loadFailed": "无法加载结果",
@@ -1194,7 +1594,7 @@
       "loading": "加载中…",
       "loadFailed": "无法加载历史记录",
       "deleteFailed": "无法删除",
-      "deleteConfirm": "从历史记录中删除此扫描？",
+      "deleteConfirm": "Delete this scan from history?",
       "empty": "尚未保存扫描",
       "emptyAction": "运行您的第一次扫描 →",
       "colSite": "站点",
@@ -1202,18 +1602,18 @@
       "colDate": "更改日期",
       "open": "开启",
       "continue": "继续",
-      "delete": "删除",
+      "delete": "Delete",
       "status": {
         "pending": "暂挂",
-        "processing": "scanning",
-        "done": "done",
-        "error": "error"
+        "processing": "扫描中",
+        "done": "完成",
+        "error": "失誤"
       }
     }
   },
   "audit": {
-    "title": "Automation Audit",
-    "subtitle": "Compare multiple processes and get a prioritized automation plan",
+    "title": "自动化审计",
+    "subtitle": "比较多个流程并获得优先的自动化计划",
     "loadingRun": "加载中…",
     "subnav": {
       "new": "New audit",
@@ -1228,14 +1628,14 @@
       "companySection": "公司背景",
       "processesSection": "要审核的流程",
       "reviewSection": "生成前审核",
-      "companyName": "公司名称",
+      "companyName": "Company name",
       "primaryGoal": "主要自动化目标",
       "customGoal": "自定义目标",
       "companySize": "公司规模",
       "headcount": "运营人员编制",
       "budget": "自动化预算",
       "timeline": "决策视野",
-      "dataDuplication": "跨系统的数据复制",
+      "dataDuplication": "Data duplication across systems",
       "priorityCriteria": "优先级标准",
       "itSystems": "正在使用的系统",
       "otherSystem": "其他系统",
@@ -1243,7 +1643,7 @@
       "select": "选择…",
       "next": "下一頁",
       "back": "回到",
-      "generate": "生成报告",
+      "generate": "Generate report",
       "generating": "正在启动...",
       "newAudit": "新审核",
       "processesHint": "将__ PH0 __添加到__ PH1 __流程。使用模板以加快输入速度。",
@@ -1253,7 +1653,7 @@
     },
     "goals": {
       "reduce_costs": "降低成本。",
-      "speed": "加快流程",
+      "speed": "Speed up processes",
       "quality": "减少错误",
       "scale": "无需招聘即可扩展",
       "control": "透明度和控制权"
@@ -1262,7 +1662,7 @@
       "cost_savings": "节省开支",
       "speed": "速度",
       "quality": "装备品质",
-      "scalability": "可扩展性",
+      "scalability": "Scalability",
       "control": "制高",
       "quick_wins": "速赢"
     },
@@ -1280,15 +1680,15 @@
       "5m_plus": "卷尺（5m）"
     },
     "timeline": {
-      "3months": "3 months",
-      "6months": "6 months",
+      "3months": "3个月",
+      "6months": "- 6个月",
       "1year": "1 year",
-      "2years": "2 years"
+      "2years": "2年"
     },
     "duplication": {
-      "none": "Almost none",
-      "some": "Some cases",
-      "many": "Often",
+      "none": "几乎没有",
+      "some": "审理的部分案件",
+      "many": "经常",
       "critical": "严重问题"
     },
     "systems": {
@@ -1300,7 +1700,7 @@
       "messengers": "信差",
       "website": "網站",
       "helpdesk": "服务",
-      "warehouse": "仓库/WMS"
+      "warehouse": "Warehouse / WMS"
     },
     "departments": {
       "sales": "销售",
@@ -1309,7 +1709,7 @@
       "hr": "人力资源",
       "marketing": "市场营销",
       "logistics": "物流",
-      "support": "技术支持",
+      "support": "Support",
       "it": "IT",
       "other": "其他"
     },
@@ -1322,14 +1722,14 @@
       "other": "其他"
     },
     "templates": {
-      "incoming_leads": "传入的线索",
+      "incoming_leads": "Incoming leads",
       "order_processing": "订单处理",
       "customer_support": "客户支持",
       "invoicing": "发票",
       "hr_onboarding": "员工入职",
       "inventory": "库存",
       "reporting": "报告",
-      "custom": "自定义处理"
+      "custom": "Custom process"
     },
     "levels": {
       "high": "高",
@@ -1340,23 +1740,23 @@
       "name": "工序名称",
       "department": "部门/所有者",
       "customDepartment": "指定部门",
-      "frequency": "每月频率",
+      "frequency": "Frequency per month",
       "minutes": "每个周期的时间",
       "fte": "卷人",
       "hourlyRate": "每小时成本",
       "errorRate": "错误/返工率",
       "errorCost": "每个错误的成本",
       "systems": "使用的系统",
-      "bottleneck": "主要瓶颈",
+      "bottleneck": "Main bottleneck",
       "customBottleneck": "描述瓶颈",
       "standardization": "过程标准化",
-      "readiness": "Automation readiness",
-      "impact": "Expected impact",
+      "readiness": "自动化就绪性",
+      "impact": "预期影响",
       "integrationComplexity": "集成复杂性(1–5)"
     },
     "ranges": {
       "frequency": {
-        "1-10": "1–10 / month",
+        "1-10": "1–10次/月",
         "11-50": "11–50",
         "51-200": "51–200",
         "201-500": "201-500 名",
@@ -1366,7 +1766,7 @@
         "5-15": "5–15分钟",
         "16-30": "16–30分钟",
         "31-60": "31–60分钟",
-        "61-120": "1–2小时",
+        "61-120": "1–2 h",
         "120+": "2小时"
       },
       "fte": {
@@ -1377,7 +1777,7 @@
       },
       "hourly": {
         "300-500": "300–500 ₽/小时",
-        "501-800": "501–800 ₽/小时",
+        "501-800": "501–800 ₽/h",
         "801-1200": "801–1200 ₽/小时",
         "1201-2000": "1201–2000 ₽/小时",
         "2000+": "2000 h"
@@ -1386,7 +1786,7 @@
         "0-2": "0 ... 2",
         "3-5": "35",
         "6-10": "6 至 10 个",
-        "11-20": "11–20",
+        "11-20": "11–20%",
         "20+": "20"
       },
       "errorCost": {
@@ -1398,7 +1798,7 @@
       }
     },
     "polling": {
-      "title": "正在准备审核报告",
+      "title": "Preparing audit report",
       "hint": "一般需要〜3分钟",
       "failed": "生成报告失败"
     },
@@ -1410,7 +1810,7 @@
       "document": "自动化审计报告",
       "subtitle": "已确定优先级的自动化计划",
       "metrics": {
-        "totalCost": "月度总额",
+        "totalCost": "Total monthly cost",
         "totalSavings": "每月可能节省的费用",
         "processCount": "已审核流程"
       },
@@ -1421,7 +1821,7 @@
         "priority": "自动化优先级",
         "roadmap": "路线图",
         "risks": "风险",
-        "nextSteps": "后续步骤（ 30天）",
+        "nextSteps": "Next steps (30 days)",
         "metrics": "要跟踪的指标"
       },
       "table": {
@@ -1430,7 +1830,7 @@
         "score": "得分",
         "savings": "每月节省金额",
         "quickWin": "速赢",
-        "yes": "是"
+        "yes": "Yes"
       },
       "roadmap": {
         "processes": "生产工序"
@@ -1443,8 +1843,8 @@
     },
     "history": {
       "loading": "加载中…",
-      "empty": "No audits yet",
-      "createFirst": "Create first audit →",
+      "empty": "无审计",
+      "createFirst": "创建首次审核 →",
       "view": "开启",
       "continue": "继续",
       "columns": {
@@ -1456,7 +1856,7 @@
       "status": {
         "done": "完成",
         "error": "错误",
-        "processing": "展成",
+        "processing": "Generating",
         "pending": "已在队列中"
       }
     }
@@ -1471,7 +1871,7 @@
       "item3": "通过Telegram明确推荐：自动、等待或跳过"
     },
     "steps": {
-      "label": "第__ PH0 __步",
+      "label": "Step {n}",
       "calc": "运行自动化计算器",
       "describe": "描述项目并附上计算",
       "talk": "根据您在Telegram中的数据进行讨论"
@@ -1481,21 +1881,21 @@
       "email": "电子邮箱",
       "emailVerified": "来自您账号的已验证电子邮箱",
       "emailGuestHint": "我们将发送确认链接，只有在您点击请求后，我们才会收到该请求",
-      "telegram": "电报",
+      "telegram": "Telegram",
       "telegramPlaceholder": "@username",
       "telegramHint": "您的用户名—我们将通过Telegram与您联系，根据您的计算讨论项目",
       "projectTitle": "项目名称",
       "description": "项目描述",
       "descriptionPlaceholder": "简要描述流程、自动化目标和背景。如果您有计算器，请在下面附上计算器。",
       "calculatorRun": "计算器运行",
-      "noRun": "不计算",
+      "noRun": "No calculation",
       "unnamedRun": "无标题",
       "runPreview": "所选计算",
       "runBenefit": "优惠： __ PH0 __",
       "runPayback": "回报： __ PH0 __",
       "months": "周一",
       "guestRunHint": "登录以附加已保存的计算，或先运行计算器。",
-      "guestRunAttached": "您的计算器结果将包含在请求中。",
+      "guestRunAttached": "Your calculator result will be included with the request.",
       "goCalculator": "打开计算器 →",
       "submit": "提交",
       "sending": "发送中…"
@@ -1504,7 +1904,7 @@
       "title": "已提交请求",
       "auth": "我们已收到您的申请，并将通过Telegram与您联系。确认信息已发送至您的电子邮箱。",
       "guest": "请查看您的收件箱，然后点击确认链接。然后，我们将收到您的请求，并通过Telegram与您联系。",
-      "telegramHint": "我们会通过Telegram __ PH0 __联系您",
+      "telegramHint": "We'll reach you on Telegram {telegram}",
       "backToCalculator": "← 返回计算器"
     },
     "alreadySubmitted": {
@@ -1512,9 +1912,9 @@
       "body": "您已经提交了项目讨论请求。Erman AI团队将与您联系—重复提交不可用。"
     },
     "errors": {
-      "submitFailed": "Failed to submit request",
-      "missingFields": "Please fill in all required fields",
-      "invalidTelegram": "Enter a Telegram username (5+ Latin characters) or phone number",
+      "submitFailed": "提交申请失败",
+      "missingFields": "请填写所有必填欄位。",
+      "invalidTelegram": "输入Telegram用户名（ 5个以上拉丁字符）或电话号码",
       "invalidForm": "Please check the form data",
       "alreadySubmitted": "您已经提交了项目讨论请求"
     },
@@ -1524,7 +1924,7 @@
       "body": "谢谢！我们收到了您的请求，并将通过Telegram与您联系，根据您的数据讨论自动化问题。",
       "errorTitle": "无效的链接",
       "errorBody": "此链接已过期或已被使用。请重新提交表格。",
-      "back": "返回到形式",
+      "back": "← Back to form",
       "dashboard": "转到账户中心"
     }
   }
