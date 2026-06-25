@@ -164,6 +164,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Post("/billing/yookassa/webhook", paymentWebhookHandler.YookassaWebhook)
 		api.Get("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
 		api.Post("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
+		api.Post("/billing/robokassa/result2", paymentWebhookHandler.RobokassaResult2)
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)

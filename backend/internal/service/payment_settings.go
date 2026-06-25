@@ -182,7 +182,7 @@ func (s *PaymentSettingsService) testRobokassa(ctx context.Context) (*model.Paym
 	}
 	return &model.PaymentTestResult{
 		OK:      true,
-		Message: "Учётные данные заполнены. Проверьте Result URL в кабинете Robokassa.",
+		Message: "Учётные данные заполнены. Result URL в кабинете Robokassa укажите для WordPress. Оплата тарифов dashboard идёт через ResultUrl2 (не работает в тестовом режиме).",
 	}, nil
 }
 
@@ -191,6 +191,14 @@ func (s *PaymentSettingsService) YookassaWebhookURL() string {
 }
 
 func (s *PaymentSettingsService) RobokassaResultURL() string {
+	return s.cfg.PublicBaseURL() + "/?robokassa=result"
+}
+
+func (s *PaymentSettingsService) RobokassaResult2URL() string {
+	return s.cfg.PublicBaseURL() + "/api/v1/billing/robokassa/result2"
+}
+
+func (s *PaymentSettingsService) RobokassaLegacyResultURL() string {
 	return s.cfg.PublicBaseURL() + "/api/v1/billing/robokassa/result"
 }
 
@@ -248,6 +256,7 @@ func (s *PaymentSettingsService) buildAdminView(rec *model.PaymentSettingsRecord
 		RobokassaPassword2Hint: maskSecret(rk.Password2),
 		YookassaWebhookURL:     s.YookassaWebhookURL(),
 		RobokassaResultURL:     s.RobokassaResultURL(),
+		RobokassaResult2URL:    s.RobokassaResult2URL(),
 		DefaultReturnURL:       s.defaultReturnURL(),
 		UpdatedAt:              rec.UpdatedAt,
 	}

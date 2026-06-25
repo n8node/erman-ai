@@ -872,6 +872,7 @@ export type PaymentAdminView = {
   robokassa_password2_hint?: string;
   yookassa_webhook_url: string;
   robokassa_result_url: string;
+  robokassa_result2_url: string;
   default_return_url: string;
   updated_at?: string;
 };

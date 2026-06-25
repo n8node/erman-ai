@@ -102,6 +102,7 @@ export function AdminPaymentEditor() {
   const [robokassaPassword2Hint, setRobokassaPassword2Hint] = useState("");
   const [yookassaWebhookURL, setYookassaWebhookURL] = useState("");
   const [robokassaResultURL, setRobokassaResultURL] = useState("");
+  const [robokassaResult2URL, setRobokassaResult2URL] = useState("");
   const [defaultReturnURL, setDefaultReturnURL] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -122,6 +123,7 @@ export function AdminPaymentEditor() {
     setRobokassaPassword2Hint(data.robokassa_password2_hint || "");
     setYookassaWebhookURL(data.yookassa_webhook_url);
     setRobokassaResultURL(data.robokassa_result_url);
+    setRobokassaResult2URL(data.robokassa_result2_url);
     setDefaultReturnURL(data.default_return_url);
   }
 
@@ -424,13 +426,24 @@ export function AdminPaymentEditor() {
       <section className="rounded-xl border border-bg2 bg-bg2 p-5 space-y-3">
         <h3 className="text-sm font-medium">{t("robokassaResultTitle")}</h3>
         <p className="text-sm text-text2">{t("robokassaResultHint")}</p>
-        <CopyField value={robokassaResultURL} label="result" />
+        <CopyField value={robokassaResultURL} label="result-wp" />
         <ul className="list-disc space-y-1 pl-5 text-xs text-text3">
           <li>{t("robokassaNoteMd5")}</li>
           <li>{t("robokassaNoteShp")}</li>
+          <li>{t("robokassaNoteWordPress")}</li>
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-bg2 bg-bg2 p-5 space-y-3">
+        <h3 className="text-sm font-medium">{t("robokassaResult2Title")}</h3>
+        <p className="text-sm text-text2">{t("robokassaResult2Hint")}</p>
+        <CopyField value={robokassaResult2URL} label="result2" />
+        <ul className="list-disc space-y-1 pl-5 text-xs text-text3">
+          <li>{t("robokassaNoteResult2Auto")}</li>
+          <li>{t("robokassaNoteResult2Test")}</li>
         </ul>
         <a
-          href="https://docs.robokassa.ru/"
+          href="https://docs.robokassa.ru/ru/notifications-and-redirects"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block text-sm text-accent hover:underline"

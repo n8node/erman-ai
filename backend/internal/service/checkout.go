@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -193,7 +192,9 @@ func (s *CheckoutService) createRobokassa(ctx context.Context, cfg model.Payment
 	pass1 := strings.TrimSpace(rk.Password1)
 	invStr := strconv.FormatInt(invID, 10)
 
-	signature := fmt.Sprintf("%x", md5.Sum([]byte(login+":"+outSum+":"+invStr+":"+pass1)))
+	resultURL2 := s.payments.RobokassaResult2URL()
+	resultURL2Encoded := EncodeRobokassaResultURL2(resultURL2)
+	signature := BuildRobokassaPaymentSignature(login, outSum, invStr, pass1, resultURL2Encoded)
 
 	returnURL := s.payments.defaultReturnURL()
 	successURL := appendQuery(returnURL, "payment", "success")
@@ -205,6 +206,7 @@ func (s *CheckoutService) createRobokassa(ctx context.Context, cfg model.Payment
 	params.Set("InvId", invStr)
 	params.Set("Description", fmt.Sprintf("Erman AI — %s", plan.Name))
 	params.Set("SignatureValue", signature)
+	params.Set("ResultUrl2", resultURL2)
 	params.Set("SuccessURL", successURL)
 	params.Set("FailURL", failURL)
 	if rk.TestMode {

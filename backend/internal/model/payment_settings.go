@@ -57,9 +57,10 @@ type PaymentAdminView struct {
 	RobokassaPassword1Hint string                `json:"robokassa_password1_hint,omitempty"`
 	RobokassaPassword2Set bool                  `json:"robokassa_password2_set"`
 	RobokassaPassword2Hint string                `json:"robokassa_password2_hint,omitempty"`
-	YookassaWebhookURL   string                 `json:"yookassa_webhook_url"`
-	RobokassaResultURL   string                 `json:"robokassa_result_url"`
-	DefaultReturnURL     string                 `json:"default_return_url"`
+	YookassaWebhookURL     string                 `json:"yookassa_webhook_url"`
+	RobokassaResultURL     string                 `json:"robokassa_result_url"`
+	RobokassaResult2URL    string                 `json:"robokassa_result2_url"`
+	DefaultReturnURL       string                 `json:"default_return_url"`
 	UpdatedAt            time.Time              `json:"updated_at"`
 }
 

@@ -71,6 +71,82 @@ func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 }
 
+func (h *PaymentWebhookHandler) RobokassaResult2(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	cfg, err := h.payments.GetEffective(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "settings unavailable")
+		return
+	}
+
+	rk := cfg.Robokassa
+	if !service.RobokassaConfigured(rk) {
+		writeError(w, http.StatusServiceUnavailable, "robokassa not configured")
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+
+	token := strings.TrimSpace(string(body))
+	if token == "" {
+		if err := r.ParseForm(); err == nil {
+			token = strings.TrimSpace(firstParam(r.PostForm, "token"))
+		}
+	}
+	if token == "" {
+		writeError(w, http.StatusBadRequest, "missing jws token")
+		return
+	}
+
+	if err := service.VerifyRobokassaResult2Token(token); err != nil {
+		h.logger.Warn("robokassa result2 jws verify failed", "error", err)
+		writeError(w, http.StatusForbidden, "invalid jws signature")
+		return
+	}
+
+	notification, err := service.ParseRobokassaResult2Token(token)
+	if err != nil {
+		h.logger.Warn("robokassa result2 parse failed", "error", err)
+		writeError(w, http.StatusBadRequest, "invalid notification")
+		return
+	}
+
+	if shop := strings.TrimSpace(rk.MerchantLogin); shop != "" && !strings.EqualFold(notification.Shop, shop) {
+		h.logger.Warn("robokassa result2 shop mismatch",
+			"expected", shop,
+			"got", notification.Shop,
+			"inv_id", notification.InvID,
+		)
+		writeError(w, http.StatusForbidden, "shop mismatch")
+		return
+	}
+
+	h.logger.Info("robokassa result2 payment confirmed",
+		"inv_id", notification.InvID,
+		"amount", notification.IncSum,
+		"op_key", notification.OpKey,
+		"test_mode", rk.TestMode,
+	)
+
+	if h.checkout != nil {
+		if err := h.checkout.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
+			h.logger.Warn("robokassa result2 fulfill failed", "error", err, "inv_id", notification.InvID)
+			writeError(w, http.StatusInternalServerError, "fulfillment failed")
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.Request) {
 	cfg, err := h.payments.GetEffective(r.Context())
 	if err != nil {
