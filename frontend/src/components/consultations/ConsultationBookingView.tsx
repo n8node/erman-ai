@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock, CreditCard } from "lucide-react";
+import { CalendarDays, Clock, CreditCard, X } from "lucide-react";
 import { useAuthUser } from "@/context/AuthContext";
 import {
   createConsultationBooking,
@@ -30,7 +30,10 @@ function formatTime(value: string) {
 }
 
 function toDateInput(value: Date) {
-  return value.toISOString().slice(0, 10);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function ConsultationBookingView() {
@@ -40,6 +43,7 @@ export function ConsultationBookingView() {
   const [selectedDate, setSelectedDate] = useState(() => toDateInput(new Date()));
   const [slots, setSlots] = useState<ConsultationSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
+  const [serviceModal, setServiceModal] = useState<ConsultationService | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
@@ -77,10 +81,10 @@ export function ConsultationBookingView() {
 
   useEffect(() => {
     if (!serviceId || !selectedDate) return;
-    const from = new Date(`${selectedDate}T00:00:00`);
-    const to = new Date(`${selectedDate}T23:59:59`);
+    const from = `${selectedDate}T00:00:00+03:00`;
+    const to = `${selectedDate}T23:59:59+03:00`;
     setSelectedSlot(null);
-    fetchConsultationSlots(serviceId, from.toISOString(), to.toISOString())
+    fetchConsultationSlots(serviceId, from, to)
       .then((data) => setSlots(data.items))
       .catch(() => setSlots([]));
   }, [serviceId, selectedDate]);
@@ -149,7 +153,10 @@ export function ConsultationBookingView() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setServiceId(item.id)}
+                  onClick={() => {
+                    setServiceId(item.id);
+                    setServiceModal(item);
+                  }}
                   className={cn(
                     "rounded-xl border p-4 text-left transition hover:border-border2",
                     serviceId === item.id ? "border-text bg-bg2" : "border-border bg-bg"
@@ -264,6 +271,64 @@ export function ConsultationBookingView() {
           </section>
         </aside>
       </form>
+
+      {serviceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-bg shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+              <div>
+                <h2 className="text-base font-medium">{serviceModal.name}</h2>
+                <p className="mt-1 text-sm text-text2">
+                  {formatRub(serviceModal.price_rub)} · {serviceModal.duration_minutes} мин
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setServiceModal(null)}
+                className="rounded-md p-1 text-text3 hover:bg-bg2 hover:text-text"
+                aria-label="Закрыть"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-5">
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-text3">Описание</p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-text2">{serviceModal.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg border border-border bg-bg2 p-3">
+                  <p className="text-xs text-text3">Стоимость</p>
+                  <p className="mt-1 font-medium">{formatRub(serviceModal.price_rub)}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-bg2 p-3">
+                  <p className="text-xs text-text3">Продолжительность</p>
+                  <p className="mt-1 font-medium">{serviceModal.duration_minutes} мин</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setServiceModal(null)}
+                className="rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2"
+              >
+                Закрыть
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setServiceId(serviceModal.id);
+                  setServiceModal(null);
+                }}
+                className="rounded-lg bg-text px-4 py-2 text-sm font-medium text-white"
+              >
+                Выбрать услугу
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

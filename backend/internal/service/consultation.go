@@ -106,28 +106,31 @@ func (s *ConsultationService) ListSlots(ctx context.Context, serviceID string, f
 	if to.IsZero() || to.Before(from) {
 		to = from.AddDate(0, 0, svc.MaxAdvanceDays)
 	}
-	maxTo := time.Now().AddDate(0, 0, svc.MaxAdvanceDays)
-	if to.After(maxTo) {
-		to = maxTo
+	loc := consultationLocation("Europe/Moscow")
+	fromLocal := from.In(loc)
+	toLocal := to.In(loc)
+	maxTo := time.Now().In(loc).AddDate(0, 0, svc.MaxAdvanceDays)
+	if toLocal.After(maxTo) {
+		toLocal = maxTo
 	}
 
 	rules, err := s.repo.ListAvailability(ctx, serviceID)
 	if err != nil {
 		return nil, err
 	}
-	bookings, err := s.repo.ListBookingsForService(ctx, serviceID, from, to)
+	bookings, err := s.repo.ListBookingsForService(ctx, serviceID, fromLocal, toLocal)
 	if err != nil {
 		return nil, err
 	}
-	blackouts, err := s.repo.ListBlackouts(ctx, serviceID, from, to)
+	blackouts, err := s.repo.ListBlackouts(ctx, serviceID, fromLocal, toLocal)
 	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now()
+	now := time.Now().In(loc)
 	minStart := now.Add(time.Duration(svc.MinNoticeMinutes) * time.Minute)
 	slots := []model.ConsultationSlot{}
-	for day := startOfDay(from); day.Before(to); day = day.AddDate(0, 0, 1) {
+	for day := startOfDay(fromLocal, loc); day.Before(toLocal); day = day.AddDate(0, 0, 1) {
 		weekday := int(day.Weekday())
 		for _, rule := range rules {
 			if !rule.IsActive || rule.Weekday != weekday {
@@ -142,13 +145,13 @@ func (s *ConsultationService) ListSlots(ctx context.Context, serviceID string, f
 				continue
 			}
 			step := time.Duration(rule.SlotStepMinutes) * time.Minute
-			for start := time.Date(day.Year(), day.Month(), day.Day(), startClock.Hour(), startClock.Minute(), 0, 0, time.Local); ; start = start.Add(step) {
+			for start := time.Date(day.Year(), day.Month(), day.Day(), startClock.Hour(), startClock.Minute(), 0, 0, loc); ; start = start.Add(step) {
 				end := start.Add(time.Duration(svc.DurationMinutes) * time.Minute)
-				ruleEnd := time.Date(day.Year(), day.Month(), day.Day(), endClock.Hour(), endClock.Minute(), 0, 0, time.Local)
+				ruleEnd := time.Date(day.Year(), day.Month(), day.Day(), endClock.Hour(), endClock.Minute(), 0, 0, loc)
 				if end.After(ruleEnd) {
 					break
 				}
-				if start.Before(from) || start.Before(minStart) {
+				if start.Before(fromLocal) || start.Before(minStart) {
 					continue
 				}
 				available := !overlapsAnyBooking(start, end, bookings) && !overlapsAnyBlackout(start, end, blackouts)
@@ -436,8 +439,16 @@ func slugify(value string) string {
 	return slug
 }
 
-func startOfDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+func consultationLocation(name string) *time.Location {
+	loc, err := time.LoadLocation(strings.TrimSpace(name))
+	if err != nil {
+		return time.FixedZone("Europe/Moscow", 3*60*60)
+	}
+	return loc
+}
+
+func startOfDay(t time.Time, loc *time.Location) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 }
 
 func normalizeClock(value string) string {
