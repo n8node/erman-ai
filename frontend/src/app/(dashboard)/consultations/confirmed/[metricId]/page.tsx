@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { CalendarCheck, MessageCircle, ShieldCheck } from "lucide-react";
 
-export default async function ConsultationConfirmedPage({
-  params,
-}: {
-  params: Promise<{ metricId: string }>;
-}) {
-  const { metricId } = await params;
-
+export default function ConsultationConfirmedPage() {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-120px)] max-w-3xl items-center">
       <section className="w-full rounded-xl border border-border bg-bg p-6 shadow-sm">
@@ -53,11 +47,6 @@ export default async function ConsultationConfirmedPage({
               несколькими короткими сообщениями.
             </p>
           </div>
-        </div>
-
-        <div className="mt-6 rounded-lg border border-border bg-bg2 px-4 py-3 text-xs text-text3">
-          ID страницы для аналитики:{" "}
-          <span className="font-mono text-text">{metricId}</span>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
