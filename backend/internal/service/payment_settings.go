@@ -182,7 +182,7 @@ func (s *PaymentSettingsService) testRobokassa(ctx context.Context) (*model.Paym
 	}
 	return &model.PaymentTestResult{
 		OK:      true,
-		Message: "Учётные данные заполнены. Result URL в кабинете Robokassa укажите для WordPress. Оплата тарифов dashboard идёт через ResultUrl2 (не работает в тестовом режиме).",
+		Message: "Учётные данные заполнены. В кабинете Robokassa укажите Result URL backend API. Server отвечает OK{InvId}.",
 	}, nil
 }
 
@@ -191,7 +191,7 @@ func (s *PaymentSettingsService) YookassaWebhookURL() string {
 }
 
 func (s *PaymentSettingsService) RobokassaResultURL() string {
-	return s.cfg.PublicBaseURL() + "/?robokassa=result"
+	return s.cfg.PublicBaseURL() + "/api/v1/billing/robokassa/result"
 }
 
 func (s *PaymentSettingsService) RobokassaResult2URL() string {

@@ -310,8 +310,7 @@ func (s *ConsultationService) createRobokassaCheckout(ctx context.Context, cfg m
 	login := strings.TrimSpace(cfg.Robokassa.MerchantLogin)
 	pass1 := strings.TrimSpace(cfg.Robokassa.Password1)
 	invStr := strconv.FormatInt(invID, 10)
-	resultURL2 := s.payments.RobokassaResult2URL()
-	signature := BuildRobokassaPaymentSignature(login, outSum, invStr, pass1, EncodeRobokassaResultURL2(resultURL2))
+	signature := BuildRobokassaPaymentSignature(login, outSum, invStr, pass1, "")
 
 	returnURL := s.cfg.PublicBaseURL() + "/dashboard/consultations"
 	params := url.Values{}
@@ -320,7 +319,6 @@ func (s *ConsultationService) createRobokassaCheckout(ctx context.Context, cfg m
 	params.Set("InvId", invStr)
 	params.Set("Description", fmt.Sprintf("Erman AI — %s", booking.ServiceName))
 	params.Set("SignatureValue", signature)
-	params.Set("ResultUrl2", resultURL2)
 	params.Set("SuccessURL", appendQuery(returnURL, "booking", "success"))
 	params.Set("FailURL", appendQuery(returnURL, "booking", "failed"))
 	if cfg.Robokassa.TestMode {
