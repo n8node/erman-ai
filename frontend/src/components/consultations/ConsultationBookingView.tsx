@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Clock, CreditCard, X } from "lucide-react";
 import { useAuthUser } from "@/context/AuthContext";
 import {
+  checkEmailStatus,
   createConsultationBooking,
   createConsultationCheckout,
-  createPublicConsultationBooking,
   fetchConsultationSlots,
   fetchPublicConsultationServices,
   type ConsultationService,
@@ -16,6 +17,20 @@ import { cn } from "@/lib/utils";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+const pendingBookingKey = "erman_consultation_pending_booking";
+const resumePath = "/consultations?resume_booking=1";
+
+type PendingConsultationBooking = {
+  service_id: string;
+  starts_at: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_telegram: string;
+  customer_note: string;
+  timezone: string;
+  website: string;
+};
 
 function formatRub(value: number) {
   return new Intl.NumberFormat("ru-RU").format(value) + " ₽";
@@ -38,6 +53,10 @@ function toDateInput(value: Date) {
 
 export function ConsultationBookingView() {
   const user = useAuthUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const resumeBooking = searchParams.get("resume_booking") === "1";
+  const resumeStarted = useRef(false);
   const [services, setServices] = useState<ConsultationService[]>([]);
   const [serviceId, setServiceId] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => toDateInput(new Date()));
@@ -67,6 +86,53 @@ export function ConsultationBookingView() {
   useEffect(() => {
     if (user?.email) setEmail(user.email);
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !resumeBooking || resumeStarted.current) return;
+    resumeStarted.current = true;
+    const raw = window.localStorage.getItem(pendingBookingKey);
+    if (!raw) {
+      setError("Не нашли сохранённую бронь. Выберите дату и время заново.");
+      return;
+    }
+
+    let pending: PendingConsultationBooking;
+    try {
+      pending = JSON.parse(raw) as PendingConsultationBooking;
+    } catch {
+      window.localStorage.removeItem(pendingBookingKey);
+      setError("Сохранённая бронь повреждена. Выберите дату и время заново.");
+      return;
+    }
+
+    if (pending.customer_email.toLowerCase() !== user.email.toLowerCase()) {
+      setError("Войдите в аккаунт с email, который указан в бронировании.");
+      return;
+    }
+
+    setServiceId(pending.service_id);
+    setName(pending.customer_name);
+    setEmail(pending.customer_email);
+    setPhone(pending.customer_phone);
+    setTelegram(pending.customer_telegram);
+    setNote(pending.customer_note);
+    setWebsite(pending.website);
+    setSubmitting(true);
+    setError("");
+
+    (async () => {
+      try {
+        const booking = await createConsultationBooking(pending);
+        const checkout = await createConsultationCheckout(booking.id);
+        window.localStorage.removeItem(pendingBookingKey);
+        window.location.href = checkout.checkout_url;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Не удалось создать запись";
+        setError(message === "slot unavailable" ? "Этот слот уже недоступен. Выберите другое время." : message);
+        setSubmitting(false);
+      }
+    })();
+  }, [resumeBooking, user]);
 
   const service = services.find((item) => item.id === serviceId) || null;
 
@@ -102,7 +168,7 @@ export function ConsultationBookingView() {
     }
     setSubmitting(true);
     try {
-      const payload = {
+      const payload: PendingConsultationBooking = {
         service_id: service.id,
         starts_at: selectedSlot.starts_at,
         customer_name: name.trim(),
@@ -113,10 +179,20 @@ export function ConsultationBookingView() {
         timezone: "Europe/Moscow",
         website,
       };
-      const booking = user
-        ? await createConsultationBooking(payload)
-        : await createPublicConsultationBooking(payload);
-      const checkout = await createConsultationCheckout(booking.id, !user);
+      if (!user) {
+        window.localStorage.setItem(pendingBookingKey, JSON.stringify(payload));
+        const status = await checkEmailStatus(payload.customer_email);
+        const emailParam = encodeURIComponent(payload.customer_email);
+        const nextParam = encodeURIComponent(resumePath);
+        router.push(
+          status.exists
+            ? `/login?email=${emailParam}&next=${nextParam}`
+            : `/register?email=${emailParam}&ref=erman&next=${nextParam}`
+        );
+        return;
+      }
+      const booking = await createConsultationBooking(payload);
+      const checkout = await createConsultationCheckout(booking.id);
       window.location.href = checkout.checkout_url;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Не удалось создать запись";

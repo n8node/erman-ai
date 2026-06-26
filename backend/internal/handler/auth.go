@@ -61,6 +61,10 @@ type forgotPasswordRequest struct {
 	Email string `json:"email"`
 }
 
+type emailStatusRequest struct {
+	Email string `json:"email"`
+}
+
 type resetPasswordRequest struct {
 	Token       string `json:"token"`
 	NewPassword string `json:"new_password"`
@@ -164,6 +168,20 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 
 	hasInquiry, hasProposal := h.submissionFlags(r.Context(), user)
 	writeJSON(w, http.StatusOK, userResponse(user, hasInquiry, hasProposal))
+}
+
+func (h *AuthHandler) EmailStatus(w http.ResponseWriter, r *http.Request) {
+	var req emailStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	exists, err := h.auth.EmailExists(r.Context(), req.Email)
+	if err != nil {
+		h.writeAuthError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"exists": exists})
 }
 
 func (h *AuthHandler) submissionFlags(ctx context.Context, user *model.User) (bool, bool) {

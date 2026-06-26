@@ -32,6 +32,7 @@ const reservedSingleSegments = new Set([
   "tools",
   "admin",
   "billing",
+  "consultations",
   "settings",
   "api-keys",
   "discuss",
@@ -71,7 +72,7 @@ function isGuestBillingPath(pathname: string) {
 
 function isGuestToolPath(pathname: string) {
   const p = appPathname(pathname);
-  return p === "/" || p.startsWith("/tools") || p === "/discuss" || p.startsWith("/discuss/");
+  return p === "/" || p.startsWith("/tools") || p === "/discuss" || p.startsWith("/discuss/") || p === "/consultations" || p.startsWith("/consultations/");
 }
 
 function isPublicApiPath(pathname: string) {

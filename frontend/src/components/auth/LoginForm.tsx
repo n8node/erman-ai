@@ -12,8 +12,9 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeReturnPath(searchParams.get("next"));
+  const emailParam = searchParams.get("email") || "";
   const resetOk = searchParams.get("reset") === "ok";
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -32,7 +33,7 @@ export function LoginForm() {
     try {
       const user = await login(email, password);
       if (!user.onboarding_completed) {
-        router.push("/onboarding");
+        router.push(`/onboarding?next=${encodeURIComponent(nextPath)}`);
       } else {
         router.push(nextPath);
       }
@@ -61,7 +62,7 @@ export function LoginForm() {
           {error === t("emailNotVerified") && email.trim() && (
             <p className="mt-2">
               <Link
-                href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+                href={`/verify-email?email=${encodeURIComponent(email.trim())}&next=${encodeURIComponent(nextPath)}`}
                 className="text-accent hover:underline"
               >
                 {t("verify.resendLink")}
@@ -119,7 +120,7 @@ export function LoginForm() {
       </button>
       <p className="text-center text-sm text-text2">
         {t("noAccount")}{" "}
-        <Link href="/register" className="text-accent hover:underline">
+        <Link href={`/register?next=${encodeURIComponent(nextPath)}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""}`} className="text-accent hover:underline">
           {t("register")}
         </Link>
       </p>

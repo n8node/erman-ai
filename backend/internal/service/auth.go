@@ -137,6 +137,14 @@ func (s *AuthService) GetMe(ctx context.Context, userID string) (*model.User, er
 	return user, err
 }
 
+func (s *AuthService) EmailExists(ctx context.Context, email string) (bool, error) {
+	email = normalizeEmail(email)
+	if email == "" {
+		return false, ErrInvalidInput
+	}
+	return s.users.ExistsByEmail(ctx, email)
+}
+
 func (s *AuthService) UpdateMe(ctx context.Context, userID, email, locale string) (*model.User, error) {
 	email = normalizeEmail(email)
 	if email == "" {

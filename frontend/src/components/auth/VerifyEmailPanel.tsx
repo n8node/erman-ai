@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError, resendVerification, verifyEmail } from "@/lib/api";
+import { sanitizeReturnPath } from "@/lib/return-url";
+
+const pendingConsultationBookingKey = "erman_consultation_pending_booking";
+const consultationResumePath = "/consultations?resume_booking=1";
 
 export function VerifyEmailPanel() {
   const t = useTranslations("auth.verify");
@@ -12,6 +16,12 @@ export function VerifyEmailPanel() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") || "";
   const tokenParam = searchParams.get("token") || "";
+  const nextPath = sanitizeReturnPath(
+    searchParams.get("next") ||
+      (typeof window !== "undefined" && window.localStorage.getItem(pendingConsultationBookingKey)
+        ? consultationResumePath
+        : null)
+  );
 
   const [email, setEmail] = useState(emailParam);
   const [error, setError] = useState("");
@@ -28,7 +38,7 @@ export function VerifyEmailPanel() {
       try {
         const user = await verifyEmail(tokenParam);
         if (cancelled) return;
-        router.replace(user.onboarding_completed ? "/" : "/onboarding");
+        router.replace(user.onboarding_completed ? nextPath : `/onboarding?next=${encodeURIComponent(nextPath)}`);
         router.refresh();
       } catch (err) {
         if (!cancelled) {
@@ -41,7 +51,7 @@ export function VerifyEmailPanel() {
     return () => {
       cancelled = true;
     };
-  }, [tokenParam, router, t]);
+  }, [tokenParam, nextPath, router, t]);
 
   async function handleResend(e: React.FormEvent) {
     e.preventDefault();
@@ -116,7 +126,7 @@ export function VerifyEmailPanel() {
         </button>
       </form>
       <p className="text-center text-sm text-text2">
-        <Link href="/login" className="text-accent hover:underline">
+        <Link href={`/login?next=${encodeURIComponent(nextPath)}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""}`} className="text-accent hover:underline">
           {t("backToLogin")}
         </Link>
       </p>

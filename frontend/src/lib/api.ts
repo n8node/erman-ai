@@ -200,6 +200,13 @@ export async function register(
   });
 }
 
+export async function checkEmailStatus(email: string) {
+  return apiFetch<{ exists: boolean }>("/auth/email-status", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function verifyEmail(token: string) {
   return apiFetch<User>("/auth/verify-email", {
     method: "POST",

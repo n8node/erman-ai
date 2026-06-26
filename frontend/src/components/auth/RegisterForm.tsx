@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { register } from "@/lib/api";
 import { checkPasswordRules, isPasswordValid } from "@/lib/password-policy";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { sanitizeReturnPath } from "@/lib/return-url";
 
 export function RegisterForm() {
   const t = useTranslations("auth");
@@ -14,7 +15,9 @@ export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const referral = searchParams.get("ref") || undefined;
-  const [email, setEmail] = useState("");
+  const nextPath = sanitizeReturnPath(searchParams.get("next"));
+  const emailParam = searchParams.get("email") || "";
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [privacyConsent, setPrivacyConsent] = useState(false);
@@ -42,7 +45,7 @@ export function RegisterForm() {
     setLoading(true);
     try {
       const result = await register(email, password, referral);
-      router.push(`/verify-email?email=${encodeURIComponent(result.email)}`);
+      router.push(`/verify-email?email=${encodeURIComponent(result.email)}&next=${encodeURIComponent(nextPath)}`);
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("registerFailed");
@@ -127,7 +130,7 @@ export function RegisterForm() {
       </button>
       <p className="text-center text-sm text-text2">
         {t("hasAccount")}{" "}
-        <Link href="/login" className="text-accent hover:underline">
+        <Link href={`/login?next=${encodeURIComponent(nextPath)}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""}`} className="text-accent hover:underline">
           {t("login")}
         </Link>
       </p>

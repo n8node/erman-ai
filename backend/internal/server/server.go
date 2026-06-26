@@ -180,6 +180,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			auth.Post("/resend-verification", authHandler.ResendVerification)
 			auth.Post("/forgot-password", authHandler.ForgotPassword)
 			auth.Post("/reset-password", authHandler.ResetPassword)
+			auth.Post("/email-status", authHandler.EmailStatus)
 			auth.Post("/login", authHandler.Login)
 			auth.Post("/logout", authHandler.Logout)
 

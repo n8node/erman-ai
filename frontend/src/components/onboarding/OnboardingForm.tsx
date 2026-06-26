@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { completeOnboarding } from "@/lib/api";
+import { sanitizeReturnPath } from "@/lib/return-url";
 
-export function OnboardingForm() {
+export function OnboardingForm({ next }: { next?: string }) {
   const t = useTranslations("onboarding");
   const router = useRouter();
+  const nextPath = sanitizeReturnPath(next);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -16,7 +18,7 @@ export function OnboardingForm() {
     setLoading(true);
     try {
       await completeOnboarding(segment);
-      router.push(segment === "partner" ? "/tools/calculator" : "/tools/calculator");
+      router.push(nextPath);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("failed"));
