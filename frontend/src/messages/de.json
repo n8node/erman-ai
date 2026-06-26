@@ -115,6 +115,7 @@
     "dashboard": "Dashboard",
     "logout": "Logout",
     "project": "Projekt",
+    "consultations": "Consultations",
     "discussProject": "Projekt besprechen",
     "audit": "Automation Audit",
     "legalScan": "Legal Site Scan"
@@ -179,6 +180,7 @@
       "strategyLlm": "KI-Strategie",
       "projects": "Projekte",
       "projectInquiries": "Discuss project",
+      "consultations": "Consultations",
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
       "emailSmtp": "Email / SMTP",

@@ -115,6 +115,7 @@
     "dashboard": "控制台",
     "logout": "退出登录",
     "project": "项目",
+    "consultations": "Consultations",
     "discussProject": "讨论项目",
     "audit": "自动化审计",
     "legalScan": "合法站点扫描"
@@ -180,6 +181,7 @@
       "translations": "翻译",
       "projects": "项目",
       "projectInquiries": "Discuss project",
+      "consultations": "Consultations",
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
       "emailSmtp": "Email / SMTP",

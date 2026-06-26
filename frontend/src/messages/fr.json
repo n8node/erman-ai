@@ -115,6 +115,7 @@
     "dashboard": "Tableau de bord",
     "logout": "Se déconnecter",
     "project": "Projet",
+    "consultations": "Consultations",
     "discussProject": "Discuter le projet",
     "audit": "Audit de vignettes d'automatisation",
     "legalScan": "Analyse du site juridique"
@@ -180,6 +181,7 @@
       "translations": "Traductions",
       "projects": "Projets",
       "projectInquiries": "Discuss project",
+      "consultations": "Consultations",
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
       "emailSmtp": "Email / SMTP",

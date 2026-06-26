@@ -117,6 +117,7 @@
     "dashboard": "Дашборд",
     "logout": "Выйти",
     "project": "Проект",
+    "consultations": "Консультации",
     "discussProject": "Обсудить проект"
   },
   "dashboard": {
@@ -176,6 +177,7 @@
       "tooltips": "Тултипы",
       "proposalRequests": "Запросы на КП",
       "projectInquiries": "Обсудить проект",
+      "consultations": "Консультации",
       "calculatorBudget": "Ставки калькулятора",
       "strategyLlm": "AI Strategy LLM",
       "legalRisks": "Legal-скан: риски",

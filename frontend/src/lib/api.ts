@@ -1326,6 +1326,159 @@ export async function updateAdminProjectInquiryStatus(
   });
 }
 
+export type ConsultationService = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  duration_minutes: number;
+  price_rub: number;
+  is_active: boolean;
+  min_notice_minutes: number;
+  max_advance_days: number;
+  buffer_before_minutes: number;
+  buffer_after_minutes: number;
+  meeting_url: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConsultationAvailabilityRule = {
+  id?: string;
+  service_id?: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  slot_step_minutes: number;
+  is_active: boolean;
+};
+
+export type ConsultationSlot = {
+  starts_at: string;
+  ends_at: string;
+  available: boolean;
+};
+
+export type ConsultationBooking = {
+  id: string;
+  service_id: string;
+  user_id?: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_telegram: string;
+  customer_note: string;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  status: "pending_payment" | "paid" | "cancelled" | "expired" | "completed" | "no_show";
+  amount_rub: number;
+  provider?: string | null;
+  external_id?: string | null;
+  inv_id?: number | null;
+  meeting_url: string;
+  expires_at: string;
+  paid_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConsultationBookingDetail = ConsultationBooking & {
+  service_name: string;
+  service_slug: string;
+  duration_minutes: number;
+  service_description: string;
+};
+
+export type ConsultationBookingPayload = {
+  service_id: string;
+  starts_at: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  customer_telegram?: string;
+  customer_note?: string;
+  timezone?: string;
+  website?: string;
+};
+
+export async function fetchPublicConsultationServices() {
+  return apiFetch<{ items: ConsultationService[] }>("/public/consultations/services");
+}
+
+export async function fetchConsultationSlots(serviceId: string, from: string, to: string) {
+  const q = new URLSearchParams({ service_id: serviceId, from, to });
+  return apiFetch<{ items: ConsultationSlot[] }>(`/public/consultations/slots?${q}`);
+}
+
+export async function createPublicConsultationBooking(payload: ConsultationBookingPayload) {
+  return apiFetch<ConsultationBooking>("/public/consultations/bookings", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createConsultationBooking(payload: ConsultationBookingPayload) {
+  return apiFetch<ConsultationBooking>("/consultations/bookings", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createConsultationCheckout(bookingId: string, isPublic = false) {
+  return apiFetch<BillingCheckout>(isPublic ? "/public/consultations/checkout" : "/consultations/checkout", {
+    method: "POST",
+    body: JSON.stringify({ booking_id: bookingId }),
+  });
+}
+
+export async function fetchAdminConsultationServices() {
+  return apiFetch<{ items: ConsultationService[] }>("/admin/consultations/services");
+}
+
+export async function createAdminConsultationService(payload: Partial<ConsultationService>) {
+  return apiFetch<ConsultationService>("/admin/consultations/services", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminConsultationService(id: string, payload: Partial<ConsultationService>) {
+  return apiFetch<ConsultationService>(`/admin/consultations/services/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchAdminConsultationAvailability(serviceId: string) {
+  return apiFetch<{ items: ConsultationAvailabilityRule[] }>(`/admin/consultations/services/${serviceId}/availability`);
+}
+
+export async function updateAdminConsultationAvailability(serviceId: string, items: ConsultationAvailabilityRule[]) {
+  return apiFetch<{ items: ConsultationAvailabilityRule[] }>(`/admin/consultations/services/${serviceId}/availability`, {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+}
+
+export async function fetchAdminConsultationBookings(params?: { limit?: number; offset?: number }) {
+  const q = new URLSearchParams();
+  if (params?.limit) q.set("limit", String(params.limit));
+  if (params?.offset) q.set("offset", String(params.offset));
+  const qs = q.toString();
+  return apiFetch<{ items: ConsultationBookingDetail[]; total: number; limit: number; offset: number }>(
+    `/admin/consultations/bookings${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function updateAdminConsultationBookingStatus(id: string, status: ConsultationBooking["status"]) {
+  return apiFetch<ConsultationBookingDetail>(`/admin/consultations/bookings/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
 export type ExternalProject = {
   id: string;
   title: string;

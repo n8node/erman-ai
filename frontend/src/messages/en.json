@@ -117,6 +117,7 @@
     "dashboard": "Dashboard",
     "logout": "Log out",
     "project": "Project",
+    "consultations": "Consultations",
     "discussProject": "Discuss project"
   },
   "dashboard": {
@@ -176,6 +177,7 @@
       "tooltips": "Tooltips",
       "proposalRequests": "Proposal requests",
       "projectInquiries": "Discuss project",
+      "consultations": "Consultations",
       "calculatorBudget": "Calculator rates",
       "strategyLlm": "AI Strategy LLM",
       "legalRisks": "Legal scan: risks",

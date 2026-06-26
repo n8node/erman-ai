@@ -95,6 +95,41 @@ func (s *TelegramService) NotifyPayment(ctx context.Context, user *model.User, p
 	s.dispatchAdminNotification(ctx, text, "payment", cfg.Enabled && cfg.NotifyPayment)
 }
 
+func (s *TelegramService) NotifyConsultationBooking(ctx context.Context, booking *model.ConsultationBookingDetail, baseURL string) {
+	if booking == nil {
+		return
+	}
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil {
+		return
+	}
+	if !cfg.NotifyPayment && s.max == nil {
+		return
+	}
+	when := booking.StartsAt.Format("02.01.2006 15:04")
+	adminURL := strings.TrimRight(baseURL, "/") + "/dashboard/admin/consultations"
+	lines := []string{
+		"Новая оплаченная консультация",
+		"",
+		"Услуга: " + booking.ServiceName,
+		"Дата и время: " + when + " " + booking.Timezone,
+		"Клиент: " + booking.CustomerName,
+		"Email: " + booking.CustomerEmail,
+	}
+	if booking.CustomerPhone != "" {
+		lines = append(lines, "Телефон: "+booking.CustomerPhone)
+	}
+	if booking.CustomerTelegram != "" {
+		lines = append(lines, "Telegram: "+booking.CustomerTelegram)
+	}
+	lines = append(lines, fmt.Sprintf("Сумма: %d ₽", booking.AmountRUB))
+	if booking.CustomerNote != "" {
+		lines = append(lines, "", "Комментарий: "+booking.CustomerNote)
+	}
+	lines = append(lines, "", "Админка: "+adminURL)
+	s.dispatchAdminNotification(ctx, strings.Join(lines, "\n"), "consultation_booking", cfg.Enabled && cfg.NotifyPayment)
+}
+
 func (s *TelegramService) dispatchAdminNotification(ctx context.Context, text, kind string, sendTelegram bool) {
 	if strings.TrimSpace(text) == "" {
 		return

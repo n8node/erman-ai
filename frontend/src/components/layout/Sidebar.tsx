@@ -15,6 +15,7 @@ import {
   Shield,
   ExternalLink,
   MessageCircle,
+  CalendarDays,
 } from "lucide-react";
 import {
   fetchAdminExternalProjects,
@@ -66,6 +67,7 @@ export function Sidebar({ user }: Props) {
   ];
 
   const discussLink = { href: "/discuss", label: t("discussProject"), icon: MessageCircle };
+  const consultationLink = { href: "/consultations", label: t("consultations"), icon: CalendarDays };
 
   const accountLinks = [
     { href: "/billing", label: t("billing"), icon: CreditCard },
@@ -114,6 +116,18 @@ export function Sidebar({ user }: Props) {
           {t("project")}
         </p>
         <ul className="space-y-0.5">
+          <li>
+            <Link
+              href={consultationLink.href}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-2 py-2 text-[13px] text-text2 hover:bg-bg2",
+                isActive(consultationLink.href) && "bg-bg2 font-medium text-text"
+              )}
+            >
+              <consultationLink.icon size={16} />
+              {consultationLink.label}
+            </Link>
+          </li>
           <li>
             <Link
               href={discussLink.href}

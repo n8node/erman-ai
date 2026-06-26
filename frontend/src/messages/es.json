@@ -115,6 +115,7 @@
     "dashboard": "Panel",
     "logout": "Cerrar sesión",
     "project": "Proyecto",
+    "consultations": "Consultations",
     "discussProject": "Discutir proyecto",
     "audit": "Auditoría de mosaicos de automatización",
     "legalScan": "Análisis legal del sitio"
@@ -180,6 +181,7 @@
       "translations": "Traducciones",
       "projects": "Proyectos",
       "projectInquiries": "Discuss project",
+      "consultations": "Consultations",
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
       "emailSmtp": "Email / SMTP",

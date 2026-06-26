@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,17 +11,19 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
 )
 
 type PaymentWebhookHandler struct {
-	payments *service.PaymentSettingsService
-	checkout *service.CheckoutService
-	logger   *slog.Logger
+	payments      *service.PaymentSettingsService
+	checkout      *service.CheckoutService
+	consultations *service.ConsultationService
+	logger        *slog.Logger
 }
 
-func NewPaymentWebhookHandler(payments *service.PaymentSettingsService, checkout *service.CheckoutService, logger *slog.Logger) *PaymentWebhookHandler {
-	return &PaymentWebhookHandler{payments: payments, checkout: checkout, logger: logger}
+func NewPaymentWebhookHandler(payments *service.PaymentSettingsService, checkout *service.CheckoutService, consultations *service.ConsultationService, logger *slog.Logger) *PaymentWebhookHandler {
+	return &PaymentWebhookHandler{payments: payments, checkout: checkout, consultations: consultations, logger: logger}
 }
 
 func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +67,17 @@ func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.R
 			notification.Object.Status,
 			notification.Object.Metadata,
 		); err != nil {
-			h.logger.Warn("yookassa webhook fulfill failed", "error", err, "payment_id", notification.Object.ID)
+			if h.consultations == nil || !errors.Is(err, service.ErrCheckoutNotFound) {
+				h.logger.Warn("yookassa webhook fulfill failed", "error", err, "payment_id", notification.Object.ID)
+			} else if err := h.consultations.HandleYookassaWebhook(
+				r.Context(),
+				notification.Event,
+				notification.Object.ID,
+				notification.Object.Status,
+				notification.Object.Metadata,
+			); err != nil {
+				h.logger.Warn("yookassa consultation webhook fulfill failed", "error", err, "payment_id", notification.Object.ID)
+			}
 		}
 	}
 
@@ -138,9 +151,16 @@ func (h *PaymentWebhookHandler) RobokassaResult2(w http.ResponseWriter, r *http.
 
 	if h.checkout != nil {
 		if err := h.checkout.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
-			h.logger.Warn("robokassa result2 fulfill failed", "error", err, "inv_id", notification.InvID)
-			writeError(w, http.StatusInternalServerError, "fulfillment failed")
-			return
+			if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
+				h.logger.Warn("robokassa result2 fulfill failed", "error", err, "inv_id", notification.InvID)
+				writeError(w, http.StatusInternalServerError, "fulfillment failed")
+				return
+			}
+			if err := h.consultations.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
+				h.logger.Warn("robokassa result2 consultation fulfill failed", "error", err, "inv_id", notification.InvID)
+				writeError(w, http.StatusInternalServerError, "fulfillment failed")
+				return
+			}
 		}
 	}
 
@@ -195,9 +215,16 @@ func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.R
 
 	if h.checkout != nil {
 		if err := h.checkout.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
-			h.logger.Warn("robokassa fulfill failed", "error", err, "inv_id", invID)
-			writeError(w, http.StatusInternalServerError, "fulfillment failed")
-			return
+			if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
+				h.logger.Warn("robokassa fulfill failed", "error", err, "inv_id", invID)
+				writeError(w, http.StatusInternalServerError, "fulfillment failed")
+				return
+			}
+			if err := h.consultations.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
+				h.logger.Warn("robokassa consultation fulfill failed", "error", err, "inv_id", invID)
+				writeError(w, http.StatusInternalServerError, "fulfillment failed")
+				return
+			}
 		}
 	}
 
