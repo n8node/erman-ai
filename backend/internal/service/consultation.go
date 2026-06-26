@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"context"
+	crand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -250,7 +252,7 @@ func (s *ConsultationService) CreateCheckout(ctx context.Context, bookingID stri
 }
 
 func (s *ConsultationService) createYookassaCheckout(ctx context.Context, cfg model.PaymentSettings, booking *model.ConsultationBookingDetail) (*model.CheckoutResult, error) {
-	returnURL := s.cfg.PublicBaseURL() + "/dashboard/consultations?booking=success"
+	returnURL := s.confirmationURL()
 	amountStr := formatRubAmount(booking.AmountRUB)
 	body := map[string]any{
 		"amount":       map[string]string{"value": amountStr, "currency": "RUB"},
@@ -319,7 +321,7 @@ func (s *ConsultationService) createRobokassaCheckout(ctx context.Context, cfg m
 	params.Set("InvId", invStr)
 	params.Set("Description", fmt.Sprintf("Erman AI — %s", booking.ServiceName))
 	params.Set("SignatureValue", signature)
-	params.Set("SuccessURL", appendQuery(returnURL, "booking", "success"))
+	params.Set("SuccessURL", s.confirmationURL())
 	params.Set("FailURL", appendQuery(returnURL, "booking", "failed"))
 	if cfg.Robokassa.TestMode {
 		params.Set("IsTest", "1")
@@ -332,6 +334,19 @@ func (s *ConsultationService) createRobokassaCheckout(ctx context.Context, cfg m
 		Provider:    string(model.PaymentProviderRobokassa),
 		CheckoutURL: "https://auth.robokassa.ru/Merchant/Index.aspx?" + params.Encode(),
 	}, nil
+}
+
+func (s *ConsultationService) confirmationURL() string {
+	base := strings.TrimRight(s.cfg.PublicBaseURL(), "/")
+	return fmt.Sprintf("%s/dashboard/consultations/confirmed/%s", base, randomMetricID())
+}
+
+func randomMetricID() string {
+	b := make([]byte, 12)
+	if _, err := crand.Read(b); err == nil {
+		return hex.EncodeToString(b)
+	}
+	return strconv.FormatInt(time.Now().UnixNano(), 36)
 }
 
 func (s *ConsultationService) HandleYookassaWebhook(ctx context.Context, event, paymentID, status string, metadata map[string]string) error {
