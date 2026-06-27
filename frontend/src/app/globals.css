@@ -104,13 +104,13 @@ body {
 }
 
 /* Calculator landing — steps & mock screens (from source HTML) */
-.calculator-landing .steps {
+.tool-landing .steps {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.calculator-landing .step {
+.tool-landing .step {
   display: grid;
   grid-template-columns: 1fr 1.1fr;
   gap: 56px;
@@ -122,24 +122,24 @@ body {
 }
 
 @media (max-width: 960px) {
-  .calculator-landing .step {
+  .tool-landing .step {
     grid-template-columns: 1fr;
     gap: 32px;
     padding: 30px;
   }
 }
 
-.calculator-landing .step--reverse > .step__media {
+.tool-landing .step--reverse > .step__media {
   order: -1;
 }
 
 @media (max-width: 960px) {
-  .calculator-landing .step--reverse > .step__media {
+  .tool-landing .step--reverse > .step__media {
     order: 0;
   }
 }
 
-.calculator-landing .step__num {
+.tool-landing .step__num {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   letter-spacing: 0.1em;
@@ -151,7 +151,7 @@ body {
   margin-bottom: 14px;
 }
 
-.calculator-landing .step__num b {
+.tool-landing .step__num b {
   font-weight: 500;
   color: #fff;
   display: inline-flex;
@@ -163,7 +163,7 @@ body {
   background: #0b0d0e;
 }
 
-.calculator-landing .step__title {
+.tool-landing .step__title {
   font-size: clamp(24px, 2.4vw, 32px);
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -172,14 +172,14 @@ body {
   color: #0b0d0e;
 }
 
-.calculator-landing .step__desc {
+.tool-landing .step__desc {
   font-size: 15.5px;
   color: #2a2d30;
   margin-bottom: 18px;
   line-height: 1.55;
 }
 
-.calculator-landing .step__list {
+.tool-landing .step__list {
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -190,20 +190,20 @@ body {
   padding: 0;
 }
 
-.calculator-landing .step__list li {
+.tool-landing .step__list li {
   display: flex;
   gap: 10px;
   padding-left: 0;
 }
 
-.calculator-landing .step__list li::before {
+.tool-landing .step__list li::before {
   content: "→";
   color: #2d3fe5;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   flex-shrink: 0;
 }
 
-.calculator-landing .mock {
+.tool-landing .mock {
   background: #f5f4ef;
   border: 1px solid #e5e3dc;
   border-radius: 14px;
@@ -212,7 +212,7 @@ body {
   color: #2a2d30;
 }
 
-.calculator-landing .mock__head {
+.tool-landing .mock__head {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -221,7 +221,7 @@ body {
   border-bottom: 1px solid #e5e3dc;
 }
 
-.calculator-landing .mock__step {
+.tool-landing .mock__step {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -232,7 +232,7 @@ body {
   letter-spacing: 0.08em;
 }
 
-.calculator-landing .mock__step .n {
+.tool-landing .mock__step .n {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -243,29 +243,29 @@ body {
   font-size: 10px;
 }
 
-.calculator-landing .mock__step.inactive {
+.tool-landing .mock__step.inactive {
   color: #8a8e94;
 }
 
-.calculator-landing .mock__step.inactive .n {
+.tool-landing .mock__step.inactive .n {
   background: #8a8e94;
 }
 
-.calculator-landing .mock__sep {
+.tool-landing .mock__sep {
   width: 28px;
   height: 1px;
   background: #e5e3dc;
   flex-shrink: 0;
 }
 
-.calculator-landing .chip-row {
+.tool-landing .chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 16px;
 }
 
-.calculator-landing .chip {
+.tool-landing .chip {
   font-size: 11.5px;
   padding: 5px 10px;
   border-radius: 999px;
@@ -274,26 +274,26 @@ body {
   background: #fff;
 }
 
-.calculator-landing .chip.active {
+.tool-landing .chip.active {
   background: #0b0d0e;
   color: #fff;
   border-color: #0b0d0e;
 }
 
-.calculator-landing .mock-grid {
+.tool-landing .mock-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.calculator-landing .mock-card {
+.tool-landing .mock-card {
   background: #fff;
   border: 1px solid #e5e3dc;
   border-radius: 10px;
   padding: 12px 14px;
 }
 
-.calculator-landing .mock-card b {
+.tool-landing .mock-card b {
   display: block;
   font-size: 13px;
   color: #0b0d0e;
@@ -301,12 +301,12 @@ body {
   font-weight: 500;
 }
 
-.calculator-landing .mock-card span {
+.tool-landing .mock-card span {
   font-size: 11.5px;
   color: #5a5d62;
 }
 
-.calculator-landing .mock-card small {
+.tool-landing .mock-card small {
   display: block;
   margin-top: 8px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -315,21 +315,31 @@ body {
   letter-spacing: 0.04em;
 }
 
-.calculator-landing .mock-form {
+.tool-landing .mock-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin-top: 4px;
 }
 
-.calculator-landing .mock-field {
+.tool-landing .mock-field--wide {
+  grid-column: 1 / -1;
+}
+
+.tool-landing .mock-field__val--sm {
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.tool-landing .mock-field {
   background: #fff;
   border: 1px solid #e5e3dc;
   border-radius: 8px;
   padding: 10px 12px;
 }
 
-.calculator-landing .mock-field__label {
+.tool-landing .mock-field__label {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10.5px;
   letter-spacing: 0.08em;
@@ -338,14 +348,14 @@ body {
   margin-bottom: 4px;
 }
 
-.calculator-landing .mock-field__val {
+.tool-landing .mock-field__val {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 15px;
   color: #0b0d0e;
   font-weight: 500;
 }
 
-.calculator-landing .mock-preview {
+.tool-landing .mock-preview {
   margin-top: 12px;
   padding: 14px;
   border: 1px solid #e5e3dc;
@@ -353,17 +363,17 @@ body {
   background: #fff;
 }
 
-.calculator-landing .mock-preview__row {
+.tool-landing .mock-preview__row {
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
 }
 
-.calculator-landing .mock-preview__row + .mock-preview__row {
+.tool-landing .mock-preview__row + .mock-preview__row {
   border-top: 1px dashed #efede6;
 }
 
-.calculator-landing .mock-preview__row span {
+.tool-landing .mock-preview__row span {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   color: #5a5d62;
@@ -371,14 +381,14 @@ body {
   text-transform: uppercase;
 }
 
-.calculator-landing .mock-preview__row b {
+.tool-landing .mock-preview__row b {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 14px;
   color: #0b0d0e;
   font-weight: 500;
 }
 
-.calculator-landing .mock-table {
+.tool-landing .mock-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 8px;
@@ -386,7 +396,7 @@ body {
   font-size: 11.5px;
 }
 
-.calculator-landing .mock-table th {
+.tool-landing .mock-table th {
   text-align: left;
   padding: 8px 0;
   font-weight: 500;
@@ -397,20 +407,30 @@ body {
   border-bottom: 1px solid #e5e3dc;
 }
 
-.calculator-landing .mock-table td {
+.tool-landing .mock-table td {
   padding: 9px 0;
   border-bottom: 1px solid #efede6;
   color: #2a2d30;
 }
 
-.calculator-landing .mock-table td:last-child {
+.tool-landing .mock-table td:last-child {
   text-align: right;
 }
 
-.calculator-landing .delta-pos {
+.tool-landing .delta-pos {
   color: #156f3f;
   background: #e6f1e8;
   padding: 2px 7px;
   border-radius: 6px;
   font-size: 10.5px;
+}
+
+/* Strategy landing — purple AI accent overrides */
+.strategy-landing .step__list li::before {
+  color: #534ab7;
+}
+
+.strategy-landing .chip.active {
+  background: #534ab7;
+  border-color: #534ab7;
 }

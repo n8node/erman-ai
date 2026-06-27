@@ -160,7 +160,7 @@ function MidPageCta({
 
 export function CalculatorLandingPage({ page }: Props) {
   return (
-    <div className="calculator-landing bg-white text-[#0B0D0E]">
+    <div className="tool-landing bg-white text-[#0B0D0E]">
       <header className="sticky top-0 z-50 border-b border-[#1A1D20] bg-[#0B0D0E] text-white">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-6 px-7">
           <Link href="/" className="flex items-center gap-2.5 font-semibold">
