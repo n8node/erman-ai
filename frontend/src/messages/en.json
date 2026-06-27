@@ -120,6 +120,39 @@
     "consultations": "Consultations",
     "discussProject": "Discuss project"
   },
+  "toolsPage": {
+    "title": "Tools",
+    "subtitle": "AI tools to assess automation ROI, plan AI adoption, and prepare commercial proposals",
+    "forWhom": "Who it's for",
+    "openTool": "Open tool",
+    "tools": {
+      "calculator": {
+        "name": "Automation Calculator",
+        "description": "Quickly estimate automation ROI: current costs, savings, payback period, and a clear recommendation.",
+        "audience": "Owners and ops leaders who need numbers to justify automation."
+      },
+      "strategy": {
+        "name": "AI Strategy",
+        "description": "A tailored AI adoption strategy: diagnosis, priorities, roadmap, and risks for your business.",
+        "audience": "Executives and leadership teams preparing a transformation plan."
+      },
+      "proposal": {
+        "name": "Proposal Generator",
+        "description": "A polished commercial proposal from your solution, timeline, and pricing — ready to send.",
+        "audience": "B2B sales teams and agencies who need a client-ready proposal fast."
+      },
+      "audit": {
+        "name": "Automation Audit",
+        "description": "Prioritized audit across multiple processes with a roadmap of what to automate first and why.",
+        "audience": "COOs and operations leaders juggling many processes at once."
+      },
+      "legal-scan": {
+        "name": "Legal Site Scan",
+        "description": "Scan a client website for RF legal risks: policies, forms, cookies, and personal data handling.",
+        "audience": "Legal, marketing, and agency teams before a launch or client site review."
+      }
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Choose a tool to get started",
