@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicPage } from "@/lib/api-public-pages";
+import { CalculatorLandingSteps } from "@/components/public/calculator-landing/CalculatorLandingSteps";
 
 const CALCULATOR_HREF = "/tools/calculator";
 
@@ -296,47 +297,9 @@ export function CalculatorLandingPage({ page }: Props) {
           <SectionHead
             eyebrow="Как работает"
             title="Три шага — потому что считать ROI без процесса бессмысленно."
-            lead="Сначала калькулятор разбирает процесс по операциям и считает экономию часов. Только потом — деньги. И только потом — выводы."
+            lead="Сначала калькулятор разбирает процесс по операциям и считает экономию часов. Только потом — деньги. И только потом — выводы. Каждый шаг можно сохранить как черновик."
           />
-          <div className="space-y-5">
-            {[
-              {
-                num: "1",
-                tag: "Процесс",
-                title: "Разберите процесс на операции — или возьмите готовый шаблон",
-                desc: "Выбираете отрасль из 10 готовых пакетов, либо описываете свой процесс вручную. Калькулятор сам считает Hm — экономию часов в месяц.",
-                bullets: ["10 отраслей с готовыми шаблонами", "Любое число шагов внутри процесса", "Параметры объёма и % автоматизации"],
-              },
-              {
-                num: "2",
-                tag: "Финансы",
-                title: "Стоимость часа, бюджет внедрения, горизонт — модель сама подставит оценку",
-                desc: "Выбираете уровень внедрения — Простой, Стандарт или Сложный. Превью результата обновляется на лету.",
-                bullets: ["Ch — полная стоимость часа", "I₀ — бюджет внедрения", "Om — поддержка решения", "Горизонт оценки — 6, 12 или 24 месяца"],
-              },
-              {
-                num: "3",
-                tag: "Результат",
-                title: "Готовый финансовый отчёт — с KPI «до/после» и возможностью отправить КП",
-                desc: "На выходе — 4 ключевых цифры, таблица KPI «до/после», TCO и NPV по запросу.",
-                bullets: ["Сравнение по 6 KPI", "Публичная ссылка для коллег", "Экспорт PDF и генерация КП"],
-              },
-            ].map((step) => (
-              <article key={step.num} className="rounded-[20px] border border-[#E5E3DC] bg-white p-8 lg:p-11">
-                <div className="mb-3.5 flex items-center gap-2.5 font-mono text-[13px] uppercase tracking-[0.1em] text-[#5A5D62]">
-                  <b className="inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full bg-[#0B0D0E] text-white">{step.num}</b>
-                  {step.tag}
-                </div>
-                <h3 className="text-[clamp(24px,2.4vw,32px)] font-semibold leading-[1.1] tracking-[-0.025em]">{step.title}</h3>
-                <p className="mt-3.5 text-[15.5px] leading-relaxed text-[#2A2D30]">{step.desc}</p>
-                <ul className="mt-4 space-y-2.5 text-[14.5px] text-[#2A2D30]">
-                  {step.bullets.map((b) => (
-                    <li key={b} className="flex gap-2.5 before:font-mono before:text-[#2D3FE5] before:content-['→']">{b}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
+          <CalculatorLandingSteps />
           <div className="mt-10">
             <MidPageCta
               title="Готовы посчитать свой процесс?"

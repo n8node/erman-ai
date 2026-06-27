@@ -102,3 +102,315 @@ body {
 .ProseMirror ol {
   list-style: decimal;
 }
+
+/* Calculator landing — steps & mock screens (from source HTML) */
+.calculator-landing .steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calculator-landing .step {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 56px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e3dc;
+  border-radius: 20px;
+  padding: 44px;
+}
+
+@media (max-width: 960px) {
+  .calculator-landing .step {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 30px;
+  }
+}
+
+.calculator-landing .step--reverse > .step__media {
+  order: -1;
+}
+
+@media (max-width: 960px) {
+  .calculator-landing .step--reverse > .step__media {
+    order: 0;
+  }
+}
+
+.calculator-landing .step__num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a5d62;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.calculator-landing .step__num b {
+  font-weight: 500;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #0b0d0e;
+}
+
+.calculator-landing .step__title {
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin-bottom: 14px;
+  color: #0b0d0e;
+}
+
+.calculator-landing .step__desc {
+  font-size: 15.5px;
+  color: #2a2d30;
+  margin-bottom: 18px;
+  line-height: 1.55;
+}
+
+.calculator-landing .step__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14.5px;
+  color: #2a2d30;
+  margin: 0;
+  padding: 0;
+}
+
+.calculator-landing .step__list li {
+  display: flex;
+  gap: 10px;
+  padding-left: 0;
+}
+
+.calculator-landing .step__list li::before {
+  content: "→";
+  color: #2d3fe5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  flex-shrink: 0;
+}
+
+.calculator-landing .mock {
+  background: #f5f4ef;
+  border: 1px solid #e5e3dc;
+  border-radius: 14px;
+  padding: 20px;
+  font-size: 12.5px;
+  color: #2a2d30;
+}
+
+.calculator-landing .mock__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e3dc;
+}
+
+.calculator-landing .mock__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: #5a5d62;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.calculator-landing .mock__step .n {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0b0d0e;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+
+.calculator-landing .mock__step.inactive {
+  color: #8a8e94;
+}
+
+.calculator-landing .mock__step.inactive .n {
+  background: #8a8e94;
+}
+
+.calculator-landing .mock__sep {
+  width: 28px;
+  height: 1px;
+  background: #e5e3dc;
+  flex-shrink: 0;
+}
+
+.calculator-landing .chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.calculator-landing .chip {
+  font-size: 11.5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e3dc;
+  color: #2a2d30;
+  background: #fff;
+}
+
+.calculator-landing .chip.active {
+  background: #0b0d0e;
+  color: #fff;
+  border-color: #0b0d0e;
+}
+
+.calculator-landing .mock-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.calculator-landing .mock-card {
+  background: #fff;
+  border: 1px solid #e5e3dc;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.calculator-landing .mock-card b {
+  display: block;
+  font-size: 13px;
+  color: #0b0d0e;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.calculator-landing .mock-card span {
+  font-size: 11.5px;
+  color: #5a5d62;
+}
+
+.calculator-landing .mock-card small {
+  display: block;
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  color: #8a8e94;
+  letter-spacing: 0.04em;
+}
+
+.calculator-landing .mock-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.calculator-landing .mock-field {
+  background: #fff;
+  border: 1px solid #e5e3dc;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.calculator-landing .mock-field__label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a5d62;
+  margin-bottom: 4px;
+}
+
+.calculator-landing .mock-field__val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  color: #0b0d0e;
+  font-weight: 500;
+}
+
+.calculator-landing .mock-preview {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #e5e3dc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.calculator-landing .mock-preview__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.calculator-landing .mock-preview__row + .mock-preview__row {
+  border-top: 1px dashed #efede6;
+}
+
+.calculator-landing .mock-preview__row span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: #5a5d62;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.calculator-landing .mock-preview__row b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  color: #0b0d0e;
+  font-weight: 500;
+}
+
+.calculator-landing .mock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+.calculator-landing .mock-table th {
+  text-align: left;
+  padding: 8px 0;
+  font-weight: 500;
+  font-size: 10.5px;
+  color: #5a5d62;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e3dc;
+}
+
+.calculator-landing .mock-table td {
+  padding: 9px 0;
+  border-bottom: 1px solid #efede6;
+  color: #2a2d30;
+}
+
+.calculator-landing .mock-table td:last-child {
+  text-align: right;
+}
+
+.calculator-landing .delta-pos {
+  color: #156f3f;
+  background: #e6f1e8;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+}
