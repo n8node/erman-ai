@@ -444,3 +444,13 @@ body {
   background: #3b6d11;
   border-color: #3b6d11;
 }
+
+/* Audit landing — warning accent overrides */
+.audit-landing .step__list li::before {
+  color: #ba7517;
+}
+
+.audit-landing .chip.active {
+  background: #ba7517;
+  border-color: #ba7517;
+}
