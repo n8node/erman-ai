@@ -390,6 +390,7 @@
       "metaLabel": "Meta description",
       "contentLabel": "Content",
       "contentHint": "TipTap visual editor. Switch to HTML mode for advanced markup (dl, dt, dd).",
+      "templateHint": "This page uses the React template \"{template}\". For now you can edit only the title and URL slug. Content is managed in code.",
       "published": "Published",
       "sortOrder": "Sort order",
       "editor": {

@@ -104,6 +104,7 @@ func (h *PublicPageHandler) DeleteAdmin(w http.ResponseWriter, r *http.Request) 
 type publicPageRequest struct {
 	Slug            string `json:"slug"`
 	Title           string `json:"title"`
+	Template        string `json:"template"`
 	ContentHTML     string `json:"content_html"`
 	MetaDescription string `json:"meta_description"`
 	IsPublished     bool   `json:"is_published"`
@@ -114,6 +115,7 @@ func (req publicPageRequest) toInput() service.PublicPageInput {
 	return service.PublicPageInput{
 		Slug:            req.Slug,
 		Title:           req.Title,
+		Template:        req.Template,
 		ContentHTML:     req.ContentHTML,
 		MetaDescription: req.MetaDescription,
 		IsPublished:     req.IsPublished,

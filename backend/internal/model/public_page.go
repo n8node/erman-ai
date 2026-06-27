@@ -6,6 +6,7 @@ type PublicPage struct {
 	ID              string    `json:"id"`
 	Slug            string    `json:"slug"`
 	Title           string    `json:"title"`
+	Template        string    `json:"template"`
 	ContentHTML     string    `json:"content_html"`
 	MetaDescription string    `json:"meta_description"`
 	IsPublished     bool      `json:"is_published"`

@@ -1542,6 +1542,7 @@ export type PublicPage = {
   id: string;
   slug: string;
   title: string;
+  template: string;
   content_html: string;
   meta_description: string;
   is_published: boolean;
@@ -1553,6 +1554,7 @@ export type PublicPage = {
 export type PublicPageInput = {
   slug: string;
   title: string;
+  template?: string;
   content_html: string;
   meta_description: string;
   is_published: boolean;

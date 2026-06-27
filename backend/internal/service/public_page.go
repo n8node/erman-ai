@@ -23,6 +23,10 @@ var reservedPublicPageSlugs = map[string]struct{}{
 	"api-keys": {}, "discuss": {}, "api": {},
 }
 
+var allowedPublicPageTemplates = map[string]struct{}{
+	"calculator-landing": {},
+}
+
 type PublicPageService struct {
 	repo *repository.PublicPageRepository
 }
@@ -34,6 +38,7 @@ func NewPublicPageService(repo *repository.PublicPageRepository) *PublicPageServ
 type PublicPageInput struct {
 	Slug            string
 	Title           string
+	Template        string
 	ContentHTML     string
 	MetaDescription string
 	IsPublished     bool
@@ -60,10 +65,12 @@ func (s *PublicPageService) Create(ctx context.Context, input PublicPageInput) (
 	if err := s.validateInput(ctx, input, ""); err != nil {
 		return nil, err
 	}
+	template := normalizePublicPageTemplate(input.Template)
 	return s.repo.Create(
 		ctx,
 		normalizePublicPageSlug(input.Slug),
 		strings.TrimSpace(input.Title),
+		template,
 		input.ContentHTML,
 		strings.TrimSpace(input.MetaDescription),
 		input.IsPublished,
@@ -75,16 +82,34 @@ func (s *PublicPageService) Update(ctx context.Context, id string, input PublicP
 	if strings.TrimSpace(id) == "" {
 		return nil, ErrInvalidInput
 	}
+	existing, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	if err := s.validateInput(ctx, input, id); err != nil {
 		return nil, err
 	}
+
+	template := existing.Template
+	if template == "" {
+		template = normalizePublicPageTemplate(input.Template)
+	}
+
+	contentHTML := input.ContentHTML
+	metaDescription := strings.TrimSpace(input.MetaDescription)
+	if template != "" {
+		contentHTML = existing.ContentHTML
+		metaDescription = existing.MetaDescription
+	}
+
 	return s.repo.Update(
 		ctx,
 		id,
 		normalizePublicPageSlug(input.Slug),
 		strings.TrimSpace(input.Title),
-		input.ContentHTML,
-		strings.TrimSpace(input.MetaDescription),
+		template,
+		contentHTML,
+		metaDescription,
 		input.IsPublished,
 		input.SortOrder,
 	)
@@ -108,6 +133,12 @@ func (s *PublicPageService) validateInput(ctx context.Context, input PublicPageI
 	if strings.TrimSpace(input.Title) == "" {
 		return ErrInvalidInput
 	}
+	template := normalizePublicPageTemplate(input.Template)
+	if template != "" {
+		if _, ok := allowedPublicPageTemplates[template]; !ok {
+			return ErrInvalidInput
+		}
+	}
 	exists, err := s.repo.SlugExists(ctx, slug, excludeID)
 	if err != nil {
 		return err
@@ -120,4 +151,8 @@ func (s *PublicPageService) validateInput(ctx context.Context, input PublicPageI
 
 func normalizePublicPageSlug(slug string) string {
 	return strings.Trim(strings.ToLower(strings.TrimSpace(slug)), "/")
+}
+
+func normalizePublicPageTemplate(template string) string {
+	return strings.TrimSpace(template)
 }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { PublicPageView } from "@/components/public/PublicPageView";
 import { fetchPublicPage } from "@/lib/api-public-pages";
+import { renderPublicPage } from "@/components/public/public-page-templates";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -30,5 +30,5 @@ export default async function PublicPage({ params }: Props) {
     notFound();
   }
 
-  return <PublicPageView page={page} />;
+  return renderPublicPage(page);
 }

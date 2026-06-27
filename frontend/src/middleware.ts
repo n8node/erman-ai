@@ -45,6 +45,7 @@ const defaultPublicPageSlugs = [
   "terms",
   "shop-terms",
   "refund",
+  "calculator-roi",
 ];
 
 let cachedPublicSlugs: string[] = defaultPublicPageSlugs;

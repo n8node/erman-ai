@@ -390,6 +390,7 @@
       "metaLabel": "Meta description",
       "contentLabel": "Содержимое",
       "contentHint": "Визуальный редактор TipTap. Для сложной разметки (dl, dt, dd) переключитесь на режим HTML.",
+      "templateHint": "Страница собрана из React-шаблона «{template}». Сейчас в админке можно менять только заголовок и URL. Контент редактируется в коде.",
       "published": "Опубликована",
       "sortOrder": "Порядок",
       "editor": {

@@ -2,6 +2,7 @@ export type PublicPage = {
   id: string;
   slug: string;
   title: string;
+  template: string;
   content_html: string;
   meta_description: string;
   is_published: boolean;
@@ -31,7 +32,7 @@ export async function fetchPublicPageSlugs(): Promise<string[]> {
     next: { revalidate: 60 },
   });
   if (!res.ok) {
-    return ["about", "privacy-policy", "terms", "shop-terms", "refund"];
+    return ["about", "privacy-policy", "terms", "shop-terms", "refund", "calculator-roi"];
   }
   const data = (await res.json()) as { slugs?: string[] };
   return data.slugs ?? [];

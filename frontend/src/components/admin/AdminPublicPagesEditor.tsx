@@ -20,6 +20,7 @@ const fieldClass =
 const emptyDraft = (): PublicPageInput => ({
   slug: "",
   title: "",
+  template: "",
   content_html: "",
   meta_description: "",
   is_published: true,
@@ -62,6 +63,7 @@ export function AdminPublicPagesEditor() {
     return {
       slug: page.slug,
       title: page.title,
+      template: page.template ?? "",
       content_html: page.content_html,
       meta_description: page.meta_description,
       is_published: page.is_published,
@@ -137,6 +139,7 @@ export function AdminPublicPagesEditor() {
   const publicUrl = draft.slug
     ? `/dashboard/${draft.slug.replace(/^\//, "")}`
     : "";
+  const isTemplatePage = Boolean(draft.template);
 
   if (loading) {
     return <p className="text-sm text-text2">{t("loading")}</p>;
@@ -239,26 +242,33 @@ export function AdminPublicPagesEditor() {
             <input
               className={fieldClass}
               value={draft.meta_description}
+              disabled={isTemplatePage}
               onChange={(e) =>
                 setDraft((d) => ({ ...d, meta_description: e.target.value }))
               }
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-medium text-text2">
-              {t("contentLabel")}
-            </label>
-            <p className="mb-2 text-xs text-text3">{t("contentHint")}</p>
-            <RichTextEditor
-              key={isNew ? "new-page" : selectedId ?? "empty"}
-              editorKey={isNew ? "new-page" : selectedId ?? "empty"}
-              value={draft.content_html}
-              onChange={(content_html) =>
-                setDraft((d) => ({ ...d, content_html }))
-              }
-            />
-          </div>
+          {isTemplatePage ? (
+            <div className="rounded-lg border border-border bg-bg2 px-4 py-3 text-sm text-text2">
+              {t("templateHint", { template: draft.template })}
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-xs font-medium text-text2">
+                {t("contentLabel")}
+              </label>
+              <p className="mb-2 text-xs text-text3">{t("contentHint")}</p>
+              <RichTextEditor
+                key={isNew ? "new-page" : selectedId ?? "empty"}
+                editorKey={isNew ? "new-page" : selectedId ?? "empty"}
+                value={draft.content_html}
+                onChange={(content_html) =>
+                  setDraft((d) => ({ ...d, content_html }))
+                }
+              />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2 text-sm">

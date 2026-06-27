@@ -19,7 +19,7 @@ func NewPublicPageRepository(pool *pgxpool.Pool) *PublicPageRepository {
 func (r *PublicPageRepository) scan(row pgx.Row) (*model.PublicPage, error) {
 	var p model.PublicPage
 	err := row.Scan(
-		&p.ID, &p.Slug, &p.Title, &p.ContentHTML, &p.MetaDescription,
+		&p.ID, &p.Slug, &p.Title, &p.Template, &p.ContentHTML, &p.MetaDescription,
 		&p.IsPublished, &p.SortOrder, &p.UpdatedAt, &p.CreatedAt,
 	)
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *PublicPageRepository) ListPublishedSlugs(ctx context.Context) ([]string
 
 func (r *PublicPageRepository) GetPublishedBySlug(ctx context.Context, slug string) (*model.PublicPage, error) {
 	const q = `
-		SELECT id, slug, title, content_html, meta_description, is_published, sort_order, updated_at, created_at
+		SELECT id, slug, title, template, content_html, meta_description, is_published, sort_order, updated_at, created_at
 		FROM public_pages
 		WHERE slug = $1 AND is_published = true
 	`
@@ -66,7 +66,7 @@ func (r *PublicPageRepository) GetPublishedBySlug(ctx context.Context, slug stri
 
 func (r *PublicPageRepository) ListAll(ctx context.Context) ([]model.PublicPage, error) {
 	const q = `
-		SELECT id, slug, title, content_html, meta_description, is_published, sort_order, updated_at, created_at
+		SELECT id, slug, title, template, content_html, meta_description, is_published, sort_order, updated_at, created_at
 		FROM public_pages
 		ORDER BY sort_order ASC, slug ASC
 	`
@@ -89,7 +89,7 @@ func (r *PublicPageRepository) ListAll(ctx context.Context) ([]model.PublicPage,
 
 func (r *PublicPageRepository) GetByID(ctx context.Context, id string) (*model.PublicPage, error) {
 	const q = `
-		SELECT id, slug, title, content_html, meta_description, is_published, sort_order, updated_at, created_at
+		SELECT id, slug, title, template, content_html, meta_description, is_published, sort_order, updated_at, created_at
 		FROM public_pages
 		WHERE id = $1
 	`
@@ -113,32 +113,32 @@ func (r *PublicPageRepository) SlugExists(ctx context.Context, slug string, excl
 
 func (r *PublicPageRepository) Create(
 	ctx context.Context,
-	slug, title, contentHTML, metaDescription string,
+	slug, title, template, contentHTML, metaDescription string,
 	isPublished bool,
 	sortOrder int,
 ) (*model.PublicPage, error) {
 	const q = `
-		INSERT INTO public_pages (slug, title, content_html, meta_description, is_published, sort_order)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, slug, title, content_html, meta_description, is_published, sort_order, updated_at, created_at
+		INSERT INTO public_pages (slug, title, template, content_html, meta_description, is_published, sort_order)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, slug, title, template, content_html, meta_description, is_published, sort_order, updated_at, created_at
 	`
-	return r.scan(r.pool.QueryRow(ctx, q, slug, title, contentHTML, metaDescription, isPublished, sortOrder))
+	return r.scan(r.pool.QueryRow(ctx, q, slug, title, template, contentHTML, metaDescription, isPublished, sortOrder))
 }
 
 func (r *PublicPageRepository) Update(
 	ctx context.Context,
-	id, slug, title, contentHTML, metaDescription string,
+	id, slug, title, template, contentHTML, metaDescription string,
 	isPublished bool,
 	sortOrder int,
 ) (*model.PublicPage, error) {
 	const q = `
 		UPDATE public_pages
-		SET slug = $2, title = $3, content_html = $4, meta_description = $5,
-		    is_published = $6, sort_order = $7, updated_at = NOW()
+		SET slug = $2, title = $3, template = $4, content_html = $5, meta_description = $6,
+		    is_published = $7, sort_order = $8, updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, slug, title, content_html, meta_description, is_published, sort_order, updated_at, created_at
+		RETURNING id, slug, title, template, content_html, meta_description, is_published, sort_order, updated_at, created_at
 	`
-	p, err := r.scan(r.pool.QueryRow(ctx, q, id, slug, title, contentHTML, metaDescription, isPublished, sortOrder))
+	p, err := r.scan(r.pool.QueryRow(ctx, q, id, slug, title, template, contentHTML, metaDescription, isPublished, sortOrder))
 	if err == pgx.ErrNoRows {
 		return nil, ErrNotFound
 	}
