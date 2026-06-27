@@ -28,6 +28,7 @@ var allowedPublicPageTemplates = map[string]struct{}{
 	"strategy-landing":   {},
 	"proposal-landing":   {},
 	"audit-landing":      {},
+	"legal-scan-landing": {},
 }
 
 type PublicPageService struct {

@@ -454,3 +454,31 @@ body {
   background: #ba7517;
   border-color: #ba7517;
 }
+
+/* Legal scan landing — error/red accent overrides */
+.legal-scan-landing .step__list li::before {
+  color: #a32d2d;
+}
+
+.legal-scan-landing .chip.active {
+  background: #a32d2d;
+  border-color: #a32d2d;
+}
+
+.tool-landing .mock-status {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.tool-landing .mock-status--ok {
+  color: #156f3f;
+  background: #e6f1e8;
+}
+
+.tool-landing .mock-status--risk {
+  color: #a32d2d;
+  background: #fcebeb;
+}
