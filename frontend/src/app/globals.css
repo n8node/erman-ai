@@ -434,3 +434,13 @@ body {
   background: #534ab7;
   border-color: #534ab7;
 }
+
+/* Proposal landing — green accent overrides */
+.proposal-landing .step__list li::before {
+  color: #3b6d11;
+}
+
+.proposal-landing .chip.active {
+  background: #3b6d11;
+  border-color: #3b6d11;
+}

@@ -26,6 +26,7 @@ var reservedPublicPageSlugs = map[string]struct{}{
 var allowedPublicPageTemplates = map[string]struct{}{
 	"calculator-landing": {},
 	"strategy-landing":   {},
+	"proposal-landing":   {},
 }
 
 type PublicPageService struct {
