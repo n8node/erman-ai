@@ -133,7 +133,7 @@ export function ProposalResult({ input, output, runId }: Props) {
       {output.timeline.length > 0 && (
         <Section title={t("timeline")}>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                   <th className="px-3 py-2">{t("phase")}</th>

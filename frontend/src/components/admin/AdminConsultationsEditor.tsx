@@ -308,7 +308,7 @@ export function AdminConsultationsEditor() {
       <section className="rounded-xl border border-border bg-bg p-5">
         <h2 className="text-sm font-medium">Записи</h2>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[900px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                 <th className="px-3 py-2 font-medium">Дата</th>

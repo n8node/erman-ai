@@ -48,7 +48,7 @@ export function StrategyROIBarChart({ summary }: { summary: StrategyROISummary }
 export function StrategyPriorityMatrix({ rows }: { rows: StrategyPriorityRow[] }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs">
+      <table className="w-full min-w-[640px] text-left text-xs">
         <thead>
           <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text3">
             <th className="pb-2 pr-3">#</th>

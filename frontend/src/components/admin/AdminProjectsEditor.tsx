@@ -263,8 +263,8 @@ export function AdminProjectsEditor() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-border bg-bg">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-bg">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-bg2 text-left text-[10px] font-medium uppercase tracking-wider text-text3">
             <tr>
               <th className="px-4 py-3">{t("colTitle")}</th>

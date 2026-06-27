@@ -54,7 +54,7 @@ export function AuditResult({ input, output }: Props) {
 
       <Section title={t("sections.priority")}>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text3">
                 <th className="py-2 pr-3">{t("table.rank")}</th>

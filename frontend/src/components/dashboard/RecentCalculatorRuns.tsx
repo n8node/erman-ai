@@ -53,7 +53,7 @@ export function RecentCalculatorRuns() {
         </Link>
       </div>
       <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-bg">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
               <th className="px-4 py-2 font-medium">{tc("history.colProcess")}</th>

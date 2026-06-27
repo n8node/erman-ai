@@ -31,13 +31,13 @@ export function AdminNav() {
   ];
 
   return (
-    <nav className="flex gap-1 border-b border-border">
+    <nav className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0">
       {links.map(({ href, label }) => (
         <Link
           key={href}
           href={href}
           className={cn(
-            "px-3 py-2 text-sm border-b-2 -mb-px",
+            "-mb-px shrink-0 border-b-2 px-3 py-2 text-sm",
             pathname === href || pathname.startsWith(`${href}/`)
               ? "border-text font-medium text-text"
               : "border-transparent text-text2 hover:text-text"

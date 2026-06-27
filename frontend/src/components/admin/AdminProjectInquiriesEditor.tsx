@@ -82,7 +82,7 @@ export function AdminProjectInquiriesEditor() {
         <p className="text-sm text-text2">{t("empty")}</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border bg-bg">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[980px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                 <th className="px-4 py-2 font-medium">{t("colDate")}</th>

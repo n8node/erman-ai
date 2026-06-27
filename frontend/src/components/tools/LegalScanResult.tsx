@@ -188,10 +188,12 @@ export function LegalScanResult({ input, output, runId, canExport, onRestart }: 
             <p className="text-[34px] font-bold leading-none text-error">{fineDisplay}</p>
             <p className="mt-1.5 text-sm text-text3">{t("fixedFines")}</p>
           </div>
-          <div className="ml-auto text-right text-xs text-text3">
+          <div className="min-w-0 flex-1 text-left text-xs text-text3 sm:text-right">
             {t("scanned")}
             <br />
-            <span className="font-semibold text-text2">{output.layer1.final_url || input.url}</span>
+            <span className="break-all font-semibold text-text2">
+              {output.layer1.final_url || input.url}
+            </span>
             {output.layer1.crawl && output.layer1.crawl.pages_fetched > 1 && (
               <>
                 <br />

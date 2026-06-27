@@ -24,7 +24,7 @@ export default function PublicSharePage() {
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-bg3 p-6">
+      <main className="flex min-h-screen items-center justify-center bg-bg3 px-4 py-8 sm:p-6">
         <p className="text-sm text-text2">{error}</p>
       </main>
     );
@@ -32,7 +32,7 @@ export default function PublicSharePage() {
 
   if (!report) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-bg3 p-6">
+      <main className="flex min-h-screen items-center justify-center bg-bg3 px-4 py-8 sm:p-6">
         <p className="text-sm text-text2">{t("loading")}</p>
       </main>
     );
@@ -40,9 +40,9 @@ export default function PublicSharePage() {
 
   return (
     <TooltipProvider prefix="calculator" locale={locale}>
-      <main className="min-h-screen bg-bg3 p-6">
+      <main className="min-h-screen bg-bg3 px-4 py-6 sm:p-6">
         <div className="mx-auto max-w-5xl space-y-6">
-          <div className="rounded-xl border border-border bg-bg p-8">
+          <div className="rounded-xl border border-border bg-bg p-5 sm:p-8">
             <div className="mb-6 flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-text text-sm font-semibold text-white">
                 E

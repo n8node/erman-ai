@@ -28,9 +28,11 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   user: User | null;
+  isOpen: boolean;
+  onClose: () => void;
 };
 
-export function Sidebar({ user }: Props) {
+export function Sidebar({ user, isOpen, onClose }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const [projects, setProjects] = useState<ExternalProject[]>([]);
@@ -50,6 +52,10 @@ export function Sidebar({ user }: Props) {
   useEffect(() => {
     loadProjects();
   }, [loadProjects, pathname]);
+
+  useEffect(() => {
+    onClose();
+  }, [onClose, pathname]);
 
   useEffect(() => {
     const onProjectsUpdated = () => loadProjects();
@@ -82,7 +88,22 @@ export function Sidebar({ user }: Props) {
     : projects.filter((project) => project.is_enabled);
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-[220px] flex-col border-r border-border bg-bg">
+    <>
+      <button
+        type="button"
+        aria-label="Закрыть меню"
+        className={cn(
+          "fixed inset-0 z-30 bg-black/30 transition-opacity lg:hidden",
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={onClose}
+      />
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 flex h-dvh w-[280px] max-w-[85vw] flex-col border-r border-border bg-bg transition-transform duration-200 lg:z-30 lg:h-screen lg:w-[220px] lg:max-w-none lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
       <div className="flex items-center gap-2.5 px-5 py-5">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-text text-sm font-semibold text-white">
           E
@@ -211,6 +232,7 @@ export function Sidebar({ user }: Props) {
           </>
         )}
       </nav>
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -87,7 +87,7 @@ export function CalculatorReportView({
             {t("kpi.title")}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr className="border-b border-border bg-bg2 text-[10px] uppercase tracking-wider text-text3">
                   <th className="px-3 py-2">KPI</th>

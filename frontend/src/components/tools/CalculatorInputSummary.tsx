@@ -106,7 +106,7 @@ export function CalculatorInputSummary({ input }: Props) {
           <>
             {steps.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[640px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-border bg-bg2">
                       <TableHeader

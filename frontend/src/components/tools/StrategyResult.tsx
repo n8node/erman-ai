@@ -350,7 +350,7 @@ function MetricsTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs">
+      <table className="w-full min-w-[640px] text-left text-xs">
         <thead>
           <tr className="border-b border-border text-[10px] uppercase tracking-wider text-text3">
             <th className="pb-2 pr-4">{t("metricCol")}</th>

@@ -75,6 +75,13 @@ body {
   font-size: 13px;
 }
 
+@media (max-width: 640px) {
+  .public-page-content .legal-details {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
+
 .ProseMirror:focus {
   outline: none;
 }

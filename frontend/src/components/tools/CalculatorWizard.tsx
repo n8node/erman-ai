@@ -316,7 +316,7 @@ export function CalculatorWizard() {
           {input.hm_mode === "process" ? (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full min-w-[720px] text-left text-xs">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="pb-2 pr-2 normal-case">
