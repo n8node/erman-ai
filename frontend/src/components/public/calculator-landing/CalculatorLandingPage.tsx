@@ -3,6 +3,7 @@ import type { PublicPage } from "@/lib/api-public-pages";
 import { CalculatorLandingSteps } from "@/components/public/calculator-landing/CalculatorLandingSteps";
 
 const CALCULATOR_HREF = "/tools/calculator";
+const NET_BENEFIT_VALUE = "2\u00a0663\u00a0667\u00a0₽";
 
 type Props = {
   page: PublicPage;
@@ -13,7 +14,7 @@ const outcomes = [
     icon: "01 — ₽/МЕС",
     name: "Чистая выгода в месяц",
     desc: "Сколько денег процесс начинает приносить после внедрения, после вычета поддержки и амортизации внедрения.",
-    value: "2 663 667 ₽",
+    value: NET_BENEFIT_VALUE,
   },
   {
     icon: "02 — МЕС",
@@ -224,14 +225,14 @@ export function CalculatorLandingPage({ page }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] bg-[#E5E3DC]">
               {[
-                { label: "Чистая выгода / мес", value: "2 663 667 ₽", big: true },
+                { label: "Чистая выгода / мес", value: NET_BENEFIT_VALUE, big: true },
                 { label: "Окупаемость", value: "0.2 мес", big: true },
                 { label: "FTE", value: "7.94", hint: "эквивалент полных ставок" },
                 { label: "ROI за горизонт", value: "5227.3%" },
               ].map((m) => (
                 <div key={m.label} className="flex flex-col gap-2 bg-white p-[18px]">
                   <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#5A5D62]">{m.label}</div>
-                  <div className={`font-mono font-medium tracking-[-0.02em] text-[#0B0D0E] ${m.big ? "text-[30px]" : "text-[26px]"}`}>
+                  <div className={`whitespace-nowrap font-mono font-medium tracking-[-0.02em] text-[#0B0D0E] ${m.big ? "text-[30px]" : "text-[26px]"}`}>
                     {m.value}
                   </div>
                   {m.hint && <div className="text-xs text-[#5A5D62]">{m.hint}</div>}
@@ -278,7 +279,7 @@ export function CalculatorLandingPage({ page }: Props) {
                 <div className="font-mono text-xs tracking-[0.08em] text-[#2D3FE5]">{item.icon}</div>
                 <h3 className="text-[15px] font-medium">{item.name}</h3>
                 <p className="text-[13.5px] leading-relaxed text-[#5A5D62]">{item.desc}</p>
-                <div className="mt-auto font-mono text-[38px] font-medium leading-none tracking-[-0.03em]">{item.value}</div>
+                <div className="mt-auto whitespace-nowrap font-mono text-[38px] font-medium leading-none tracking-[-0.03em]">{item.value}</div>
               </div>
             ))}
           </div>
