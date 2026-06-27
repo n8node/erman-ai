@@ -69,11 +69,14 @@ function Step1Mock() {
           <div className="mock-field__val">Малый бизнес</div>
         </div>
       </div>
-      <div className="chip-row">
-        <span className="chip active">Формы</span>
-        <span className="chip">Реклама</span>
-        <span className="chip active">Онлайн-оплата</span>
-        <span className="chip">Иностр. сервисы</span>
+      <div className="mock-features">
+        <div className="mock-field__label">Признаки сайта</div>
+        <div className="chip-row chip-row--grid">
+          <span className="chip active">Формы</span>
+          <span className="chip">Реклама</span>
+          <span className="chip active">Оплата</span>
+          <span className="chip">Ино. сервисы</span>
+        </div>
       </div>
       <div className="mock-preview">
         <div className="mock-preview__row">
