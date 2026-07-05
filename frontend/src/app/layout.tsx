@@ -10,6 +10,13 @@ const inter = Inter({ subsets: ["latin", "cyrillic"] });
 export const metadata: Metadata = {
   title: "Erman AI",
   description: "AI-инструменты для вашего бизнеса",
+  icons: {
+    icon: [
+      { url: "/dashboard/favicon.ico", sizes: "any" },
+      { url: "/dashboard/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/dashboard/apple-icon.png", sizes: "512x512" }],
+  },
 };
 
 export default async function RootLayout({
