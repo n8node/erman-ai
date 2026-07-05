@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicPage } from "@/lib/api-public-pages";
+import { LandingBrandLink } from "@/components/public/LandingBrandLink";
 import { ProposalLandingSteps } from "@/components/public/proposal-landing/ProposalLandingSteps";
 
 const PROPOSAL_HREF = "/tools/proposal";
@@ -201,12 +202,7 @@ export function ProposalLandingPage({ page }: Props) {
     <div className="tool-landing proposal-landing bg-white text-[#0B0D0E]">
       <header className="sticky top-0 z-50 border-b border-[#1A1D20] bg-[#0B0D0E] text-white">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-6 px-7">
-          <Link href="/" className="flex items-center gap-2.5 font-semibold">
-            <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-white text-sm font-bold text-[#0B0D0E]">
-              E
-            </span>
-            <span className="text-[15px]">Erman AI</span>
-          </Link>
+          <LandingBrandLink labelClassName="text-[15px]" />
           <nav className="hidden items-center gap-7 text-sm text-[#C9CCD1] md:flex">
             <a href="#what" className="hover:text-white">Что получите</a>
             <a href="#steps" className="hover:text-white">Как работает</a>
@@ -500,10 +496,7 @@ export function ProposalLandingPage({ page }: Props) {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-9 md:grid-cols-[2fr_1fr_1fr_1fr]">
             <div>
-              <Link href="/" className="inline-flex items-center gap-2.5 font-semibold">
-                <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#0B0D0E] text-sm font-bold text-white">E</span>
-                Erman AI
-              </Link>
+              <LandingBrandLink />
               <p className="mt-3 max-w-[340px] text-sm text-[#5A5D62]">
                 ROI, стратегия и КП — в одном кабинете. От расчёта до подписания сделки.
               </p>
