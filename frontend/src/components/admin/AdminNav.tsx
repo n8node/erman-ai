@@ -12,7 +12,6 @@ export function AdminNav() {
   const links = [
     { href: "/admin/users", label: t("users") },
     { href: "/admin/plans", label: t("plans") },
-    { href: "/admin/token-packages", label: t("tokenPackages") },
     { href: "/admin/proposal-requests", label: t("proposalRequests") },
     { href: "/admin/project-inquiries", label: t("projectInquiries") },
     { href: "/admin/consultations", label: t("consultations") },

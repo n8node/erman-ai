@@ -6,15 +6,12 @@ import { useTranslations } from "next-intl";
 import {
   ApiError,
   createBillingCheckout,
-  createTokenPackageCheckout,
   fetchBillingPlans,
   fetchMe,
-  fetchTokenPackages,
   getBillingPlan,
   switchBillingPlan,
   type BillingPlan,
   type PublicPlan,
-  type TokenPackage,
   type User,
 } from "@/lib/api";
 import { loginPathWithReturn } from "@/lib/return-url";
@@ -52,13 +49,11 @@ export function BillingPlansView() {
   const paymentStatus = searchParams.get("payment");
 
   const [plans, setPlans] = useState<PublicPlan[]>([]);
-  const [tokenPackages, setTokenPackages] = useState<TokenPackage[]>([]);
   const [current, setCurrent] = useState<BillingPlan | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [busyTokenId, setBusyTokenId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -71,9 +66,6 @@ export function BillingPlansView() {
       const plansRes = await fetchBillingPlans();
       setPlans(plansRes.items);
       setPaymentsEnabled(Boolean(plansRes.payments_enabled));
-
-      const tokensRes = await fetchTokenPackages().catch(() => ({ items: [] as TokenPackage[] }));
-      setTokenPackages(tokensRes.items);
 
       const me = await fetchMe().catch(() => null);
       setUser(me);
@@ -98,9 +90,6 @@ export function BillingPlansView() {
   useEffect(() => {
     if (paymentStatus === "success") {
       setNotice(t("paymentSuccess"));
-      void load();
-    } else if (paymentStatus === "tokens_success") {
-      setNotice(t("tokenPaymentSuccess"));
       void load();
     } else if (paymentStatus === "failed") {
       setError(t("paymentFailed"));
@@ -153,29 +142,6 @@ export function BillingPlansView() {
     }
   }
 
-  async function handleTokenPurchase(pkg: TokenPackage) {
-    if (!user) {
-      router.push(loginPathWithReturn("/billing"));
-      return;
-    }
-    if (!paymentsEnabled) {
-      setError(t("paymentUnavailable"));
-      return;
-    }
-
-    setBusyTokenId(pkg.id);
-    setError("");
-    setNotice("");
-    try {
-      const checkout = await createTokenPackageCheckout(pkg.id);
-      window.location.href = checkout.checkout_url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("actionFailed"));
-    } finally {
-      setBusyTokenId(null);
-    }
-  }
-
   if (loading) {
     return <p className="text-sm text-text2">{t("loading")}</p>;
   }
@@ -191,12 +157,6 @@ export function BillingPlansView() {
         {current && (
           <p className="mt-3 text-sm text-text2">
             {t("currentPlan")}: <span className="font-medium text-text">{current.plan_name}</span>
-            {typeof current.token_balance === "number" && (
-              <>
-                {" · "}
-                {t("tokenBalance", { count: current.token_balance.toLocaleString("ru-RU") })}
-              </>
-            )}
           </p>
         )}
         {isSuperadmin && (
@@ -352,38 +312,6 @@ export function BillingPlansView() {
           );
         })}
       </div>
-
-      {tokenPackages.length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-base font-medium">{t("tokenPackagesTitle")}</h2>
-            <p className="mt-1 text-sm text-text2">{t("tokenPackagesSubtitle")}</p>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tokenPackages.map((pkg) => (
-              <article key={pkg.id} className="flex min-w-0 flex-col rounded-xl border border-border bg-bg p-5">
-                <h3 className="text-lg font-medium">{pkg.name}</h3>
-                <p className="mt-2 text-xl font-medium">{formatRub(pkg.price_rub)}</p>
-                <p className="mt-1 text-sm text-text2">
-                  {t("tokensAmount", { count: pkg.tokens.toLocaleString("ru-RU") })}
-                </p>
-                <button
-                  type="button"
-                  disabled={!user || busyTokenId === pkg.id || !paymentsEnabled}
-                  onClick={() => handleTokenPurchase(pkg)}
-                  className="mt-6 w-full rounded-lg bg-text px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  {!user
-                    ? t("loginToPurchase")
-                    : busyTokenId === pkg.id
-                      ? t("processing")
-                      : t("purchaseTokens")}
-                </button>
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

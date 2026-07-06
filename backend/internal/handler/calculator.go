@@ -244,27 +244,14 @@ func (h *LeadHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 type BillingHandler struct {
-	billing       *service.BillingService
-	checkout      *service.CheckoutService
-	tokenPackages *service.TokenPackageService
-	plans         *repository.PlanRepository
-	runs          *repository.ToolRunRepository
+	billing  *service.BillingService
+	checkout *service.CheckoutService
+	plans    *repository.PlanRepository
+	runs     *repository.ToolRunRepository
 }
 
-func NewBillingHandler(
-	billing *service.BillingService,
-	checkout *service.CheckoutService,
-	tokenPackages *service.TokenPackageService,
-	plans *repository.PlanRepository,
-	runs *repository.ToolRunRepository,
-) *BillingHandler {
-	return &BillingHandler{
-		billing:       billing,
-		checkout:      checkout,
-		tokenPackages: tokenPackages,
-		plans:         plans,
-		runs:          runs,
-	}
+func NewBillingHandler(billing *service.BillingService, checkout *service.CheckoutService, plans *repository.PlanRepository, runs *repository.ToolRunRepository) *BillingHandler {
+	return &BillingHandler{billing: billing, checkout: checkout, plans: plans, runs: runs}
 }
 
 func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
@@ -303,11 +290,6 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 		paymentProvider = string(provider)
 	}
 
-	tokenBalance := int64(0)
-	if h.tokenPackages != nil {
-		tokenBalance, _ = h.tokenPackages.GetUserBalance(r.Context(), userID)
-	}
-
 	writeJSON(w, http.StatusOK, map[string]any{
 		"plan_id":          up.Plan.ID,
 		"plan_slug":        up.PlanSlug,
@@ -316,7 +298,6 @@ func (h *BillingHandler) Plan(w http.ResponseWriter, r *http.Request) {
 		"tool_limits":      up.Plan.ToolLimits,
 		"payments_enabled": paymentsEnabled,
 		"payment_provider": paymentProvider,
-		"token_balance":    tokenBalance,
 		"usage": map[string]any{
 			"share_report_used":  shareUsed,
 			"share_report_limit": shareLimit,
