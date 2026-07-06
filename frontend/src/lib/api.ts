@@ -82,6 +82,7 @@ export type BillingPlan = {
   tool_limits: Record<string, number>;
   payments_enabled?: boolean;
   payment_provider?: string;
+  token_balance?: number;
   usage: {
     share_report_used: number;
     share_report_limit: number;
@@ -542,6 +543,56 @@ export async function createBillingCheckout(planId: string) {
   return apiFetch<BillingCheckout>("/billing/checkout", {
     method: "POST",
     body: JSON.stringify({ plan_id: planId }),
+  });
+}
+
+export type TokenPackage = {
+  id: string;
+  slug: string;
+  name: string;
+  tokens: number;
+  price_rub: number;
+  sort_order: number;
+  is_public: boolean;
+  is_archived: boolean;
+};
+
+export type TokenPackageUpsertInput = {
+  slug: string;
+  name: string;
+  tokens: number;
+  price_rub: number;
+  sort_order: number;
+  is_public: boolean;
+  is_archived: boolean;
+};
+
+export async function fetchTokenPackages() {
+  return apiFetch<{ items: TokenPackage[] }>("/public/billing/token-packages");
+}
+
+export async function createTokenPackageCheckout(tokenPackageId: string) {
+  return apiFetch<BillingCheckout>("/billing/token-checkout", {
+    method: "POST",
+    body: JSON.stringify({ token_package_id: tokenPackageId }),
+  });
+}
+
+export async function fetchAdminTokenPackages() {
+  return apiFetch<{ items: TokenPackage[] }>("/admin/token-packages");
+}
+
+export async function createAdminTokenPackage(payload: TokenPackageUpsertInput) {
+  return apiFetch<TokenPackage>("/admin/token-packages", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminTokenPackage(id: string, payload: TokenPackageUpsertInput) {
+  return apiFetch<TokenPackage>(`/admin/token-packages/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 

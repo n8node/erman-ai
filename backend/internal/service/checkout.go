@@ -24,16 +24,18 @@ var (
 )
 
 type CheckoutService struct {
-	checkouts *repository.PlanCheckoutRepository
-	users     *repository.UserRepository
-	plans     *repository.PlanRepository
-	payments  *PaymentSettingsService
-	telegram  *TelegramService
-	cfg       *config.Config
+	checkouts      *repository.PlanCheckoutRepository
+	tokenCheckouts *repository.TokenPackageCheckoutRepository
+	users          *repository.UserRepository
+	plans          *repository.PlanRepository
+	payments       *PaymentSettingsService
+	telegram       *TelegramService
+	cfg            *config.Config
 }
 
 func NewCheckoutService(
 	checkouts *repository.PlanCheckoutRepository,
+	tokenCheckouts *repository.TokenPackageCheckoutRepository,
 	users *repository.UserRepository,
 	plans *repository.PlanRepository,
 	payments *PaymentSettingsService,
@@ -41,12 +43,13 @@ func NewCheckoutService(
 	cfg *config.Config,
 ) *CheckoutService {
 	return &CheckoutService{
-		checkouts: checkouts,
-		users:     users,
-		plans:     plans,
-		payments:  payments,
-		telegram:  telegram,
-		cfg:       cfg,
+		checkouts:      checkouts,
+		tokenCheckouts: tokenCheckouts,
+		users:          users,
+		plans:          plans,
+		payments:       payments,
+		telegram:       telegram,
+		cfg:            cfg,
 	}
 }
 
@@ -248,7 +251,7 @@ func (s *CheckoutService) HandleRobokassaResult(ctx context.Context, invIDStr, o
 	if err != nil {
 		return err
 	}
-	if err := s.verifyRobokassaAmount(checkout.AmountRUB, outSumStr); err != nil {
+	if err := verifyRobokassaAmount(checkout.AmountRUB, outSumStr); err != nil {
 		return err
 	}
 	return s.Fulfill(ctx, checkout.ID)
@@ -296,7 +299,130 @@ func (s *CheckoutService) Fulfill(ctx context.Context, checkoutID string) error 
 	return nil
 }
 
-func (s *CheckoutService) verifyRobokassaAmount(expected int, outSumStr string) error {
+func (s *CheckoutService) createYookassaTokenPackage(
+	ctx context.Context,
+	cfg model.PaymentSettings,
+	checkout *model.TokenPackageCheckout,
+	pkg *model.TokenPackage,
+	user *model.User,
+) (*model.CheckoutResult, error) {
+	returnURL := appendQuery(s.payments.defaultReturnURL(), "payment", "tokens_success")
+	amountStr := formatRubAmount(pkg.PriceRUB)
+	desc := fmt.Sprintf("Erman AI — %s", pkg.Name)
+
+	body := map[string]any{
+		"amount": map[string]string{
+			"value":    amountStr,
+			"currency": "RUB",
+		},
+		"capture": true,
+		"confirmation": map[string]string{
+			"type":       "redirect",
+			"return_url": returnURL,
+		},
+		"description": desc,
+		"metadata": map[string]string{
+			"token_checkout_id": checkout.ID,
+			"user_id":           user.ID,
+			"token_package_id":  pkg.ID,
+		},
+	}
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	yk := cfg.Yookassa
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.yookassa.ru/v3/payments", strings.NewReader(string(payload)))
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(strings.TrimSpace(yk.ShopID), strings.TrimSpace(yk.SecretKey))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotence-Key", checkout.ID)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("yookassa request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("yookassa status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var payment struct {
+		ID           string `json:"id"`
+		Confirmation struct {
+			ConfirmationURL string `json:"confirmation_url"`
+		} `json:"confirmation"`
+	}
+	if err := json.Unmarshal(respBody, &payment); err != nil {
+		return nil, err
+	}
+	if payment.ID == "" || payment.Confirmation.ConfirmationURL == "" {
+		return nil, fmt.Errorf("yookassa: missing payment id or confirmation url")
+	}
+
+	if err := s.tokenCheckouts.SetExternal(ctx, checkout.ID, payment.ID, nil); err != nil {
+		return nil, err
+	}
+
+	return &model.CheckoutResult{
+		CheckoutID:  checkout.ID,
+		Provider:    string(model.PaymentProviderYookassa),
+		CheckoutURL: payment.Confirmation.ConfirmationURL,
+	}, nil
+}
+
+func (s *CheckoutService) createRobokassaTokenPackage(
+	ctx context.Context,
+	cfg model.PaymentSettings,
+	checkout *model.TokenPackageCheckout,
+	pkg *model.TokenPackage,
+) (*model.CheckoutResult, error) {
+	rk := cfg.Robokassa
+	invID, err := s.checkouts.NextInvID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	outSum := formatRubAmount(pkg.PriceRUB)
+	login := strings.TrimSpace(rk.MerchantLogin)
+	pass1 := strings.TrimSpace(rk.Password1)
+	invStr := strconv.FormatInt(invID, 10)
+	signature := BuildRobokassaPaymentSignature(login, outSum, invStr, pass1, "")
+
+	returnURL := s.payments.defaultReturnURL()
+	successURL := appendQuery(returnURL, "payment", "tokens_success")
+	failURL := appendQuery(returnURL, "payment", "failed")
+
+	params := url.Values{}
+	params.Set("MerchantLogin", login)
+	params.Set("OutSum", outSum)
+	params.Set("InvId", invStr)
+	params.Set("Description", fmt.Sprintf("Erman AI — %s", pkg.Name))
+	params.Set("SignatureValue", signature)
+	params.Set("SuccessURL", successURL)
+	params.Set("FailURL", failURL)
+	if rk.TestMode {
+		params.Set("IsTest", "1")
+	}
+
+	if err := s.tokenCheckouts.SetExternal(ctx, checkout.ID, invStr, &invID); err != nil {
+		return nil, err
+	}
+
+	return &model.CheckoutResult{
+		CheckoutID:  checkout.ID,
+		Provider:    string(model.PaymentProviderRobokassa),
+		CheckoutURL: "https://auth.robokassa.ru/Merchant/Index.aspx?" + params.Encode(),
+	}, nil
+}
+
+func verifyRobokassaAmount(expected int, outSumStr string) error {
 	got, err := strconv.ParseFloat(strings.TrimSpace(outSumStr), 64)
 	if err != nil {
 		return ErrInvalidInput

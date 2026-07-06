@@ -134,6 +134,33 @@ export function AdminPaymentEditor() {
       .finally(() => setLoading(false));
   }, [t]);
 
+  async function handleSaveRobokassa() {
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await updateAdminPaymentSettings({
+        active_provider: "robokassa",
+        yookassa: {
+          ...yookassa,
+          return_url: yookassa.return_url || defaultReturnURL,
+        },
+        robokassa: { ...robokassa, enabled: true },
+        ...(robokassaPassword1.trim() ? { robokassa_password1: robokassaPassword1.trim() } : {}),
+        ...(robokassaPassword2.trim() ? { robokassa_password2: robokassaPassword2.trim() } : {}),
+      });
+      applyView(data);
+      setActiveProvider("robokassa");
+      setRobokassaPassword1("");
+      setRobokassaPassword2("");
+      setSuccess(t("saved"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("saveFailed"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setError("");
@@ -414,7 +441,7 @@ export function AdminPaymentEditor() {
         <button
           type="button"
           disabled={saving}
-          onClick={handleSave}
+          onClick={handleSaveRobokassa}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
         >
           {saving ? t("saving") : t("saveRobokassa")}
@@ -439,25 +466,23 @@ export function AdminPaymentEditor() {
         </a>
       </section>
 
-      {activeProvider === "robokassa" && (
-        <section className="rounded-xl border border-border bg-bg p-5 space-y-3">
-          <p className="text-sm text-text2">{t("robokassaTestHint")}</p>
-          <button
-            type="button"
-            disabled={testing}
-            onClick={() => handleTest("robokassa")}
-            className="inline-flex items-center gap-2 rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-60"
-          >
-            <Zap className="h-4 w-4" />
-            {testing ? t("testing") : t("testConnection")}
-          </button>
-          {testMessage && (
-            <p className={cn("text-sm", testMessage.includes("заполн") || testMessage.toLowerCase().includes("success") ? "text-green-800" : "text-text2")}>
-              {testMessage}
-            </p>
-          )}
-        </section>
-      )}
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-3">
+        <p className="text-sm text-text2">{t("robokassaTestHint")}</p>
+        <button
+          type="button"
+          disabled={testing}
+          onClick={() => handleTest("robokassa")}
+          className="inline-flex items-center gap-2 rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2 disabled:opacity-60"
+        >
+          <Zap className="h-4 w-4" />
+          {testing ? t("testing") : t("testConnection")}
+        </button>
+        {testMessage && activeProvider === "robokassa" && (
+          <p className={cn("text-sm", testMessage.includes("заполн") || testMessage.toLowerCase().includes("success") ? "text-green-800" : "text-text2")}>
+            {testMessage}
+          </p>
+        )}
+      </section>
     </div>
   );
 }

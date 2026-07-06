@@ -219,8 +219,7 @@ func IsPaymentEnabled(cfg model.PaymentSettings) bool {
 	case model.PaymentProviderYookassa:
 		return cfg.Yookassa.Enabled && yookassaConfigured(cfg.Yookassa)
 	case model.PaymentProviderRobokassa:
-		// Active Robokassa + credentials is enough (no separate enable toggle was required in admin UI).
-		return robokassaConfigured(cfg.Robokassa)
+		return cfg.Robokassa.Enabled && robokassaConfigured(cfg.Robokassa)
 	default:
 		return false
 	}

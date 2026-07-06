@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/json"
 	"errors"
@@ -18,12 +19,25 @@ import (
 type PaymentWebhookHandler struct {
 	payments      *service.PaymentSettingsService
 	checkout      *service.CheckoutService
+	tokenPackages *service.TokenPackageService
 	consultations *service.ConsultationService
 	logger        *slog.Logger
 }
 
-func NewPaymentWebhookHandler(payments *service.PaymentSettingsService, checkout *service.CheckoutService, consultations *service.ConsultationService, logger *slog.Logger) *PaymentWebhookHandler {
-	return &PaymentWebhookHandler{payments: payments, checkout: checkout, consultations: consultations, logger: logger}
+func NewPaymentWebhookHandler(
+	payments *service.PaymentSettingsService,
+	checkout *service.CheckoutService,
+	tokenPackages *service.TokenPackageService,
+	consultations *service.ConsultationService,
+	logger *slog.Logger,
+) *PaymentWebhookHandler {
+	return &PaymentWebhookHandler{
+		payments:      payments,
+		checkout:      checkout,
+		tokenPackages: tokenPackages,
+		consultations: consultations,
+		logger:        logger,
+	}
 }
 
 func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +81,9 @@ func (h *PaymentWebhookHandler) YookassaWebhook(w http.ResponseWriter, r *http.R
 			notification.Object.Status,
 			notification.Object.Metadata,
 		); err != nil {
-			if h.consultations == nil || !errors.Is(err, service.ErrCheckoutNotFound) {
+			if h.tryTokenPackageYookassa(r.Context(), notification.Event, notification.Object.ID, notification.Object.Status, notification.Object.Metadata, err) {
+				// handled
+			} else if h.consultations == nil || !errors.Is(err, service.ErrCheckoutNotFound) {
 				h.logger.Warn("yookassa webhook fulfill failed", "error", err, "payment_id", notification.Object.ID)
 			} else if err := h.consultations.HandleYookassaWebhook(
 				r.Context(),
@@ -151,12 +167,13 @@ func (h *PaymentWebhookHandler) RobokassaResult2(w http.ResponseWriter, r *http.
 
 	if h.checkout != nil {
 		if err := h.checkout.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
-			if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
+			if h.tryTokenPackageRobokassa(r.Context(), notification.InvID, notification.IncSum, err) {
+				// handled
+			} else if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
 				h.logger.Warn("robokassa result2 fulfill failed", "error", err, "inv_id", notification.InvID)
 				writeError(w, http.StatusInternalServerError, "fulfillment failed")
 				return
-			}
-			if err := h.consultations.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
+			} else if err := h.consultations.HandleRobokassaResult(r.Context(), notification.InvID, notification.IncSum); err != nil {
 				h.logger.Warn("robokassa result2 consultation fulfill failed", "error", err, "inv_id", notification.InvID)
 				writeError(w, http.StatusInternalServerError, "fulfillment failed")
 				return
@@ -215,12 +232,13 @@ func (h *PaymentWebhookHandler) RobokassaResult(w http.ResponseWriter, r *http.R
 
 	if h.checkout != nil {
 		if err := h.checkout.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
-			if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
+			if h.tryTokenPackageRobokassa(r.Context(), invID, outSum, err) {
+				// handled
+			} else if h.consultations == nil || !errors.Is(err, repository.ErrNotFound) {
 				h.logger.Warn("robokassa fulfill failed", "error", err, "inv_id", invID)
 				writeError(w, http.StatusInternalServerError, "fulfillment failed")
 				return
-			}
-			if err := h.consultations.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
+			} else if err := h.consultations.HandleRobokassaResult(r.Context(), invID, outSum); err != nil {
 				h.logger.Warn("robokassa consultation fulfill failed", "error", err, "inv_id", invID)
 				writeError(w, http.StatusInternalServerError, "fulfillment failed")
 				return
@@ -236,4 +254,35 @@ func firstParam(q interface {
 	Get(string) string
 }, key string) string {
 	return strings.TrimSpace(q.Get(key))
+}
+
+func (h *PaymentWebhookHandler) tryTokenPackageYookassa(
+	ctx context.Context,
+	event, paymentID, status string,
+	metadata map[string]string,
+	planErr error,
+) bool {
+	if h.tokenPackages == nil || !errors.Is(planErr, service.ErrCheckoutNotFound) {
+		return false
+	}
+	if err := h.tokenPackages.HandleYookassaWebhook(ctx, event, paymentID, status, metadata); err != nil {
+		if !errors.Is(err, repository.ErrNotFound) {
+			h.logger.Warn("yookassa token package webhook fulfill failed", "error", err, "payment_id", paymentID)
+		}
+		return false
+	}
+	return true
+}
+
+func (h *PaymentWebhookHandler) tryTokenPackageRobokassa(ctx context.Context, invID, outSum string, planErr error) bool {
+	if h.tokenPackages == nil || !errors.Is(planErr, repository.ErrNotFound) {
+		return false
+	}
+	if err := h.tokenPackages.HandleRobokassaResult(ctx, invID, outSum); err != nil {
+		if !errors.Is(err, repository.ErrNotFound) {
+			h.logger.Warn("robokassa token package fulfill failed", "error", err, "inv_id", invID)
+		}
+		return false
+	}
+	return true
 }
