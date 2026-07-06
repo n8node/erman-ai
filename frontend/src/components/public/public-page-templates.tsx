@@ -4,6 +4,7 @@ import { StrategyLandingPage } from "@/components/public/strategy-landing/Strate
 import { ProposalLandingPage } from "@/components/public/proposal-landing/ProposalLandingPage";
 import { AuditLandingPage } from "@/components/public/audit-landing/AuditLandingPage";
 import { LegalScanLandingPage } from "@/components/public/legal-scan-landing/LegalScanLandingPage";
+import { AutoRtkLandingPage } from "@/components/public/auto-rtk-landing/AutoRtkLandingPage";
 import { PublicPageView } from "@/components/public/PublicPageView";
 
 export function renderPublicPage(page: PublicPage) {
@@ -18,6 +19,8 @@ export function renderPublicPage(page: PublicPage) {
       return <AuditLandingPage page={page} />;
     case "legal-scan-landing":
       return <LegalScanLandingPage page={page} />;
+    case "auto-rtk-landing":
+      return <AutoRtkLandingPage page={page} />;
     default:
       return <PublicPageView page={page} />;
   }
@@ -29,6 +32,7 @@ export function isFullBleedPublicPage(template: string) {
     template === "strategy-landing" ||
     template === "proposal-landing" ||
     template === "audit-landing" ||
-    template === "legal-scan-landing"
+    template === "legal-scan-landing" ||
+    template === "auto-rtk-landing"
   );
 }

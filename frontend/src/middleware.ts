@@ -50,6 +50,7 @@ const defaultPublicPageSlugs = [
   "ai-proposal",
   "ai-audit",
   "legal-scan",
+  "auto-rtk",
 ];
 
 let cachedPublicSlugs: string[] = defaultPublicPageSlugs;
