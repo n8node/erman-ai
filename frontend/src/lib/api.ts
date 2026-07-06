@@ -592,6 +592,22 @@ export type ProjectInquirySubmitResult = {
   message?: string;
 };
 
+export type UserProjectInquiryRow = {
+  id: string;
+  project_title: string;
+  project_description: string;
+  process_name?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listProjectInquiries(limit = 50) {
+  return apiFetch<{ items: UserProjectInquiryRow[]; total: number }>(
+    `/project-inquiries?limit=${limit}`
+  );
+}
+
 export async function submitProjectInquiryPublic(payload: ProjectInquirySubmitPayload) {
   return apiFetch<ProjectInquirySubmitResult>("/public/project-inquiries", {
     method: "POST",

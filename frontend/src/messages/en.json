@@ -882,18 +882,23 @@
       "auth": "We received your request and will contact you on Telegram. A confirmation was sent to your email.",
       "guest": "Check your inbox and click the confirmation link. Then we'll receive your request and contact you on Telegram.",
       "telegramHint": "We'll reach you on Telegram {telegram}",
+      "another": "You can submit another request using the form below.",
       "backToCalculator": "← Back to calculator"
     },
-    "alreadySubmitted": {
-      "title": "Request already submitted",
-      "body": "You have already submitted a project discussion request. The Erman AI team will contact you — repeat submissions are not available."
+    "history": {
+      "title": "Request history",
+      "untitled": "Untitled",
+      "statusPendingEmail": "Awaiting email",
+      "statusNew": "Received",
+      "statusInProgress": "In progress",
+      "statusDone": "Completed",
+      "statusSpam": "Rejected"
     },
     "errors": {
       "submitFailed": "Failed to submit request",
       "missingFields": "Please fill in all required fields",
       "invalidTelegram": "Enter a Telegram username (5+ Latin characters) or phone number",
-      "invalidForm": "Please check the form data",
-      "alreadySubmitted": "You have already submitted a project discussion request"
+      "invalidForm": "Please check the form data"
     },
     "confirm": {
       "loading": "Confirming request…",

@@ -90,13 +90,6 @@ func (s *ProjectInquiryService) CreatePublic(ctx context.Context, input ProjectI
 	}
 
 	normalized := normalizeProjectInquiryInput(input)
-	exists, err := s.inquiries.ExistsByEmail(ctx, normalized.email)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, ErrProjectInquiryAlreadySent
-	}
 	inq, err := s.inquiries.Create(
 		ctx, nil, normalized.runID,
 		normalized.name, normalized.email, normalized.telegram,
@@ -145,20 +138,6 @@ func (s *ProjectInquiryService) CreateAuthenticated(
 	}
 	if !user.EmailVerified() {
 		return nil, errors.New("email not verified")
-	}
-
-	exists, err := s.inquiries.ExistsByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		exists, err = s.inquiries.ExistsByEmail(ctx, user.Email)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if exists {
-		return nil, ErrProjectInquiryAlreadySent
 	}
 
 	normalized := normalizeProjectInquiryInput(input)
@@ -218,6 +197,20 @@ func (s *ProjectInquiryService) Verify(ctx context.Context, rawToken string) (*m
 	s.sendReceivedConfirmation(ctx, inq.Locale, inq.Email, inq.Name, inq.Telegram)
 
 	return inq, nil
+}
+
+func (s *ProjectInquiryService) ListMine(ctx context.Context, userID string, limit, offset int) (*ProjectInquiryList, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	items, err := s.inquiries.ListByUserID(ctx, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return &ProjectInquiryList{Items: items, Total: len(items), Limit: limit, Offset: offset}, nil
 }
 
 func (s *ProjectInquiryService) ListAdmin(ctx context.Context, limit, offset int) (*ProjectInquiryList, error) {

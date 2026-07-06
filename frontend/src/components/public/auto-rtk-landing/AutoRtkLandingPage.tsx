@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { PublicPage } from "@/lib/api-public-pages";
 import { LandingBrandLink } from "@/components/public/LandingBrandLink";
-import { ClientBrandMark } from "@/components/public/auto-rtk-landing/ClientBrandMark";
 import { AutoRtkLandingSteps } from "@/components/public/auto-rtk-landing/AutoRtkLandingSteps";
 import { AutoRtkDemoShowcase } from "@/components/public/auto-rtk-landing/AutoRtkDemoShowcase";
 
 const DEMO_HREF = "#demo";
+const DISCUSS_HREF = "/discuss";
 const ACCENT = "#185FA5";
 const ACCENT_SOFT = "#E6F1FB";
 
@@ -175,11 +175,7 @@ export function AutoRtkLandingPage({ page }: Props) {
     <div className="tool-landing auto-rtk-landing bg-white text-[#0B0D0E]">
       <header className="sticky top-0 z-50 border-b border-[#1A1D20] bg-[#0B0D0E] text-white">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-6 px-7">
-          <div className="flex items-center gap-6">
-            <LandingBrandLink labelClassName="text-[15px]" />
-            <span className="hidden h-4 w-px bg-[#2A2D30] md:block" aria-hidden />
-            <ClientBrandMark className="hidden md:flex [&_span:last-child]:text-[#C9CCD1]" />
-          </div>
+          <LandingBrandLink labelClassName="text-[15px]" />
           <nav className="hidden items-center gap-7 text-sm text-[#C9CCD1] md:flex">
             <a href="#demo" className="hover:text-white">
               Демо
@@ -228,17 +224,11 @@ export function AutoRtkLandingPage({ page }: Props) {
               Веб-сервис для работы с режимно-технологическими картами: иерархия скважин, контроль
               план/факт по ключевым параметрам, графики, таблицы и согласование планов с рассылкой.
             </p>
-            <div className="mt-6 flex items-center gap-3">
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#5A5D62]">
-                Разработано для
-              </span>
-              <ClientBrandMark />
-            </div>
             <div className="mt-9 flex flex-wrap gap-3">
               <PrimaryButton href={DEMO_HREF} accent>
                 Смотреть демо <span aria-hidden>→</span>
               </PrimaryButton>
-              <GhostButton href="#steps">Как это работает</GhostButton>
+              <GhostButton href={DISCUSS_HREF}>Обсудить проект</GhostButton>
             </div>
             <div className="mt-7 flex flex-wrap gap-5 font-mono text-[12.5px] uppercase tracking-[0.08em] text-[#5A5D62]">
               <span>
@@ -575,9 +565,6 @@ export function AutoRtkLandingPage({ page }: Props) {
               <span className="text-[#E8C078]">Telemetry</span>
               <span className="text-[#7E8189]"> → </span>
               <span className="text-[#F5A5A5]">Excel / Email</span>
-            </div>
-            <div className="mt-6 flex items-center gap-3 border-t border-[#1A1D20] pt-6">
-              <ClientBrandMark className="[&_span:last-child]:text-[#C9CCD1]" />
             </div>
           </aside>
         </div>

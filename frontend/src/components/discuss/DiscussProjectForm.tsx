@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   getRun,
   listRuns,
+  listProjectInquiries,
   submitProjectInquiry,
   submitProjectInquiryPublic,
   type RunListItem,
+  type UserProjectInquiryRow,
 } from "@/lib/api";
 import { useAuthUser } from "@/context/AuthContext";
 import { GuestBanner } from "@/components/layout/GuestBanner";
@@ -20,7 +22,11 @@ import {
   type GuestCalculatorResult,
 } from "@/lib/calculator-guest-result";
 import { cn } from "@/lib/utils";
-import { isGuestDiscussSubmitted, markGuestDiscussSubmitted } from "@/lib/submission-limits";
+import {
+  appendGuestDiscussHistory,
+  loadGuestDiscussHistory,
+  type GuestDiscussHistoryItem,
+} from "@/lib/submission-limits";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
@@ -49,11 +55,36 @@ function mapSubmitError(message: string, t: (key: string) => string) {
       return t("errors.invalidTelegram");
     case "invalid input":
       return t("errors.invalidForm");
-    case "project inquiry already submitted":
-      return t("errors.alreadySubmitted");
     default:
       return message || t("errors.submitFailed");
   }
+}
+
+function inquiryStatusLabel(status: string, t: (key: string) => string) {
+  switch (status) {
+    case "pending_email":
+      return t("history.statusPendingEmail");
+    case "new":
+      return t("history.statusNew");
+    case "in_progress":
+      return t("history.statusInProgress");
+    case "done":
+      return t("history.statusDone");
+    case "spam":
+      return t("history.statusSpam");
+    default:
+      return status;
+  }
+}
+
+function formatInquiryDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale === "en" ? "en-GB" : "ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatPayback(n?: number | null, monthsLabel = "мес") {
@@ -85,20 +116,26 @@ function DiscussProjectFormInner() {
   const [guestSnapshot, setGuestSnapshot] = useState<GuestCalculatorResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<"auth" | "guest" | "already" | null>(() => {
-    if (user?.has_project_inquiry) return "already";
-    if (!user && isGuestDiscussSubmitted()) return "already";
-    return null;
-  });
+  const [success, setSuccess] = useState<"auth" | "guest" | null>(null);
+  const [history, setHistory] = useState<(UserProjectInquiryRow | GuestDiscussHistoryItem)[]>([]);
   const [honeypot, setHoneypot] = useState("");
 
-  useEffect(() => {
-    if (user?.has_project_inquiry) {
-      setDone("already");
-    } else if (!user && isGuestDiscussSubmitted()) {
-      setDone("already");
+  const loadHistory = useCallback(async () => {
+    if (user) {
+      try {
+        const data = await listProjectInquiries(50);
+        setHistory(data.items);
+      } catch {
+        setHistory([]);
+      }
+      return;
     }
+    setHistory(loadGuestDiscussHistory());
   }, [user]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   useEffect(() => {
     if (user?.email) {
@@ -209,13 +246,26 @@ function DiscussProjectFormInner() {
     };
     try {
       if (user) {
-        await submitProjectInquiry(payload);
-        setDone("auth");
+        const created = await submitProjectInquiry(payload);
+        setSuccess("auth");
+        setProjectDescription("");
+        await loadHistory();
+        if (created?.id) {
+          // history refreshed from API
+        }
       } else {
-        await submitProjectInquiryPublic(payload);
-        markGuestDiscussSubmitted();
+        const created = await submitProjectInquiryPublic(payload);
+        appendGuestDiscussHistory({
+          id: created.id,
+          project_title: trimmedTitle || t("history.untitled"),
+          project_description: trimmedDescription,
+          status: created.status || "pending_email",
+          created_at: new Date().toISOString(),
+        });
+        setHistory(loadGuestDiscussHistory());
         clearGuestCalculatorResult();
-        setDone("guest");
+        setSuccess("guest");
+        setProjectDescription("");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : t("errors.submitFailed");
@@ -223,40 +273,6 @@ function DiscussProjectFormInner() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    const isAlready = done === "already";
-    return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <GuestBanner />
-        <div
-          className={cn(
-            "rounded-xl border p-6 text-sm",
-            isAlready
-              ? "border-border bg-bg2 text-text2"
-              : "border-green-200 bg-green-50 text-green-900"
-          )}
-        >
-          <h2 className="text-base font-medium text-text">
-            {isAlready ? t("alreadySubmitted.title") : t("success.title")}
-          </h2>
-          <p className="mt-2">
-            {isAlready
-              ? t("alreadySubmitted.body")
-              : done === "guest"
-                ? t("success.guest")
-                : t("success.auth")}
-          </p>
-          {!isAlready && telegram && (
-            <p className="mt-2 text-green-800">{t("success.telegramHint", { telegram: telegram.startsWith("@") ? telegram : `@${telegram}` })}</p>
-          )}
-        </div>
-        <Link href="/tools/calculator" className="text-sm text-accent hover:underline">
-          {t("success.backToCalculator")}
-        </Link>
-      </div>
-    );
   }
 
   return (
@@ -267,6 +283,56 @@ function DiscussProjectFormInner() {
         <h1 className="text-base font-medium">{t("title")}</h1>
         <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
       </div>
+
+      {success && (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-sm text-green-900">
+          <h2 className="text-base font-medium text-green-950">{t("success.title")}</h2>
+          <p className="mt-2">
+            {success === "guest" ? t("success.guest") : t("success.auth")}
+          </p>
+          {telegram && (
+            <p className="mt-2 text-green-800">
+              {t("success.telegramHint", {
+                telegram: telegram.startsWith("@") ? telegram : `@${telegram}`,
+              })}
+            </p>
+          )}
+          <p className="mt-2 text-green-800">{t("success.another")}</p>
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="rounded-xl border border-border bg-bg p-6">
+          <h2 className="text-sm font-medium">{t("history.title")}</h2>
+          <ul className="mt-4 divide-y divide-border">
+            {history.map((item) => {
+              const title =
+                ("project_title" in item && item.project_title) || t("history.untitled");
+              const createdAt =
+                "created_at" in item ? formatInquiryDate(item.created_at, locale) : "—";
+              const status = inquiryStatusLabel(item.status, t);
+              const key = ("id" in item && item.id) || `${title}-${createdAt}`;
+              return (
+                <li key={key} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{title}</p>
+                    {"project_description" in item && item.project_description && (
+                      <p className="mt-1 line-clamp-2 text-xs text-text2">{item.project_description}</p>
+                    )}
+                    {"process_name" in item && item.process_name && (
+                      <p className="mt-1 text-xs text-text3">{item.process_name}</p>
+                    )}
+                    <p className="mt-1 text-[10px] text-text3">{createdAt}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-border bg-bg2 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-text2">
+                    {status}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded-xl border border-accent bg-accent-bg p-5 text-sm text-accent">
         <p className="font-medium">{t("value.title")}</p>

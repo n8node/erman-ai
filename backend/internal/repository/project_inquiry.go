@@ -229,6 +229,46 @@ func (r *ProjectInquiryRepository) GetAdminDetail(ctx context.Context, id string
 	return &item, nil
 }
 
+func (r *ProjectInquiryRepository) ListByUserID(ctx context.Context, userID string, limit, offset int) ([]AdminProjectInquiryRow, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	const q = `
+		SELECT pi.id, pi.user_id, NULL::text, pi.calculator_run_id,
+		       pi.name, pi.email, pi.telegram, pi.project_title, pi.project_description,
+		       COALESCE(tr.input->>'process_name', pi.calculator_snapshot->'input'->>'process_name', '') AS process_name,
+		       NULLIF(COALESCE(tr.output->>'net_benefit_monthly', pi.calculator_snapshot->'output'->>'net_benefit_monthly'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'payback_months', pi.calculator_snapshot->'output'->>'payback_months'), '')::double precision,
+		       NULLIF(COALESCE(tr.output->>'recommendation', pi.calculator_snapshot->'output'->>'recommendation'), ''),
+		       pi.status, pi.created_at, pi.updated_at
+		FROM project_inquiries pi
+		LEFT JOIN tool_runs tr ON tr.id = pi.calculator_run_id
+		WHERE pi.user_id = $1
+		ORDER BY pi.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.pool.Query(ctx, q, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []AdminProjectInquiryRow
+	for rows.Next() {
+		var item AdminProjectInquiryRow
+		if err := rows.Scan(
+			&item.ID, &item.UserID, &item.UserEmail, &item.CalculatorRunID,
+			&item.Name, &item.Email, &item.Telegram, &item.ProjectTitle, &item.ProjectDescription,
+			&item.ProcessName, &item.NetBenefitMonthly, &item.PaybackMonths, &item.Recommendation,
+			&item.Status, &item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *ProjectInquiryRepository) ExistsByUserID(ctx context.Context, userID string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM project_inquiries WHERE user_id = $1)`, userID).Scan(&exists)

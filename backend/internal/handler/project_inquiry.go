@@ -115,6 +115,23 @@ func (h *ProjectInquiryHandler) CreateAuthenticated(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusCreated, created)
 }
 
+func (h *ProjectInquiryHandler) ListMine(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	result, err := h.inquiries.ListMine(r.Context(), userID, limit, offset)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to load project inquiries")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 func (h *ProjectInquiryHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {

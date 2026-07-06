@@ -215,6 +215,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Delete("/runs/{id}", runsHandler.Delete)
 			protected.Post("/runs/{id}/share", shareHandler.Create)
 			protected.Post("/leads", leadHandler.Create)
+			protected.Get("/project-inquiries", projectInquiryHandler.ListMine)
 			protected.Post("/project-inquiries", projectInquiryHandler.CreateAuthenticated)
 			protected.Post("/consultations/bookings", consultationHandler.CreateAuthenticatedBooking)
 			protected.Post("/consultations/checkout", consultationHandler.CreateCheckout)

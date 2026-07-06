@@ -1,11 +1,39 @@
-const GUEST_DISCUSS_KEY = "erman_project_inquiry_submitted";
+export type GuestDiscussHistoryItem = {
+  id?: string;
+  project_title: string;
+  project_description?: string;
+  status: string;
+  created_at: string;
+};
 
-export function isGuestDiscussSubmitted(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(GUEST_DISCUSS_KEY) === "1";
+const GUEST_DISCUSS_HISTORY_KEY = "erman_project_inquiry_history";
+
+function readHistory(): GuestDiscussHistoryItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(GUEST_DISCUSS_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as GuestDiscussHistoryItem[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-export function markGuestDiscussSubmitted(): void {
+function writeHistory(items: GuestDiscussHistoryItem[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(GUEST_DISCUSS_KEY, "1");
+  window.localStorage.setItem(GUEST_DISCUSS_HISTORY_KEY, JSON.stringify(items.slice(0, 50)));
+}
+
+export function loadGuestDiscussHistory(): GuestDiscussHistoryItem[] {
+  return readHistory();
+}
+
+export function appendGuestDiscussHistory(item: GuestDiscussHistoryItem) {
+  writeHistory([item, ...readHistory()]);
+}
+
+export function updateGuestDiscussHistoryStatus(id: string, status: string) {
+  const items = readHistory().map((row) => (row.id === id ? { ...row, status } : row));
+  writeHistory(items);
 }

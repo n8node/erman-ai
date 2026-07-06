@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { verifyProjectInquiry } from "@/lib/api";
+import { updateGuestDiscussHistoryStatus } from "@/lib/submission-limits";
 
 function DiscussConfirmedInner() {
   const t = useTranslations("discuss.confirm");
@@ -18,7 +19,12 @@ function DiscussConfirmedInner() {
       return;
     }
     verifyProjectInquiry(token)
-      .then(() => setState("ok"))
+      .then((res) => {
+        if (res.id) {
+          updateGuestDiscussHistoryStatus(res.id, res.status || "new");
+        }
+        setState("ok");
+      })
       .catch(() => setState("error"));
   }, [token]);
 

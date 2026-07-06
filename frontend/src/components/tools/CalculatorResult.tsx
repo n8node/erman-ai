@@ -12,12 +12,10 @@ import {
 import { usePathname } from "next/navigation";
 import { loginPathWithReturn } from "@/lib/return-url";
 import { useAuthUser } from "@/context/AuthContext";
-import { isGuestDiscussSubmitted } from "@/lib/submission-limits";
 import { LeadForm } from "./LeadForm";
 import { CalculatorReportView } from "./CalculatorReportView";
 import { ProposalRequestModal } from "./ProposalRequestModal";
 import type { CalculatorInput, CalculatorOutput, User } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
 type Props = {
   runId: string;
@@ -39,20 +37,13 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [proposalDone, setProposalDone] = useState(Boolean(authUser?.has_proposal_request));
-  const [discussDone, setDiscussDone] = useState(
-    Boolean(authUser?.has_project_inquiry) || (isGuest && isGuestDiscussSubmitted())
-  );
 
   useEffect(() => {
-    if (isGuest) {
-      setDiscussDone(isGuestDiscussSubmitted());
-      return;
-    }
+    if (isGuest) return;
     fetchMe()
       .then((me) => {
         setUser(me);
         setProposalDone(Boolean(me.has_proposal_request));
-        setDiscussDone(Boolean(me.has_project_inquiry));
       })
       .catch(() => undefined);
     getBillingPlan().then(setPlan).catch(() => undefined);
@@ -65,11 +56,8 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
   const discussHref = `/discuss?run_id=${runId}${input.process_name ? `&project_name=${encodeURIComponent(input.process_name)}` : ""}`;
   const guestDiscussHref = `/discuss${input.process_name ? `?project_name=${encodeURIComponent(input.process_name)}` : ""}`;
 
-  function discussButtonClassName(disabled: boolean) {
-    return cn(
-      "rounded-lg border border-border2 px-4 py-2 text-sm",
-      disabled ? "cursor-not-allowed opacity-50" : "hover:bg-bg2"
-    );
+  function discussButtonClassName() {
+    return "rounded-lg border border-border2 px-4 py-2 text-sm hover:bg-bg2";
   }
 
   async function handleShare() {
@@ -132,29 +120,17 @@ export function CalculatorResult({ runId, input, output, isGuest = false }: Prop
           >
             {t("createProposal")}
           </Link>
-          {discussDone ? (
-            <span className={discussButtonClassName(true)} title={t("discussProjectAlreadySent")}>
-              {t("discussProjectSent")}
-            </span>
-          ) : (
-            <Link href={discussHref} className={discussButtonClassName(false)}>
-              {t("discussProject")}
-            </Link>
-          )}
+          <Link href={discussHref} className={discussButtonClassName()}>
+            {t("discussProject")}
+          </Link>
         </div>
       )}
 
       {isGuest && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-          {discussDone ? (
-            <span className={discussButtonClassName(true)} title={t("discussProjectAlreadySent")}>
-              {t("discussProjectSent")}
-            </span>
-          ) : (
-            <Link href={guestDiscussHref} className={discussButtonClassName(false)}>
-              {t("discussProject")}
-            </Link>
-          )}
+          <Link href={guestDiscussHref} className={discussButtonClassName()}>
+            {t("discussProject")}
+          </Link>
         </div>
       )}
 
