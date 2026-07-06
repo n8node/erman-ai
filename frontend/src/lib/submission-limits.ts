@@ -13,8 +13,15 @@ function readHistory(): GuestDiscussHistoryItem[] {
   try {
     const raw = window.localStorage.getItem(GUEST_DISCUSS_HISTORY_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as GuestDiscussHistoryItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is GuestDiscussHistoryItem =>
+        !!item &&
+        typeof item === "object" &&
+        typeof (item as GuestDiscussHistoryItem).status === "string" &&
+        typeof (item as GuestDiscussHistoryItem).created_at === "string",
+    );
   } catch {
     return [];
   }

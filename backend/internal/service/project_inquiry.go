@@ -210,6 +210,9 @@ func (s *ProjectInquiryService) ListMine(ctx context.Context, userID string, lim
 	if err != nil {
 		return nil, err
 	}
+	if items == nil {
+		items = []repository.AdminProjectInquiryRow{}
+	}
 	return &ProjectInquiryList{Items: items, Total: len(items), Limit: limit, Offset: offset}, nil
 }
 
@@ -223,6 +226,9 @@ func (s *ProjectInquiryService) ListAdmin(ctx context.Context, limit, offset int
 	items, err := s.inquiries.ListAdmin(ctx, limit, offset)
 	if err != nil {
 		return nil, err
+	}
+	if items == nil {
+		items = []repository.AdminProjectInquiryRow{}
 	}
 	total, err := s.inquiries.CountAdmin(ctx)
 	if err != nil {

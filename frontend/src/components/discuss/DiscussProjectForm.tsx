@@ -124,7 +124,7 @@ function DiscussProjectFormInner() {
     if (user) {
       try {
         const data = await listProjectInquiries(50);
-        setHistory(data.items);
+        setHistory(Array.isArray(data.items) ? data.items : []);
       } catch {
         setHistory([]);
       }
@@ -301,11 +301,12 @@ function DiscussProjectFormInner() {
         </div>
       )}
 
-      {history.length > 0 && (
+      {Array.isArray(history) && history.length > 0 && (
         <div className="rounded-xl border border-border bg-bg p-6">
           <h2 className="text-sm font-medium">{t("history.title")}</h2>
           <ul className="mt-4 divide-y divide-border">
             {history.map((item) => {
+              if (!item || typeof item !== "object") return null;
               const title =
                 ("project_title" in item && item.project_title) || t("history.untitled");
               const createdAt =
