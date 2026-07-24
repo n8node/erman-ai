@@ -118,7 +118,14 @@
     "consultations": "Consultations",
     "discussProject": "讨论项目",
     "audit": "自动化审计",
-    "legalScan": "合法站点扫描"
+    "legalScan": "合法站点扫描",
+    "workspace": "Workspace"
+  },
+  "workspace": {
+    "title": "Workspace",
+    "subtitle": "文档和无限白板",
+    "openNewTab": "单独打开",
+    "frameTitle": "Erman AI Workspace"
   },
   "dashboard": {
     "title": "控制台",

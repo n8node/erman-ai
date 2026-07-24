@@ -108,6 +108,7 @@
     "proposal": "Proposal",
     "audit": "Automation Audit",
     "legalScan": "Legal Site Scan",
+    "workspace": "Workspace",
     "billing": "Billing",
     "apiKeys": "API Keys",
     "settings": "Settings",
@@ -150,8 +151,19 @@
         "name": "Legal Site Scan",
         "description": "Scan a client website for RF legal risks: policies, forms, cookies, and personal data handling.",
         "audience": "Legal, marketing, and agency teams before a launch or client site review."
+      },
+      "workspace": {
+        "name": "Workspace",
+        "description": "One place for documents, collaboration, and infinite visual whiteboards.",
+        "audience": "Teams and leaders developing strategies, process maps, and ideas together."
       }
     }
+  },
+  "workspace": {
+    "title": "Workspace",
+    "subtitle": "Documents and infinite whiteboards",
+    "openNewTab": "Open separately",
+    "frameTitle": "Erman AI Workspace"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -118,7 +118,14 @@
     "consultations": "Consultations",
     "discussProject": "Discutir proyecto",
     "audit": "Auditoría de mosaicos de automatización",
-    "legalScan": "Análisis legal del sitio"
+    "legalScan": "Análisis legal del sitio",
+    "workspace": "Workspace"
+  },
+  "workspace": {
+    "title": "Workspace",
+    "subtitle": "Documentos y pizarras infinitas",
+    "openNewTab": "Abrir por separado",
+    "frameTitle": "Erman AI Workspace"
   },
   "dashboard": {
     "title": "Panel",
