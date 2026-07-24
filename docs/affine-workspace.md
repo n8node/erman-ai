@@ -42,10 +42,19 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T backend 
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 ```
 
-Open `https://erman.ai/workspace-app/admin/setup` and create the first AFFiNE admin.
+### First-admin bootstrap for subpath deployments
 
-If the browser lands on a WordPress 404 after `/workspace-app/admin`, rebuild nginx
-so `proxy_redirect` is applied, or open the setup URL directly.
+AFFiNE 0.27.3 redirects every uninitialized request to the root-relative
+`/admin/setup`, even when `AFFINE_SERVER_SUB_PATH` is configured. Bootstrap the
+first administrator once with an empty subpath:
+
+1. Start the `affine` service with a temporary Compose override that sets
+   `AFFINE_SERVER_SUB_PATH` to an empty string.
+2. Create the administrator through `POST /api/setup/create-admin-user`.
+3. Remove the override and recreate `affine` with the normal
+   `/workspace-app` subpath.
+
+After initialization, open `https://erman.ai/workspace-app/admin`.
 
 ## Configure seamless sign-in
 
