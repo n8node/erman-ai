@@ -16,6 +16,9 @@ export default async function WorkspacePage() {
   if (!user) {
     redirect("/login?next=/tools/workspace");
   }
+  if (user.role !== "superadmin") {
+    redirect("/");
+  }
 
   return (
     <section className="-mx-4 -my-5 flex h-[calc(100dvh-52px)] min-h-[560px] flex-col bg-bg sm:-mx-6 sm:-my-6">

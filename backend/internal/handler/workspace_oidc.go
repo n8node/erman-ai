@@ -125,7 +125,7 @@ func (h *WorkspaceOIDCHandler) Authorize(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	user, err := h.users.GetByID(r.Context(), userID)
-	if err != nil || user.IsBlocked || !user.EmailVerified() {
+	if err != nil || user.Role != "superadmin" || user.IsBlocked || !user.EmailVerified() {
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}

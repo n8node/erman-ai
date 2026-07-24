@@ -47,6 +47,7 @@ func TestWorkspaceOIDCAuthorizationCodeFlow(t *testing.T) {
 	h := NewWorkspaceOIDCHandler(workspaceOIDCTestUsers{user: &model.User{
 		ID:              "user-1",
 		Email:           "user@example.com",
+		Role:            "superadmin",
 		Locale:          "ru",
 		EmailVerifiedAt: &verifiedAt,
 	}}, cfg)
@@ -65,7 +66,7 @@ func TestWorkspaceOIDCAuthorizationCodeFlow(t *testing.T) {
 	}
 	req := httptest.NewRequest(http.MethodGet, "/authorize?"+authorizeQuery.Encode(), nil)
 	authMW := middleware.NewAuth("test-jwt-secret")
-	session, err := authMW.IssueToken("user-1", "user", time.Hour)
+	session, err := authMW.IssueToken("user-1", "superadmin", time.Hour)
 	require.NoError(t, err)
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: session})
 	rec := httptest.NewRecorder()
@@ -104,6 +105,44 @@ func TestWorkspaceOIDCAuthorizationCodeFlow(t *testing.T) {
 	assert.Equal(t, "user-1", claims["sub"])
 	assert.Equal(t, "user@example.com", claims["email"])
 	assert.Equal(t, "nonce-1", claims["nonce"])
+}
+
+func TestWorkspaceOIDCRejectsNonSuperAdmin(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	der, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	require.NoError(t, err)
+
+	verifiedAt := time.Now()
+	cfg := &config.Config{
+		Environment:                "development",
+		WorkspaceOIDCClientID:      "erman-affine",
+		WorkspaceOIDCClientSecret:  "test-client-secret",
+		WorkspaceOIDCPrivateKeyB64: base64.StdEncoding.EncodeToString(der),
+	}
+	h := NewWorkspaceOIDCHandler(workspaceOIDCTestUsers{user: &model.User{
+		ID:              "user-1",
+		Email:           "user@example.com",
+		Role:            "user",
+		Locale:          "ru",
+		EmailVerifiedAt: &verifiedAt,
+	}}, cfg)
+
+	query := url.Values{
+		"client_id":     {"erman-affine"},
+		"redirect_uri":  {cfg.WorkspaceOIDCCallbackURL()},
+		"response_type": {"code"},
+		"scope":         {"openid email profile"},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/authorize?"+query.Encode(), nil)
+	authMW := middleware.NewAuth("test-jwt-secret")
+	session, err := authMW.IssueToken("user-1", "user", time.Hour)
+	require.NoError(t, err)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: session})
+
+	rec := httptest.NewRecorder()
+	authMW.Required(http.HandlerFunc(h.Authorize)).ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
 func TestWorkspaceOIDCValidatesPlainPKCE(t *testing.T) {

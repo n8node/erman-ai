@@ -71,7 +71,9 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
     { href: "/tools/proposal", label: t("proposal"), icon: FileText },
     { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
     { href: "/tools/legal-scan", label: t("legalScan"), icon: ShieldCheck },
-    { href: "/tools/workspace", label: t("workspace"), icon: PanelsTopLeft },
+    ...(isSuperAdmin
+      ? [{ href: "/tools/workspace", label: t("workspace"), icon: PanelsTopLeft }]
+      : []),
   ];
 
   const discussLink = { href: "/discuss", label: t("discussProject"), icon: MessageCircle };

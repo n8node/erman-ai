@@ -449,7 +449,11 @@ func (h *ToolsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	items := make([]toolItem, 0, len(tools))
+	role, _ := middleware.UserRoleFromContext(r.Context())
 	for _, t := range tools {
+		if t.Slug == "workspace" && role != "superadmin" {
+			continue
+		}
 		limit := -1
 		if up.Plan.ToolLimits != nil {
 			if v, ok := up.Plan.ToolLimits[t.Slug]; ok {

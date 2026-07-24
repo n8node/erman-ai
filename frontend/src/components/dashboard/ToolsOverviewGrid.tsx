@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { fetchTools, type ToolListItem } from "@/lib/api";
-import { useIsGuest } from "@/context/AuthContext";
+import { useAuthUser, useIsGuest } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { ToolLimitBadge } from "./ToolLimitBadge";
 
@@ -64,6 +64,7 @@ const TOOLS: {
 export function ToolsOverviewGrid() {
   const t = useTranslations("toolsPage");
   const tLimits = useTranslations("toolLimits");
+  const user = useAuthUser();
   const isGuest = useIsGuest();
   const [tools, setTools] = useState<ToolListItem[]>([]);
 
@@ -80,7 +81,9 @@ export function ToolsOverviewGrid() {
 
   return (
     <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      {TOOLS.map(({ slug, href, icon: Icon, badge }) => {
+      {TOOLS.filter(
+        ({ slug }) => slug !== "workspace" || user?.role === "superadmin"
+      ).map(({ slug, href, icon: Icon, badge }) => {
         const meta = toolMeta(slug);
         return (
           <article
