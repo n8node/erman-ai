@@ -2,8 +2,10 @@ import { ExternalLink } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { getMe } from "@/lib/auth-server";
-
-const WORKSPACE_PATH = "/workspace-app/";
+import {
+  WORKSPACE_SSO_PATH,
+  WorkspaceFrame,
+} from "@/components/tools/WorkspaceFrame";
 
 export default async function WorkspacePage() {
   const [user, t] = await Promise.all([
@@ -25,7 +27,7 @@ export default async function WorkspacePage() {
           </p>
         </div>
         <a
-          href={WORKSPACE_PATH}
+          href={WORKSPACE_SSO_PATH}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border2 px-2.5 py-1.5 text-xs text-text hover:bg-bg2"
@@ -35,12 +37,7 @@ export default async function WorkspacePage() {
         </a>
       </header>
 
-      <iframe
-        src={WORKSPACE_PATH}
-        title={t("frameTitle")}
-        className="min-h-0 flex-1 border-0 bg-white"
-        allow="clipboard-read; clipboard-write; fullscreen"
-      />
+      <WorkspaceFrame title={t("frameTitle")} />
     </section>
   );
 }
