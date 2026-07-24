@@ -14,6 +14,8 @@ services:
   backend:
     environment:
       ENVIRONMENT: production
+      # AFFiNE 0.27.x omits its configured subpath from the OIDC callback.
+      WORKSPACE_OIDC_REDIRECT_URI: https://${DOMAIN:-erman.ai}/oauth/callback
     logging:
       driver: json-file
       options:

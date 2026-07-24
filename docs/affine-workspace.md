@@ -18,7 +18,7 @@ AFFINE_SERVER_EXTERNAL_URL=https://erman.ai/workspace-app
 WORKSPACE_OIDC_CLIENT_ID=erman-affine
 WORKSPACE_OIDC_CLIENT_SECRET=<strong-oidc-client-secret>
 WORKSPACE_OIDC_PRIVATE_KEY_B64=<base64-pkcs8-rsa-private-key>
-WORKSPACE_OIDC_REDIRECT_URI=https://erman.ai/workspace-app/oauth/callback
+WORKSPACE_OIDC_REDIRECT_URI=https://erman.ai/oauth/callback
 ```
 
 Generate the OIDC values once and keep them stable:
