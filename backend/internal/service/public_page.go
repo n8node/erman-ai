@@ -24,12 +24,13 @@ var reservedPublicPageSlugs = map[string]struct{}{
 }
 
 var allowedPublicPageTemplates = map[string]struct{}{
-	"calculator-landing": {},
-	"strategy-landing":   {},
-	"proposal-landing":   {},
-	"audit-landing":      {},
-	"legal-scan-landing": {},
-	"auto-rtk-landing":    {},
+	"calculator-landing":   {},
+	"strategy-landing":     {},
+	"proposal-landing":     {},
+	"audit-landing":        {},
+	"legal-scan-landing":   {},
+	"auto-rtk-landing":     {},
+	"nastavnik-ai-landing": {},
 }
 
 type PublicPageService struct {

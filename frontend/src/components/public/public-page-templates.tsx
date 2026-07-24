@@ -6,6 +6,7 @@ import { AuditLandingPage } from "@/components/public/audit-landing/AuditLanding
 import { LegalScanLandingPage } from "@/components/public/legal-scan-landing/LegalScanLandingPage";
 import { AutoRtkLandingPage } from "@/components/public/auto-rtk-landing/AutoRtkLandingPage";
 import { AutoRoLandingPage } from "@/components/public/auto-ro-landing/AutoRoLandingPage";
+import { NastavnikAiLandingPage } from "@/components/public/nastavnik-ai-landing/NastavnikAiLandingPage";
 import { PublicPageView } from "@/components/public/PublicPageView";
 
 export function renderPublicPage(page: PublicPage) {
@@ -24,6 +25,8 @@ export function renderPublicPage(page: PublicPage) {
       return <AutoRtkLandingPage page={page} />;
     case "auto-ro-landing":
       return <AutoRoLandingPage page={page} />;
+    case "nastavnik-ai-landing":
+      return <NastavnikAiLandingPage />;
     default:
       return <PublicPageView page={page} />;
   }
@@ -37,6 +40,7 @@ export function isFullBleedPublicPage(template: string) {
     template === "audit-landing" ||
     template === "legal-scan-landing" ||
     template === "auto-rtk-landing" ||
-    template === "auto-ro-landing"
+    template === "auto-ro-landing" ||
+    template === "nastavnik-ai-landing"
   );
 }

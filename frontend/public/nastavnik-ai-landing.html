@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Наставник ИИ — тренажёр менторов и разбор их видеосессий</title>
+<meta name="description" content="Обучение менторов и проверка их навыков: тренажёр менторской беседы + анализ видеозаписей реальных менторских сессий. Расшифровка, структура, навыки, невербалика. Один стандарт качества менторства во всех командах." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============ TOKENS ============ */
+:root {
+  --ink: #0B0D0E;
+  --ink-2: #2A2D30;
+  --ink-3: #5A5D62;
+  --ink-4: #8A8E94;
+  --paper: #FFFFFF;
+  --paper-2: #F5F4EF;
+  --paper-3: #EFEEE8;
+  --rule: #E5E3DC;
+  --rule-soft: #EFEDE6;
+  --accent: #1F5D3E;
+  --accent-2: #2B7C57;
+  --accent-soft: #E8F1EB;
+  --accent-soft-2: #D3E5D9;
+  --growth: #B26A1E;
+  --growth-soft: #FBEEDA;
+  --neutral-blue: #2D3FE5;
+  --neutral-blue-soft: #EBEDFE;
+  --rec: #E15C4A;
+
+  --container: 1240px;
+  --gutter: 28px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 16px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01" on, "cv11" on;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: 0; background: transparent; }
+
+.container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+.mono { font-family: 'Geist Mono', ui-monospace, monospace; font-feature-settings: "tnum" on; }
+
+.eyebrow {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.eyebrow .dot { color: var(--accent); }
+
+/* ============ TOP BAR ============ */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,13,14,0.92);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  color: #fff;
+  border-bottom: 1px solid #1A1D20;
+}
+.topbar__inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 600; letter-spacing: -0.01em;
+}
+.brand__mark {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--accent); color: #fff;
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 14px;
+}
+.brand__names { display: flex; flex-direction: column; line-height: 1.15; }
+.brand__title { font-size: 14px; font-weight: 500; }
+.brand__sub {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.06em;
+  color: #8A8E94; text-transform: uppercase;
+}
+.nav { display: flex; align-items: center; gap: 24px; }
+.nav a {
+  color: #C9CCD1; font-size: 13.5px;
+  transition: color .2s; position: relative;
+}
+.nav a:hover { color: #fff; }
+.nav a.is-active { color: #fff; }
+.nav a.is-active::after {
+  content: ""; position: absolute; bottom: -20px; left: 0; right: 0;
+  height: 2px; background: var(--accent-2);
+}
+.nav__cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px;
+  background: var(--accent); color: #fff !important;
+  font-size: 13.5px; font-weight: 500;
+  transition: background .2s;
+}
+.nav__cta:hover { background: var(--accent-2); }
+@media (max-width: 900px) { .nav > a:not(.nav__cta) { display: none; } }
+
+/* ============ SECTION PRIMITIVES ============ */
+.section { padding: 96px 0; border-top: 1px solid var(--rule); }
+.section--alt { background: var(--paper-2); }
+.section--dark { background: var(--ink); color: #fff; border-top-color: #1A1D20; }
+.section__head {
+  display: grid; grid-template-columns: 0.9fr 1fr;
+  gap: 48px; align-items: end; margin-bottom: 56px;
+}
+@media (max-width: 900px) { .section__head { grid-template-columns: 1fr; gap: 20px; } }
+.section__title {
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 600; letter-spacing: -0.025em;
+  line-height: 1.05; margin-top: 20px;
+}
+.section__lead { font-size: 17px; color: var(--ink-2); max-width: 560px; }
+.section--dark .section__title { color: #fff; }
+.section--dark .section__lead { color: #C9CCD1; }
+.section--dark .eyebrow { color: #9CA0A8; }
+.section--dark .eyebrow .dot { color: var(--accent-2); }
+
+/* ============ BUTTONS ============ */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 22px; border-radius: 10px;
+  font-size: 15px; font-weight: 500;
+  border: 1px solid transparent;
+  transition: transform .12s, background .2s, border-color .2s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn--primary { background: var(--accent); color: #fff; }
+.btn--primary:hover { background: var(--accent-2); }
+.btn--dark { background: var(--ink); color: #fff; }
+.btn--dark:hover { background: #1a1d20; }
+.btn--ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn--ghost:hover { background: var(--paper-2); }
+.btn--white { background: #fff; color: var(--ink); }
+.btn--outline { background: transparent; color: #fff; border-color: #2A2D30; }
+.btn--outline:hover { border-color: #4E5158; }
+.btn .arrow { transition: transform .15s; }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* ============ HERO ============ */
+.hero {
+  padding: 88px 0 72px;
+  background:
+    radial-gradient(1000px 500px at 100% -10%, rgba(31,93,62,0.06), transparent 60%),
+    var(--paper);
+  border-top: 0;
+}
+.hero__grid {
+  display: grid; grid-template-columns: 1fr 1.15fr;
+  gap: 56px; align-items: center;
+}
+@media (max-width: 1000px) { .hero__grid { grid-template-columns: 1fr; gap: 44px; } }
+
+.hero__breadcrumb {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 26px;
+  font-family: 'Geist Mono', monospace; font-size: 12px;
+  color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em;
+}
+.hero__breadcrumb b { color: var(--ink); font-weight: 500; }
+.hero__breadcrumb .sep { color: var(--ink-4); }
+.hero h1 {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 600; letter-spacing: -0.033em;
+  line-height: 1.02; margin-bottom: 24px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero__sub {
+  font-size: 17.5px; color: var(--ink-2);
+  max-width: 540px; margin-bottom: 32px; line-height: 1.5;
+}
+.hero__actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+.hero__meta {
+  display: flex; flex-direction: column; gap: 10px;
+  padding-top: 22px; border-top: 1px solid var(--rule);
+  font-family: 'Geist Mono', monospace; font-size: 12.5px;
+  color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.hero__meta span { display: inline-flex; gap: 8px; align-items: baseline; }
+.hero__meta b { color: var(--ink); font-weight: 500; }
+
+/* ============ VIDEO CARD (hero + review) ============ */
+.video-card {
+  background: #0B0D0E;
+  border-radius: 20px; overflow: hidden;
+  color: #fff;
+  box-shadow: 0 30px 60px -30px rgba(11,13,14,0.28);
+  border: 1px solid #1A1D20;
+}
+.video-card__head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #9CA0A8;
+}
+.video-card__rec {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--rec); font-weight: 500;
+}
+.video-card__rec::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--rec);
+  animation: rec-pulse 2s infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(225,92,74,0.5); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 6px rgba(225,92,74,0); }
+}
+.video-card__meta { color: #7E8189; }
+.video-card__meta b { color: #C9CCD1; font-weight: 500; }
+
+.video-panels {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 3px; padding: 3px;
+  background: #000;
+  aspect-ratio: 20 / 8;
+  position: relative;
+}
+.video-panel {
+  background: linear-gradient(135deg, #1a1d20 0%, #26292d 100%);
+  border-radius: 6px;
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.video-panel--active::after {
+  content: ""; position: absolute; inset: 0;
+  border: 2px solid var(--accent-2); border-radius: 6px;
+  pointer-events: none;
+}
+.video-panel__label {
+  position: absolute; top: 8px; left: 8px;
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  color: #E5E3DC;
+  background: rgba(0,0,0,0.55);
+  padding: 4px 8px; border-radius: 4px;
+  letter-spacing: 0.06em;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.video-panel__label .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-2);
+}
+.video-panel svg { width: 60%; height: 75%; opacity: 0.45; }
+
+.video-controls {
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.video-play {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.14);
+  color: #fff; display: grid; place-items: center;
+  font-size: 11px; transition: background .15s;
+}
+.video-play:hover { background: rgba(255,255,255,0.22); }
+.video-time {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px; color: #E5E3DC;
+  min-width: 90px;
+}
+.video-timeline {
+  flex: 1; height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px; position: relative;
+  cursor: pointer;
+}
+.video-timeline__played {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 36%;
+  background: var(--accent-2);
+  border-radius: 2px;
+}
+.video-timeline__played::after {
+  content: ""; position: absolute; right: -4px; top: -3px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #fff;
+}
+.video-timeline__marker {
+  position: absolute; top: -3px;
+  width: 3px; height: 10px; border-radius: 2px;
+}
+.video-timeline__marker--strong { background: var(--accent); }
+.video-timeline__marker--growth { background: var(--growth); }
+
+.video-waveform {
+  padding: 10px 14px; height: 44px;
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.wf-bar {
+  flex: 1; background: rgba(255,255,255,0.18);
+  border-radius: 1px; min-height: 8%;
+  transition: background .3s;
+}
+.wf-bar.is-past { background: rgba(43,124,87,0.5); }
+.wf-bar.is-marker-strong { background: var(--accent); }
+.wf-bar.is-marker-growth { background: var(--growth); }
+
+.video-analysis {
+  padding: 18px 20px;
+  background: linear-gradient(180deg, #0B0D0E, #111417);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.video-analysis__scores {
+  display: flex; gap: 22px; flex-wrap: wrap;
+  padding-bottom: 14px; margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-family: 'Geist Mono', monospace;
+}
+.score-mini {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.score-mini__label {
+  font-size: 10px; color: #7E8189;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.score-mini__value {
+  font-size: 18px; font-weight: 500; color: #fff;
+  letter-spacing: -0.02em;
+}
+.score-mini__value small { color: #8A8E94; font-size: 12px; font-weight: 400; }
+
+.fb-mini {
+  padding: 10px 12px; border-radius: 8px;
+  font-size: 13px; line-height: 1.5;
+  margin-bottom: 8px;
+  display: grid; grid-template-columns: 18px 1fr; gap: 10px;
+  align-items: start;
+}
+.fb-mini:last-child { margin-bottom: 0; }
+.fb-mini__mark {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 500; margin-top: 1px;
+}
+.fb-mini b {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 500; margin-right: 6px;
+}
+.fb-mini--strong { background: rgba(31,93,62,0.18); }
+.fb-mini--strong .fb-mini__mark { background: var(--accent); color: #fff; }
+.fb-mini--strong b { color: var(--accent-2); }
+.fb-mini--strong { color: #C9CCD1; }
+.fb-mini--growth { background: rgba(178,106,30,0.18); }
+.fb-mini--growth .fb-mini__mark { background: var(--growth); color: #fff; }
+.fb-mini--growth b { color: #E1A45A; }
+.fb-mini--growth { color: #C9CCD1; }
+
+/* ============ BRIDGE STRIP ============ */
+.bridge {
+  background: var(--ink); color: #fff;
+  padding: 20px 0; border-top: 0;
+}
+.bridge__inner {
+  display: flex; justify-content: center; align-items: center;
+  gap: 40px; flex-wrap: wrap;
+  font-family: 'Geist Mono', monospace;
+  font-size: clamp(13px, 1.4vw, 16px); letter-spacing: 0.02em;
+}
+.bridge__item { display: inline-flex; align-items: center; gap: 12px; }
+.bridge__item::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-2);
+}
+.bridge__plus { color: #4E5158; font-family: 'Geist Mono', monospace; }
+
+/* ============ 4 PILLARS ============ */
+.pillars {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 20px; overflow: hidden;
+}
+@media (max-width: 900px) { .pillars { grid-template-columns: 1fr 1fr; } }
+.pillar {
+  background: var(--paper); padding: 28px 24px 32px;
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; min-height: 240px;
+}
+.pillar__num {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.pillar__title {
+  font-size: 20px; font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.15; margin-top: 4px;
+}
+.pillar__desc { font-size: 14px; color: var(--ink-3); line-height: 1.5; }
+.pillar__list {
+  list-style: none; margin-top: auto; padding-top: 16px;
+  border-top: 1px solid var(--rule-soft);
+  display: flex; flex-direction: column; gap: 6px;
+  font-family: 'Geist Mono', monospace; font-size: 11.5px; color: var(--ink-2);
+}
+.pillar__list li { display: flex; gap: 8px; }
+.pillar__list li::before { content: "→"; color: var(--accent); flex-shrink: 0; }
+
+/* ============ CYCLE DIAGRAM ============ */
+.cycle { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+@media (max-width: 900px) { .cycle { grid-template-columns: 1fr; gap: 32px; } }
+.cycle__diagram {
+  position: relative; width: 100%; max-width: 460px;
+  aspect-ratio: 1; margin: 0 auto;
+}
+.cycle__center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px; height: 140px; border-radius: 50%;
+  background: var(--ink); color: #fff;
+  display: grid; place-items: center; text-align: center;
+  padding: 20px; z-index: 2;
+}
+.cycle__center-label {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #9CA0A8;
+  margin-bottom: 6px;
+}
+.cycle__center-title { font-size: 15px; font-weight: 500; line-height: 1.2; }
+.cycle-node {
+  position: absolute; width: 132px; height: 132px;
+  border-radius: 50%;
+  background: var(--paper); border: 1px solid var(--rule);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 12px;
+  cursor: pointer;
+  transition: transform .2s, border-color .2s, background .2s;
+}
+.cycle-node:hover, .cycle-node.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: scale(1.05);
+}
+.cycle-node__num {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--accent); letter-spacing: 0.08em;
+}
+.cycle-node__name { font-size: 14px; font-weight: 500; text-align: center; }
+.cycle-node--1 { top: 0; left: 50%; transform: translateX(-50%); }
+.cycle-node--2 { top: 50%; right: 0; transform: translateY(-50%); }
+.cycle-node--3 { bottom: 0; left: 50%; transform: translateX(-50%); }
+.cycle-node--4 { top: 50%; left: 0; transform: translateY(-50%); }
+.cycle-node--1:hover, .cycle-node--1.is-active { transform: translateX(-50%) scale(1.05); }
+.cycle-node--2:hover, .cycle-node--2.is-active { transform: translateY(-50%) scale(1.05); }
+.cycle-node--3:hover, .cycle-node--3.is-active { transform: translateX(-50%) scale(1.05); }
+.cycle-node--4:hover, .cycle-node--4.is-active { transform: translateY(-50%) scale(1.05); }
+.cycle-arrows { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.cycle__detail {
+  padding: 32px; background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 20px; min-height: 260px;
+}
+.cycle__detail-eyebrow {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 12px;
+}
+.cycle__detail-title {
+  font-size: 24px; font-weight: 600; letter-spacing: -0.02em;
+  margin-bottom: 14px; line-height: 1.15;
+}
+.cycle__detail-desc { font-size: 15px; color: var(--ink-2); line-height: 1.55; margin-bottom: 16px; }
+.cycle__detail-list { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.cycle__detail-list li {
+  display: flex; gap: 10px; color: var(--ink-2);
+  font-family: 'Geist Mono', monospace; font-size: 12.5px; letter-spacing: 0.03em;
+}
+.cycle__detail-list li::before { content: "•"; color: var(--accent); }
+
+/* ============ SPLIT SECTIONS ============ */
+.split { display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 36px; } }
+.split--rev > .split__media { order: -1; }
+@media (max-width: 900px) { .split--rev > .split__media { order: 0; } }
+.split__eyebrow {
+  font-family: 'Geist Mono', monospace; font-size: 12px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+}
+.split__title {
+  font-size: clamp(26px, 2.6vw, 36px); font-weight: 600;
+  letter-spacing: -0.025em; line-height: 1.1; margin-bottom: 16px;
+}
+.split__desc { font-size: 16px; color: var(--ink-2); margin-bottom: 22px; line-height: 1.55; }
+.split__list {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+  font-size: 15px; color: var(--ink-2);
+}
+.split__list li { display: flex; gap: 10px; }
+.split__list li::before { content: "→"; color: var(--accent); }
+
+/* ============ EDITOR MOCK ============ */
+.mock {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 16px; padding: 20px; font-size: 13px;
+}
+.mock__head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.mock__dots { display: flex; gap: 5px; }
+.mock__dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-4); }
+.mock__dots span:first-child { background: #E15C4A; }
+.mock__dots span:nth-child(2) { background: #E1B84A; }
+.mock__dots span:nth-child(3) { background: var(--accent); }
+.editor-block { padding: 8px 0; }
+.editor-block__label {
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  color: var(--ink-4); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.editor-title { font-size: 18px; font-weight: 600; color: var(--ink); padding: 6px 0; letter-spacing: -0.015em; }
+.editor-para { font-size: 13.5px; color: var(--ink-2); line-height: 1.55; padding: 4px 0; }
+.editor-list {
+  list-style: none; padding: 4px 0; font-size: 13px;
+  display: flex; flex-direction: column; gap: 4px; color: var(--ink-2);
+}
+.editor-list li { display: flex; gap: 8px; }
+.editor-list li::before { content: "—"; color: var(--ink-4); }
+.editor-ai-panel {
+  background: var(--accent-soft); border: 1px solid var(--accent-soft-2);
+  border-radius: 10px; padding: 12px 14px; margin: 10px 0;
+}
+.editor-ai-panel__label {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.editor-ai-panel__label::before { content: "✦"; font-size: 13px; }
+.editor-ai-panel__input {
+  background: #fff; border: 1px solid var(--accent-soft-2);
+  border-radius: 6px; padding: 8px 10px;
+  font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px;
+  font-family: 'Geist', sans-serif;
+}
+.editor-ai-panel__buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+.editor-mini-btn {
+  padding: 5px 10px; border-radius: 6px;
+  background: var(--accent); color: #fff;
+  font-size: 11.5px; font-weight: 500;
+}
+.editor-mini-btn--ghost {
+  background: transparent; color: var(--accent);
+  border: 1px solid var(--accent-soft-2);
+}
+.editor-generated {
+  padding: 12px 14px; border-left: 3px solid var(--accent);
+  background: var(--paper-2); border-radius: 0 8px 8px 0;
+  font-size: 13px; color: var(--ink-2); line-height: 1.55;
+  animation: fade-in .5s ease;
+}
+.editor-generated b { color: var(--ink); font-weight: 500; }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============ TRAINER MOCK ============ */
+.chat {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 16px; padding: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.chat__head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 14px; border-bottom: 1px solid var(--rule);
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.chat__scenario {
+  padding: 10px 14px; background: var(--paper-2);
+  border-radius: 8px; font-size: 12.5px; color: var(--ink-2);
+  margin-bottom: 4px;
+}
+.chat__scenario b { color: var(--ink); font-weight: 500; }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg__avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  font-family: 'Geist Mono', monospace; font-size: 11px; font-weight: 500;
+}
+.msg__avatar--role { background: var(--growth-soft); color: var(--growth); }
+.msg__avatar--user { background: var(--accent-soft); color: var(--accent); }
+.msg__body { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.msg__who {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--ink-4); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.msg__text {
+  padding: 10px 14px; border-radius: 12px;
+  font-size: 13.5px; line-height: 1.5; color: var(--ink-2);
+  background: var(--paper-2);
+}
+.msg--user .msg__text { background: var(--accent-soft); }
+.chat__input {
+  margin-top: 4px; padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  display: flex; gap: 8px; align-items: center;
+}
+.chat__input-field {
+  flex: 1; padding: 10px 14px;
+  border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--paper-2);
+  font-size: 13px; color: var(--ink-3);
+}
+
+/* ============ REVIEW (main showcase, now with video player on top) ============ */
+.review {
+  display: grid; grid-template-columns: 0.85fr 1.2fr; gap: 48px; align-items: start;
+}
+@media (max-width: 1000px) { .review { grid-template-columns: 1fr; gap: 40px; } }
+.review-card {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 20px; overflow: hidden;
+}
+.review-card__head {
+  padding: 20px 24px 18px; border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.review-card__title-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 4px;
+}
+.review-card__name { font-size: 15px; font-weight: 500; color: var(--ink); }
+.review-card__meta {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-4); letter-spacing: 0.05em;
+}
+.review-card__scenario {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--ink-3); letter-spacing: 0.03em;
+}
+/* Large video player inside review card */
+.review-card__player { padding: 16px; background: #F9F7F1; border-bottom: 1px solid var(--rule); }
+.review-card__player .video-card {
+  box-shadow: 0 10px 30px -20px rgba(11,13,14,0.4);
+}
+
+.review-tabs {
+  display: flex; border-bottom: 1px solid var(--rule);
+  background: var(--paper-2); overflow-x: auto;
+}
+.review-tab {
+  padding: 14px 18px; font-size: 13px;
+  color: var(--ink-3); position: relative;
+  white-space: nowrap; transition: color .2s;
+  font-family: 'Geist Mono', monospace; letter-spacing: 0.03em;
+}
+.review-tab:hover { color: var(--ink); }
+.review-tab.is-active { color: var(--ink); background: var(--paper); }
+.review-tab.is-active::after {
+  content: ""; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+}
+.review-panel { padding: 24px; display: none; }
+.review-panel.is-active { display: block; animation: fade-in .3s ease; }
+
+/* ---- Transcript panel ---- */
+.transcript { display: flex; flex-direction: column; gap: 8px; }
+.transcript__line {
+  display: grid; grid-template-columns: 46px 74px 1fr; gap: 8px;
+  font-size: 13.5px; line-height: 1.55;
+  padding: 8px 0; border-bottom: 1px dashed var(--rule-soft);
+}
+.transcript__line:last-child { border-bottom: 0; }
+.transcript__time { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--ink-4); }
+.transcript__speaker {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.transcript__text { color: var(--ink-2); }
+.hl-strong {
+  background: var(--accent-soft); color: var(--accent);
+  padding: 1px 6px; border-radius: 4px; font-weight: 500;
+}
+.hl-growth {
+  background: var(--growth-soft); color: var(--growth);
+  padding: 1px 6px; border-radius: 4px; font-weight: 500;
+}
+.hl-neutral {
+  background: var(--neutral-blue-soft); color: var(--neutral-blue);
+  padding: 1px 6px; border-radius: 4px; font-weight: 500;
+}
+.transcript__legend {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  padding-top: 14px; margin-top: 10px;
+  border-top: 1px solid var(--rule);
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.transcript__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.transcript__legend .dot { width: 9px; height: 9px; border-radius: 3px; }
+
+/* ---- Structure panel ---- */
+.struct { display: flex; flex-direction: column; gap: 10px; }
+.struct__step {
+  padding: 12px 14px; border: 1px solid var(--rule);
+  border-radius: 10px; display: grid;
+  grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center;
+}
+.struct__step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 500;
+}
+.struct__step--done { background: var(--accent-soft); border-color: var(--accent-soft-2); }
+.struct__step--done .struct__step-num { background: var(--accent); color: #fff; }
+.struct__step--miss { background: var(--growth-soft); border-color: #F0D8B5; }
+.struct__step--miss .struct__step-num { background: var(--growth); color: #fff; }
+.struct__step-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.struct__step-hint { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.struct__step-status {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+}
+.struct__step--done .struct__step-status { color: var(--accent); }
+.struct__step--miss .struct__step-status { color: var(--growth); }
+
+/* ---- Skills panel ---- */
+.skills { display: flex; flex-direction: column; gap: 14px; }
+.skill { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+.skill__row-1 { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.skill__name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.skill__value { font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--ink-2); }
+.skill__bar {
+  grid-column: 1 / -1; height: 6px;
+  background: var(--rule); border-radius: 3px; overflow: hidden;
+}
+.skill__fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width .6s ease;
+}
+.skill__fill--growth { background: var(--growth); }
+.skill__note {
+  grid-column: 1 / -1; margin-top: 4px;
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.5;
+}
+.skill + .skill { padding-top: 14px; border-top: 1px solid var(--rule-soft); }
+
+/* ---- Nonverbal panel ---- */
+.nv { display: flex; flex-direction: column; gap: 20px; }
+.nv-balance {
+  padding: 16px 18px; background: var(--paper-2);
+  border-radius: 12px;
+}
+.nv-balance__title {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.nv-balance__bar {
+  height: 24px; border-radius: 6px; overflow: hidden;
+  display: flex;
+  border: 1px solid var(--rule);
+}
+.nv-balance__mentor {
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Geist Mono', monospace; font-size: 11px; font-weight: 500;
+  width: 32%;
+}
+.nv-balance__mentee {
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Geist Mono', monospace; font-size: 11px; font-weight: 500;
+  flex: 1;
+}
+.nv-balance__hint {
+  margin-top: 10px; font-size: 12.5px; color: var(--ink-3);
+  display: flex; align-items: center; gap: 6px;
+}
+.nv-balance__hint::before { content: "✓"; color: var(--accent); }
+
+.nv-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.nv-stat {
+  padding: 14px 16px; border: 1px solid var(--rule);
+  border-radius: 10px; background: var(--paper);
+}
+.nv-stat__label {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.nv-stat__value {
+  font-family: 'Geist Mono', monospace; font-size: 20px; font-weight: 500;
+  color: var(--ink); letter-spacing: -0.02em;
+}
+.nv-stat__value small {
+  color: var(--ink-3); font-size: 12px; font-weight: 400;
+}
+.nv-stat__norm {
+  margin-top: 4px; font-size: 11.5px; color: var(--ink-3);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.nv-stat__norm--ok { color: var(--accent); }
+.nv-stat__norm--warn { color: var(--growth); }
+
+.nv-note {
+  padding: 14px 16px; background: var(--ink); color: #C9CCD1;
+  border-radius: 12px; font-size: 13px; line-height: 1.6;
+}
+.nv-note b { color: #fff; }
+
+/* ---- Feedback summary panel ---- */
+.summary { display: flex; flex-direction: column; gap: 12px; }
+.summary__series {
+  padding: 14px 16px; background: var(--paper-2); border-radius: 12px;
+  font-family: 'Geist Mono', monospace; font-size: 12px;
+  color: var(--ink-2); line-height: 1.55;
+  display: flex; gap: 10px; align-items: center;
+}
+.summary__series::before { content: "▲"; color: var(--accent); }
+.fb-item {
+  padding: 14px 16px; border-radius: 12px;
+  display: grid; grid-template-columns: 22px 1fr; gap: 10px;
+  align-items: start;
+}
+.fb-item__mark {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: 'Geist Mono', monospace; font-size: 11px; font-weight: 500;
+  color: #fff; margin-top: 1px;
+}
+.fb-item__label {
+  font-family: 'Geist Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; font-weight: 500;
+}
+.fb-item__text { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.fb-item--strong { background: var(--accent-soft); }
+.fb-item--strong .fb-item__mark { background: var(--accent); }
+.fb-item--strong .fb-item__label { color: var(--accent); }
+.fb-item--growth { background: var(--growth-soft); }
+.fb-item--growth .fb-item__mark { background: var(--growth); }
+.fb-item--growth .fb-item__label { color: var(--growth); }
+.fb-item--next { background: var(--ink); }
+.fb-item--next .fb-item__mark { background: #fff; color: var(--ink); }
+.fb-item--next .fb-item__label { color: #9CA0A8; }
+.fb-item--next .fb-item__text { color: #E5E3DC; }
+
+/* ============ AI MAP ============ */
+.ai-map__filters {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.ai-map__filter {
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--rule); background: var(--paper);
+  font-size: 13px; color: var(--ink-2);
+  transition: all .2s;
+}
+.ai-map__filter:hover { border-color: var(--ink-3); }
+.ai-map__filter.is-active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.ai-map__filter .count {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  opacity: 0.6; margin-left: 4px;
+}
+.ai-map {
+  border: 1px solid var(--rule); border-radius: 20px;
+  overflow: hidden; background: var(--paper);
+}
+.ai-row {
+  display: grid; grid-template-columns: 44px 2fr 3fr 1.4fr;
+  gap: 20px; padding: 16px 22px;
+  align-items: center; border-bottom: 1px solid var(--rule-soft);
+  transition: background .2s;
+}
+.ai-row:last-child { border-bottom: 0; }
+.ai-row:hover { background: var(--paper-2); }
+.ai-row.is-hidden { display: none; }
+.ai-row--head {
+  background: var(--paper-2); font-family: 'Geist Mono', monospace;
+  font-size: 11px; color: var(--ink-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ai-row--head:hover { background: var(--paper-2); }
+.ai-row--video { background: rgba(31,93,62,0.03); }
+.ai-row--video:hover { background: rgba(31,93,62,0.06); }
+.ai-row__num { font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--accent); }
+.ai-row__place { font-size: 14px; font-weight: 500; color: var(--ink); }
+.ai-row__place-tag {
+  display: inline-block; margin-left: 6px;
+  padding: 1px 6px; border-radius: 4px;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: 'Geist Mono', monospace; font-size: 10px;
+  letter-spacing: 0.05em; text-transform: uppercase; font-weight: 500;
+  vertical-align: middle;
+}
+.ai-row__what { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.ai-row__who {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--ink-3); letter-spacing: 0.03em;
+}
+.ai-role-tag {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 4px; background: var(--paper-3);
+  color: var(--ink-2); font-size: 11px; font-weight: 500;
+}
+@media (max-width: 800px) {
+  .ai-row { grid-template-columns: 32px 1fr; }
+  .ai-row__what, .ai-row__who { grid-column: 2; }
+  .ai-row--head .ai-row__what, .ai-row--head .ai-row__who { display: none; }
+}
+
+/* ============ ROLES ============ */
+.roles-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 20px; overflow: hidden;
+}
+@media (max-width: 1100px) { .roles-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px) { .roles-grid { grid-template-columns: 1fr 1fr; } }
+.role {
+  background: var(--paper); padding: 24px 22px 28px;
+  display: flex; flex-direction: column; gap: 10px; min-height: 200px;
+}
+.role__num {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--accent); letter-spacing: 0.08em;
+}
+.role__name {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.015em;
+  line-height: 1.2; margin-top: 2px;
+}
+.role__desc { font-size: 13px; color: var(--ink-3); line-height: 1.5; margin-top: 2px; }
+.role__gets {
+  margin-top: auto; padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--accent); letter-spacing: 0.03em; line-height: 1.5;
+}
+
+/* ============ SCENARIOS TABLE ============ */
+.scenarios {
+  border: 1px solid var(--rule); border-radius: 20px;
+  overflow: hidden; background: var(--paper);
+}
+.scen-row {
+  display: grid; grid-template-columns: 1fr 2fr;
+  gap: 24px; padding: 20px 24px;
+  border-bottom: 1px solid var(--rule-soft);
+  align-items: baseline;
+}
+.scen-row:last-child { border-bottom: 0; }
+.scen-row--head {
+  background: var(--paper-2);
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.scen-name { font-size: 15px; font-weight: 500; color: var(--ink); }
+.scen-how { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+
+/* ============ READY vs ADAPT ============ */
+.ra-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule);
+  border-radius: 20px; overflow: hidden;
+}
+@media (max-width: 800px) { .ra-grid { grid-template-columns: 1fr; } }
+.ra { padding: 32px 34px 36px; background: var(--paper); }
+.ra--dark { background: var(--ink); color: #fff; }
+.ra__tag {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 10px;
+}
+.ra--dark .ra__tag { color: #9CA0A8; }
+.ra__title {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 18px;
+}
+.ra__list {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+  font-size: 14.5px; color: var(--ink-2);
+}
+.ra--dark .ra__list { color: #C9CCD1; }
+.ra__list li { display: flex; gap: 10px; }
+.ra__list li::before { content: "✓"; color: var(--accent); }
+.ra--dark .ra__list li::before { content: "→"; color: var(--accent-2); }
+
+/* ============ PURCHASE ============ */
+.buy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .buy-grid { grid-template-columns: 1fr; } }
+.buy-card {
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 14px; padding: 24px 26px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative;
+}
+.buy-card__num {
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--accent); letter-spacing: 0.08em;
+}
+.buy-card__title { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
+.buy-card__desc { font-size: 14px; color: var(--ink-3); line-height: 1.5; }
+
+/* ============ FAQ ============ */
+.faq { display: flex; flex-direction: column; }
+.faq__item { border-top: 1px solid var(--rule); padding: 24px 0; }
+.faq__item:last-child { border-bottom: 1px solid var(--rule); }
+.faq__q {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 17px; font-weight: 500; cursor: pointer; list-style: none;
+}
+.faq__q::-webkit-details-marker { display: none; }
+.faq__q::after {
+  content: "+"; font-family: 'Geist Mono', monospace;
+  color: var(--ink-3); font-size: 20px; transition: transform .2s;
+}
+details[open] > .faq__q::after { transform: rotate(45deg); }
+.faq__a {
+  margin-top: 12px; font-size: 15px; color: var(--ink-2);
+  line-height: 1.6; max-width: 780px;
+}
+
+/* ============ FINAL CTA ============ */
+.cta { padding: 96px 0; }
+.cta__grid {
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center;
+}
+@media (max-width: 900px) { .cta__grid { grid-template-columns: 1fr; gap: 32px; } }
+.cta h2 {
+  font-size: clamp(30px, 3.6vw, 48px); font-weight: 600;
+  letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 20px;
+}
+.cta p { color: #C9CCD1; font-size: 17px; margin-bottom: 28px; max-width: 540px; }
+.cta__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.cta__card {
+  background: #111417; border: 1px solid #1A1D20;
+  border-radius: 20px; padding: 26px;
+}
+.cta__card-title {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: #7E8189; letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.cta__steps { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.cta__steps li {
+  display: grid; grid-template-columns: 24px 1fr; gap: 12px;
+  align-items: baseline; font-size: 14px; color: #E5E3DC;
+}
+.cta__steps li b {
+  color: var(--accent-2);
+  font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.08em;
+}
+
+/* ============ FOOTER ============ */
+.foot { background: var(--paper-2); padding: 44px 0 32px; }
+.foot__grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  gap: 40px; margin-bottom: 28px;
+}
+@media (max-width: 700px) { .foot__grid { grid-template-columns: 1fr 1fr; } }
+.foot__title {
+  font-family: 'Geist Mono', monospace; font-size: 11px;
+  color: var(--ink-3); letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.foot ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.foot a { font-size: 14px; color: var(--ink-2); }
+.foot a:hover { color: var(--ink); }
+.foot__about {
+  font-size: 13.5px; color: var(--ink-3);
+  max-width: 380px; margin-top: 14px; line-height: 1.55;
+}
+.foot__bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 24px; border-top: 1px solid var(--rule);
+  font-family: 'Geist Mono', monospace; font-size: 11.5px;
+  color: var(--ink-3); letter-spacing: 0.05em;
+}
+
+/* ============ REVEAL ============ */
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+  .btn:hover { transform: none; }
+  .video-card__rec::before { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="container topbar__inner">
+    <a class="brand" href="https://erman.ai">
+      <span class="brand__mark">Н</span>
+      <span class="brand__names">
+        <span class="brand__title">Наставник ИИ</span>
+        <span class="brand__sub">тренажёр и разбор видеосессий · Erman AI</span>
+      </span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="#pillars">Возможности</a>
+      <a href="#cycle">Цикл</a>
+      <a href="#review">Разбор видео</a>
+      <a href="#ai-map">14 мест ИИ</a>
+      <a href="#buy">Внедрение</a>
+      <a href="#cta" class="nav__cta">Заказать демо →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero__grid">
+      <div>
+        <div class="hero__breadcrumb">
+          <span>Клиентские решения</span>
+          <span class="sep">/</span>
+          <b>Наставник ИИ · тренажёр менторов</b>
+        </div>
+        <h1>Обучаем менторов и проверяем их навыки — <em>через тренажёр и разбор видеосессий</em></h1>
+        <p class="hero__sub">
+          Тренажёр менторской беседы с ИИ-подопечным + автоматический разбор реальных видеосессий: расшифровка, структура, навыки, невербалика. Один стандарт качества менторства во всех командах — без ручного просмотра каждой встречи куратором.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="#cta">Показать на моей группе <span class="arrow">→</span></a>
+          <a class="btn btn--ghost" href="#review">Как выглядит разбор</a>
+        </div>
+        <div class="hero__meta">
+          <span><b>14 применений ИИ</b> — сквозное, не витринное</span>
+          <span><b>Видеосессии из Zoom и Teams</b> — расшифровка, диаризация, невербалика</span>
+          <span><b>Внедрение под ключ</b> — программа, тренажёры, сопровождение</span>
+        </div>
+      </div>
+
+      <!-- Hero video player card -->
+      <aside>
+        <div class="video-card">
+          <div class="video-card__head">
+            <span class="video-card__rec">REC · Сессия #124</span>
+            <span class="video-card__meta"><b>А. Иванов</b> ментор · <b>К. Петров</b> · 24:15</span>
+          </div>
+          <div class="video-panels">
+            <div class="video-panel video-panel--active">
+              <div class="video-panel__label"><span class="dot"></span>А. Иванов · Ментор</div>
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="38" r="14" fill="#5A5D62"/>
+                <path d="M 20 90 Q 20 60 50 60 Q 80 60 80 90 Z" fill="#5A5D62"/>
+              </svg>
+            </div>
+            <div class="video-panel">
+              <div class="video-panel__label"><span class="dot" style="background:#7E8189"></span>К. Петров · Подопечный</div>
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="38" r="14" fill="#3A3D40"/>
+                <path d="M 20 90 Q 20 60 50 60 Q 80 60 80 90 Z" fill="#3A3D40"/>
+              </svg>
+            </div>
+          </div>
+          <div class="video-controls">
+            <button class="video-play" aria-label="Играть">▶</button>
+            <span class="video-time">08:42 / 24:15</span>
+            <div class="video-timeline">
+              <div class="video-timeline__played"></div>
+              <div class="video-timeline__marker video-timeline__marker--strong" style="left:8%"></div>
+              <div class="video-timeline__marker video-timeline__marker--strong" style="left:22%"></div>
+              <div class="video-timeline__marker video-timeline__marker--growth" style="left:41%"></div>
+              <div class="video-timeline__marker video-timeline__marker--strong" style="left:58%"></div>
+              <div class="video-timeline__marker video-timeline__marker--growth" style="left:72%"></div>
+              <div class="video-timeline__marker video-timeline__marker--strong" style="left:88%"></div>
+            </div>
+          </div>
+          <div class="video-waveform" id="heroWaveform"></div>
+
+          <div class="video-analysis">
+            <div class="video-analysis__scores">
+              <div class="score-mini">
+                <div class="score-mini__label">Структура</div>
+                <div class="score-mini__value">8<small>/10</small></div>
+              </div>
+              <div class="score-mini">
+                <div class="score-mini__label">Навыки</div>
+                <div class="score-mini__value">4<small>/5</small></div>
+              </div>
+              <div class="score-mini">
+                <div class="score-mini__label">Баланс речи</div>
+                <div class="score-mini__value">32<small>/68</small></div>
+              </div>
+            </div>
+            <div class="fb-mini fb-mini--strong">
+              <div class="fb-mini__mark">✓</div>
+              <div><b>Сильная сторона.</b> Шесть открытых вопросов подряд без готовых советов — дал подопечному самому дойти до решения про смену команды.</div>
+            </div>
+            <div class="fb-mini fb-mini--growth">
+              <div class="fb-mini__mark">↗</div>
+              <div><b>Зона роста.</b> На 15:44 задан yes/no вопрос — упустили момент углубить запрос. И не подтвердили договорённость финальным summary.</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BRIDGE ============ -->
+<section class="bridge">
+  <div class="container bridge__inner">
+    <span class="bridge__item">Учим менторов</span>
+    <span class="bridge__plus">→</span>
+    <span class="bridge__item">Тренируем на ИИ-подопечном</span>
+    <span class="bridge__plus">→</span>
+    <span class="bridge__item">Разбираем видео живой сессии</span>
+  </div>
+</section>
+
+<!-- ============ 4 PILLARS ============ -->
+<section class="section" id="pillars">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Что внутри</div>
+        <h2 class="section__title">Четыре этапа — от программы обучения до разбора реальной видеосессии</h2>
+      </div>
+      <p class="section__lead">
+        В отличие от точечных решений (только тренажёр или только видеоплатформа) — «Наставник ИИ» держит весь путь: методист собирает курс менторства, начинающий ментор проходит его, тренируется на ИИ-подопечном и получает разбор своей первой живой сессии с реальным человеком.
+      </p>
+    </div>
+
+    <div class="pillars reveal">
+      <div class="pillar">
+        <div class="pillar__num">01 · СОЗДАНИЕ</div>
+        <div class="pillar__title">Программа обучения менторов</div>
+        <div class="pillar__desc">Методист собирает курс в умном редакторе: правила менторской беседы, GROW / SBI / собственная модель, критерии оценки навыков. ИИ помогает с текстами, иллюстрациями и тестами.</div>
+        <ul class="pillar__list">
+          <li>Умный редактор материалов</li>
+          <li>Сборка тестов ИИ</li>
+          <li>Настройка критериев оценки</li>
+        </ul>
+      </div>
+      <div class="pillar">
+        <div class="pillar__num">02 · ОБУЧЕНИЕ</div>
+        <div class="pillar__title">Прохождение курса группой</div>
+        <div class="pillar__desc">Начинающие менторы идут по программе: материалы, задания, тесты, прогресс. Руководитель программы видит группу целиком — кто в графике, кто «завис».</div>
+        <ul class="pillar__list">
+          <li>Задания и автопроверка</li>
+          <li>Прогресс участника и группы</li>
+          <li>Помощник в обучении</li>
+        </ul>
+      </div>
+      <div class="pillar">
+        <div class="pillar__num">03 · ТРЕНАЖЁР</div>
+        <div class="pillar__title">Диалог с ИИ-подопечным</div>
+        <div class="pillar__desc">Прежде чем выйти к живому человеку — ментор тренируется на ИИ-собеседнике: первая встреча, сложный запрос, разговор про карьеру. Безопасная среда, где можно ошибиться.</div>
+        <ul class="pillar__list">
+          <li>Диалоговый тренажёр</li>
+          <li>Тренажёр первой встречи</li>
+          <li>Разбор учебной беседы</li>
+        </ul>
+      </div>
+      <div class="pillar">
+        <div class="pillar__num">04 · РАЗБОР ВИДЕО</div>
+        <div class="pillar__title">Анализ реальной сессии</div>
+        <div class="pillar__desc">Ментор загружает видеозапись сессии с реальным подопечным (Zoom, Teams, локальный файл). Система разделяет говорящих, расшифровывает речь, оценивает структуру, навыки и невербалику.</div>
+        <ul class="pillar__list">
+          <li>Разделение говорящих</li>
+          <li>Структура и навыки</li>
+          <li>Баланс речи, паузы, темп</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CYCLE ============ -->
+<section class="section section--alt" id="cycle">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Полный цикл</div>
+        <h2 class="section__title">Замкнутый круг — от урока до разбора видео и обратно</h2>
+      </div>
+      <p class="section__lead">
+        Разбор видеосессии — не финал, а вход в следующий круг. Данные о зонах роста возвращаются в программу: методист корректирует материалы, тренажёр подтягивает нужные сценарии, ментор получает следующее задание с учётом того, что уже работает.
+      </p>
+    </div>
+
+    <div class="cycle reveal">
+      <div class="cycle__diagram" id="cycleDiagram">
+        <svg class="cycle-arrows" viewBox="0 0 460 460" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#8A8E94"/>
+            </marker>
+          </defs>
+          <circle cx="230" cy="230" r="150" fill="none" stroke="#E5E3DC" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M 300 100 Q 360 160 360 230" fill="none" stroke="#8A8E94" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <path d="M 360 300 Q 300 360 230 360" fill="none" stroke="#8A8E94" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <path d="M 160 360 Q 100 300 100 230" fill="none" stroke="#8A8E94" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <path d="M 100 160 Q 160 100 230 100" fill="none" stroke="#8A8E94" stroke-width="1.5" marker-end="url(#arrow)"/>
+        </svg>
+        <div class="cycle__center">
+          <div class="cycle__center-label">Цикл</div>
+          <div class="cycle__center-title">Обучение<br>менторов</div>
+        </div>
+        <button class="cycle-node cycle-node--1 is-active" data-stage="1">
+          <div class="cycle-node__num">01</div>
+          <div class="cycle-node__name">Создание</div>
+        </button>
+        <button class="cycle-node cycle-node--2" data-stage="2">
+          <div class="cycle-node__num">02</div>
+          <div class="cycle-node__name">Обучение</div>
+        </button>
+        <button class="cycle-node cycle-node--3" data-stage="3">
+          <div class="cycle-node__num">03</div>
+          <div class="cycle-node__name">Тренажёр</div>
+        </button>
+        <button class="cycle-node cycle-node--4" data-stage="4">
+          <div class="cycle-node__num">04</div>
+          <div class="cycle-node__name">Разбор видео</div>
+        </button>
+      </div>
+
+      <div class="cycle__detail" id="cycleDetail">
+        <div class="cycle__detail-eyebrow" id="cycleDetailEyebrow">01 · СОЗДАНИЕ</div>
+        <div class="cycle__detail-title" id="cycleDetailTitle">Методист собирает программу менторства</div>
+        <div class="cycle__detail-desc" id="cycleDetailDesc">
+          Умный редактор помогает написать курс: правила менторской беседы, структура сессии, критерии оценки навыков. ИИ дописывает разделы в контексте урока, генерирует иллюстрации, собирает черновики тестов.
+        </div>
+        <ul class="cycle__detail-list" id="cycleDetailList">
+          <li>Курс → темы → уроки → материалы, задания, тесты</li>
+          <li>Методист остаётся редактором качества</li>
+          <li>ИИ снимает рутину черновика</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SMART EDITOR ============ -->
+<section class="section">
+  <div class="container split">
+    <div class="reveal">
+      <div class="split__eyebrow">01 · Создание</div>
+      <h3 class="split__title">Умный редактор — методист собирает курс менторства, а не воюет с вёрсткой</h3>
+      <p class="split__desc">
+        Помощник по тексту дописывает разделы в контексте урока, генератор рисует иллюстрации, сборщик тестов предлагает вопросы по содержанию. Автор остаётся редактором качества — ИИ снимает рутину черновика.
+      </p>
+      <ul class="split__list">
+        <li>Помощник по тексту работает в контексте соседних блоков</li>
+        <li>Иллюстрации к урокам — без обращения к дизайнеру</li>
+        <li>Сборка теста по содержанию курса, с баллами и порогом</li>
+        <li>Оценка качества готового теста — где вопросы слабые</li>
+      </ul>
+    </div>
+
+    <div class="split__media reveal">
+      <div class="mock">
+        <div class="mock__head">
+          <div class="mock__dots"><span></span><span></span><span></span></div>
+          <span>Урок 2.3 · черновик</span>
+        </div>
+        <div class="editor-block">
+          <div class="editor-block__label">H2</div>
+          <div class="editor-title">Первая встреча ментор → подопечный</div>
+        </div>
+        <div class="editor-block">
+          <div class="editor-block__label">Абзац</div>
+          <div class="editor-para">Первая встреча — не про содержание, а про доверие и договорённости. Ментор устанавливает контакт, выясняет ожидания подопечного, формулирует правила совместной работы: как часто встречаемся, что делаем на сессии, что остаётся между нами.</div>
+        </div>
+        <div class="editor-block">
+          <div class="editor-block__label">Список</div>
+          <ul class="editor-list">
+            <li>Приветствие + личная короткая настройка</li>
+            <li>Ожидания подопечного и границы менторства</li>
+            <li>Формат встреч, частота, каналы связи</li>
+          </ul>
+        </div>
+
+        <div class="editor-ai-panel">
+          <div class="editor-ai-panel__label">Помощник по тексту</div>
+          <div class="editor-ai-panel__input">Добавь раздел про типовые страхи подопечного на первой встрече и как их снимать без готовых советов</div>
+          <div class="editor-ai-panel__buttons">
+            <button class="editor-mini-btn">Написать раздел</button>
+            <button class="editor-mini-btn editor-mini-btn--ghost">Переформулировать проще</button>
+          </div>
+        </div>
+
+        <div class="editor-generated">
+          <b>Типовые страхи подопечного и что с ними делать</b><br>
+          На первой встрече подопечный часто боится показаться «глупым», «недостаточно продвинутым», занять слишком много времени. Ментор снимает это не заверениями, а вопросами: «Как вам будет удобнее — говорить сразу о том, что беспокоит, или начнём с общего?» Показывает, что темп задаёт подопечный.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRAINER ============ -->
+<section class="section section--alt">
+  <div class="container split split--rev">
+    <div class="reveal">
+      <div class="split__eyebrow">03 · Тренажёр</div>
+      <h3 class="split__title">Диалог с ИИ-подопечным — безопасная тренировка до живой сессии</h3>
+      <p class="split__desc">
+        Начинающий ментор выбирает сценарий (первая встреча, сложный запрос, разговор про карьерный переход) — система ведёт диалог от лица подопечного. Разговор можно потом отправить в модуль разбора, как обычную видеосессию.
+      </p>
+      <ul class="split__list">
+        <li>Диалоговый тренажёр — по сценарию задания методиста</li>
+        <li>Тренажёр учебной беседы — свободная тренировка навыка</li>
+        <li>Тренажёр первой встречи — договорённости и цели</li>
+        <li>Разбор учебного диалога — тот же контур, что для живой видеосессии</li>
+      </ul>
+    </div>
+
+    <div class="split__media reveal">
+      <div class="chat">
+        <div class="chat__head">
+          <span>Тренажёр · Разговор про карьерный переход</span>
+          <span>10:24</span>
+        </div>
+        <div class="chat__scenario">
+          <b>Сценарий:</b> Middle-разработчик, 4 года в компании. Предлагают возглавить команду. Не уверен, что это его путь — не хочет терять техническую глубину. Пришёл на менторскую сессию разобраться.
+        </div>
+        <div class="msg msg--role">
+          <div class="msg__avatar msg__avatar--role">П</div>
+          <div class="msg__body">
+            <div class="msg__who">Подопечный (ИИ)</div>
+            <div class="msg__text">Мне сейчас предлагают возглавить команду, но я не уверен, что это правильный выбор для меня.</div>
+          </div>
+        </div>
+        <div class="msg msg--user">
+          <div class="msg__avatar msg__avatar--user">М</div>
+          <div class="msg__body">
+            <div class="msg__who">Ментор</div>
+            <div class="msg__text">А что для вас сейчас звучит как «правильный выбор»? Как вы себе его представляете, если разложить на конкретные вещи?</div>
+          </div>
+        </div>
+        <div class="msg msg--role">
+          <div class="msg__avatar msg__avatar--role">П</div>
+          <div class="msg__body">
+            <div class="msg__who">Подопечный (ИИ)</div>
+            <div class="msg__text">Наверное, чтобы через полгода не жалел. И чтобы не потерял в технической глубине — сейчас я расту как разработчик, а тимлид — это про другое.</div>
+          </div>
+        </div>
+        <div class="chat__input">
+          <div class="chat__input-field">Ваш ответ…</div>
+          <button class="btn btn--dark" style="padding:8px 14px;font-size:13px">Отправить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEW (main showcase, with video player) ============ -->
+<section class="section" id="review">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Разбор видеосессии — центральная фича</div>
+        <h2 class="section__title">Живая менторская сессия становится структурированным отчётом</h2>
+      </div>
+      <p class="section__lead">
+        Ментор проводит сессию с реальным подопечным через Zoom, Teams или пишет отдельно. Загружает видео — система разделяет говорящих, расшифровывает речь, размечает структуру, оценивает навыки менторства и невербальные сигналы. Куратор видит первый качественный разбор без ручного просмотра, подключается только к сложным случаям.
+      </p>
+    </div>
+
+    <div class="review reveal">
+      <div>
+        <div class="split__eyebrow">04 · Разбор видео</div>
+        <h3 class="split__title">Что видит куратор в отчёте после сессии</h3>
+        <p class="split__desc">
+          Каждый разбор строится по одним критериям организации — потому что качество не зависит от «как сегодня посмотрит куратор». Ментор в московском офисе получает такую же обратную связь, как ментор в берлинском.
+        </p>
+        <ul class="split__list">
+          <li>Расшифровка речи с таймкодами и разделением говорящих</li>
+          <li>Структура: были ли пройдены обязательные шаги менторской сессии</li>
+          <li>Навыки: 5 профессиональных умений с обоснованием из цитат</li>
+          <li>Невербалика: баланс речи, длина реплик, паузы, темп</li>
+          <li>Развивающая обратная связь и динамика по серии сессий</li>
+        </ul>
+      </div>
+
+      <div class="review-card">
+        <div class="review-card__head">
+          <div class="review-card__title-row">
+            <div class="review-card__name">Сессия #124 · А. Иванов ментор</div>
+            <div class="review-card__meta">24:15 · вчера</div>
+          </div>
+          <div class="review-card__scenario">Разговор про карьерный переход · подопечный К. Петров, middle-разработчик</div>
+        </div>
+
+        <div class="review-card__player">
+          <div class="video-card">
+            <div class="video-card__head">
+              <span class="video-card__rec">Запись сессии</span>
+              <span class="video-card__meta">Zoom · импорт вчера в 18:32</span>
+            </div>
+            <div class="video-panels">
+              <div class="video-panel video-panel--active">
+                <div class="video-panel__label"><span class="dot"></span>А. Иванов</div>
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="38" r="14" fill="#5A5D62"/>
+                  <path d="M 20 90 Q 20 60 50 60 Q 80 60 80 90 Z" fill="#5A5D62"/>
+                </svg>
+              </div>
+              <div class="video-panel">
+                <div class="video-panel__label"><span class="dot" style="background:#7E8189"></span>К. Петров</div>
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="38" r="14" fill="#3A3D40"/>
+                  <path d="M 20 90 Q 20 60 50 60 Q 80 60 80 90 Z" fill="#3A3D40"/>
+                </svg>
+              </div>
+            </div>
+            <div class="video-controls">
+              <button class="video-play" aria-label="Играть">▶</button>
+              <span class="video-time">08:42 / 24:15</span>
+              <div class="video-timeline">
+                <div class="video-timeline__played"></div>
+                <div class="video-timeline__marker video-timeline__marker--strong" style="left:8%"></div>
+                <div class="video-timeline__marker video-timeline__marker--strong" style="left:22%"></div>
+                <div class="video-timeline__marker video-timeline__marker--growth" style="left:41%"></div>
+                <div class="video-timeline__marker video-timeline__marker--strong" style="left:58%"></div>
+                <div class="video-timeline__marker video-timeline__marker--growth" style="left:72%"></div>
+                <div class="video-timeline__marker video-timeline__marker--strong" style="left:88%"></div>
+              </div>
+            </div>
+            <div class="video-waveform" id="reviewWaveform"></div>
+          </div>
+        </div>
+
+        <div class="review-tabs" role="tablist">
+          <button class="review-tab is-active" data-tab="transcript" role="tab">Расшифровка</button>
+          <button class="review-tab" data-tab="structure" role="tab">Структура</button>
+          <button class="review-tab" data-tab="skills" role="tab">Навыки</button>
+          <button class="review-tab" data-tab="nonverbal" role="tab">Невербалика</button>
+          <button class="review-tab" data-tab="feedback" role="tab">Обратная связь</button>
+        </div>
+
+        <!-- Transcript -->
+        <div class="review-panel is-active" data-panel="transcript">
+          <div class="transcript">
+            <div class="transcript__line">
+              <span class="transcript__time">00:12</span>
+              <span class="transcript__speaker">Ментор</span>
+              <span class="transcript__text">Привет. <span class="hl-strong">Как ты? Что важное произошло с прошлой встречи?</span></span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">00:28</span>
+              <span class="transcript__speaker">Подоп.</span>
+              <span class="transcript__text">Слушай, тут разговор был с тимлидом. Мне предлагают возглавить команду. И я не понимаю, что с этим делать.</span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">01:14</span>
+              <span class="transcript__speaker">Ментор</span>
+              <span class="transcript__text"><span class="hl-strong">А что для тебя сейчас звучит как «правильный выбор»?</span> Как ты его себе представляешь?</span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">02:30</span>
+              <span class="transcript__speaker">Подоп.</span>
+              <span class="transcript__text">Чтобы не жалел через полгода. И чтобы не потерял в технической глубине — я сейчас расту как разработчик.</span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">04:22</span>
+              <span class="transcript__speaker">Ментор</span>
+              <span class="transcript__text"><span class="hl-strong">А если попробовать посмотреть на это через год — что ты хочешь про себя рассказать через год?</span></span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">15:44</span>
+              <span class="transcript__speaker">Ментор</span>
+              <span class="transcript__text"><span class="hl-growth">Понял. То есть тебе больше нравится техника, да?</span> [закрытый вопрос — упущен момент углубить]</span>
+            </div>
+            <div class="transcript__line">
+              <span class="transcript__time">22:10</span>
+              <span class="transcript__speaker">Ментор</span>
+              <span class="transcript__text">Ну хорошо, тогда давай так — попробуй ещё встретиться с тимлидом и сказать про свои сомнения. <span class="hl-growth">До встречи!</span> [нет финального summary]</span>
+            </div>
+          </div>
+          <div class="transcript__legend">
+            <span><span class="dot" style="background:var(--accent)"></span>Сильные моменты</span>
+            <span><span class="dot" style="background:var(--growth)"></span>Пропущено / упущено</span>
+            <span><span class="dot" style="background:var(--neutral-blue)"></span>Нейтральное</span>
+          </div>
+        </div>
+
+        <!-- Structure -->
+        <div class="review-panel" data-panel="structure">
+          <div class="struct">
+            <div class="struct__step struct__step--done">
+              <div class="struct__step-num">1</div>
+              <div>
+                <div class="struct__step-name">Установление контакта</div>
+                <div class="struct__step-hint">Приветствие + возврат к прошлой встрече</div>
+              </div>
+              <div class="struct__step-status">✓ Есть</div>
+            </div>
+            <div class="struct__step struct__step--done">
+              <div class="struct__step-num">2</div>
+              <div>
+                <div class="struct__step-name">Запрос подопечного</div>
+                <div class="struct__step-hint">Что беспокоит, с чем пришли на сессию</div>
+              </div>
+              <div class="struct__step-status">✓ Есть</div>
+            </div>
+            <div class="struct__step struct__step--done">
+              <div class="struct__step-num">3</div>
+              <div>
+                <div class="struct__step-name">Прояснение через открытые вопросы</div>
+                <div class="struct__step-hint">Углубление запроса, поиск истинной цели</div>
+              </div>
+              <div class="struct__step-status">✓ Есть</div>
+            </div>
+            <div class="struct__step struct__step--done">
+              <div class="struct__step-num">4</div>
+              <div>
+                <div class="struct__step-name">Совместное исследование</div>
+                <div class="struct__step-hint">Альтернативы, взвешивание, ресурсы</div>
+              </div>
+              <div class="struct__step-status">✓ Есть</div>
+            </div>
+            <div class="struct__step struct__step--miss">
+              <div class="struct__step-num">5</div>
+              <div>
+                <div class="struct__step-name">Договорённости о следующем шаге</div>
+                <div class="struct__step-hint">Конкретное действие с дедлайном</div>
+              </div>
+              <div class="struct__step-status">△ Формально</div>
+            </div>
+            <div class="struct__step struct__step--miss">
+              <div class="struct__step-num">6</div>
+              <div>
+                <div class="struct__step-name">Закрытие и summary</div>
+                <div class="struct__step-hint">Подведение итогов, рефлексия сессии</div>
+              </div>
+              <div class="struct__step-status">— Пропущено</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="review-panel" data-panel="skills">
+          <div class="skills">
+            <div class="skill">
+              <div class="skill__row-1">
+                <span class="skill__name">Активное слушание</span>
+                <span class="skill__value">4/5</span>
+              </div>
+              <div class="skill__bar"><div class="skill__fill" style="width:80%"></div></div>
+              <div class="skill__note">Возвращал слова подопечного своими фразами, давал развернуться. Первые 15 минут — почти чистое слушание.</div>
+            </div>
+            <div class="skill">
+              <div class="skill__row-1">
+                <span class="skill__name">Открытые вопросы</span>
+                <span class="skill__value">4/5</span>
+              </div>
+              <div class="skill__bar"><div class="skill__fill" style="width:80%"></div></div>
+              <div class="skill__note">6 открытых вопросов подряд («что», «как», «а если»). Один закрытый на 15:44 сломал темп.</div>
+            </div>
+            <div class="skill">
+              <div class="skill__row-1">
+                <span class="skill__name">Удержание от готовых советов</span>
+                <span class="skill__value">5/5</span>
+              </div>
+              <div class="skill__bar"><div class="skill__fill" style="width:100%"></div></div>
+              <div class="skill__note">Ни разу не сказал «на твоём месте я бы» и «попробуй сделать так». Дал дойти самому.</div>
+            </div>
+            <div class="skill">
+              <div class="skill__row-1">
+                <span class="skill__name">Проверка понимания</span>
+                <span class="skill__value">3/5</span>
+              </div>
+              <div class="skill__bar"><div class="skill__fill" style="width:60%"></div></div>
+              <div class="skill__note">Пересказ был в середине, но не подтверждён вопросом. К концу проверка понимания не сделана.</div>
+            </div>
+            <div class="skill">
+              <div class="skill__row-1">
+                <span class="skill__name">Договориться о следующем шаге</span>
+                <span class="skill__value">2/5</span>
+              </div>
+              <div class="skill__bar"><div class="skill__fill skill__fill--growth" style="width:40%"></div></div>
+              <div class="skill__note">Действие обозначено («поговорить с тимлидом»), но нет дедлайна и не спросил, есть ли препятствия. Финальный summary отсутствует.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nonverbal -->
+        <div class="review-panel" data-panel="nonverbal">
+          <div class="nv">
+            <div class="nv-balance">
+              <div class="nv-balance__title">Баланс речи в сессии</div>
+              <div class="nv-balance__bar">
+                <div class="nv-balance__mentor">Ментор 32%</div>
+                <div class="nv-balance__mentee">Подопечный 68%</div>
+              </div>
+              <div class="nv-balance__hint">Норма для менторской сессии: ментор 25–40%, подопечный 60–75%. Ментор в норме — оставил подопечному пространство говорить.</div>
+            </div>
+
+            <div class="nv-stats">
+              <div class="nv-stat">
+                <div class="nv-stat__label">Средняя длина реплики ментора</div>
+                <div class="nv-stat__value">11.4<small> сек</small></div>
+                <div class="nv-stat__norm nv-stat__norm--ok">✓ норма ≤15 сек</div>
+              </div>
+              <div class="nv-stat">
+                <div class="nv-stat__label">Пауза до следующего вопроса</div>
+                <div class="nv-stat__value">2.4<small> сек</small></div>
+                <div class="nv-stat__norm nv-stat__norm--ok">✓ давал время подумать</div>
+              </div>
+              <div class="nv-stat">
+                <div class="nv-stat__label">Монологов подопечного (30+ сек)</div>
+                <div class="nv-stat__value">4</div>
+                <div class="nv-stat__norm nv-stat__norm--ok">✓ ментор не мешал</div>
+              </div>
+              <div class="nv-stat">
+                <div class="nv-stat__label">Перебиваний ментором</div>
+                <div class="nv-stat__value">1</div>
+                <div class="nv-stat__norm nv-stat__norm--warn">△ на 15:44 — прервал ответ</div>
+              </div>
+            </div>
+
+            <div class="nv-note">
+              <b>Что это значит.</b> Ментор физически создал условия для разговора: говорил мало, давал паузы, не перебивал (кроме одного случая). Это фундамент менторского навыка — сам факт «удержался от захвата разговора» уже редкое качество, стоит на нём закреплять.
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="review-panel" data-panel="feedback">
+          <div class="summary">
+            <div class="fb-item fb-item--strong">
+              <div class="fb-item__mark">✓</div>
+              <div>
+                <div class="fb-item__label">Сильная сторона</div>
+                <div class="fb-item__text">Шесть открытых вопросов подряд, полное удержание от готовых советов, здоровый баланс речи (32/68). Ментор физически создал условия для того, чтобы подопечный сам нашёл решение.</div>
+              </div>
+            </div>
+            <div class="fb-item fb-item--growth">
+              <div class="fb-item__mark">↗</div>
+              <div>
+                <div class="fb-item__label">Зона роста</div>
+                <div class="fb-item__text">На 15:44 задан закрытый вопрос «Тебе больше нравится техника, да?» — упустили момент углубить. И не сделали финальный summary: сессия закрылась без чётких договорённостей с дедлайном.</div>
+              </div>
+            </div>
+            <div class="fb-item fb-item--next">
+              <div class="fb-item__mark">→</div>
+              <div>
+                <div class="fb-item__label">Следующий шаг</div>
+                <div class="fb-item__text">В следующих 3 сессиях: (1) отлавливать «да?» в конце реплики — это маркер закрытого вопроса; (2) в последние 3 минуты обязательный summary: «Что забираешь? Что первым сделаешь? К какому числу?»</div>
+              </div>
+            </div>
+            <div class="summary__series">
+              По серии из 5 сессий: открытые вопросы — растёт (3/5 → 4/5 → 4/5 → 5/5 → 4/5). Финальный summary — 1 из 5. Первый навык закрепляется, второй — только формируется.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI MAP ============ -->
+<section class="section section--alt" id="ai-map">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Прозрачность</div>
+        <h2 class="section__title">Где именно работает ИИ — все 14 мест</h2>
+      </div>
+      <p class="section__lead">
+        Обычно «AI powered» означает одну кнопку и никакой ясности. Здесь мы явно перечисляем — где именно система помогает и кому. Особенно важно для видео: разделение говорящих, невербалика и анализ структуры — три разные модели, не «одна большая ИИ-магия».
+      </p>
+    </div>
+
+    <div class="ai-map__filters reveal" role="tablist">
+      <button class="ai-map__filter is-active" data-filter="all">Все<span class="count">· 14</span></button>
+      <button class="ai-map__filter" data-filter="methodist">Методисту<span class="count">· 4</span></button>
+      <button class="ai-map__filter" data-filter="participant">Участнику<span class="count">· 9</span></button>
+      <button class="ai-map__filter" data-filter="curator">Куратору<span class="count">· 3</span></button>
+      <button class="ai-map__filter" data-filter="video">Видео<span class="count">· 4</span></button>
+    </div>
+
+    <div class="ai-map reveal">
+      <div class="ai-row ai-row--head">
+        <div>№</div>
+        <div>Место в продукте</div>
+        <div>Что делает ИИ</div>
+        <div>Кому</div>
+      </div>
+      <div class="ai-row" data-role="methodist">
+        <div class="ai-row__num">01</div>
+        <div class="ai-row__place">Умный редактор уроков</div>
+        <div class="ai-row__what">Пишет и дорабатывает текст материалов по запросу автора, с учётом контекста урока</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Методист</span></div>
+      </div>
+      <div class="ai-row" data-role="methodist">
+        <div class="ai-row__num">02</div>
+        <div class="ai-row__place">Иллюстрации к урокам</div>
+        <div class="ai-row__what">Создаёт картинки по текстовому описанию</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Методист</span></div>
+      </div>
+      <div class="ai-row" data-role="methodist">
+        <div class="ai-row__num">03</div>
+        <div class="ai-row__place">Сборка тестов</div>
+        <div class="ai-row__what">Предлагает вопросы, баллы и проходной порог по содержанию курса</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Методист</span></div>
+      </div>
+      <div class="ai-row" data-role="methodist">
+        <div class="ai-row__num">04</div>
+        <div class="ai-row__place">Оценка качества теста</div>
+        <div class="ai-row__what">Подсказывает, как улучшить сам тест — где вопросы слабые</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Методист</span></div>
+      </div>
+      <div class="ai-row" data-role="participant curator">
+        <div class="ai-row__num">05</div>
+        <div class="ai-row__place">Проверка письменных заданий</div>
+        <div class="ai-row__what">Даёт развёрнутую обратную связь по ответам участника</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник · Куратор</span></div>
+      </div>
+      <div class="ai-row" data-role="participant">
+        <div class="ai-row__num">06</div>
+        <div class="ai-row__place">Диалоговый тренажёр</div>
+        <div class="ai-row__what">Играет роль подопечного по сценарию задания</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row" data-role="participant">
+        <div class="ai-row__num">07</div>
+        <div class="ai-row__place">Тренажёр менторской беседы</div>
+        <div class="ai-row__what">Создаёт учебную ситуацию и ведёт диалог подопечного</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row" data-role="participant curator">
+        <div class="ai-row__num">08</div>
+        <div class="ai-row__place">Тренажёр первой встречи</div>
+        <div class="ai-row__what">Отрабатывает договорённости и цели совместной работы</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник · Куратор</span></div>
+      </div>
+      <div class="ai-row ai-row--video" data-role="participant curator video">
+        <div class="ai-row__num">09</div>
+        <div class="ai-row__place">Расшифровка видеосессии<span class="ai-row__place-tag">Видео</span></div>
+        <div class="ai-row__what">Переводит речь в текст с таймкодами. Поддерживает Zoom, MS Teams, локальные mp4/mov</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник · Куратор</span></div>
+      </div>
+      <div class="ai-row ai-row--video" data-role="participant video">
+        <div class="ai-row__num">10</div>
+        <div class="ai-row__place">Разделение говорящих<span class="ai-row__place-tag">Видео</span></div>
+        <div class="ai-row__what">Диаризация — определяет, где реплика ментора, где подопечного. Работает и на аудио</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row ai-row--video" data-role="participant video">
+        <div class="ai-row__num">11</div>
+        <div class="ai-row__place">Анализ структуры сессии<span class="ai-row__place-tag">Видео</span></div>
+        <div class="ai-row__what">Оценивает шаги менторской беседы с цитатами из расшифровки</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row" data-role="participant">
+        <div class="ai-row__num">12</div>
+        <div class="ai-row__place">Анализ навыков ментора</div>
+        <div class="ai-row__what">Отдельно смотрит: открытые вопросы, удержание от советов, проверка понимания, договорённости</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row ai-row--video" data-role="participant video">
+        <div class="ai-row__num">13</div>
+        <div class="ai-row__place">Анализ невербальных сигналов<span class="ai-row__place-tag">Видео</span></div>
+        <div class="ai-row__what">Баланс речи, длина реплик, паузы, темп, перебивания — по аудиодорожке видео</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+      <div class="ai-row" data-role="participant">
+        <div class="ai-row__num">14</div>
+        <div class="ai-row__place">Развивающая обратная связь</div>
+        <div class="ai-row__what">Формулирует сильные стороны, зону роста и следующий шаг — по сессии и по серии</div>
+        <div class="ai-row__who"><span class="ai-role-tag">Участник</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROLES ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Для кого в организации</div>
+        <h2 class="section__title">Пять ролей — одна среда</h2>
+      </div>
+      <p class="section__lead">
+        Методист собирает, начинающий ментор учится, куратор проверяет сложное, руководитель программы видит группу, компания получает стандарт. Каждый работает в своей вкладке, но данные связаны.
+      </p>
+    </div>
+
+    <div class="roles-grid reveal">
+      <div class="role">
+        <div class="role__num">01</div>
+        <div class="role__name">Методист</div>
+        <div class="role__desc">Собирает программу менторства, настраивает правила проверки и критерии оценки навыков.</div>
+        <div class="role__gets">→ Быстрее черновики, меньше рутины</div>
+      </div>
+      <div class="role">
+        <div class="role__num">02</div>
+        <div class="role__name">Начинающий ментор</div>
+        <div class="role__desc">Проходит курс, тренируется на ИИ-подопечном, загружает записи сессий, получает разбор.</div>
+        <div class="role__gets">→ Обратная связь после каждой сессии</div>
+      </div>
+      <div class="role">
+        <div class="role__num">03</div>
+        <div class="role__name">Куратор</div>
+        <div class="role__desc">Опытный ментор. Видит первый разбор ИИ, добавляет свой комментарий в сложных случаях.</div>
+        <div class="role__gets">→ Ручной разбор только там, где нужен</div>
+      </div>
+      <div class="role">
+        <div class="role__num">04</div>
+        <div class="role__name">Руководитель программы</div>
+        <div class="role__desc">Видит прогресс группы менторов: кто в графике, у кого какие зоны роста, кто готов к самостоятельной работе.</div>
+        <div class="role__gets">→ Единая картина без Excel</div>
+      </div>
+      <div class="role">
+        <div class="role__num">05</div>
+        <div class="role__name">Компания / HR</div>
+        <div class="role__desc">Один стандарт менторской беседы и оценки навыков по всей организации. Настраивается через «инструкции ИИ».</div>
+        <div class="role__gets">→ Масштабируемое качество</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCENARIOS ============ -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Сценарии внедрения</div>
+        <h2 class="section__title">Где продукт закрывает рабочую боль</h2>
+      </div>
+      <p class="section__lead">
+        Не абстрактное «edtech-решение», а конкретные ситуации организаций, где обучают менторов и оценивают их навыки: от корпоративных программ наставничества до коучинг-школ.
+      </p>
+    </div>
+
+    <div class="scenarios reveal">
+      <div class="scen-row scen-row--head">
+        <div>Сценарий</div>
+        <div>Как помогает продукт</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Обучение новых менторов в компании</div>
+        <div class="scen-how">Полный цикл: курс менторства → тренажёр диалога → первые сессии под запись → разбор. Куратор не смотрит каждую сессию — только сложные.</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Оценка навыков действующих менторов</div>
+        <div class="scen-how">Загружаете видео 3–5 сессий каждого ментора. Получаете сравнимый отчёт по критериям организации, без «нравится / не нравится».</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Программа наставничества senior → junior</div>
+        <div class="scen-how">Senior проходят короткий курс + разбор их видеосессий с junior. Помогает переводить экспертизу в менторскую компетенцию.</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Коучинг-школа</div>
+        <div class="scen-how">Ученики отправляют записи учебных и клиентских сессий, получают разбор по школьным критериям. Супервайзер экономит время на типовом.</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Стандартизация менторства</div>
+        <div class="scen-how">Один язык, одни критерии, одни маркеры «правильно / неправильно» — в московском офисе, в берлинском, в бангалорском.</div>
+      </div>
+      <div class="scen-row">
+        <div class="scen-name">Масштаб программы на сеть</div>
+        <div class="scen-how">Одна платформа обучает и оценивает менторов в разных странах и командах, без зависимости от «настроения» конкретного куратора.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ READY vs ADAPT ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Статус готовности</div>
+        <h2 class="section__title">Что уже работает и что настраивается под вашу модель</h2>
+      </div>
+      <p class="section__lead">
+        Продукт запущен и используется в клиентских проектах. Весь контур — от создания курса до разбора видеосессии — работает. Под вашу организацию адаптируется язык, критерии и типы менторских ситуаций.
+      </p>
+    </div>
+
+    <div class="ra-grid reveal">
+      <div class="ra">
+        <div class="ra__tag">Уже работает</div>
+        <div class="ra__title">Весь цикл собран и запущен</div>
+        <ul class="ra__list">
+          <li>Курсы, темы, уроки, умный редактор материалов</li>
+          <li>Генерация иллюстраций и сборка тестов ИИ</li>
+          <li>Задания разных типов: письменные, анкеты, тренажёры</li>
+          <li>Прохождение курсов в вебе и мобильном приложении</li>
+          <li>Тренажёры менторской беседы и первой встречи</li>
+          <li><b>Загрузка видеосессий</b> из Zoom, Teams, локальных файлов</li>
+          <li><b>Расшифровка и разделение говорящих</b> по видео</li>
+          <li><b>Анализ структуры, навыков и невербалики</b> сессии</li>
+          <li>Развивающая обратная связь и динамика по серии</li>
+        </ul>
+      </div>
+      <div class="ra ra--dark">
+        <div class="ra__tag">Адаптируется под вашу модель</div>
+        <div class="ra__title">Язык, критерии, сценарии</div>
+        <ul class="ra__list">
+          <li>Модель менторства: GROW, SBI, собственная</li>
+          <li>Структура менторской сессии в вашем стандарте</li>
+          <li>Критерии оценки навыков — на языке вашей практики</li>
+          <li>Формулировки обратной связи под ваш тон</li>
+          <li>Учебные ситуации для тренажёров: типовые кейсы вашей организации</li>
+          <li>Инструкции ИИ настраиваются под ваши стандарты</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PURCHASE ============ -->
+<section class="section section--alt" id="buy">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Что можно заказать</div>
+        <h2 class="section__title">Пять позиций внедрения</h2>
+      </div>
+      <p class="section__lead">
+        Не «купите лицензию — разбирайтесь сами». Внедрение под учебную модель: адаптация, программа, тренажёры, кабинет, сопровождение. Пилот на одной группе — потом масштабирование.
+      </p>
+    </div>
+
+    <div class="buy-grid reveal">
+      <div class="buy-card">
+        <div class="buy-card__num">01</div>
+        <div class="buy-card__title">Адаптация под менторский стандарт</div>
+        <div class="buy-card__desc">Структура сессии, критерии оценки, формулировки обратной связи — по вашей модели (GROW / SBI / собственная).</div>
+      </div>
+      <div class="buy-card">
+        <div class="buy-card__num">02</div>
+        <div class="buy-card__title">Учебная программа «под ключ»</div>
+        <div class="buy-card__desc">Курс менторства в умном редакторе, задания, тесты, правила проверки — под контекст вашей организации.</div>
+      </div>
+      <div class="buy-card">
+        <div class="buy-card__num">03</div>
+        <div class="buy-card__title">Учебные ситуации для тренажёров</div>
+        <div class="buy-card__desc">Типовые сценарии, важные для вашей практики: карьерный переход, конфликт в команде, сложный запрос, первая встреча.</div>
+      </div>
+      <div class="buy-card">
+        <div class="buy-card__num">04</div>
+        <div class="buy-card__title">Кабинет учебной службы</div>
+        <div class="buy-card__desc">Участники, прогресс, доступы, отчёты для руководителя программы — без ручных выгрузок и Excel.</div>
+      </div>
+      <div class="buy-card">
+        <div class="buy-card__num">05</div>
+        <div class="buy-card__title">Сопровождение внедрения</div>
+        <div class="buy-card__desc">Настройка, обучение методистов и кураторов, пилот на одной группе менторов, затем масштабирование.</div>
+      </div>
+      <div class="buy-card" style="background:var(--ink); color:#fff; border-color: var(--ink);">
+        <div class="buy-card__num" style="color:var(--accent-2)">→</div>
+        <div class="buy-card__title" style="color:#fff">Начать с пилота</div>
+        <div class="buy-card__desc" style="color:#C9CCD1">5–7 менторов, ваши сценарии, две недели работы. Загружаете видео нескольких сессий — получаете отчёт по каждой.</div>
+        <a href="#cta" class="btn btn--primary" style="align-self:flex-start; margin-top:8px">Обсудить пилот <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section__head reveal">
+      <div>
+        <div class="eyebrow"><span class="dot">●</span> Частые вопросы</div>
+        <h2 class="section__title">Что важно понимать до внедрения</h2>
+      </div>
+      <p class="section__lead">
+        Восемь вопросов, которые обычно задают руководители программ наставничества, HR-отделы и супервайзеры коучинг-школ.
+      </p>
+    </div>
+
+    <div class="faq reveal">
+      <details class="faq__item">
+        <summary class="faq__q">Заменяет ли ИИ живого куратора / супервайзера?</summary>
+        <div class="faq__a">Нет. ИИ снимает рутину базового разбора — расшифровку видео, разметку структуры, типовую обратную связь по 5 навыкам. Куратор освобождается для сложных случаев: неоднозначные ситуации, разговор с ментором про его состояние, обсуждение развития. Задача — освободить опытного человека, а не заменить его.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Какие форматы видео поддерживаются?</summary>
+        <div class="faq__a">Zoom (облачная запись), Microsoft Teams, локальные записи в mp4, mov, mkv. Загрузка через веб-интерфейс или интеграцию с корпоративным облаком. Аудио тоже работает (без невербалики видеокамеры, но со всей звуковой аналитикой).</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Что с приватностью видео и данных сессий?</summary>
+        <div class="faq__a">Хранение в вашем корпоративном контуре или в защищённом сегменте продукта — обсуждается на этапе внедрения. Шифрование при передаче и хранении. Записи привязаны к правам доступа: конкретному ментору доступны только свои сессии, куратору — свои курируемые. Подопечных уведомляют о записи по политике вашей организации.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Как быстро можно запустить пилот?</summary>
+        <div class="faq__a">Пилот на 5–7 менторов — за 2 недели: неделя на адаптацию критериев и настройку «инструкций ИИ» под вашу модель менторства, неделя работы группы с загрузкой видео и разборами. По итогам — понятная картина эффективности и решение о масштабе.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Как настраиваются критерии оценки навыков?</summary>
+        <div class="faq__a">Через модуль «инструкции ИИ». Организация задаёт: какие шаги обязательны в менторской сессии, какие навыки оцениваем, в каком тоне обратная связь, какие фразы — маркер риска (например, «на твоём месте я бы» — маркер готового совета). Настраивается вместе с вашими методистами на этапе адаптации.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Что если у нас уже есть LMS?</summary>
+        <div class="faq__a">«Наставник ИИ» умеет работать рядом: SSO, экспорт прогресса, интеграция с вашим кабинетом сотрудника. Часто первое внедрение — только модуль тренажёра и разбора видео; остальные части подключаются постепенно.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Работает ли только для оценки, без обучения?</summary>
+        <div class="faq__a">Да. Отдельный сценарий: не учим менторов, а только оцениваем действующих. Загружаете видео 3–5 сессий каждого — получаете сравнимый отчёт по всей команде. Помогает при аттестации, при отборе senior-менторов на масштабирование программы, при разборе конфликтных ситуаций.</div>
+      </details>
+      <details class="faq__item">
+        <summary class="faq__q">Сколько времени экономит куратору?</summary>
+        <div class="faq__a">По опыту действующих клиентских проектов — 60–80% времени на разбор типовых сессий. Куратор смотрит уже готовый структурный разбор с цитатами, добавляет комментарий в 3–4 предложения там, где нужно. Ручной разбор с нуля остаётся только на сложных случаях — обычно это 10–15% сессий.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="section section--dark cta" id="cta">
+  <div class="container cta__grid">
+    <div>
+      <h2>Показать «Наставника ИИ» на вашей менторской программе</h2>
+      <p>5–7 менторов, ваши сценарии и критерии, две недели работы. Загружаете видео нескольких сессий — получаете отчёт по каждой. По итогам решаем про масштаб на всю программу.</p>
+      <div class="cta__actions">
+        <a class="btn btn--primary" href="https://erman.ai/dashboard/discuss">Обсудить пилот <span class="arrow">→</span></a>
+        <a class="btn btn--outline" href="https://erman.ai/dashboard/consultations">Записаться на демо</a>
+      </div>
+    </div>
+    <aside class="cta__card">
+      <div class="cta__card-title">Как проходит пилот</div>
+      <ul class="cta__steps">
+        <li><b>01</b> <span>Встреча с методистом программы: разбираем вашу модель менторства (GROW / SBI / собственная) и критерии оценки.</span></li>
+        <li><b>02</b> <span>Настройка «инструкций ИИ» под ваш язык, стандарт менторской сессии и структуру разбора.</span></li>
+        <li><b>03</b> <span>Неделя работы группы: тренажёры + загрузка видео первых сессий с реальными подопечными.</span></li>
+        <li><b>04</b> <span>Отчёт: динамика группы, время куратора «до/после», рекомендации по масштабированию.</span></li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot__grid">
+      <div>
+        <a class="brand" href="https://erman.ai" style="color:var(--ink)">
+          <span class="brand__mark">Н</span>
+          <span class="brand__names">
+            <span class="brand__title" style="color:var(--ink)">Наставник ИИ</span>
+            <span class="brand__sub" style="color:var(--ink-3)">тренажёр и разбор видеосессий · Erman AI</span>
+          </span>
+        </a>
+        <p class="foot__about">Клиентское решение Erman AI: обучение менторов через тренажёр беседы с ИИ-подопечным и разбор реальных видеосессий с оценкой структуры, навыков и невербалики.</p>
+      </div>
+      <div>
+        <div class="foot__title">Продукт</div>
+        <ul>
+          <li><a href="#pillars">Возможности</a></li>
+          <li><a href="#cycle">Полный цикл</a></li>
+          <li><a href="#review">Разбор видеосессии</a></li>
+          <li><a href="#ai-map">14 применений ИИ</a></li>
+          <li><a href="#buy">Внедрение</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="foot__title">Erman AI</div>
+        <ul>
+          <li><a href="https://erman.ai">erman.ai</a></li>
+          <li><a href="https://erman.ai/dashboard/discuss">Обсудить проект</a></li>
+          <li><a href="https://t.me/ermanai">@ermanai</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot__bottom">
+      <span>1982 — 2026 · ERMAN AI</span>
+      <span>Наставник ИИ · v.1.0</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ==== Waveform generation ====
+  function genWaveform(el, count, played) {
+    if (!el) return;
+    var heights = [];
+    // Псевдо-стабильная генерация: воспроизводимая случайность
+    var seed = 42;
+    for (var i = 0; i < count; i++) {
+      seed = (seed * 9301 + 49297) % 233280;
+      var h = 15 + (seed / 233280) * 75;
+      // Слегка усиливаем в 4-х моментах ("маркеры")
+      if (i === Math.round(count * 0.08) || i === Math.round(count * 0.22) ||
+          i === Math.round(count * 0.58) || i === Math.round(count * 0.88)) h = 92;
+      heights.push(h);
+    }
+    var html = '';
+    for (var j = 0; j < heights.length; j++) {
+      var cls = 'wf-bar';
+      if (j < count * played) cls += ' is-past';
+      // Маркер
+      if (j === Math.round(count * 0.08) || j === Math.round(count * 0.22) ||
+          j === Math.round(count * 0.58) || j === Math.round(count * 0.88)) {
+        cls += ' is-marker-strong';
+      }
+      if (j === Math.round(count * 0.41) || j === Math.round(count * 0.72)) {
+        cls += ' is-marker-growth';
+      }
+      html += '<div class="' + cls + '" style="height:' + heights[j].toFixed(0) + '%"></div>';
+    }
+    el.innerHTML = html;
+  }
+  genWaveform(document.getElementById('heroWaveform'), 42, 0.36);
+  genWaveform(document.getElementById('reviewWaveform'), 60, 0.36);
+
+  // ==== Cycle diagram ====
+  var STAGES = {
+    '1': {
+      eyebrow: '01 · СОЗДАНИЕ',
+      title: 'Методист собирает программу менторства',
+      desc: 'Умный редактор помогает написать курс: правила менторской беседы, структура сессии, критерии оценки навыков. ИИ дописывает разделы в контексте урока, генерирует иллюстрации, собирает черновики тестов.',
+      list: ['Курс → темы → уроки → материалы, задания, тесты', 'Методист остаётся редактором качества', 'ИИ снимает рутину черновика']
+    },
+    '2': {
+      eyebrow: '02 · ОБУЧЕНИЕ',
+      title: 'Группа проходит программу',
+      desc: 'Начинающие менторы идут по курсу в вебе или мобильном приложении: материалы, задания, тесты, прогресс. Руководитель программы видит группу целиком, замечает, кто «завис», кто готов к живым сессиям.',
+      list: ['Задания и автоматическая проверка', 'Прогресс участника и группы', 'Помощник в обучении отвечает на вопросы']
+    },
+    '3': {
+      eyebrow: '03 · ТРЕНАЖЁР',
+      title: 'Диалог с ИИ-подопечным',
+      desc: 'Прежде чем выйти к живому человеку — ментор тренируется на ИИ-собеседнике: первая встреча, сложный запрос, разговор про карьеру. Безопасная среда, где можно ошибиться и разобрать сразу.',
+      list: ['Диалоговый тренажёр по сценарию', 'Тренажёр учебной беседы под область', 'Тренажёр первой встречи']
+    },
+    '4': {
+      eyebrow: '04 · РАЗБОР ВИДЕО',
+      title: 'Живая видеосессия → структурированный отчёт',
+      desc: 'Ментор загружает видео сессии с реальным подопечным (Zoom, Teams, файл). Система разделяет говорящих, расшифровывает речь, оценивает структуру, навыки и невербальные сигналы. Зоны роста возвращаются в программу — цикл замыкается.',
+      list: ['Диаризация: кто где говорит', 'Расшифровка с таймкодами', 'Структура + навыки + невербалика']
+    }
+  };
+  var cycleNodes = document.querySelectorAll('.cycle-node');
+  var elE = document.getElementById('cycleDetailEyebrow');
+  var elT = document.getElementById('cycleDetailTitle');
+  var elD = document.getElementById('cycleDetailDesc');
+  var elL = document.getElementById('cycleDetailList');
+  function setStage(n) {
+    var s = STAGES[n];
+    if (!s) return;
+    cycleNodes.forEach(function (x) { x.classList.toggle('is-active', x.dataset.stage === n); });
+    elE.textContent = s.eyebrow;
+    elT.textContent = s.title;
+    elD.textContent = s.desc;
+    elL.innerHTML = s.list.map(function (li) { return '<li>' + li + '</li>'; }).join('');
+  }
+  cycleNodes.forEach(function (node) {
+    node.addEventListener('mouseenter', function () { setStage(node.dataset.stage); });
+    node.addEventListener('click', function () { setStage(node.dataset.stage); });
+    node.addEventListener('focus', function () { setStage(node.dataset.stage); });
+  });
+
+  // ==== Review card tabs ====
+  var tabs = document.querySelectorAll('.review-tab');
+  var panels = document.querySelectorAll('.review-panel');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('is-active'); });
+      panels.forEach(function (p) { p.classList.remove('is-active'); });
+      tab.classList.add('is-active');
+      var target = tab.dataset.tab;
+      var panel = document.querySelector('[data-panel="' + target + '"]');
+      if (panel) panel.classList.add('is-active');
+    });
+  });
+
+  // ==== AI map filter ====
+  var filters = document.querySelectorAll('.ai-map__filter');
+  var rows = document.querySelectorAll('.ai-row:not(.ai-row--head)');
+  filters.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      filters.forEach(function (b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      var role = btn.dataset.filter;
+      rows.forEach(function (row) {
+        if (role === 'all') { row.classList.remove('is-hidden'); return; }
+        var roles = (row.dataset.role || '').split(' ');
+        row.classList.toggle('is-hidden', roles.indexOf(role) === -1);
+      });
+    });
+  });
+
+  // ==== Sticky nav highlight ====
+  var navLinks = document.querySelectorAll('.nav a[href^="#"]');
+  var sections = [];
+  navLinks.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ id: id, el: el, link: a });
+  });
+  if ('IntersectionObserver' in window && sections.length) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          navLinks.forEach(function (l) { l.classList.remove('is-active'); });
+          var match = sections.find(function (s) { return s.el === e.target; });
+          if (match) match.link.classList.add('is-active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+    sections.forEach(function (s) { io.observe(s.el); });
+  }
+
+  // ==== Reveal on scroll ====
+  var reveals = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    reveals.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          ro.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    reveals.forEach(function (el) { ro.observe(el); });
+  }
+})();
+</script>
+
+</body>
+</html>
