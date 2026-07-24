@@ -10,12 +10,14 @@ const inter = Inter({ subsets: ["latin", "cyrillic"] });
 export const metadata: Metadata = {
   title: "Erman AI",
   description: "AI-инструменты для вашего бизнеса",
+  // Paths are relative to basePath (/dashboard) — Next.js prefixes them.
+  // Do NOT hardcode "/dashboard/..." here or icons can break / double-prefix.
   icons: {
     icon: [
-      { url: "/dashboard/favicon.ico", sizes: "any" },
-      { url: "/dashboard/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/dashboard/apple-icon.png", sizes: "512x512" }],
+    apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
   },
 };
 

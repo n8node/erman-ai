@@ -68,6 +68,14 @@ function appPathname(pathname: string): string {
   return pathname;
 }
 
+/** Favicon / brand icons must never hit auth redirects (browsers fetch without cookies). */
+const STATIC_ASSET_RE =
+  /\.(?:ico|png|jpe?g|gif|webp|svg|txt|xml|webmanifest)$/i;
+
+function isStaticAssetPath(pathname: string) {
+  return STATIC_ASSET_RE.test(appPathname(pathname));
+}
+
 function isSharePath(pathname: string) {
   const p = appPathname(pathname);
   return p.startsWith("/share/");
@@ -152,6 +160,14 @@ function loginRedirect(request: NextRequest, returnPath: string) {
 
 export async function middleware(request: NextRequest) {
   const pathname = appPathname(request.nextUrl.pathname);
+
+  // Icons and other static assets are public — never redirect to /login.
+  // Regression: excluding only favicon.ico left icon.png / apple-icon.png
+  // returning 307 → login HTML, so the dashboard favicon disappeared.
+  if (isStaticAssetPath(pathname)) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("access_token");
 
   let response: NextResponse;
@@ -192,5 +208,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Keep icon routes out of middleware entirely (matcher + early return above).
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.png|apple-icon\\.png|.*\\.(?:ico|png|jpe?g|gif|webp|svg)$).*)",
+  ],
 };
