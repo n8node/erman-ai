@@ -42,13 +42,17 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T backend 
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 ```
 
-Open `https://erman.ai/workspace-app/admin` and create the first AFFiNE admin.
+Open `https://erman.ai/workspace-app/admin/setup` and create the first AFFiNE admin.
+
+If the browser lands on a WordPress 404 after `/workspace-app/admin`, rebuild nginx
+so `proxy_redirect` is applied, or open the setup URL directly.
 
 ## Configure seamless sign-in
 
 In AFFiNE Admin → Settings → OAuth → OIDC, configure:
 
-- Issuer: `https://erman.ai/api/v1/workspace/oidc`
+- Issuer: `https://erman.ai/api/v1/workspace/oidc` (discovery document:
+  `https://erman.ai/api/v1/workspace/oidc/.well-known/openid-configuration`)
 - Client ID: the value of `WORKSPACE_OIDC_CLIENT_ID`
 - Client secret: the value of `WORKSPACE_OIDC_CLIENT_SECRET`
 - Scopes: `openid email profile`

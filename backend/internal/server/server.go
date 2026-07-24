@@ -175,6 +175,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Post("/billing/robokassa/result2", paymentWebhookHandler.RobokassaResult2)
 
 		api.Route("/workspace/oidc", func(oidc chi.Router) {
+			oidc.Get("/", workspaceOIDCHandler.Root)
 			oidc.Get("/.well-known/openid-configuration", workspaceOIDCHandler.Discovery)
 			oidc.Get("/jwks", workspaceOIDCHandler.JWKS)
 			oidc.With(authMW.Required).Get("/authorize", workspaceOIDCHandler.Authorize)

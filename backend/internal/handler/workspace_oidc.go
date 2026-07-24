@@ -64,6 +64,10 @@ func NewWorkspaceOIDCHandler(
 	}
 }
 
+func (h *WorkspaceOIDCHandler) Root(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, h.issuer+"/.well-known/openid-configuration", http.StatusTemporaryRedirect)
+}
+
 func (h *WorkspaceOIDCHandler) Discovery(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"issuer":                                h.issuer,
