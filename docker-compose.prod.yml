@@ -38,6 +38,9 @@ services:
           memory: 512M
 
   affine:
+    environment:
+      AFFINE_SERVER_HTTPS: "true"
+      AFFINE_SERVER_HOST: ${DOMAIN:-erman.ai}
     logging:
       driver: json-file
       options:
@@ -50,6 +53,9 @@ services:
           memory: 2G
 
   affine-migration:
+    environment:
+      AFFINE_SERVER_HTTPS: "true"
+      AFFINE_SERVER_HOST: ${DOMAIN:-erman.ai}
     logging:
       driver: json-file
       options:
