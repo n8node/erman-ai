@@ -39,6 +39,11 @@ type Config struct {
 	TelegramAssetsDir  string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
 	Domain             string `env:"DOMAIN" envDefault:"erman.ai"`
 
+	WorkspaceOIDCClientID      string `env:"WORKSPACE_OIDC_CLIENT_ID" envDefault:"erman-affine"`
+	WorkspaceOIDCClientSecret  string `env:"WORKSPACE_OIDC_CLIENT_SECRET"`
+	WorkspaceOIDCPrivateKeyB64 string `env:"WORKSPACE_OIDC_PRIVATE_KEY_B64"`
+	WorkspaceOIDCRedirectURI   string `env:"WORKSPACE_OIDC_REDIRECT_URI"`
+
 	startedAt time.Time
 }
 
@@ -78,4 +83,15 @@ func (c *Config) PublicBaseURL() string {
 		return "http://localhost"
 	}
 	return "https://" + c.Domain
+}
+
+func (c *Config) WorkspaceOIDCIssuer() string {
+	return c.PublicBaseURL() + "/api/v1/workspace/oidc"
+}
+
+func (c *Config) WorkspaceOIDCCallbackURL() string {
+	if c.WorkspaceOIDCRedirectURI != "" {
+		return c.WorkspaceOIDCRedirectURI
+	}
+	return c.PublicBaseURL() + "/workspace-app/oauth/callback"
 }

@@ -7,6 +7,7 @@ import {
   Calculator,
   ClipboardList,
   FileText,
+  PanelsTopLeft,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -51,6 +52,12 @@ const TOOLS: {
     href: "/tools/legal-scan",
     icon: ShieldCheck,
     badge: { text: "text-text2", bg: "bg-bg2" },
+  },
+  {
+    slug: "workspace",
+    href: "/tools/workspace",
+    icon: PanelsTopLeft,
+    badge: { text: "text-accent", bg: "bg-accent-bg" },
   },
 ];
 

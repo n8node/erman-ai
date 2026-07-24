@@ -141,6 +141,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	inquiryRL := middleware.NewRateLimiter(5, time.Hour)
 	billingHandler := handler.NewBillingHandler(billingSvc, checkoutSvc, planRepo, runRepo)
 	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc)
+	workspaceOIDCHandler := handler.NewWorkspaceOIDCHandler(userRepo, cfg)
 
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -172,6 +173,14 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		api.Get("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
 		api.Post("/billing/robokassa/result", paymentWebhookHandler.RobokassaResult)
 		api.Post("/billing/robokassa/result2", paymentWebhookHandler.RobokassaResult2)
+
+		api.Route("/workspace/oidc", func(oidc chi.Router) {
+			oidc.Get("/.well-known/openid-configuration", workspaceOIDCHandler.Discovery)
+			oidc.Get("/jwks", workspaceOIDCHandler.JWKS)
+			oidc.With(authMW.Required).Get("/authorize", workspaceOIDCHandler.Authorize)
+			oidc.Post("/token", workspaceOIDCHandler.Token)
+			oidc.Get("/userinfo", workspaceOIDCHandler.UserInfo)
+		})
 
 		api.Route("/auth", func(auth chi.Router) {
 			auth.Use(authRL.Middleware)

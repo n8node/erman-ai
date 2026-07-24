@@ -8,6 +8,7 @@ services:
       - backend
       - frontend
       - wordpress
+      - affine
     volumes:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - ./certbot-webroot:/var/www/certbot
@@ -38,6 +39,71 @@ services:
       INTERNAL_API_URL: http://backend:8080
     depends_on:
       - backend
+    restart: unless-stopped
+
+  affine:
+    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
+    env_file: .env
+    environment:
+      REDIS_SERVER_HOST: affine-redis
+      DATABASE_URL: postgresql://${AFFINE_DB_USER:-affine}:${AFFINE_DB_PASSWORD:?set AFFINE_DB_PASSWORD}@affine-postgres:5432/${AFFINE_DB_NAME:-affine}
+      AFFINE_INDEXER_ENABLED: "false"
+      AFFINE_SERVER_SUB_PATH: /workspace-app
+      AFFINE_SERVER_EXTERNAL_URL: ${AFFINE_SERVER_EXTERNAL_URL:-http://localhost/workspace-app}
+    volumes:
+      - affine_storage:/root/.affine/storage
+      - affine_config:/root/.affine/config
+    depends_on:
+      affine-redis:
+        condition: service_healthy
+      affine-postgres:
+        condition: service_healthy
+      affine-migration:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  affine-migration:
+    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
+    command: ["sh", "-c", "node ./scripts/self-host-predeploy.js"]
+    env_file: .env
+    environment:
+      REDIS_SERVER_HOST: affine-redis
+      DATABASE_URL: postgresql://${AFFINE_DB_USER:-affine}:${AFFINE_DB_PASSWORD:?set AFFINE_DB_PASSWORD}@affine-postgres:5432/${AFFINE_DB_NAME:-affine}
+      AFFINE_INDEXER_ENABLED: "false"
+      AFFINE_SERVER_SUB_PATH: /workspace-app
+      AFFINE_SERVER_EXTERNAL_URL: ${AFFINE_SERVER_EXTERNAL_URL:-http://localhost/workspace-app}
+    volumes:
+      - affine_storage:/root/.affine/storage
+      - affine_config:/root/.affine/config
+    depends_on:
+      affine-redis:
+        condition: service_healthy
+      affine-postgres:
+        condition: service_healthy
+
+  affine-redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  affine-postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${AFFINE_DB_USER:-affine}
+      POSTGRES_PASSWORD: ${AFFINE_DB_PASSWORD:?set AFFINE_DB_PASSWORD}
+      POSTGRES_DB: ${AFFINE_DB_NAME:-affine}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - affine_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${AFFINE_DB_USER:-affine}", "-d", "${AFFINE_DB_NAME:-affine}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   wordpress:
@@ -95,3 +161,6 @@ volumes:
   mysql_data:
   wp_uploads:
   telegram_assets:
+  affine_postgres_data:
+  affine_storage:
+  affine_config:
