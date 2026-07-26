@@ -14,8 +14,6 @@ services:
   backend:
     environment:
       ENVIRONMENT: production
-      # AFFiNE 0.27.x omits its configured subpath from the OIDC callback.
-      WORKSPACE_OIDC_REDIRECT_URI: https://${DOMAIN:-erman.ai}/oauth/callback
     logging:
       driver: json-file
       options:
@@ -38,55 +36,6 @@ services:
         limits:
           cpus: "0.5"
           memory: 512M
-
-  affine:
-    environment:
-      AFFINE_SERVER_HTTPS: "true"
-      AFFINE_SERVER_HOST: ${DOMAIN:-erman.ai}
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 2G
-
-  affine-migration:
-    environment:
-      AFFINE_SERVER_HTTPS: "true"
-      AFFINE_SERVER_HOST: ${DOMAIN:-erman.ai}
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  affine-redis:
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-
-  affine-postgres:
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
 
   wordpress:
     logging:
