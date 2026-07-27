@@ -177,6 +177,19 @@ func FilterYandexChatModels(models []string) []string {
 	return out
 }
 
+func YandexFolderFromModelURI(modelURI string) string {
+	modelURI = strings.TrimSpace(modelURI)
+	if !strings.HasPrefix(modelURI, "gpt://") {
+		return ""
+	}
+	rest := strings.TrimPrefix(modelURI, "gpt://")
+	idx := strings.Index(rest, "/")
+	if idx <= 0 {
+		return ""
+	}
+	return rest[:idx]
+}
+
 func MergeYandexChatModels(apiModels []string, folderID string) []string {
 	merged := FilterYandexChatModels(apiModels)
 	seen := make(map[string]struct{}, len(merged))

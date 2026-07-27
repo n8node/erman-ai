@@ -56,6 +56,13 @@ func TestResolveModelPricingUsesModelSpecificRates(t *testing.T) {
 	}
 }
 
+func TestYandexFolderFromModelURI(t *testing.T) {
+	got := YandexFolderFromModelURI("gpt://b1gtnjtlhud3pof106in/yandexgpt/latest")
+	if got != "b1gtnjtlhud3pof106in" {
+		t.Fatalf("folder = %q", got)
+	}
+}
+
 func TestKnownYandexChatModelsIncludesCatalog(t *testing.T) {
 	got := KnownYandexChatModels("b1gtest")
 	if len(got) < 8 {

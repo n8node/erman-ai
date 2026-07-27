@@ -259,6 +259,21 @@ func (s *StrategyLLMSettingsService) buildAdminView(rec *model.StrategyLLMSettin
 	}
 }
 
+func yandexFolderIDForCatalog(folderID string, cfg model.StrategyLLMStoredConfig) string {
+	if strings.TrimSpace(folderID) != "" {
+		return folderID
+	}
+	if fromModel := YandexFolderFromModelURI(cfg.YandexModel); fromModel != "" {
+		return fromModel
+	}
+	for _, m := range cfg.YandexModels {
+		if fromModel := YandexFolderFromModelURI(m); fromModel != "" {
+			return fromModel
+		}
+	}
+	return folderID
+}
+
 func cloneModelPricing(src map[string]model.LLMProviderPricing) map[string]model.LLMProviderPricing {
 	if src == nil {
 		return map[string]model.LLMProviderPricing{}
@@ -313,7 +328,7 @@ func (s *StrategyLLMSettingsService) providerStatuses(cfg model.StrategyLLMStore
 			KeyHint:      model.MaskAPIKey(creds.YandexKey),
 			FolderHint:   model.MaskFolderID(creds.YandexFolderID),
 			DefaultModel: YandexModelURI(creds.YandexFolderID, s.cfg.YandexModelSmart),
-			Models:       MergeYandexChatModels(cfg.YandexModels, creds.YandexFolderID),
+			Models:       MergeYandexChatModels(cfg.YandexModels, yandexFolderIDForCatalog(creds.YandexFolderID, cfg)),
 		},
 	}
 }
