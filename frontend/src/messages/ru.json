@@ -734,6 +734,8 @@
         "deepseek": "DeepSeek",
         "yandex": "Yandex GPT"
       }
+    },
+    "legalRisks": {
       "title": "Legal-скан — справочник рисков",
       "subtitle": "Штрафы и статьи для Legal-скан сайта. Изменения применяются к новым сканам.",
       "loading": "Загрузка…",
