@@ -8,6 +8,7 @@ import {
   testStrategyLLMConnection,
   updateAdminStrategyLLMSettings,
   type LLMProvider,
+  type LLMProviderPricing,
   type LLMProviderStatus,
   type StrategyLLMSettings,
 } from "@/lib/api";
@@ -16,24 +17,47 @@ import { cn } from "@/lib/utils";
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
 
+const LLM_PROVIDERS: LLMProvider[] = ["yandex", "openrouter", "deepseek"];
+
 const DEFAULT_SETTINGS: StrategyLLMSettings = {
-  provider: "openrouter",
+  provider: "yandex",
   openrouter_model: "anthropic/claude-sonnet-4-5",
   deepseek_model: "deepseek-chat",
+  yandex_model: "yandexgpt/latest",
   system_prompt: "",
   proposal_system_prompt: "",
   temperature: 0.7,
   max_tokens: 8192,
 };
 
+const DEFAULT_PRICING: Record<LLMProvider, LLMProviderPricing> = {
+  yandex: { input_per_1k: 0.6, output_per_1k: 1.8, currency: "RUB" },
+  openrouter: { input_per_1k: 0.003, output_per_1k: 0.015, currency: "USD" },
+  deepseek: { input_per_1k: 0.014, output_per_1k: 0.028, currency: "USD" },
+};
+
+function activeModelLabel(settings: StrategyLLMSettings): string {
+  switch (settings.provider) {
+    case "deepseek":
+      return settings.deepseek_model;
+    case "yandex":
+      return settings.yandex_model;
+    default:
+      return settings.openrouter_model;
+  }
+}
+
 export function AdminStrategyLLMEditor() {
   const t = useTranslations("admin.strategyLlm");
   const [settings, setSettings] = useState<StrategyLLMSettings>(DEFAULT_SETTINGS);
+  const [pricing, setPricing] = useState<Partial<Record<LLMProvider, LLMProviderPricing>>>(DEFAULT_PRICING);
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [defaultProposalPrompt, setDefaultProposalPrompt] = useState("");
   const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
   const [openrouterKeyInput, setOpenrouterKeyInput] = useState("");
   const [deepseekKeyInput, setDeepseekKeyInput] = useState("");
+  const [yandexKeyInput, setYandexKeyInput] = useState("");
+  const [yandexFolderInput, setYandexFolderInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<LLMProvider | null>(null);
@@ -46,6 +70,7 @@ export function AdminStrategyLLMEditor() {
     setDefaultPrompt(data.default_system_prompt);
     setDefaultProposalPrompt(data.default_proposal_system_prompt);
     setProviders(data.providers);
+    setPricing({ ...DEFAULT_PRICING, ...data.pricing });
   }
 
   useEffect(() => {
@@ -62,19 +87,36 @@ export function AdminStrategyLLMEditor() {
     setSuccess("");
   }
 
+  function patchPricing(provider: LLMProvider, partial: Partial<LLMProviderPricing>) {
+    setPricing((prev) => ({
+      ...prev,
+      [provider]: { ...DEFAULT_PRICING[provider], ...prev[provider], ...partial },
+    }));
+    setSuccess("");
+  }
+
+  function buildSavePayload() {
+    return {
+      settings,
+      pricing,
+      ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
+      ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
+      ...(yandexKeyInput.trim() ? { yandex_api_key: yandexKeyInput.trim() } : {}),
+      ...(yandexFolderInput.trim() ? { yandex_folder_id: yandexFolderInput.trim() } : {}),
+    };
+  }
+
   async function handleSave() {
     setSaving(true);
     setError("");
     setSuccess("");
     try {
-      const data = await updateAdminStrategyLLMSettings({
-        settings,
-        ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
-        ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
-      });
+      const data = await updateAdminStrategyLLMSettings(buildSavePayload());
       applyView(data);
       setOpenrouterKeyInput("");
       setDeepseekKeyInput("");
+      setYandexKeyInput("");
+      setYandexFolderInput("");
       setSuccess(t("saved"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("saveFailed"));
@@ -88,18 +130,18 @@ export function AdminStrategyLLMEditor() {
     setError("");
     setTestStatus((prev) => ({ ...prev, [provider]: "" }));
     try {
-      if (
+      const needsSave =
         (provider === "openrouter" && openrouterKeyInput.trim()) ||
-        (provider === "deepseek" && deepseekKeyInput.trim())
-      ) {
-        const saved = await updateAdminStrategyLLMSettings({
-          settings,
-          ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
-          ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
-        });
+        (provider === "deepseek" && deepseekKeyInput.trim()) ||
+        (provider === "yandex" && (yandexKeyInput.trim() || yandexFolderInput.trim()));
+
+      if (needsSave) {
+        const saved = await updateAdminStrategyLLMSettings(buildSavePayload());
         applyView(saved);
         setOpenrouterKeyInput("");
         setDeepseekKeyInput("");
+        setYandexKeyInput("");
+        setYandexFolderInput("");
       }
 
       const result = await testStrategyLLMConnection(provider);
@@ -117,6 +159,9 @@ export function AdminStrategyLLMEditor() {
         }
         if (provider === "deepseek" && !result.models.includes(settings.deepseek_model)) {
           patch({ deepseek_model: result.models[0] });
+        }
+        if (provider === "yandex" && !result.models.includes(settings.yandex_model)) {
+          patch({ yandex_model: result.models[0] });
         }
       }
     } catch (err) {
@@ -139,6 +184,7 @@ export function AdminStrategyLLMEditor() {
 
   const openrouterMeta = providers.find((p) => p.id === "openrouter");
   const deepseekMeta = providers.find((p) => p.id === "deepseek");
+  const yandexMeta = providers.find((p) => p.id === "yandex");
 
   if (loading) {
     return <p className="text-sm text-text2">{t("loading")}</p>;
@@ -206,6 +252,67 @@ export function AdminStrategyLLMEditor() {
             </div>
           );
         })}
+
+        <div className="rounded-lg border border-border bg-bg2/40 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium">{t("providers.yandex")}</p>
+            {yandexMeta?.configured ? (
+              <span className="text-xs text-success">
+                {t("keyConfigured")}: {yandexMeta.key_hint}
+                {yandexMeta.folder_hint ? ` · ${t("folderConfigured")}: ${yandexMeta.folder_hint}` : ""}
+              </span>
+            ) : (
+              <span className="text-xs text-warning">{t("yandexCredentialsMissing")}</span>
+            )}
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">{t("yandexApiKey")}</label>
+            <input
+              type="password"
+              className={fieldClass}
+              value={yandexKeyInput}
+              placeholder={
+                yandexMeta?.key_hint
+                  ? t("keyPlaceholderExisting", { hint: yandexMeta.key_hint })
+                  : t("keyPlaceholder")
+              }
+              onChange={(e) => {
+                setYandexKeyInput(e.target.value);
+                setSuccess("");
+              }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium">{t("yandexFolderId")}</label>
+            <input
+              type="text"
+              className={fieldClass}
+              value={yandexFolderInput}
+              placeholder={
+                yandexMeta?.folder_hint
+                  ? t("folderPlaceholderExisting", { hint: yandexMeta.folder_hint })
+                  : t("folderPlaceholder")
+              }
+              onChange={(e) => {
+                setYandexFolderInput(e.target.value);
+                setSuccess("");
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            disabled={testing === "yandex"}
+            onClick={() => handleTestConnection("yandex")}
+            className="rounded-lg border border-border2 px-3 py-1.5 text-xs font-medium hover:bg-bg2 disabled:opacity-60"
+          >
+            {testing === "yandex" ? t("testing") : t("testConnection")}
+          </button>
+          {testStatus.yandex && (
+            <p className={cn("text-xs", testStatus.yandex?.includes("connected") ? "text-success" : "text-text2")}>
+              {testStatus.yandex}
+            </p>
+          )}
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
@@ -213,7 +320,7 @@ export function AdminStrategyLLMEditor() {
           {t("providerSection")}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {(["openrouter", "deepseek"] as LLMProvider[]).map((id) => {
+          {LLM_PROVIDERS.map((id) => {
             const meta = providers.find((p) => p.id === id);
             return (
               <button
@@ -242,6 +349,13 @@ export function AdminStrategyLLMEditor() {
           {t("modelsSection")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
+          <ModelPicker
+            label={t("yandexModel")}
+            value={settings.yandex_model}
+            models={yandexMeta?.models ?? []}
+            onChange={(v) => patch({ yandex_model: v })}
+            placeholder={t("modelsEmpty")}
+          />
           <ModelPicker
             label={t("openrouterModel")}
             value={settings.openrouter_model}
@@ -283,12 +397,54 @@ export function AdminStrategyLLMEditor() {
         </div>
         <p className="text-xs text-text3">
           {t("activeModel")}:{" "}
-          <span className="font-medium text-text">
-            {settings.provider === "deepseek"
-              ? settings.deepseek_model
-              : settings.openrouter_model}
-          </span>
+          <span className="font-medium text-text">{activeModelLabel(settings)}</span>
         </p>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("pricingSection")}
+        </h2>
+        <p className="text-xs text-text3">{t("pricingHint")}</p>
+        <div className="space-y-4">
+          {LLM_PROVIDERS.map((id) => {
+            const p = pricing[id] ?? DEFAULT_PRICING[id];
+            const currency = p.currency ?? DEFAULT_PRICING[id].currency;
+            return (
+              <div key={id} className="rounded-lg border border-border bg-bg2/40 p-4 space-y-3">
+                <p className="text-sm font-medium">{t(`providers.${id}`)}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium">
+                      {t("priceInputPer1k", { currency })}
+                    </label>
+                    <input
+                      type="number"
+                      step={0.0001}
+                      min={0}
+                      className={fieldClass}
+                      value={p.input_per_1k}
+                      onChange={(e) => patchPricing(id, { input_per_1k: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium">
+                      {t("priceOutputPer1k", { currency })}
+                    </label>
+                    <input
+                      type="number"
+                      step={0.0001}
+                      min={0}
+                      className={fieldClass}
+                      value={p.output_per_1k}
+                      onChange={(e) => patchPricing(id, { output_per_1k: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-3">

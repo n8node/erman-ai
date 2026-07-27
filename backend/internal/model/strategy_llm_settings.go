@@ -7,13 +7,22 @@ type LLMProvider string
 const (
 	LLMProviderOpenRouter LLMProvider = "openrouter"
 	LLMProviderDeepSeek   LLMProvider = "deepseek"
+	LLMProviderYandex     LLMProvider = "yandex"
 )
+
+// LLMProviderPricing — admin-configured token cost (per 1000 tokens).
+type LLMProviderPricing struct {
+	InputPer1K  float64 `json:"input_per_1k"`
+	OutputPer1K float64 `json:"output_per_1k"`
+	Currency    string  `json:"currency"` // RUB or USD
+}
 
 // StrategyLLMSettings — public settings (no API keys).
 type StrategyLLMSettings struct {
 	Provider             LLMProvider `json:"provider"`
 	OpenRouterModel      string      `json:"openrouter_model"`
 	DeepSeekModel        string      `json:"deepseek_model"`
+	YandexModel          string      `json:"yandex_model"`
 	SystemPrompt         string      `json:"system_prompt"`
 	ProposalSystemPrompt string      `json:"proposal_system_prompt"`
 	Temperature          float64     `json:"temperature"`
@@ -23,10 +32,14 @@ type StrategyLLMSettings struct {
 // StrategyLLMStoredConfig — full row persisted in JSONB.
 type StrategyLLMStoredConfig struct {
 	StrategyLLMSettings
-	OpenRouterAPIKey string   `json:"openrouter_api_key"`
-	DeepSeekAPIKey   string   `json:"deepseek_api_key"`
-	OpenRouterModels []string `json:"openrouter_models"`
-	DeepSeekModels   []string `json:"deepseek_models"`
+	OpenRouterAPIKey string                          `json:"openrouter_api_key"`
+	DeepSeekAPIKey   string                          `json:"deepseek_api_key"`
+	YandexAPIKey     string                          `json:"yandex_api_key"`
+	YandexFolderID   string                          `json:"yandex_folder_id"`
+	OpenRouterModels []string                        `json:"openrouter_models"`
+	DeepSeekModels   []string                        `json:"deepseek_models"`
+	YandexModels     []string                        `json:"yandex_models"`
+	Pricing          map[LLMProvider]LLMProviderPricing `json:"pricing"`
 }
 
 type StrategyLLMSettingsRecord struct {
@@ -38,22 +51,27 @@ type LLMProviderStatus struct {
 	ID           LLMProvider `json:"id"`
 	Configured   bool        `json:"configured"`
 	KeyHint      string      `json:"key_hint,omitempty"`
+	FolderHint   string      `json:"folder_hint,omitempty"`
 	DefaultModel string      `json:"default_model"`
 	Models       []string    `json:"models"`
 }
 
 type StrategyLLMAdminView struct {
-	Settings                    StrategyLLMSettings `json:"settings"`
-	Providers                   []LLMProviderStatus `json:"providers"`
-	DefaultSystemPrompt         string              `json:"default_system_prompt"`
-	DefaultProposalSystemPrompt string              `json:"default_proposal_system_prompt"`
-	UpdatedAt                   time.Time           `json:"updated_at"`
+	Settings                    StrategyLLMSettings                `json:"settings"`
+	Providers                   []LLMProviderStatus                `json:"providers"`
+	Pricing                     map[LLMProvider]LLMProviderPricing `json:"pricing"`
+	DefaultSystemPrompt         string                             `json:"default_system_prompt"`
+	DefaultProposalSystemPrompt string                             `json:"default_proposal_system_prompt"`
+	UpdatedAt                   time.Time                          `json:"updated_at"`
 }
 
 type StrategyLLMAdminUpdateRequest struct {
-	Settings         StrategyLLMSettings `json:"settings"`
-	OpenRouterAPIKey string              `json:"openrouter_api_key,omitempty"`
-	DeepSeekAPIKey   string              `json:"deepseek_api_key,omitempty"`
+	Settings         StrategyLLMSettings                `json:"settings"`
+	OpenRouterAPIKey string                             `json:"openrouter_api_key,omitempty"`
+	DeepSeekAPIKey   string                             `json:"deepseek_api_key,omitempty"`
+	YandexAPIKey     string                             `json:"yandex_api_key,omitempty"`
+	YandexFolderID   string                             `json:"yandex_folder_id,omitempty"`
+	Pricing          map[LLMProvider]LLMProviderPricing `json:"pricing,omitempty"`
 }
 
 type StrategyLLMTestConnectionResult struct {
@@ -66,23 +84,30 @@ type StrategyLLMTestConnectionResult struct {
 func DefaultStrategyLLMStoredConfig() StrategyLLMStoredConfig {
 	return StrategyLLMStoredConfig{
 		StrategyLLMSettings: StrategyLLMSettings{
-			Provider:        LLMProviderOpenRouter,
+			Provider:        LLMProviderYandex,
 			OpenRouterModel: "anthropic/claude-sonnet-4-5",
 			DeepSeekModel:   "deepseek-chat",
+			YandexModel:     "yandexgpt/latest",
 			SystemPrompt:    "",
 			Temperature:     0.7,
 			MaxTokens:       32000,
 		},
 		OpenRouterModels: []string{},
 		DeepSeekModels:   []string{},
+		YandexModels:     []string{},
+		Pricing:          map[LLMProvider]LLMProviderPricing{},
 	}
 }
 
 func (s StrategyLLMSettings) ActiveModel() string {
-	if s.Provider == LLMProviderDeepSeek {
+	switch s.Provider {
+	case LLMProviderDeepSeek:
 		return s.DeepSeekModel
+	case LLMProviderYandex:
+		return s.YandexModel
+	default:
+		return s.OpenRouterModel
 	}
-	return s.OpenRouterModel
 }
 
 func MaskAPIKey(key string) string {
@@ -93,4 +118,14 @@ func MaskAPIKey(key string) string {
 		return "••••••••"
 	}
 	return key[:4] + "…" + key[len(key)-4:]
+}
+
+func MaskFolderID(id string) string {
+	if id == "" {
+		return ""
+	}
+	if len(id) <= 6 {
+		return "••••••"
+	}
+	return id[:3] + "…" + id[len(id)-3:]
 }

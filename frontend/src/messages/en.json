@@ -713,6 +713,17 @@
       "resetProposalPrompt": "Reset proposal prompt",
       "openrouterModel": "OpenRouter model",
       "deepseekModel": "DeepSeek model",
+      "yandexModel": "Yandex GPT model",
+      "yandexApiKey": "Yandex API key",
+      "yandexFolderId": "Folder ID (Yandex Cloud catalog)",
+      "folderConfigured": "Folder ID",
+      "folderPlaceholder": "b1g…",
+      "folderPlaceholderExisting": "New folder ID (current: {hint})",
+      "yandexCredentialsMissing": "API key and folder ID required",
+      "pricingSection": "Token pricing",
+      "pricingHint": "Used to calculate cost_rub / cost_usd in usage_log after each LLM call. Set rates from your Yandex Cloud pricing page.",
+      "priceInputPer1k": "Input per 1K tokens ({currency})",
+      "priceOutputPer1k": "Output per 1K tokens ({currency})",
       "temperature": "Temperature",
       "maxTokens": "Max tokens",
       "activeModel": "Active model",
@@ -720,7 +731,8 @@
       "keyMissing": "key not set",
       "providers": {
         "openrouter": "OpenRouter",
-        "deepseek": "DeepSeek"
+        "deepseek": "DeepSeek",
+        "yandex": "Yandex GPT"
       }
     },
     "legalRisks": {
@@ -765,13 +777,14 @@
       "saved": "Settings saved",
       "save": "Save",
       "saving": "Saving…",
-      "keysHint": "OpenRouter / DeepSeek keys are configured under AI Strategy LLM.",
+      "keysHint": "Keys and folder ID are configured under AI Strategy LLM.",
       "keyMissing": "key not set",
       "providerSection": "Provider",
       "modelsSection": "Models and parameters",
       "promptSection": "System prompt",
       "openrouterModel": "OpenRouter model",
       "deepseekModel": "DeepSeek model",
+      "yandexModel": "Yandex GPT model",
       "temperature": "Temperature",
       "maxTokens": "Max tokens",
       "activeModel": "Active model",
@@ -779,7 +792,8 @@
       "resetPrompt": "Reset to default",
       "providers": {
         "openrouter": "OpenRouter",
-        "deepseek": "DeepSeek"
+        "deepseek": "DeepSeek",
+        "yandex": "Yandex GPT"
       }
     },
     "proposalRequests": {

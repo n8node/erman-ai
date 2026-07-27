@@ -713,6 +713,17 @@
       "resetProposalPrompt": "Сбросить промпт КП",
       "openrouterModel": "Модель OpenRouter",
       "deepseekModel": "Модель DeepSeek",
+      "yandexModel": "Модель Yandex GPT",
+      "yandexApiKey": "API-ключ Yandex",
+      "yandexFolderId": "Folder ID (каталог Yandex Cloud)",
+      "folderConfigured": "Folder ID",
+      "folderPlaceholder": "b1g…",
+      "folderPlaceholderExisting": "Новый folder ID (текущий: {hint})",
+      "yandexCredentialsMissing": "нужны API-ключ и folder ID",
+      "pricingSection": "Стоимость токенов",
+      "pricingHint": "Используется для расчёта cost_rub / cost_usd в usage_log после каждого LLM-вызова. Укажите актуальный тариф из консоли Yandex Cloud.",
+      "priceInputPer1k": "Input за 1000 токенов ({currency})",
+      "priceOutputPer1k": "Output за 1000 токенов ({currency})",
       "temperature": "Temperature",
       "maxTokens": "Max tokens",
       "activeModel": "Активная модель",
@@ -720,10 +731,9 @@
       "keyMissing": "ключ не задан",
       "providers": {
         "openrouter": "OpenRouter",
-        "deepseek": "DeepSeek"
+        "deepseek": "DeepSeek",
+        "yandex": "Yandex GPT"
       }
-    },
-    "legalRisks": {
       "title": "Legal-скан — справочник рисков",
       "subtitle": "Штрафы и статьи для Legal-скан сайта. Изменения применяются к новым сканам.",
       "loading": "Загрузка…",
@@ -765,13 +775,14 @@
       "saved": "Настройки сохранены",
       "save": "Сохранить",
       "saving": "Сохранение…",
-      "keysHint": "Ключи OpenRouter / DeepSeek настраиваются в разделе «AI Strategy LLM».",
+      "keysHint": "Ключи и folder ID настраиваются в разделе «AI Strategy LLM».",
       "keyMissing": "ключ не задан",
       "providerSection": "Провайдер",
       "modelsSection": "Модели и параметры",
       "promptSection": "Системный промпт",
       "openrouterModel": "Модель OpenRouter",
       "deepseekModel": "Модель DeepSeek",
+      "yandexModel": "Модель Yandex GPT",
       "temperature": "Temperature",
       "maxTokens": "Max tokens",
       "activeModel": "Активная модель",
@@ -779,7 +790,8 @@
       "resetPrompt": "Сбросить к дефолту",
       "providers": {
         "openrouter": "OpenRouter",
-        "deepseek": "DeepSeek"
+        "deepseek": "DeepSeek",
+        "yandex": "Yandex GPT"
       }
     },
     "proposalRequests": {

@@ -78,20 +78,32 @@ func (s *LegalScanLLMSettingsService) Update(ctx context.Context, req model.Lega
 
 func (s *LegalScanLLMSettingsService) buildAdminView(rec *model.LegalScanLLMSettingsRecord, strategyRec *model.StrategyLLMSettingsRecord) *model.LegalScanLLMAdminView {
 	stored := strategyRec.Config
+	orKey := firstNonEmpty(stored.OpenRouterAPIKey, s.cfg.OpenRouterAPIKey)
+	dsKey := firstNonEmpty(stored.DeepSeekAPIKey, s.cfg.DeepSeekAPIKey)
+	yandexKey := firstNonEmpty(stored.YandexAPIKey, s.cfg.YandexAPIKey)
+	yandexFolder := firstNonEmpty(stored.YandexFolderID, s.cfg.YandexFolderID)
 	providers := []model.LLMProviderStatus{
 		{
 			ID:           model.LLMProviderOpenRouter,
-			Configured:   stored.OpenRouterAPIKey != "" || s.cfg.OpenRouterAPIKey != "",
-			KeyHint:      model.MaskAPIKey(firstNonEmpty(stored.OpenRouterAPIKey, s.cfg.OpenRouterAPIKey)),
+			Configured:   orKey != "",
+			KeyHint:      model.MaskAPIKey(orKey),
 			DefaultModel: rec.Config.OpenRouterModel,
 			Models:       stored.OpenRouterModels,
 		},
 		{
 			ID:           model.LLMProviderDeepSeek,
-			Configured:   stored.DeepSeekAPIKey != "" || s.cfg.DeepSeekAPIKey != "",
-			KeyHint:      model.MaskAPIKey(firstNonEmpty(stored.DeepSeekAPIKey, s.cfg.DeepSeekAPIKey)),
+			Configured:   dsKey != "",
+			KeyHint:      model.MaskAPIKey(dsKey),
 			DefaultModel: rec.Config.DeepSeekModel,
 			Models:       stored.DeepSeekModels,
+		},
+		{
+			ID:           model.LLMProviderYandex,
+			Configured:   yandexKey != "" && yandexFolder != "",
+			KeyHint:      model.MaskAPIKey(yandexKey),
+			FolderHint:   model.MaskFolderID(yandexFolder),
+			DefaultModel: YandexModelURI(yandexFolder, s.cfg.YandexModelFast),
+			Models:       stored.YandexModels,
 		},
 	}
 	return &model.LegalScanLLMAdminView{
@@ -104,7 +116,7 @@ func (s *LegalScanLLMSettingsService) buildAdminView(rec *model.LegalScanLLMSett
 
 func (s *LegalScanLLMSettingsService) applyPromptDefault(settings *model.LegalScanLLMSettings) {
 	if settings.Provider == "" {
-		settings.Provider = model.LLMProviderOpenRouter
+		settings.Provider = model.LLMProviderYandex
 	}
 	if settings.OpenRouterModel == "" {
 		settings.OpenRouterModel = "google/gemini-flash-1.5-8b"
@@ -112,16 +124,21 @@ func (s *LegalScanLLMSettingsService) applyPromptDefault(settings *model.LegalSc
 	if settings.DeepSeekModel == "" {
 		settings.DeepSeekModel = "deepseek-chat"
 	}
+	if settings.YandexModel == "" {
+		settings.YandexModel = s.cfg.YandexModelFast
+	}
 	if settings.MaxTokens == 0 {
 		settings.MaxTokens = 4096
 	}
 }
 
 func validateLegalScanLLMSettings(s model.LegalScanLLMSettings) error {
-	if s.Provider != model.LLMProviderOpenRouter && s.Provider != model.LLMProviderDeepSeek {
+	switch s.Provider {
+	case model.LLMProviderOpenRouter, model.LLMProviderDeepSeek, model.LLMProviderYandex:
+	default:
 		return fmt.Errorf("%w: invalid provider", ErrInvalidLegalScanLLMSettings)
 	}
-	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" {
+	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" || strings.TrimSpace(s.YandexModel) == "" {
 		return fmt.Errorf("%w: model required", ErrInvalidLegalScanLLMSettings)
 	}
 	if s.Temperature < 0 || s.Temperature > 2 {

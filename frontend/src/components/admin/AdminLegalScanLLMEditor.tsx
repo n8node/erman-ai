@@ -14,14 +14,28 @@ import { cn } from "@/lib/utils";
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
 
+const LLM_PROVIDERS: LLMProvider[] = ["yandex", "openrouter", "deepseek"];
+
 const DEFAULT_SETTINGS: LegalScanLLMSettings = {
-  provider: "openrouter",
+  provider: "yandex",
   openrouter_model: "google/gemini-flash-1.5-8b",
   deepseek_model: "deepseek-chat",
+  yandex_model: "yandexgpt-lite/latest",
   system_prompt: "",
   temperature: 0.3,
   max_tokens: 4096,
 };
+
+function activeModelLabel(settings: LegalScanLLMSettings): string {
+  switch (settings.provider) {
+    case "deepseek":
+      return settings.deepseek_model;
+    case "yandex":
+      return settings.yandex_model;
+    default:
+      return settings.openrouter_model;
+  }
+}
 
 export function AdminLegalScanLLMEditor() {
   const t = useTranslations("admin.legalScanLlm");
@@ -69,6 +83,7 @@ export function AdminLegalScanLLMEditor() {
 
   const openrouterMeta = providers.find((p) => p.id === "openrouter");
   const deepseekMeta = providers.find((p) => p.id === "deepseek");
+  const yandexMeta = providers.find((p) => p.id === "yandex");
 
   if (loading) {
     return <p className="text-sm text-text2">{t("loading")}</p>;
@@ -98,7 +113,7 @@ export function AdminLegalScanLLMEditor() {
         </h2>
         <p className="text-xs text-text3">{t("keysHint")}</p>
         <div className="flex flex-wrap gap-2">
-          {(["openrouter", "deepseek"] as LLMProvider[]).map((id) => {
+          {LLM_PROVIDERS.map((id) => {
             const meta = providers.find((p) => p.id === id);
             return (
               <button
@@ -127,6 +142,13 @@ export function AdminLegalScanLLMEditor() {
           {t("modelsSection")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
+          <ModelPicker
+            label={t("yandexModel")}
+            value={settings.yandex_model}
+            models={yandexMeta?.models ?? []}
+            onChange={(v) => patch({ yandex_model: v })}
+            placeholder={t("modelsEmpty")}
+          />
           <ModelPicker
             label={t("openrouterModel")}
             value={settings.openrouter_model}
@@ -168,11 +190,7 @@ export function AdminLegalScanLLMEditor() {
         </div>
         <p className="text-xs text-text3">
           {t("activeModel")}:{" "}
-          <span className="font-medium text-text">
-            {settings.provider === "deepseek"
-              ? settings.deepseek_model
-              : settings.openrouter_model}
-          </span>
+          <span className="font-medium text-text">{activeModelLabel(settings)}</span>
         </p>
       </section>
 

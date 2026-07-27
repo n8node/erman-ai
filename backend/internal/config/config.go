@@ -30,6 +30,19 @@ type Config struct {
 	DeepSeekBaseURL       string `env:"DEEPSEEK_BASE_URL" envDefault:"https://api.deepseek.com/v1"`
 	DeepSeekModelDefault  string `env:"DEEPSEEK_MODEL_DEFAULT" envDefault:"deepseek-chat"`
 
+	YandexAPIKey       string `env:"YANDEX_API_KEY"`
+	YandexFolderID     string `env:"YANDEX_FOLDER_ID"`
+	YandexBaseURL      string `env:"YANDEX_BASE_URL" envDefault:"https://llm.api.cloud.yandex.net/v1"`
+	YandexModelSmart   string `env:"YANDEX_MODEL_SMART" envDefault:"yandexgpt/latest"`
+	YandexModelFast    string `env:"YANDEX_MODEL_FAST" envDefault:"yandexgpt-lite/latest"`
+
+	YandexPriceInputRUBPer1K  float64 `env:"YANDEX_PRICE_INPUT_RUB_PER_1K" envDefault:"0.6"`
+	YandexPriceOutputRUBPer1K float64 `env:"YANDEX_PRICE_OUTPUT_RUB_PER_1K" envDefault:"1.8"`
+	OpenRouterPriceInputUSDPer1K  float64 `env:"OPENROUTER_PRICE_INPUT_USD_PER_1K" envDefault:"0.003"`
+	OpenRouterPriceOutputUSDPer1K float64 `env:"OPENROUTER_PRICE_OUTPUT_USD_PER_1K" envDefault:"0.015"`
+	DeepSeekPriceInputUSDPer1K  float64 `env:"DEEPSEEK_PRICE_INPUT_USD_PER_1K" envDefault:"0.014"`
+	DeepSeekPriceOutputUSDPer1K float64 `env:"DEEPSEEK_PRICE_OUTPUT_USD_PER_1K" envDefault:"0.028"`
+
 	AutomationSavingsRate float64 `env:"AUTOMATION_SAVINGS_RATE" envDefault:"0.7"`
 
 	WorkerStrategyConcurrency int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`

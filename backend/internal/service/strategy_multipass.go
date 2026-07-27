@@ -45,10 +45,12 @@ func (s *StrategyService) generateStrategyOutput(
 	input model.StrategyInput,
 	baseSystemPrompt string,
 	settings model.StrategyLLMSettings,
-	apiKey, baseURL string,
+	creds LLMCredentials,
+	baseURL string,
 ) (*model.StrategyOutput, llmUsageAggregate, error) {
 	mode := normalizeReportMode(input.ReportMode)
 	var usage llmUsageAggregate
+	apiKey := s.llm.ResolveKey(settings.Provider, creds)
 
 	userPayload, _ := json.Marshal(input)
 	baseUser := string(userPayload)
@@ -67,6 +69,7 @@ func (s *StrategyService) generateStrategyOutput(
 				MaxTokens:    passMaxTokens(settings.MaxTokens),
 				APIKey:       apiKey,
 				BaseURL:      baseURL,
+				FolderID:     creds.YandexFolderID,
 			}
 			result, err := s.streamWithRetry(ctx, runID, req)
 			if err != nil {
@@ -79,7 +82,7 @@ func (s *StrategyService) generateStrategyOutput(
 			s.publishPhase(runID, pass.id, "done")
 			s.logger.Info("strategy pass complete", "run_id", runID, "pass", pass.id, "index", i+1, "total", len(consultingPasses))
 		}
-		if err := s.postValidateAndExpand(ctx, runID, &merged, input, baseSystemPrompt, settings, apiKey, baseURL, mode, &usage); err != nil {
+		if err := s.postValidateAndExpand(ctx, runID, &merged, input, baseSystemPrompt, settings, creds, baseURL, mode, &usage); err != nil {
 			return nil, usage, err
 		}
 		return &merged, usage, nil
@@ -95,6 +98,7 @@ func (s *StrategyService) generateStrategyOutput(
 		MaxTokens:    settings.MaxTokens,
 		APIKey:       apiKey,
 		BaseURL:      baseURL,
+		FolderID:     creds.YandexFolderID,
 	}
 	result, err := s.streamWithRetry(ctx, runID, req)
 	if err != nil {
@@ -105,7 +109,7 @@ func (s *StrategyService) generateStrategyOutput(
 	if err != nil {
 		return nil, usage, err
 	}
-	if err := s.postValidateAndExpand(ctx, runID, output, input, baseSystemPrompt, settings, apiKey, baseURL, mode, &usage); err != nil {
+	if err := s.postValidateAndExpand(ctx, runID, output, input, baseSystemPrompt, settings, creds, baseURL, mode, &usage); err != nil {
 		return nil, usage, err
 	}
 	return output, usage, nil
@@ -132,7 +136,8 @@ func (s *StrategyService) postValidateAndExpand(
 	input model.StrategyInput,
 	baseSystemPrompt string,
 	settings model.StrategyLLMSettings,
-	apiKey, baseURL, mode string,
+	creds LLMCredentials,
+	baseURL, mode string,
 	usage *llmUsageAggregate,
 ) error {
 	consulting := mode == model.StrategyReportConsulting
@@ -153,8 +158,9 @@ func (s *StrategyService) postValidateAndExpand(
 		UserPrompt:   expandPrompt,
 		Temperature:  settings.Temperature,
 		MaxTokens:    passMaxTokens(settings.MaxTokens),
-		APIKey:       apiKey,
+		APIKey:       s.llm.ResolveKey(settings.Provider, creds),
 		BaseURL:      baseURL,
+		FolderID:     creds.YandexFolderID,
 	}
 	result, err := s.streamWithRetry(ctx, runID, req)
 	if err != nil {

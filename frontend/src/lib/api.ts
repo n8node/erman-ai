@@ -475,6 +475,7 @@ export type LegalScanLLMSettings = {
   provider: LLMProvider;
   openrouter_model: string;
   deepseek_model: string;
+  yandex_model: string;
   system_prompt: string;
   temperature: number;
   max_tokens: number;
@@ -756,12 +757,19 @@ export async function updateAdminCalculatorBudgetConfig(
   );
 }
 
-export type LLMProvider = "openrouter" | "deepseek";
+export type LLMProvider = "openrouter" | "deepseek" | "yandex";
+
+export type LLMProviderPricing = {
+  input_per_1k: number;
+  output_per_1k: number;
+  currency: "RUB" | "USD";
+};
 
 export type StrategyLLMSettings = {
   provider: LLMProvider;
   openrouter_model: string;
   deepseek_model: string;
+  yandex_model: string;
   system_prompt: string;
   proposal_system_prompt: string;
   temperature: number;
@@ -772,6 +780,7 @@ export type LLMProviderStatus = {
   id: LLMProvider;
   configured: boolean;
   key_hint?: string;
+  folder_hint?: string;
   default_model: string;
   models: string[];
 };
@@ -779,6 +788,7 @@ export type LLMProviderStatus = {
 export type StrategyLLMAdminView = {
   settings: StrategyLLMSettings;
   providers: LLMProviderStatus[];
+  pricing: Partial<Record<LLMProvider, LLMProviderPricing>>;
   default_system_prompt: string;
   default_proposal_system_prompt: string;
   updated_at?: string;
@@ -788,6 +798,9 @@ export type StrategyLLMAdminUpdateRequest = {
   settings: StrategyLLMSettings;
   openrouter_api_key?: string;
   deepseek_api_key?: string;
+  yandex_api_key?: string;
+  yandex_folder_id?: string;
+  pricing?: Partial<Record<LLMProvider, LLMProviderPricing>>;
 };
 
 export type StrategyLLMTestConnectionResult = {

@@ -109,9 +109,14 @@ func (s *AuditService) processRun(runID string) {
 	}
 	settings := stored.Config.StrategyLLMSettings
 	provider := settings.Provider
-	apiKey := s.llm.ResolveKey(provider, stored.Config.OpenRouterAPIKey, stored.Config.DeepSeekAPIKey)
+	creds := s.llm.CredentialsFromStored(stored.Config)
+	apiKey := s.llm.ResolveKey(provider, creds)
 	if apiKey == "" {
 		s.failRun(ctx, runID, "llm api key not configured")
+		return
+	}
+	if provider == model.LLMProviderYandex && creds.YandexFolderID == "" {
+		s.failRun(ctx, runID, "yandex folder id not configured")
 		return
 	}
 
@@ -145,6 +150,7 @@ func (s *AuditService) processRun(runID string) {
 		MaxTokens:    maxTokens,
 		APIKey:       apiKey,
 		BaseURL:      s.llm.BaseURL(provider),
+		FolderID:     creds.YandexFolderID,
 	}
 
 	result, err := s.llm.Complete(ctx, req)
@@ -184,7 +190,8 @@ func (s *AuditService) processRun(runID string) {
 		return
 	}
 
-	_ = s.usageLog.Create(ctx, run.UserID, runID, result.Model, result.PromptTokens, result.CompletionTokens, 0)
+	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, result.PromptTokens, result.CompletionTokens)
+	_ = s.usageLog.Create(ctx, run.UserID, runID, string(provider), result.Model, result.PromptTokens, result.CompletionTokens, costUSD, costRUB)
 }
 
 func (s *AuditService) failRun(ctx context.Context, runID, msg string) {

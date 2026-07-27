@@ -38,6 +38,7 @@ type LLMCompletionRequest struct {
 	MaxTokens    int
 	APIKey       string
 	BaseURL      string
+	FolderID     string
 }
 
 type LLMCompletionResult struct {
@@ -63,51 +64,155 @@ func (s *LLMService) ResolveDeepSeekKey(stored string) string {
 	return strings.TrimSpace(s.cfg.DeepSeekAPIKey)
 }
 
-func (s *LLMService) ResolveKey(provider model.LLMProvider, storedOpenRouter, storedDeepSeek string) string {
-	if provider == model.LLMProviderDeepSeek {
-		return s.ResolveDeepSeekKey(storedDeepSeek)
+func (s *LLMService) ResolveYandexKey(stored string) string {
+	if strings.TrimSpace(stored) != "" {
+		return strings.TrimSpace(stored)
 	}
-	return s.ResolveOpenRouterKey(storedOpenRouter)
+	return strings.TrimSpace(s.cfg.YandexAPIKey)
+}
+
+func (s *LLMService) ResolveYandexFolderID(stored string) string {
+	if strings.TrimSpace(stored) != "" {
+		return strings.TrimSpace(stored)
+	}
+	return strings.TrimSpace(s.cfg.YandexFolderID)
+}
+
+func (s *LLMService) CredentialsFromStored(stored model.StrategyLLMStoredConfig) LLMCredentials {
+	return LLMCredentials{
+		OpenRouterKey:  s.ResolveOpenRouterKey(stored.OpenRouterAPIKey),
+		DeepSeekKey:    s.ResolveDeepSeekKey(stored.DeepSeekAPIKey),
+		YandexKey:      s.ResolveYandexKey(stored.YandexAPIKey),
+		YandexFolderID: s.ResolveYandexFolderID(stored.YandexFolderID),
+	}
+}
+
+func (s *LLMService) ResolveKey(provider model.LLMProvider, creds LLMCredentials) string {
+	switch provider {
+	case model.LLMProviderDeepSeek:
+		return creds.DeepSeekKey
+	case model.LLMProviderYandex:
+		return creds.YandexKey
+	default:
+		return creds.OpenRouterKey
+	}
 }
 
 func (s *LLMService) BaseURL(provider model.LLMProvider) string {
-	if provider == model.LLMProviderDeepSeek {
+	switch provider {
+	case model.LLMProviderDeepSeek:
 		return strings.TrimRight(s.cfg.DeepSeekBaseURL, "/")
+	case model.LLMProviderYandex:
+		return strings.TrimRight(s.cfg.YandexBaseURL, "/")
+	default:
+		return strings.TrimRight(s.cfg.OpenRouterBaseURL, "/")
 	}
-	return strings.TrimRight(s.cfg.OpenRouterBaseURL, "/")
+}
+
+type llmHTTPHeaders struct {
+	openRouter bool
+	yandex     bool
+	folderID   string
+}
+
+func (s *LLMService) httpHeaders(provider model.LLMProvider, creds LLMCredentials) llmHTTPHeaders {
+	switch provider {
+	case model.LLMProviderDeepSeek:
+		return llmHTTPHeaders{}
+	case model.LLMProviderYandex:
+		folderID := creds.YandexFolderID
+		if folderID == "" {
+			folderID = s.cfg.YandexFolderID
+		}
+		return llmHTTPHeaders{yandex: true, folderID: folderID}
+	default:
+		return llmHTTPHeaders{openRouter: true}
+	}
+}
+
+func (s *LLMService) resolveModel(provider model.LLMProvider, modelID string, creds LLMCredentials) string {
+	if provider != model.LLMProviderYandex {
+		return modelID
+	}
+	folderID := creds.YandexFolderID
+	if folderID == "" {
+		folderID = s.cfg.YandexFolderID
+	}
+	return YandexModelURI(folderID, modelID)
 }
 
 func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*LLMCompletionResult, error) {
-	apiKey := req.APIKey
-	baseURL := req.BaseURL
-	if apiKey == "" {
-		apiKey = s.ResolveKey(req.Provider, "", "")
+	creds := LLMCredentials{
+		YandexFolderID: req.FolderID,
 	}
+	if req.APIKey != "" {
+		switch req.Provider {
+		case model.LLMProviderDeepSeek:
+			creds.DeepSeekKey = req.APIKey
+		case model.LLMProviderYandex:
+			creds.YandexKey = req.APIKey
+		default:
+			creds.OpenRouterKey = req.APIKey
+		}
+	} else {
+		creds.YandexFolderID = req.FolderID
+	}
+
+	apiKey := req.APIKey
+	if apiKey == "" {
+		apiKey = s.ResolveKey(req.Provider, creds)
+	}
+	baseURL := req.BaseURL
 	if baseURL == "" {
 		baseURL = s.BaseURL(req.Provider)
 	}
 	if apiKey == "" {
 		return nil, errors.New("api key not configured")
 	}
-	openRouter := req.Provider != model.LLMProviderDeepSeek
-	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, openRouter)
+	if req.Provider == model.LLMProviderYandex {
+		folderID := req.FolderID
+		if folderID == "" {
+			folderID = s.cfg.YandexFolderID
+		}
+		if folderID == "" {
+			return nil, errors.New("yandex folder id not configured")
+		}
+		creds.YandexFolderID = folderID
+	}
+
+	req.Model = s.resolveModel(req.Provider, req.Model, creds)
+	headers := s.httpHeaders(req.Provider, creds)
+	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers)
 }
 
 // StreamComplete calls the chat API with stream=true and invokes onDelta for each content token.
 func (s *LLMService) StreamComplete(ctx context.Context, req LLMCompletionRequest, onDelta func(string)) (*LLMCompletionResult, error) {
+	creds := LLMCredentials{YandexFolderID: req.FolderID}
 	apiKey := req.APIKey
-	baseURL := req.BaseURL
 	if apiKey == "" {
-		apiKey = s.ResolveKey(req.Provider, "", "")
+		apiKey = s.ResolveKey(req.Provider, creds)
 	}
+	baseURL := req.BaseURL
 	if baseURL == "" {
 		baseURL = s.BaseURL(req.Provider)
 	}
 	if apiKey == "" {
 		return nil, errors.New("api key not configured")
 	}
-	openRouter := req.Provider != model.LLMProviderDeepSeek
-	return s.postChatCompletionStream(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, openRouter, onDelta)
+	if req.Provider == model.LLMProviderYandex {
+		folderID := req.FolderID
+		if folderID == "" {
+			folderID = s.cfg.YandexFolderID
+		}
+		if folderID == "" {
+			return nil, errors.New("yandex folder id not configured")
+		}
+		creds.YandexFolderID = folderID
+	}
+
+	req.Model = s.resolveModel(req.Provider, req.Model, creds)
+	headers := s.httpHeaders(req.Provider, creds)
+	return s.postChatCompletionStream(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers, onDelta)
 }
 
 type chatMessage struct {
@@ -161,25 +266,40 @@ type modelsListResponse struct {
 	} `json:"data"`
 }
 
-func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider, apiKey string) ([]string, error) {
+func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider, creds LLMCredentials) ([]string, error) {
+	apiKey := s.ResolveKey(provider, creds)
 	if apiKey == "" {
 		return nil, errors.New("api key not configured")
 	}
+	if provider == model.LLMProviderYandex {
+		folderID := creds.YandexFolderID
+		if folderID == "" {
+			return nil, errors.New("yandex folder id not configured")
+		}
+	}
+
 	baseURL := s.BaseURL(provider)
-	openRouter := provider != model.LLMProviderDeepSeek
+	headers := s.httpHeaders(provider, creds)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/models", nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	if openRouter {
+	if headers.openRouter {
 		req.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
 		req.Header.Set("X-Title", "Erman AI")
+	}
+	if headers.yandex {
+		req.Header.Set("x-folder-id", headers.folderID)
+		req.Header.Set("x-data-logging-enabled", "false")
 	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
+		if provider == model.LLMProviderYandex {
+			return DefaultYandexModels(creds.YandexFolderID), nil
+		}
 		return nil, fmt.Errorf("models request failed: %w", err)
 	}
 	defer resp.Body.Close()
@@ -189,11 +309,17 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
+		if provider == model.LLMProviderYandex {
+			return DefaultYandexModels(creds.YandexFolderID), nil
+		}
 		return nil, fmt.Errorf("models http %d: %s", resp.StatusCode, string(raw))
 	}
 
 	var parsed modelsListResponse
 	if err := json.Unmarshal(raw, &parsed); err != nil {
+		if provider == model.LLMProviderYandex {
+			return DefaultYandexModels(creds.YandexFolderID), nil
+		}
 		return nil, fmt.Errorf("models parse error: %w", err)
 	}
 
@@ -212,6 +338,9 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 	}
 	sort.Strings(ids)
 	if len(ids) == 0 {
+		if provider == model.LLMProviderYandex {
+			return DefaultYandexModels(creds.YandexFolderID), nil
+		}
 		return nil, errors.New("provider returned no models")
 	}
 	return ids, nil
@@ -222,7 +351,7 @@ func (s *LLMService) postChatCompletion(
 	url, apiKey string,
 	req LLMCompletionRequest,
 	provider model.LLMProvider,
-	openRouterHeaders bool,
+	headers llmHTTPHeaders,
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: req.Model,
@@ -243,9 +372,13 @@ func (s *LLMService) postChatCompletion(
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-	if openRouterHeaders {
+	if headers.openRouter {
 		httpReq.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
 		httpReq.Header.Set("X-Title", "Erman AI")
+	}
+	if headers.yandex {
+		httpReq.Header.Set("x-folder-id", headers.folderID)
+		httpReq.Header.Set("x-data-logging-enabled", "false")
 	}
 
 	resp, err := s.client.Do(httpReq)
@@ -293,7 +426,7 @@ func (s *LLMService) postChatCompletionStream(
 	url, apiKey string,
 	req LLMCompletionRequest,
 	provider model.LLMProvider,
-	openRouterHeaders bool,
+	headers llmHTTPHeaders,
 	onDelta func(string),
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
@@ -317,9 +450,13 @@ func (s *LLMService) postChatCompletionStream(
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 	httpReq.Header.Set("Accept", "text/event-stream")
-	if openRouterHeaders {
+	if headers.openRouter {
 		httpReq.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
 		httpReq.Header.Set("X-Title", "Erman AI")
+	}
+	if headers.yandex {
+		httpReq.Header.Set("x-folder-id", headers.folderID)
+		httpReq.Header.Set("x-data-logging-enabled", "false")
 	}
 
 	resp, err := s.client.Do(httpReq)

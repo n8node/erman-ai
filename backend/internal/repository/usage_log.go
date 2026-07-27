@@ -16,15 +16,15 @@ func NewUsageLogRepository(pool *pgxpool.Pool) *UsageLogRepository {
 
 func (r *UsageLogRepository) Create(
 	ctx context.Context,
-	userID, runID, modelName string,
+	userID, runID, provider, modelName string,
 	promptTokens, completionTokens int,
-	costUSD float64,
+	costUSD, costRUB float64,
 ) error {
 	const q = `
-		INSERT INTO usage_log (user_id, run_id, model, prompt_tokens, completion_tokens, total_tokens, cost_usd)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO usage_log (user_id, run_id, provider, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, cost_rub)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 	total := promptTokens + completionTokens
-	_, err := r.pool.Exec(ctx, q, userID, runID, modelName, promptTokens, completionTokens, total, costUSD)
+	_, err := r.pool.Exec(ctx, q, userID, runID, provider, modelName, promptTokens, completionTokens, total, costUSD, costRUB)
 	return err
 }

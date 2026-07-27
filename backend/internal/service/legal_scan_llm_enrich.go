@@ -56,7 +56,8 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 
 	settings := llmStored.Config.LegalScanLLMSettings
 	provider := settings.Provider
-	apiKey := s.llm.ResolveKey(provider, strategyStored.Config.OpenRouterAPIKey, strategyStored.Config.DeepSeekAPIKey)
+	creds := s.llm.CredentialsFromStored(strategyStored.Config)
+	apiKey := s.llm.ResolveKey(provider, creds)
 	if apiKey == "" {
 		return layer1
 	}
@@ -87,6 +88,7 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 		MaxTokens:   2048,
 		APIKey:      apiKey,
 		BaseURL:     s.llm.BaseURL(provider),
+		FolderID:    creds.YandexFolderID,
 	}
 
 	result, err := s.llm.Complete(ctx, req)
@@ -94,6 +96,9 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 		s.logger.Warn("legal scan llm enrich failed", "run_id", run.ID, "error", err)
 		return layer1
 	}
+
+	costUSD, costRUB := s.strategy.UsageCosts(strategyStored.Config, provider, result.PromptTokens, result.CompletionTokens)
+	_ = s.usageLog.Create(ctx, run.UserID, run.ID, string(provider), result.Model, result.PromptTokens, result.CompletionTokens, costUSD, costRUB)
 
 	raw, err := parseLegalScanEnrichment(result.Content)
 	if err != nil {

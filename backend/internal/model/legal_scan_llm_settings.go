@@ -6,6 +6,7 @@ type LegalScanLLMSettings struct {
 	Provider        LLMProvider `json:"provider"`
 	OpenRouterModel string      `json:"openrouter_model"`
 	DeepSeekModel   string      `json:"deepseek_model"`
+	YandexModel     string      `json:"yandex_model"`
 	SystemPrompt    string      `json:"system_prompt"`
 	Temperature     float64     `json:"temperature"`
 	MaxTokens       int         `json:"max_tokens"`
@@ -34,9 +35,10 @@ type LegalScanLLMAdminUpdateRequest struct {
 func DefaultLegalScanLLMStoredConfig() LegalScanLLMStoredConfig {
 	return LegalScanLLMStoredConfig{
 		LegalScanLLMSettings: LegalScanLLMSettings{
-			Provider:        LLMProviderOpenRouter,
+			Provider:        LLMProviderYandex,
 			OpenRouterModel: "google/gemini-flash-1.5-8b",
 			DeepSeekModel:   "deepseek-chat",
+			YandexModel:     "yandexgpt-lite/latest",
 			SystemPrompt:    "",
 			Temperature:     0.3,
 			MaxTokens:       4096,
@@ -45,8 +47,12 @@ func DefaultLegalScanLLMStoredConfig() LegalScanLLMStoredConfig {
 }
 
 func (s LegalScanLLMSettings) ActiveModel() string {
-	if s.Provider == LLMProviderDeepSeek {
+	switch s.Provider {
+	case LLMProviderDeepSeek:
 		return s.DeepSeekModel
+	case LLMProviderYandex:
+		return s.YandexModel
+	default:
+		return s.OpenRouterModel
 	}
-	return s.OpenRouterModel
 }

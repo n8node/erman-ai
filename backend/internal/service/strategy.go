@@ -226,9 +226,14 @@ func (s *StrategyService) processRun(runID string) {
 	}
 	settings := stored.Config.StrategyLLMSettings
 	provider := settings.Provider
-	apiKey := s.llm.ResolveKey(provider, stored.Config.OpenRouterAPIKey, stored.Config.DeepSeekAPIKey)
+	creds := s.llm.CredentialsFromStored(stored.Config)
+	apiKey := s.llm.ResolveKey(provider, creds)
 	if apiKey == "" {
 		s.failRun(ctx, runID, "llm api key not configured")
+		return
+	}
+	if provider == model.LLMProviderYandex && creds.YandexFolderID == "" {
+		s.failRun(ctx, runID, "yandex folder id not configured")
 		return
 	}
 
@@ -236,7 +241,7 @@ func (s *StrategyService) processRun(runID string) {
 	_ = userPayload
 	llmReqBase := s.llmCfg.ResolvedSystemPrompt(settings)
 
-	output, usage, err := s.generateStrategyOutput(ctx, runID, input, llmReqBase, settings, apiKey, s.llm.BaseURL(provider))
+	output, usage, err := s.generateStrategyOutput(ctx, runID, input, llmReqBase, settings, creds, s.llm.BaseURL(provider))
 	if err != nil {
 		s.failRun(ctx, runID, err.Error())
 		return
@@ -261,7 +266,8 @@ func (s *StrategyService) processRun(runID string) {
 		return
 	}
 
-	_ = s.usageLog.Create(ctx, run.UserID, runID, usage.Model, usage.PromptTokens, usage.CompletionTokens, 0)
+	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, usage.PromptTokens, usage.CompletionTokens)
+	_ = s.usageLog.Create(ctx, run.UserID, runID, string(provider), usage.Model, usage.PromptTokens, usage.CompletionTokens, costUSD, costRUB)
 
 	s.streams.Publish(runID, StrategyStreamEvent{
 		Type: StrategyEventDone,
