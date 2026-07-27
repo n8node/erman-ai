@@ -1392,6 +1392,8 @@
       "stakeholders": "Стейкхолдеры",
       "budgetPhases": "Бюджет по фазам",
       "diagrams": "Диаграммы",
+      "diagramRenderFailed": "Диаграмма не отображается — модель вернула некорректный синтаксис Mermaid.",
+      "diagramSource": "Исходный код",
       "exportPdf": "Экспорт в PDF",
       "exportPdfLocked": "PDF — Pro+",
       "pdfLoading": "Генерация PDF…",

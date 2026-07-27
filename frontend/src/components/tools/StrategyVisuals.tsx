@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { intlLocale } from "@/i18n/intl-locale";
 import type { StrategyDiagram, StrategyPriorityRow, StrategyROISummary } from "@/lib/api-strategy";
@@ -90,24 +90,36 @@ function ImpactBar({ value, color }: { value: number; color: string }) {
   );
 }
 
+function isMermaidErrorSvg(svg: string): boolean {
+  return svg.includes('class="error-text"') || svg.includes("Syntax error in text");
+}
+
 export function StrategyMermaidDiagram({ diagram }: { diagram: StrategyDiagram }) {
+  const t = useTranslations("strategy.result");
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/:/g, "");
+  const [renderFailed, setRenderFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function render() {
       if (!ref.current || !diagram.mermaid?.trim()) return;
+      setRenderFailed(false);
       try {
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "strict" });
         const { svg } = await mermaid.render(`strategy-diagram-${uid}`, diagram.mermaid);
-        if (!cancelled && ref.current) {
-          ref.current.innerHTML = svg;
+        if (cancelled || !ref.current) return;
+        if (isMermaidErrorSvg(svg)) {
+          ref.current.innerHTML = "";
+          setRenderFailed(true);
+          return;
         }
+        ref.current.innerHTML = svg;
       } catch {
         if (!cancelled && ref.current) {
-          ref.current.textContent = diagram.mermaid;
+          ref.current.innerHTML = "";
+          setRenderFailed(true);
         }
       }
     }
@@ -120,7 +132,19 @@ export function StrategyMermaidDiagram({ diagram }: { diagram: StrategyDiagram }
   return (
     <div className="rounded-lg border border-border bg-bg2/30 p-4">
       <p className="mb-2 text-sm font-medium text-text">{diagram.title}</p>
-      <div ref={ref} className="overflow-x-auto text-xs text-text2 [&_svg]:max-w-full" />
+      {renderFailed ? (
+        <div className="space-y-2">
+          <p className="text-xs text-warning">{t("diagramRenderFailed")}</p>
+          <details className="rounded-lg border border-border bg-bg px-3 py-2">
+            <summary className="cursor-pointer text-[11px] text-text3">{t("diagramSource")}</summary>
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-[11px] text-text2">
+              {diagram.mermaid}
+            </pre>
+          </details>
+        </div>
+      ) : (
+        <div ref={ref} className="overflow-x-auto text-xs text-text2 [&_svg]:max-w-full" />
+      )}
     </div>
   );
 }

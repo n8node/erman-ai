@@ -1392,6 +1392,8 @@
       "stakeholders": "Stakeholders",
       "budgetPhases": "Budget by phase",
       "diagrams": "Diagrams",
+      "diagramRenderFailed": "Diagram could not be rendered — the model returned invalid Mermaid syntax.",
+      "diagramSource": "Source",
       "exportPdf": "Export PDF",
       "exportPdfLocked": "PDF — Pro+",
       "pdfLoading": "Generating PDF…",
