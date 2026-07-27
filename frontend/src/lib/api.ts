@@ -789,6 +789,7 @@ export type StrategyLLMAdminView = {
   settings: StrategyLLMSettings;
   providers: LLMProviderStatus[];
   pricing: Partial<Record<LLMProvider, LLMProviderPricing>>;
+  model_pricing: Record<string, LLMProviderPricing>;
   default_system_prompt: string;
   default_proposal_system_prompt: string;
   updated_at?: string;
@@ -801,6 +802,7 @@ export type StrategyLLMAdminUpdateRequest = {
   yandex_api_key?: string;
   yandex_folder_id?: string;
   pricing?: Partial<Record<LLMProvider, LLMProviderPricing>>;
+  model_pricing?: Record<string, LLMProviderPricing>;
 };
 
 export type StrategyLLMTestConnectionResult = {

@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ModelPicker } from "@/components/admin/ModelPicker";
 import {
+  ModelPricingFields,
+  modelsCountLabel,
+  resolveModelPricing,
+} from "@/components/admin/ModelPricingFields";
+import {
   fetchAdminStrategyLLMSettings,
   testStrategyLLMConnection,
   updateAdminStrategyLLMSettings,
@@ -51,6 +56,7 @@ export function AdminStrategyLLMEditor() {
   const t = useTranslations("admin.strategyLlm");
   const [settings, setSettings] = useState<StrategyLLMSettings>(DEFAULT_SETTINGS);
   const [pricing, setPricing] = useState<Partial<Record<LLMProvider, LLMProviderPricing>>>(DEFAULT_PRICING);
+  const [modelPricing, setModelPricing] = useState<Record<string, LLMProviderPricing>>({});
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [defaultProposalPrompt, setDefaultProposalPrompt] = useState("");
   const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
@@ -71,6 +77,7 @@ export function AdminStrategyLLMEditor() {
     setDefaultProposalPrompt(data.default_proposal_system_prompt);
     setProviders(data.providers);
     setPricing({ ...DEFAULT_PRICING, ...data.pricing });
+    setModelPricing(data.model_pricing ?? {});
   }
 
   useEffect(() => {
@@ -87,10 +94,14 @@ export function AdminStrategyLLMEditor() {
     setSuccess("");
   }
 
-  function patchPricing(provider: LLMProvider, partial: Partial<LLMProviderPricing>) {
-    setPricing((prev) => ({
+  function patchModelPricing(modelId: string, provider: LLMProvider, partial: Partial<LLMProviderPricing>) {
+    if (!modelId.trim()) return;
+    setModelPricing((prev) => ({
       ...prev,
-      [provider]: { ...DEFAULT_PRICING[provider], ...prev[provider], ...partial },
+      [modelId]: {
+        ...resolveModelPricing(modelId, provider, prev, pricing, DEFAULT_PRICING),
+        ...partial,
+      },
     }));
     setSuccess("");
   }
@@ -99,6 +110,7 @@ export function AdminStrategyLLMEditor() {
     return {
       settings,
       pricing,
+      model_pricing: modelPricing,
       ...(openrouterKeyInput.trim() ? { openrouter_api_key: openrouterKeyInput.trim() } : {}),
       ...(deepseekKeyInput.trim() ? { deepseek_api_key: deepseekKeyInput.trim() } : {}),
       ...(yandexKeyInput.trim() ? { yandex_api_key: yandexKeyInput.trim() } : {}),
@@ -348,28 +360,76 @@ export function AdminStrategyLLMEditor() {
         <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
           {t("modelsSection")}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ModelPicker
-            label={t("yandexModel")}
-            value={settings.yandex_model}
-            models={yandexMeta?.models ?? []}
-            onChange={(v) => patch({ yandex_model: v })}
-            placeholder={t("modelsEmpty")}
-          />
-          <ModelPicker
-            label={t("openrouterModel")}
-            value={settings.openrouter_model}
-            models={openrouterMeta?.models ?? []}
-            onChange={(v) => patch({ openrouter_model: v })}
-            placeholder={t("modelsEmpty")}
-          />
-          <ModelPicker
-            label={t("deepseekModel")}
-            value={settings.deepseek_model}
-            models={deepseekMeta?.models ?? []}
-            onChange={(v) => patch({ deepseek_model: v })}
-            placeholder={t("modelsEmpty")}
-          />
+        <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+          <div>
+            <ModelPicker
+              label={t("yandexModel")}
+              value={settings.yandex_model}
+              models={yandexMeta?.models ?? []}
+              onChange={(v) => patch({ yandex_model: v })}
+              placeholder={t("modelsEmpty")}
+            />
+            <p className="mt-1 text-[11px] text-text3">
+              {modelsCountLabel(yandexMeta?.models.length ?? 0, t("modelsAvailable"))}
+            </p>
+            <ModelPricingFields
+              modelId={settings.yandex_model}
+              provider="yandex"
+              pricing={resolveModelPricing(settings.yandex_model, "yandex", modelPricing, pricing, DEFAULT_PRICING)}
+              labels={{
+                hint: t("modelPricingHint"),
+                input: t("priceInputPer1k", { currency: "{currency}" }),
+                output: t("priceOutputPer1k", { currency: "{currency}" }),
+              }}
+              onChange={(partial) => patchModelPricing(settings.yandex_model, "yandex", partial)}
+            />
+          </div>
+          <div>
+            <ModelPicker
+              label={t("openrouterModel")}
+              value={settings.openrouter_model}
+              models={openrouterMeta?.models ?? []}
+              onChange={(v) => patch({ openrouter_model: v })}
+              placeholder={t("modelsEmpty")}
+            />
+            <p className="mt-1 text-[11px] text-text3">
+              {modelsCountLabel(openrouterMeta?.models.length ?? 0, t("modelsAvailable"))}
+            </p>
+            <ModelPricingFields
+              modelId={settings.openrouter_model}
+              provider="openrouter"
+              pricing={resolveModelPricing(settings.openrouter_model, "openrouter", modelPricing, pricing, DEFAULT_PRICING)}
+              labels={{
+                hint: t("modelPricingHint"),
+                input: t("priceInputPer1k", { currency: "{currency}" }),
+                output: t("priceOutputPer1k", { currency: "{currency}" }),
+              }}
+              onChange={(partial) => patchModelPricing(settings.openrouter_model, "openrouter", partial)}
+            />
+          </div>
+          <div>
+            <ModelPicker
+              label={t("deepseekModel")}
+              value={settings.deepseek_model}
+              models={deepseekMeta?.models ?? []}
+              onChange={(v) => patch({ deepseek_model: v })}
+              placeholder={t("modelsEmpty")}
+            />
+            <p className="mt-1 text-[11px] text-text3">
+              {modelsCountLabel(deepseekMeta?.models.length ?? 0, t("modelsAvailable"))}
+            </p>
+            <ModelPricingFields
+              modelId={settings.deepseek_model}
+              provider="deepseek"
+              pricing={resolveModelPricing(settings.deepseek_model, "deepseek", modelPricing, pricing, DEFAULT_PRICING)}
+              labels={{
+                hint: t("modelPricingHint"),
+                input: t("priceInputPer1k", { currency: "{currency}" }),
+                output: t("priceOutputPer1k", { currency: "{currency}" }),
+              }}
+              onChange={(partial) => patchModelPricing(settings.deepseek_model, "deepseek", partial)}
+            />
+          </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium">{t("temperature")}</label>
             <input
@@ -399,52 +459,7 @@ export function AdminStrategyLLMEditor() {
           {t("activeModel")}:{" "}
           <span className="font-medium text-text">{activeModelLabel(settings)}</span>
         </p>
-      </section>
-
-      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
-        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
-          {t("pricingSection")}
-        </h2>
         <p className="text-xs text-text3">{t("pricingHint")}</p>
-        <div className="space-y-4">
-          {LLM_PROVIDERS.map((id) => {
-            const p = pricing[id] ?? DEFAULT_PRICING[id];
-            const currency = p.currency ?? DEFAULT_PRICING[id].currency;
-            return (
-              <div key={id} className="rounded-lg border border-border bg-bg2/40 p-4 space-y-3">
-                <p className="text-sm font-medium">{t(`providers.${id}`)}</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium">
-                      {t("priceInputPer1k", { currency })}
-                    </label>
-                    <input
-                      type="number"
-                      step={0.0001}
-                      min={0}
-                      className={fieldClass}
-                      value={p.input_per_1k}
-                      onChange={(e) => patchPricing(id, { input_per_1k: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium">
-                      {t("priceOutputPer1k", { currency })}
-                    </label>
-                    <input
-                      type="number"
-                      step={0.0001}
-                      min={0}
-                      className={fieldClass}
-                      value={p.output_per_1k}
-                      onChange={(e) => patchPricing(id, { output_per_1k: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-3">

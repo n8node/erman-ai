@@ -266,7 +266,7 @@ func (s *StrategyService) processRun(runID string) {
 		return
 	}
 
-	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, usage.PromptTokens, usage.CompletionTokens)
+	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, usage.Model, usage.PromptTokens, usage.CompletionTokens)
 	_ = s.usageLog.Create(ctx, run.UserID, runID, string(provider), usage.Model, usage.PromptTokens, usage.CompletionTokens, costUSD, costRUB)
 
 	s.streams.Publish(runID, StrategyStreamEvent{

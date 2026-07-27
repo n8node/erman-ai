@@ -245,7 +245,7 @@ func (s *ProposalService) processRun(runID string) {
 		return
 	}
 
-	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, result.PromptTokens, result.CompletionTokens)
+	costUSD, costRUB := s.llmCfg.UsageCosts(stored.Config, provider, result.Model, result.PromptTokens, result.CompletionTokens)
 	_ = s.usageLog.Create(ctx, run.UserID, runID, string(provider), result.Model, result.PromptTokens, result.CompletionTokens, costUSD, costRUB)
 }
 

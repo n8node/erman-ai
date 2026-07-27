@@ -78,12 +78,33 @@ func defaultPricingFromEnv(provider model.LLMProvider, cfg *config.Config) model
 
 func UsageLogCosts(
 	provider model.LLMProvider,
-	stored map[model.LLMProvider]model.LLMProviderPricing,
+	modelName string,
+	modelPricing map[string]model.LLMProviderPricing,
+	providerPricing map[model.LLMProvider]model.LLMProviderPricing,
 	cfg *config.Config,
 	promptTokens, completionTokens int,
 ) (costUSD, costRUB float64) {
-	p := ResolveProviderPricing(provider, stored, cfg)
+	p := ResolveModelPricing(provider, modelName, modelPricing, providerPricing, cfg)
 	return CalculateTokenCost(p, promptTokens, completionTokens)
+}
+
+func ResolveModelPricing(
+	provider model.LLMProvider,
+	modelName string,
+	modelPricing map[string]model.LLMProviderPricing,
+	providerPricing map[model.LLMProvider]model.LLMProviderPricing,
+	cfg *config.Config,
+) model.LLMProviderPricing {
+	modelName = strings.TrimSpace(modelName)
+	if modelPricing != nil && modelName != "" {
+		if p, ok := modelPricing[modelName]; ok && (p.InputPer1K > 0 || p.OutputPer1K > 0) {
+			if p.Currency == "" {
+				p.Currency = defaultCurrencyForProvider(provider)
+			}
+			return p
+		}
+	}
+	return ResolveProviderPricing(provider, providerPricing, cfg)
 }
 
 func YandexModelURI(folderID, modelID string) string {
@@ -102,14 +123,36 @@ func YandexModelURI(folderID, modelID string) string {
 }
 
 func DefaultYandexModels(folderID string) []string {
-	folderID = strings.TrimSpace(folderID)
-	if folderID == "" {
-		return []string{"yandexgpt/latest", "yandexgpt-lite/latest"}
-	}
+	return KnownYandexChatModels(folderID)
+}
+
+func KnownYandexChatModelSuffixes() []string {
 	return []string{
-		"gpt://" + folderID + "/yandexgpt/latest",
-		"gpt://" + folderID + "/yandexgpt-lite/latest",
+		"yandexgpt/latest",
+		"yandexgpt-lite/latest",
+		"yandexgpt-5/latest",
+		"yandexgpt-5-lite/latest",
+		"yandexgpt-pro/latest",
+		"yandexgpt-pro-5/latest",
+		"yandexgpt-pro-5.1/latest",
+		"aliceai-llm/latest",
+		"qwen3-235b-a22b-fp8/latest",
+		"gpt-oss-120b/latest",
+		"gpt-oss-20b/latest",
 	}
+}
+
+func KnownYandexChatModels(folderID string) []string {
+	folderID = strings.TrimSpace(folderID)
+	suffixes := KnownYandexChatModelSuffixes()
+	if folderID == "" {
+		return suffixes
+	}
+	out := make([]string, 0, len(suffixes))
+	for _, suffix := range suffixes {
+		out = append(out, "gpt://"+folderID+"/"+suffix)
+	}
+	return out
 }
 
 // IsYandexChatModel returns true for gpt:// completion models (not emb:// embeddings).
@@ -140,7 +183,7 @@ func MergeYandexChatModels(apiModels []string, folderID string) []string {
 	for _, m := range merged {
 		seen[m] = struct{}{}
 	}
-	for _, d := range DefaultYandexModels(folderID) {
+	for _, d := range KnownYandexChatModels(folderID) {
 		if _, ok := seen[d]; ok {
 			continue
 		}

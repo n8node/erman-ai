@@ -56,6 +56,9 @@ func (s *StrategyLLMSettingsService) GetStored(ctx context.Context) (*model.Stra
 	if rec.Config.Pricing == nil {
 		rec.Config.Pricing = map[model.LLMProvider]model.LLMProviderPricing{}
 	}
+	if rec.Config.ModelPricing == nil {
+		rec.Config.ModelPricing = map[string]model.LLMProviderPricing{}
+	}
 	return rec, nil
 }
 
@@ -72,6 +75,9 @@ func (s *StrategyLLMSettingsService) Update(ctx context.Context, req model.Strat
 		return nil, err
 	}
 	if err := validateLLMPricing(req.Pricing); err != nil {
+		return nil, err
+	}
+	if err := validateModelPricing(req.ModelPricing); err != nil {
 		return nil, err
 	}
 
@@ -100,6 +106,14 @@ func (s *StrategyLLMSettingsService) Update(ctx context.Context, req model.Strat
 		}
 		for provider, pricing := range req.Pricing {
 			cfg.Pricing[provider] = pricing
+		}
+	}
+	if req.ModelPricing != nil {
+		if cfg.ModelPricing == nil {
+			cfg.ModelPricing = map[string]model.LLMProviderPricing{}
+		}
+		for modelID, pricing := range req.ModelPricing {
+			cfg.ModelPricing[modelID] = pricing
 		}
 	}
 
@@ -187,9 +201,10 @@ func (s *StrategyLLMSettingsService) TestConnection(ctx context.Context, provide
 func (s *StrategyLLMSettingsService) UsageCosts(
 	cfg model.StrategyLLMStoredConfig,
 	provider model.LLMProvider,
+	modelName string,
 	promptTokens, completionTokens int,
 ) (costUSD, costRUB float64) {
-	return UsageLogCosts(provider, cfg.Pricing, s.cfg, promptTokens, completionTokens)
+	return UsageLogCosts(provider, modelName, cfg.ModelPricing, cfg.Pricing, s.cfg, promptTokens, completionTokens)
 }
 
 func (s *StrategyLLMSettingsService) ResolvedSystemPrompt(settings model.StrategyLLMSettings) string {
@@ -237,10 +252,22 @@ func (s *StrategyLLMSettingsService) buildAdminView(rec *model.StrategyLLMSettin
 		Settings:                    cfg.StrategyLLMSettings,
 		Providers:                   s.providerStatuses(cfg),
 		Pricing:                     pricing,
+		ModelPricing:                cloneModelPricing(cfg.ModelPricing),
 		DefaultSystemPrompt:         prompts.DefaultStrategySystemPrompt,
 		DefaultProposalSystemPrompt: prompts.DefaultProposalSystemPrompt,
 		UpdatedAt:                   rec.UpdatedAt,
 	}
+}
+
+func cloneModelPricing(src map[string]model.LLMProviderPricing) map[string]model.LLMProviderPricing {
+	if src == nil {
+		return map[string]model.LLMProviderPricing{}
+	}
+	out := make(map[string]model.LLMProviderPricing, len(src))
+	for k, v := range src {
+		out[k] = v
+	}
+	return out
 }
 
 func mergedPricing(stored map[model.LLMProvider]model.LLMProviderPricing, cfg *config.Config) map[model.LLMProvider]model.LLMProviderPricing {
@@ -286,7 +313,7 @@ func (s *StrategyLLMSettingsService) providerStatuses(cfg model.StrategyLLMStore
 			KeyHint:      model.MaskAPIKey(creds.YandexKey),
 			FolderHint:   model.MaskFolderID(creds.YandexFolderID),
 			DefaultModel: YandexModelURI(creds.YandexFolderID, s.cfg.YandexModelSmart),
-			Models:       cfg.YandexModels,
+			Models:       MergeYandexChatModels(cfg.YandexModels, creds.YandexFolderID),
 		},
 	}
 }
@@ -314,16 +341,35 @@ func validateLLMPricing(pricing map[model.LLMProvider]model.LLMProviderPricing) 
 		return nil
 	}
 	for provider, p := range pricing {
-		if p.InputPer1K < 0 || p.OutputPer1K < 0 {
-			return fmt.Errorf("%w: pricing for %s must be non-negative", ErrInvalidStrategyLLMSettings, provider)
+		if err := validatePricingValues(string(provider), p); err != nil {
+			return err
 		}
-		if p.InputPer1K > 10000 || p.OutputPer1K > 10000 {
-			return fmt.Errorf("%w: pricing for %s out of range", ErrInvalidStrategyLLMSettings, provider)
+	}
+	return nil
+}
+
+func validateModelPricing(pricing map[string]model.LLMProviderPricing) error {
+	if pricing == nil {
+		return nil
+	}
+	for modelID, p := range pricing {
+		if err := validatePricingValues(modelID, p); err != nil {
+			return err
 		}
-		cur := strings.ToUpper(strings.TrimSpace(p.Currency))
-		if cur != "" && cur != "RUB" && cur != "USD" {
-			return fmt.Errorf("%w: pricing currency must be RUB or USD", ErrInvalidStrategyLLMSettings)
-		}
+	}
+	return nil
+}
+
+func validatePricingValues(label string, p model.LLMProviderPricing) error {
+	if p.InputPer1K < 0 || p.OutputPer1K < 0 {
+		return fmt.Errorf("%w: pricing for %s must be non-negative", ErrInvalidStrategyLLMSettings, label)
+	}
+	if p.InputPer1K > 10000 || p.OutputPer1K > 10000 {
+		return fmt.Errorf("%w: pricing for %s out of range", ErrInvalidStrategyLLMSettings, label)
+	}
+	cur := strings.ToUpper(strings.TrimSpace(p.Currency))
+	if cur != "" && cur != "RUB" && cur != "USD" {
+		return fmt.Errorf("%w: pricing currency must be RUB or USD", ErrInvalidStrategyLLMSettings)
 	}
 	return nil
 }

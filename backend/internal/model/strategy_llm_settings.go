@@ -40,6 +40,7 @@ type StrategyLLMStoredConfig struct {
 	DeepSeekModels   []string                        `json:"deepseek_models"`
 	YandexModels     []string                        `json:"yandex_models"`
 	Pricing          map[LLMProvider]LLMProviderPricing `json:"pricing"`
+	ModelPricing     map[string]LLMProviderPricing   `json:"model_pricing"`
 }
 
 type StrategyLLMSettingsRecord struct {
@@ -60,6 +61,7 @@ type StrategyLLMAdminView struct {
 	Settings                    StrategyLLMSettings                `json:"settings"`
 	Providers                   []LLMProviderStatus                `json:"providers"`
 	Pricing                     map[LLMProvider]LLMProviderPricing `json:"pricing"`
+	ModelPricing                map[string]LLMProviderPricing      `json:"model_pricing"`
 	DefaultSystemPrompt         string                             `json:"default_system_prompt"`
 	DefaultProposalSystemPrompt string                             `json:"default_proposal_system_prompt"`
 	UpdatedAt                   time.Time                          `json:"updated_at"`
@@ -72,6 +74,7 @@ type StrategyLLMAdminUpdateRequest struct {
 	YandexAPIKey     string                             `json:"yandex_api_key,omitempty"`
 	YandexFolderID   string                             `json:"yandex_folder_id,omitempty"`
 	Pricing          map[LLMProvider]LLMProviderPricing `json:"pricing,omitempty"`
+	ModelPricing     map[string]LLMProviderPricing      `json:"model_pricing,omitempty"`
 }
 
 type StrategyLLMTestConnectionResult struct {
@@ -96,6 +99,7 @@ func DefaultStrategyLLMStoredConfig() StrategyLLMStoredConfig {
 		DeepSeekModels:   []string{},
 		YandexModels:     []string{},
 		Pricing:          map[LLMProvider]LLMProviderPricing{},
+		ModelPricing:     map[string]LLMProviderPricing{},
 	}
 }
 

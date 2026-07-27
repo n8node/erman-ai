@@ -97,7 +97,7 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 		return layer1
 	}
 
-	costUSD, costRUB := s.strategy.UsageCosts(strategyStored.Config, provider, result.PromptTokens, result.CompletionTokens)
+	costUSD, costRUB := s.strategy.UsageCosts(strategyStored.Config, provider, result.Model, result.PromptTokens, result.CompletionTokens)
 	_ = s.usageLog.Create(ctx, run.UserID, run.ID, string(provider), result.Model, result.PromptTokens, result.CompletionTokens, costUSD, costRUB)
 
 	raw, err := parseLegalScanEnrichment(result.Content)
