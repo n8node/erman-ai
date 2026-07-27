@@ -50,7 +50,7 @@ PASS 4 — GOVERNANCE, METRICS & DIAGRAMS (return ONLY this JSON object):
   "diagrams": [{"type":"architecture|roadmap|process","title":"","mermaid":""}]
 }
 Requirements: success_metrics at least 8; risks at least 6; next_30_days at least 8 steps;
-tech_stack 6 rows; stakeholder_plan 5 rows; diagrams 2-3 valid mermaid diagrams (flowchart or timeline syntax).`
+tech_stack 6 rows; stakeholder_plan 5 rows; diagrams 2-3 valid mermaid diagrams.` + MermaidDiagramRules
 
 const StrategyExpandPrompt = `
 EXPANSION PASS — the strategy draft below is too thin. Expand ONLY the listed fields in your JSON response.
@@ -66,4 +66,4 @@ ADDITIONAL STRUCTURED FIELDS — include in your JSON response alongside existin
   "tech_stack": [{"layer":"","tool":"","role":"","status":"existing|planned|evaluate"}] — 5 rows
   "stakeholder_plan": [{"role":"","responsibility":"","involvement":"high|medium|low"}] — 4 rows
   "budget_phases": [{"phase":"","capex_rub":"","opex_monthly_rub":"","cumulative_rub":""}] — 4 rows
-  "diagrams": [{"type":"architecture|roadmap|process","title":"","mermaid":""}] — 2 mermaid diagrams`
+  "diagrams": [{"type":"architecture|roadmap|process","title":"","mermaid":""}] — 2 mermaid diagrams` + MermaidDiagramRules

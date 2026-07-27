@@ -111,7 +111,11 @@ func needsVolumeExpansion(o *model.StrategyOutput, mode string) bool {
 
 func mergeStrategyJSON(dst *model.StrategyOutput, content string) error {
 	content = cleanLLMJSON(content)
-	return json.Unmarshal([]byte(content), dst)
+	if err := json.Unmarshal([]byte(content), dst); err != nil {
+		return err
+	}
+	normalizeStrategyDiagrams(dst)
+	return nil
 }
 
 func cleanLLMJSON(content string) string {

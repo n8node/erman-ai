@@ -109,7 +109,7 @@ RULES:
 - success_metrics: at least 6 KPIs with measurable targets
 - risks: at least 5 items with varied severity
 - maturity_matrix: at least 5 rows; priority_matrix: 5 rows with impact/effort 1-5
-- tech_stack: 5 rows; stakeholder_plan: 4 rows; budget_phases: 4 rows; diagrams: 2 mermaid diagrams
+- tech_stack: 5 rows; stakeholder_plan: 4 rows; budget_phases: 4 rows; diagrams: 2 mermaid diagrams` + MermaidDiagramRules + `
 - If calculator_contexts array is present: reference EACH process by name with its ROI figures (net benefit, payback, recommendation); prioritize high-ROI processes; aggregate savings only when mathematically consistent — do NOT invent calculator data
 - Budget must stay within budget_range; use RUB for locale ru
 - Architecture proportional to company_size — SMB gets pragmatic stack, not enterprise overkill

@@ -387,6 +387,7 @@ func parseStrategyOutput(content string) (*model.StrategyOutput, error) {
 	if len(out.RecommendedSolutions) == 0 {
 		return nil, errors.New("recommended_solutions required")
 	}
+	normalizeStrategyDiagrams(&out)
 	return &out, nil
 }
 
