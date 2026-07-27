@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/config"
@@ -109,4 +110,93 @@ func DefaultYandexModels(folderID string) []string {
 		"gpt://" + folderID + "/yandexgpt/latest",
 		"gpt://" + folderID + "/yandexgpt-lite/latest",
 	}
+}
+
+// IsYandexChatModel returns true for gpt:// completion models (not emb:// embeddings).
+func IsYandexChatModel(modelID string) bool {
+	return strings.HasPrefix(strings.TrimSpace(modelID), "gpt://")
+}
+
+func FilterYandexChatModels(models []string) []string {
+	out := make([]string, 0, len(models))
+	seen := make(map[string]struct{})
+	for _, m := range models {
+		m = strings.TrimSpace(m)
+		if !IsYandexChatModel(m) {
+			continue
+		}
+		if _, ok := seen[m]; ok {
+			continue
+		}
+		seen[m] = struct{}{}
+		out = append(out, m)
+	}
+	return out
+}
+
+func MergeYandexChatModels(apiModels []string, folderID string) []string {
+	merged := FilterYandexChatModels(apiModels)
+	seen := make(map[string]struct{}, len(merged))
+	for _, m := range merged {
+		seen[m] = struct{}{}
+	}
+	for _, d := range DefaultYandexModels(folderID) {
+		if _, ok := seen[d]; ok {
+			continue
+		}
+		seen[d] = struct{}{}
+		merged = append(merged, d)
+	}
+	sortYandexChatModels(merged)
+	return merged
+}
+
+func sortYandexChatModels(models []string) {
+	sort.Slice(models, func(i, j int) bool {
+		pi := yandexChatModelPriority(models[i])
+		pj := yandexChatModelPriority(models[j])
+		if pi != pj {
+			return pi < pj
+		}
+		return models[i] < models[j]
+	})
+}
+
+func yandexChatModelPriority(id string) int {
+	lower := strings.ToLower(id)
+	switch {
+	case strings.Contains(lower, "yandexgpt-lite"):
+		return 20
+	case strings.Contains(lower, "yandexgpt"):
+		return 10
+	default:
+		return 50
+	}
+}
+
+// PickYandexChatModel chooses a chat completion model, never an embedding model.
+func PickYandexChatModel(models []string, folderID, preferred string) string {
+	chatModels := MergeYandexChatModels(models, folderID)
+	if preferred != "" {
+		uri := YandexModelURI(folderID, preferred)
+		if containsString(chatModels, uri) {
+			return uri
+		}
+		if containsString(chatModels, preferred) {
+			return preferred
+		}
+	}
+	if len(chatModels) > 0 {
+		return chatModels[0]
+	}
+	return YandexModelURI(folderID, preferred)
+}
+
+func containsString(list []string, value string) bool {
+	for _, item := range list {
+		if item == value {
+			return true
+		}
+	}
+	return false
 }

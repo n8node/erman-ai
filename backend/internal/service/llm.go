@@ -337,10 +337,14 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	if len(ids) == 0 {
-		if provider == model.LLMProviderYandex {
+	if provider == model.LLMProviderYandex {
+		ids = MergeYandexChatModels(ids, creds.YandexFolderID)
+		if len(ids) == 0 {
 			return DefaultYandexModels(creds.YandexFolderID), nil
 		}
+		return ids, nil
+	}
+	if len(ids) == 0 {
 		return nil, errors.New("provider returned no models")
 	}
 	return ids, nil

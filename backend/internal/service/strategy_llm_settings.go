@@ -160,8 +160,8 @@ func (s *StrategyLLMSettingsService) TestConnection(ctx context.Context, provide
 		}
 	case model.LLMProviderYandex:
 		cfg.YandexModels = models
-		if cfg.YandexModel == "" || !containsYandexModel(models, cfg.YandexModel, creds.YandexFolderID) {
-			cfg.YandexModel = pickYandexDefaultModel(models, creds.YandexFolderID, s.cfg.YandexModelSmart)
+		if cfg.YandexModel == "" || !IsYandexChatModel(cfg.YandexModel) || !containsYandexModel(models, cfg.YandexModel, creds.YandexFolderID) {
+			cfg.YandexModel = PickYandexChatModel(models, creds.YandexFolderID, s.cfg.YandexModelSmart)
 		}
 	default:
 		cfg.OpenRouterModels = models
@@ -352,20 +352,4 @@ func pickDefaultModel(models []string, preferred string) string {
 		return models[0]
 	}
 	return preferred
-}
-
-func pickYandexDefaultModel(models []string, folderID, preferred string) string {
-	if preferred != "" {
-		uri := YandexModelURI(folderID, preferred)
-		if contains(models, uri) {
-			return uri
-		}
-		if contains(models, preferred) {
-			return preferred
-		}
-	}
-	if len(models) > 0 {
-		return models[0]
-	}
-	return YandexModelURI(folderID, preferred)
 }
