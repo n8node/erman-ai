@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,9 +17,9 @@ import (
 var ErrInvalidTelegramSettings = errors.New("invalid telegram settings")
 
 type TelegramSettingsService struct {
-	repo     *repository.TelegramSettingsRepository
-	assets   *TelegramAssets
-	runtime  func() model.TelegramBotRuntimeStatus
+	repo    *repository.TelegramSettingsRepository
+	assets  *TelegramAssets
+	runtime func() model.TelegramBotRuntimeStatus
 }
 
 func NewTelegramSettingsService(repo *repository.TelegramSettingsRepository, assets *TelegramAssets) *TelegramSettingsService {
@@ -80,6 +81,14 @@ func (s *TelegramSettingsService) Update(ctx context.Context, req model.Telegram
 		cfg.BotToken = rec.Config.BotToken
 	}
 	cfg.StartImageFilename = rec.Config.StartImageFilename
+	cfg.ProxyURLs = normalizeProxyURLs(cfg.ProxyURLs)
+	cfg.ProxyActiveURL = strings.TrimSpace(cfg.ProxyActiveURL)
+	if cfg.ProxyEnabled && cfg.ProxyActiveURL == "" && len(cfg.ProxyURLs) > 0 {
+		cfg.ProxyActiveURL = cfg.ProxyURLs[0]
+	}
+	if !cfg.ProxyEnabled {
+		cfg.ProxyActiveURL = ""
+	}
 	if req.ClearStartImage {
 		cfg.StartImageFilename = ""
 		if s.assets != nil {
@@ -157,6 +166,28 @@ func buildTelegramAdminView(rec *model.TelegramSettingsRecord, runtime model.Tel
 }
 
 func validateTelegramSettings(cfg model.TelegramSettings) error {
+	cfg.ProxyURLs = normalizeProxyURLs(cfg.ProxyURLs)
+	cfg.ProxyActiveURL = strings.TrimSpace(cfg.ProxyActiveURL)
+	if cfg.ProxyEnabled {
+		if len(cfg.ProxyURLs) == 0 {
+			return fmt.Errorf("%w: add at least one proxy url", ErrInvalidTelegramSettings)
+		}
+		for _, raw := range cfg.ProxyURLs {
+			u, err := url.Parse(raw)
+			if err != nil || u.Scheme == "" || u.Host == "" {
+				return fmt.Errorf("%w: invalid proxy url %q", ErrInvalidTelegramSettings, raw)
+			}
+		}
+		if cfg.ProxyActiveURL == "" {
+			cfg.ProxyActiveURL = cfg.ProxyURLs[0]
+		}
+		if !containsProxyURL(cfg.ProxyURLs, cfg.ProxyActiveURL) {
+			return fmt.Errorf("%w: active proxy must be one of proxy_urls", ErrInvalidTelegramSettings)
+		}
+	} else {
+		cfg.ProxyActiveURL = ""
+	}
+
 	if cfg.Enabled {
 		if strings.TrimSpace(cfg.ChatID) == "" {
 			return fmt.Errorf("%w: chat_id required when notifications enabled", ErrInvalidTelegramSettings)
@@ -195,4 +226,34 @@ func validateTelegramSettings(cfg model.TelegramSettings) error {
 		}
 	}
 	return nil
+}
+
+func normalizeProxyURLs(in []string) []string {
+	if len(in) == 0 {
+		return []string{}
+	}
+	out := make([]string, 0, len(in))
+	seen := map[string]struct{}{}
+	for _, raw := range in {
+		clean := strings.TrimSpace(raw)
+		if clean == "" {
+			continue
+		}
+		if _, ok := seen[clean]; ok {
+			continue
+		}
+		seen[clean] = struct{}{}
+		out = append(out, clean)
+	}
+	return out
+}
+
+func containsProxyURL(items []string, target string) bool {
+	target = strings.TrimSpace(target)
+	for _, item := range items {
+		if strings.TrimSpace(item) == target {
+			return true
+		}
+	}
+	return false
 }

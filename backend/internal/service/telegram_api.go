@@ -9,8 +9,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -35,6 +37,97 @@ type telegramAPIResponse struct {
 	Result      json.RawMessage `json:"result"`
 }
 
+func (s *TelegramService) doTelegramRequest(
+	ctx context.Context,
+	method string,
+	endpoint string,
+	contentType string,
+	body []byte,
+) (*http.Response, error) {
+	reqBody := body
+	if reqBody == nil {
+		reqBody = []byte{}
+	}
+	makeRequest := func(client *http.Client) (*http.Response, error) {
+		req, err := http.NewRequestWithContext(ctx, method, endpoint, bytes.NewReader(reqBody))
+		if err != nil {
+			return nil, err
+		}
+		if contentType != "" {
+			req.Header.Set("Content-Type", contentType)
+		}
+		return client.Do(req)
+	}
+
+	client := s.client
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil || !cfg.ProxyEnabled || len(cfg.ProxyURLs) == 0 {
+		return makeRequest(client)
+	}
+
+	proxies := telegramProxyOrder(cfg)
+	var lastErr error
+	for idx, proxyURL := range proxies {
+		proxyClient, err := httpClientForProxy(client, proxyURL)
+		if err != nil {
+			lastErr = fmt.Errorf("proxy %q: %w", proxyURL, err)
+			if !cfg.ProxyAutoFailover {
+				return nil, lastErr
+			}
+			continue
+		}
+		resp, reqErr := makeRequest(proxyClient)
+		if reqErr == nil {
+			return resp, nil
+		}
+		lastErr = fmt.Errorf("proxy %q: %w", proxyURL, reqErr)
+		if !cfg.ProxyAutoFailover || idx == len(proxies)-1 {
+			return nil, lastErr
+		}
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, errors.New("proxy request failed")
+}
+
+func telegramProxyOrder(cfg model.TelegramSettings) []string {
+	urls := normalizeProxyURLs(cfg.ProxyURLs)
+	if len(urls) == 0 {
+		return nil
+	}
+	active := strings.TrimSpace(cfg.ProxyActiveURL)
+	if active == "" || !slices.Contains(urls, active) {
+		return urls
+	}
+	out := make([]string, 0, len(urls))
+	out = append(out, active)
+	for _, raw := range urls {
+		if raw == active {
+			continue
+		}
+		out = append(out, raw)
+	}
+	return out
+}
+
+func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error) {
+	parsed, err := url.Parse(strings.TrimSpace(proxyURL))
+	if err != nil {
+		return nil, err
+	}
+	if base == nil {
+		base = &http.Client{}
+	}
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(parsed),
+	}
+	return &http.Client{
+		Timeout:   base.Timeout,
+		Transport: transport,
+	}, nil
+}
+
 func (s *TelegramService) telegramAPI(ctx context.Context, token, method string, payload any) (json.RawMessage, error) {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/%s", strings.TrimSpace(token), method)
 
@@ -49,13 +142,7 @@ func (s *TelegramService) telegramAPI(ctx context.Context, token, method string,
 		body = []byte("{}")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
+	resp, err := s.doTelegramRequest(ctx, http.MethodPost, url, "application/json", body)
 	if err != nil {
 		return nil, err
 	}
@@ -196,13 +283,7 @@ func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chat
 	}
 
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendPhoto", strings.TrimSpace(token))
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &body)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
-
-	resp, err := s.client.Do(req)
+	resp, err := s.doTelegramRequest(ctx, http.MethodPost, url, w.FormDataContentType(), body.Bytes())
 	if err != nil {
 		return err
 	}

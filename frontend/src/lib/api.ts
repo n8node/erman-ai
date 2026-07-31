@@ -950,6 +950,10 @@ export async function testAdminPaymentConnection(provider: PaymentProvider) {
 export type TelegramSettings = {
   enabled: boolean;
   chat_id: string;
+  proxy_enabled: boolean;
+  proxy_active_url: string;
+  proxy_auto_failover: boolean;
+  proxy_urls: string[];
   start_enabled: boolean;
   start_text: string;
   support_enabled: boolean;

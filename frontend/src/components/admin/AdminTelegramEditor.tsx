@@ -52,6 +52,10 @@ function statusDotClass(status: TelegramBotStatus): string {
 const DEFAULT_SETTINGS: TelegramSettings = {
   enabled: false,
   chat_id: "",
+  proxy_enabled: false,
+  proxy_active_url: "",
+  proxy_auto_failover: true,
+  proxy_urls: [],
   start_enabled: false,
   start_text: "",
   support_enabled: false,
@@ -98,7 +102,13 @@ export function AdminTelegramEditor() {
   const [retryingQueueID, setRetryingQueueID] = useState("");
 
   function applyView(data: TelegramAdminView) {
-    setSettings(data.settings);
+    setSettings({
+      ...data.settings,
+      proxy_urls: data.settings.proxy_urls || [],
+      proxy_active_url: data.settings.proxy_active_url || "",
+      proxy_auto_failover: data.settings.proxy_auto_failover ?? true,
+      proxy_enabled: data.settings.proxy_enabled ?? false,
+    });
     setTokenSet(data.bot_token_set);
     setTokenHint(data.bot_token_hint || "");
     setStartImageConfigured(data.start_image_configured);
@@ -549,6 +559,64 @@ export function AdminTelegramEditor() {
             placeholder="639160984"
           />
         </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-text3">
+          {t("proxySection")}
+        </h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.proxy_enabled}
+            onChange={(e) => patch({ proxy_enabled: e.target.checked })}
+            className="rounded border-border2"
+          />
+          {t("proxyEnabled")}
+        </label>
+        <p className="text-xs text-text3">{t("proxyHint")}</p>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("proxyList")}</label>
+          <textarea
+            value={(settings.proxy_urls || []).join("\n")}
+            onChange={(e) =>
+              patch({
+                proxy_urls: e.target.value
+                  .split(/\r?\n/)
+                  .map((v) => v.trim())
+                  .filter(Boolean),
+              })
+            }
+            className={templateClass}
+            rows={4}
+            placeholder="http://user:pass@5.35.83.120:3128"
+          />
+          <p className="mt-1 text-xs text-text3">{t("proxyListHint")}</p>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium">{t("proxyActive")}</label>
+          <select
+            value={settings.proxy_active_url || ""}
+            onChange={(e) => patch({ proxy_active_url: e.target.value })}
+            className={fieldClass}
+          >
+            <option value="">{t("proxyActiveAuto")}</option>
+            {(settings.proxy_urls || []).map((proxyURL) => (
+              <option key={proxyURL} value={proxyURL}>
+                {proxyURL}
+              </option>
+            ))}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.proxy_auto_failover}
+            onChange={(e) => patch({ proxy_auto_failover: e.target.checked })}
+            className="rounded border-border2"
+          />
+          {t("proxyAutoFailover")}
+        </label>
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
