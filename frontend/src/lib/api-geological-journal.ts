@@ -265,6 +265,13 @@ export function refreshAdminGeologicalJournalModels(
   );
 }
 
+export function testAdminGeologicalJournalOCR() {
+  return apiFetch<StrategyLLMTestConnectionResult>(
+    "/admin/geological-journal/ocr/test",
+    { method: "POST" }
+  );
+}
+
 export function fetchAdminGeologicalJournalAccess() {
   return apiFetch<{ items: GeologicalJournalAccessUser[] }>(
     "/admin/geological-journal/access"

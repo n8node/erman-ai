@@ -275,8 +275,12 @@
         "deepseekTextHint": "DeepSeek используется только для структурирования OCR-текста в JSON. Распознавание изображения выполняет Yandex Vision.",
         "deepseekVisionHint": "Выбранная модель DeepSeek должна поддерживать изображения. Текстовые модели deepseek-chat и deepseek-reasoner не распознают страницу журнала.",
         "ocrSection": "Yandex Vision OCR",
-        "ocrHint": "Ключ и folder ID берутся из настроек AI Strategy LLM. OCR читает изображение, LLM структурирует текст в таблицу.",
+        "ocrHint": "Ключ и folder ID берутся из настроек AI Strategy LLM. OCR — управляемый API Yandex Cloud, отдельно не разворачивается.",
+        "ocrManagedHint": "handwritten / table / page — параметры API Vision OCR, не gpt:// модели. Сервисному аккаунту нужна роль ai.vision.user. ВМ из tutorial — только для пакетной обработки архивов.",
         "ocrModel": "Модель OCR",
+        "testOCR": "Проверить Vision OCR",
+        "testingOCR": "Проверка…",
+        "ocrTestOk": "Vision OCR доступен",
         "ocrModels": {
           "handwritten": "handwritten — рукописные журналы",
           "table": "table — табличные формы",
@@ -326,7 +330,8 @@
         "exampleUpload": "Не удалось загрузить пример",
         "exampleSave": "Не удалось сохранить пример",
         "exampleDelete": "Не удалось удалить пример",
-        "models": "Не удалось загрузить список моделей"
+        "models": "Не удалось загрузить список моделей",
+        "ocrTest": "Не удалось проверить Vision OCR"
       }
     },
     "users": {
@@ -2180,9 +2185,12 @@
     "status": {
       "pending": "Ожидание распознавания",
       "processing": "OCR и структурирование таблицы",
-      "polling": "Результат обновляется автоматически каждые 3 секунды. Этап основан на реальном статусе запуска.",
+      "polling": "Статус обновляется каждые 3 секунды.",
+      "elapsed": "Прошло {seconds} сек.",
       "done": "Готово",
-      "error": "Ошибка распознавания"
+      "error": "Ошибка распознавания",
+      "emptyResult": "Таблица пустая — распознавание не дало строк",
+      "emptyResultHint": "Проверьте Folder ID и роль ai.vision.user у сервисного аккаунта в AI Strategy LLM, затем нажмите «Проверить Vision OCR» в админке."
     },
     "actions": {
       "retry": "Повторить",

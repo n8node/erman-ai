@@ -275,8 +275,12 @@
         "deepseekTextHint": "DeepSeek is used only to structure OCR text into JSON. Image recognition is handled by Yandex Vision.",
         "deepseekVisionHint": "The selected DeepSeek model must support image input. Text-only deepseek-chat and deepseek-reasoner models cannot recognize a journal page.",
         "ocrSection": "Yandex Vision OCR",
-        "ocrHint": "API key and folder ID come from AI Strategy LLM settings. OCR reads the image; the LLM structures text into a table.",
+        "ocrHint": "API key and folder ID come from AI Strategy LLM settings. OCR is Yandex Cloud managed API — no separate deployment.",
+        "ocrManagedHint": "handwritten / table / page are Vision OCR API parameters, not gpt:// models. Service account needs ai.vision.user role. The tutorial VM is for batch archive processing only.",
         "ocrModel": "OCR model",
+        "testOCR": "Test Vision OCR",
+        "testingOCR": "Testing…",
+        "ocrTestOk": "Vision OCR is reachable",
         "ocrModels": {
           "handwritten": "handwritten — handwritten journals",
           "table": "table — tabular forms",
@@ -326,7 +330,8 @@
         "exampleUpload": "Could not upload the example",
         "exampleSave": "Could not save the example",
         "exampleDelete": "Could not delete the example",
-        "models": "Could not load model list"
+        "models": "Could not load model list",
+        "ocrTest": "Vision OCR test failed"
       }
     },
     "users": {
@@ -2180,9 +2185,12 @@
     "status": {
       "pending": "Waiting for recognition",
       "processing": "OCR and table structuring",
-      "polling": "The result refreshes automatically every 3 seconds. Progress is based on the actual run status.",
+      "polling": "Status refreshes every 3 seconds.",
+      "elapsed": "Elapsed: {seconds}s",
       "done": "Ready",
-      "error": "Recognition failed"
+      "error": "Recognition failed",
+      "emptyResult": "Empty table — recognition returned no rows",
+      "emptyResultHint": "Check folder ID and ai.vision.user role for the service account in AI Strategy LLM, then use Test Vision OCR in admin."
     },
     "actions": {
       "retry": "Retry",

@@ -291,7 +291,7 @@ func (s *GeologicalJournalService) StartAnalysis(ctx context.Context, pageID, us
 }
 
 func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 	fail := func(err error) {
 		msg := err.Error()
@@ -393,6 +393,10 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	output, err := ParseGeologicalJournalOutput(result.Content)
 	if err != nil {
 		fail(err)
+		return
+	}
+	if len(output.Rows) == 0 {
+		fail(errors.New("structured output is empty: LLM did not extract table rows from OCR text"))
 		return
 	}
 	outJSON, _ := json.Marshal(output)
@@ -522,6 +526,76 @@ func (s *GeologicalJournalService) RefreshModels(ctx context.Context, provider m
 		return nil, fmt.Errorf("%w: provider must be openrouter, deepseek or yandex", ErrGeologicalJournalSettings)
 	}
 	return s.strategy.TestConnection(ctx, provider)
+}
+
+func (s *GeologicalJournalService) TestOCR(ctx context.Context) (*model.StrategyLLMTestConnectionResult, error) {
+	strategyRec, err := s.strategy.GetStored(ctx)
+	if err != nil {
+		return nil, err
+	}
+	creds := s.llm.CredentialsFromStored(strategyRec.Config)
+	if creds.YandexKey == "" || creds.YandexFolderID == "" {
+		return &model.StrategyLLMTestConnectionResult{
+			Provider: model.LLMProviderYandex,
+			OK:       false,
+			Message:  "Yandex API key and folder ID required in AI Strategy LLM settings",
+		}, nil
+	}
+	if !model.IsValidYandexCloudFolderID(creds.YandexFolderID) {
+		return &model.StrategyLLMTestConnectionResult{
+			Provider: model.LLMProviderYandex,
+			OK:       false,
+			Message:  "invalid folder ID — use catalog ID like b1g..., not account email",
+		}, nil
+	}
+	settingsRec, err := s.repo.GetSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	testCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	text, err := s.llm.RecognizeYandexVisionText(testCtx, YandexVisionRecognizeParams{
+		APIKey:   creds.YandexKey,
+		FolderID: creds.YandexFolderID,
+		Image:    yandexVisionTestImage(),
+		MIME:     "image/png",
+		Model:    settingsRec.Settings.OCRModel,
+		Proxy:    strategyRec.Config.ProxyForProvider(model.LLMProviderYandex),
+	})
+	if err != nil {
+		if errors.Is(err, ErrYandexVisionEmptyText) {
+			return &model.StrategyLLMTestConnectionResult{
+				Provider: model.LLMProviderYandex,
+				OK:       true,
+				Message:  fmt.Sprintf("Vision OCR API reachable (model: %s)", NormalizeYandexOCRModel(settingsRec.Settings.OCRModel)),
+			}, nil
+		}
+		return &model.StrategyLLMTestConnectionResult{
+			Provider: model.LLMProviderYandex,
+			OK:       false,
+			Message:  err.Error(),
+		}, nil
+	}
+	preview := strings.TrimSpace(text)
+	if len(preview) > 80 {
+		preview = preview[:80] + "…"
+	}
+	return &model.StrategyLLMTestConnectionResult{
+		Provider: model.LLMProviderYandex,
+		OK:       true,
+		Message:  fmt.Sprintf("Vision OCR OK (model: %s). Sample: %q", NormalizeYandexOCRModel(settingsRec.Settings.OCRModel), preview),
+	}, nil
+}
+
+func yandexVisionTestImage() []byte {
+	// 1×1 white PNG — enough to verify Vision OCR credentials and API access.
+	return []byte{
+		0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+		0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+		0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+		0x42, 0x60, 0x82,
+	}
 }
 
 func validateGeologicalJournalSettings(s model.GeologicalJournalSettings) error {

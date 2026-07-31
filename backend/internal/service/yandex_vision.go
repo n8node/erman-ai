@@ -109,11 +109,7 @@ func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params Yande
 		return "", err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		msg := strings.TrimSpace(string(raw))
-		if msg == "" {
-			msg = resp.Status
-		}
-		return "", fmt.Errorf("yandex vision ocr: %s", msg)
+		return "", fmt.Errorf("yandex vision ocr: %s", formatYandexVisionAPIError(raw, resp.Status))
 	}
 
 	var parsed yandexVisionRecognizeResponse
@@ -131,6 +127,34 @@ func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params Yande
 		return "", ErrYandexVisionEmptyText
 	}
 	return fullText, nil
+}
+
+type yandexVisionAPIErrorBody struct {
+	Error *struct {
+		GRPCCode int    `json:"grpcCode"`
+		HTTPCode int    `json:"httpCode"`
+		Message  string `json:"message"`
+	} `json:"error"`
+}
+
+func formatYandexVisionAPIError(raw []byte, status string) string {
+	msg := strings.TrimSpace(string(raw))
+	if msg == "" {
+		return status
+	}
+	var parsed yandexVisionAPIErrorBody
+	if err := json.Unmarshal(raw, &parsed); err == nil && parsed.Error != nil {
+		if m := strings.TrimSpace(parsed.Error.Message); m != "" {
+			if strings.Contains(m, "does not match with service account folder ID") {
+				return m + " — проверьте Folder ID в AI Strategy LLM (должен быть b1g..., не email)"
+			}
+			if strings.Contains(strings.ToLower(m), "permission") || strings.Contains(strings.ToLower(m), "access") {
+				return m + " — сервисному аккаунту нужна роль ai.vision.user"
+			}
+			return m
+		}
+	}
+	return msg
 }
 
 func geologicalJournalOCRUserPrompt(ocrText string) string {

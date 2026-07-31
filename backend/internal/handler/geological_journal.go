@@ -181,6 +181,15 @@ func (h *GeologicalJournalHandler) RefreshModels(w http.ResponseWriter, r *http.
 	writeJSON(w, http.StatusOK, result)
 }
 
+func (h *GeologicalJournalHandler) TestOCR(w http.ResponseWriter, r *http.Request) {
+	result, err := h.svc.TestOCR(r.Context())
+	if err != nil {
+		h.writeServiceError(w, err, "failed to test ocr")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 func (h *GeologicalJournalHandler) ListAccess(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.ListAccessUsers(r.Context())
 	if err != nil {

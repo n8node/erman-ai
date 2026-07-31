@@ -27,6 +27,7 @@ import {
   fetchAdminGeologicalJournalSettings,
   geologicalJournalExampleImageUrl,
   refreshAdminGeologicalJournalModels,
+  testAdminGeologicalJournalOCR,
   updateAdminGeologicalJournalAccess,
   updateAdminGeologicalJournalExample,
   updateAdminGeologicalJournalSettings,
@@ -71,6 +72,7 @@ export function AdminGeologicalJournalEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshingModels, setRefreshingModels] = useState(false);
+  const [testingOCR, setTestingOCR] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -117,6 +119,23 @@ export function AdminGeologicalJournalEditor() {
       setError(err instanceof Error ? err.message : t("errors.save"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function testOCR() {
+    setTestingOCR(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await testAdminGeologicalJournalOCR();
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+      setSuccess(result.message || t("settings.ocrTestOk"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.ocrTest"));
+    } finally {
+      setTestingOCR(false);
     }
   }
 
@@ -227,6 +246,8 @@ export function AdminGeologicalJournalEditor() {
               patch={patchSettings}
               save={saveSettings}
               refreshModels={refreshModels}
+              testOCR={testOCR}
+              testingOCR={testingOCR}
               t={t}
             />
           )}
@@ -263,15 +284,19 @@ function SettingsPanel({
   patch,
   save,
   refreshModels,
+  testOCR,
+  testingOCR,
   t,
 }: {
   settings: GeologicalJournalSettings;
   providers: LLMProviderStatus[];
   saving: boolean;
   refreshingModels: boolean;
+  testingOCR: boolean;
   patch: (partial: Partial<GeologicalJournalSettings>) => void;
   save: () => void;
   refreshModels: () => void;
+  testOCR: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
   const modelField = {
@@ -340,6 +365,16 @@ function SettingsPanel({
             <option value="page">{t("settings.ocrModels.page")}</option>
           </select>
         </Field>
+        <p className="text-xs text-text3">{t("settings.ocrManagedHint")}</p>
+        <button
+          type="button"
+          onClick={testOCR}
+          disabled={testingOCR}
+          className="inline-flex items-center gap-2 rounded-lg border border-border2 px-3 py-2 text-xs font-medium text-text2 hover:bg-bg2 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={cn(testingOCR && "animate-spin")} />
+          {testingOCR ? t("settings.testingOCR") : t("settings.testOCR")}
+        </button>
       </section>
 
       <section className="space-y-4 rounded-xl border border-border bg-bg p-5">

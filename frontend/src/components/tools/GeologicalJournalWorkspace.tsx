@@ -350,7 +350,6 @@ export function GeologicalJournalWorkspace() {
   const recognizing = Boolean(
     run && ["pending", "processing"].includes(run.status)
   );
-  const hasResult = rows.length > 0 || run?.status === "done";
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
@@ -434,20 +433,30 @@ export function GeologicalJournalWorkspace() {
           <RecognitionSteps
             uploadDone
             recognizing={recognizing}
-            hasResult={hasResult}
+            runStatus={run?.status}
+            rowCount={rows.length}
             failed={run?.status === "error"}
             t={t}
           />
 
           {recognizing && (
-            <div className="flex items-start gap-3 rounded-xl border border-[#d6d2f4] bg-ai-bg p-4">
-              <LoaderCircle size={18} className="mt-0.5 shrink-0 animate-spin text-ai" />
+            <ProcessingBanner run={run} t={t} />
+          )}
+
+          {run?.status === "done" && rows.length === 0 && !recognizing && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-bg p-4">
               <div>
-                <p className="text-sm font-medium text-ai">
-                  {t(`status.${run?.status === "pending" ? "pending" : "processing"}`)}
-                </p>
-                <p className="mt-1 text-xs text-text2">{t("status.polling")}</p>
+                <p className="text-sm font-medium text-warning">{t("status.emptyResult")}</p>
+                <p className="mt-1 text-xs text-text2">{t("status.emptyResultHint")}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => void handleRetry()}
+                className="inline-flex items-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm font-medium text-text hover:bg-bg2"
+              >
+                <RotateCcw size={15} />
+                {t("actions.retry")}
+              </button>
             </div>
           )}
 
@@ -797,23 +806,65 @@ function UploadPanel({
   );
 }
 
+function ProcessingBanner({
+  run,
+  t,
+}: {
+  run: GeologicalJournalRun | null;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!run?.created_at) return;
+    const started = new Date(run.created_at).getTime();
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - started) / 1000)));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [run?.created_at, run?.id]);
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-[#d6d2f4] bg-ai-bg p-4">
+      <LoaderCircle size={18} className="mt-0.5 shrink-0 animate-spin text-ai" />
+      <div>
+        <p className="text-sm font-medium text-ai">
+          {t(`status.${run?.status === "pending" ? "pending" : "processing"}`)}
+        </p>
+        <p className="mt-1 text-xs text-text2">
+          {t("status.polling")} {t("status.elapsed", { seconds: elapsed })}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function RecognitionSteps({
   uploadDone,
   recognizing,
-  hasResult,
+  runStatus,
+  rowCount,
   failed,
   t,
 }: {
   uploadDone: boolean;
   recognizing: boolean;
-  hasResult: boolean;
+  runStatus?: string;
+  rowCount: number;
   failed: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const emptyDone = runStatus === "done" && rowCount === 0;
   const states = [
-    { done: uploadDone, active: false },
-    { done: hasResult, active: recognizing, failed },
-    { done: false, active: hasResult && !recognizing && !failed },
+    { done: uploadDone, active: false, failed: false },
+    {
+      done: (runStatus === "done" && rowCount > 0) || failed || emptyDone,
+      active: recognizing,
+      failed: failed || emptyDone,
+    },
+    {
+      done: runStatus === "done" && rowCount > 0,
+      active: false,
+      failed: false,
+    },
   ];
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-bg px-4 py-3">
