@@ -5,10 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   adminTelegramStartImageUrl,
+  fetchAdminTelegramQueue,
   fetchAdminTelegramSettings,
   fetchAdminTelegramStatus,
   restartAdminTelegramBot,
+  retryAdminTelegramQueueItem,
   sendAdminTelegramTest,
+  type TelegramNotificationRecord,
+  type TelegramNotificationStatus,
   updateAdminTelegramSettings,
   uploadAdminTelegramStartImage,
   type TelegramAdminView,
@@ -29,6 +33,7 @@ const DEFAULT_RUNTIME: TelegramRuntimeStatus = {
   message: "",
   supervisor_running: false,
 };
+const QUEUE_PAGE_SIZE = 10;
 
 function statusDotClass(status: TelegramBotStatus): string {
   switch (status) {
@@ -84,6 +89,13 @@ export function AdminTelegramEditor() {
   const [startCaptionLimit, setStartCaptionLimit] = useState(1024);
   const [imageCacheBust, setImageCacheBust] = useState(0);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [queueItems, setQueueItems] = useState<TelegramNotificationRecord[]>([]);
+  const [queueTotal, setQueueTotal] = useState(0);
+  const [queueOffset, setQueueOffset] = useState(0);
+  const [queueStatus, setQueueStatus] = useState<"" | TelegramNotificationStatus>("");
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueError, setQueueError] = useState("");
+  const [retryingQueueID, setRetryingQueueID] = useState("");
 
   function applyView(data: TelegramAdminView) {
     setSettings(data.settings);
@@ -105,6 +117,31 @@ export function AdminTelegramEditor() {
     }
   }, []);
 
+  const refreshQueue = useCallback(
+    async (next?: { offset?: number; status?: "" | TelegramNotificationStatus }) => {
+      const offset = next?.offset ?? queueOffset;
+      const status = next?.status ?? queueStatus;
+      setQueueLoading(true);
+      if (!next) setQueueError("");
+      try {
+        const data = await fetchAdminTelegramQueue({
+          limit: QUEUE_PAGE_SIZE,
+          offset,
+          ...(status ? { status } : {}),
+        });
+        setQueueItems(data.items);
+        setQueueTotal(data.total);
+        setQueueOffset(offset);
+        setQueueStatus(status);
+      } catch (err) {
+        setQueueError(err instanceof Error ? err.message : t("queueLoadFailed"));
+      } finally {
+        setQueueLoading(false);
+      }
+    },
+    [queueOffset, queueStatus, t]
+  );
+
   useEffect(() => {
     fetchAdminTelegramSettings()
       .then(applyView)
@@ -116,9 +153,22 @@ export function AdminTelegramEditor() {
 
   useEffect(() => {
     if (loading) return;
+    void refreshQueue({ offset: 0 });
+  }, [loading, refreshQueue]);
+
+  useEffect(() => {
+    if (loading) return;
     const id = setInterval(refreshStatus, 5000);
     return () => clearInterval(id);
   }, [loading, refreshStatus]);
+
+  useEffect(() => {
+    if (loading) return;
+    const id = setInterval(() => {
+      void refreshQueue();
+    }, 10000);
+    return () => clearInterval(id);
+  }, [loading, refreshQueue]);
 
   function patch(partial: Partial<TelegramSettings>) {
     setSettings((prev) => ({ ...prev, ...partial }));
@@ -218,6 +268,51 @@ export function AdminTelegramEditor() {
     }
   }
 
+  async function handleQueueRetry(id: string) {
+    setRetryingQueueID(id);
+    setQueueError("");
+    try {
+      await retryAdminTelegramQueueItem(id);
+      setSuccess(t("queueRetryQueued"));
+      await refreshQueue();
+    } catch (err) {
+      setQueueError(err instanceof Error ? err.message : t("queueRetryFailed"));
+    } finally {
+      setRetryingQueueID("");
+    }
+  }
+
+  function queueStatusLabel(status: TelegramNotificationStatus) {
+    switch (status) {
+      case "pending":
+        return t("queueStatusPending");
+      case "processing":
+        return t("queueStatusProcessing");
+      case "sent":
+        return t("queueStatusSent");
+      case "failed":
+        return t("queueStatusFailed");
+      default:
+        return status;
+    }
+  }
+
+  function queueStatusBadge(status: TelegramNotificationStatus) {
+    switch (status) {
+      case "sent":
+        return "bg-[#eaf3de] text-[#3b6d11]";
+      case "failed":
+        return "bg-[#fcebeb] text-[#a32d2d]";
+      case "processing":
+        return "bg-[#e6f1fb] text-[#185fa5]";
+      default:
+        return "bg-[#faeeda] text-[#ba7517]";
+    }
+  }
+
+  const queuePage = Math.floor(queueOffset / QUEUE_PAGE_SIZE) + 1;
+  const queuePages = Math.max(1, Math.ceil(queueTotal / QUEUE_PAGE_SIZE));
+
   const lastCheckLabel =
     runtime.last_check_at &&
     new Date(runtime.last_check_at).toLocaleString(undefined, {
@@ -273,6 +368,125 @@ export function AdminTelegramEditor() {
           </button>
         </div>
         <p className="mt-3 text-xs text-text3">{t("runtimeHint")}</p>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-medium">{t("queueTitle")}</h2>
+            <p className="text-xs text-text3">{t("queueHint")}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={queueStatus}
+              onChange={(e) =>
+                void refreshQueue({
+                  status: e.target.value as "" | TelegramNotificationStatus,
+                  offset: 0,
+                })
+              }
+              className="rounded-lg border border-border2 px-2 py-1.5 text-xs"
+            >
+              <option value="">{t("queueStatusAll")}</option>
+              <option value="pending">{t("queueStatusPending")}</option>
+              <option value="processing">{t("queueStatusProcessing")}</option>
+              <option value="sent">{t("queueStatusSent")}</option>
+              <option value="failed">{t("queueStatusFailed")}</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => void refreshQueue()}
+              className="rounded-lg border border-border2 px-3 py-1.5 text-xs hover:bg-bg2"
+            >
+              {t("queueRefresh")}
+            </button>
+          </div>
+        </div>
+
+        {queueError && (
+          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            {queueError}
+          </p>
+        )}
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="min-w-full text-sm">
+            <thead className="bg-bg2 text-xs uppercase tracking-wide text-text3">
+              <tr>
+                <th className="px-3 py-2 text-left">{t("queueColCreated")}</th>
+                <th className="px-3 py-2 text-left">{t("queueColKind")}</th>
+                <th className="px-3 py-2 text-left">{t("queueColStatus")}</th>
+                <th className="px-3 py-2 text-left">{t("queueColAttempts")}</th>
+                <th className="px-3 py-2 text-left">{t("queueColError")}</th>
+                <th className="px-3 py-2 text-right">{t("queueColActions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {queueItems.map((item) => (
+                <tr key={item.id} className="border-t border-border">
+                  <td className="px-3 py-2 text-xs text-text2">
+                    {new Date(item.created_at).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs">{item.kind}</td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-1 text-xs font-medium",
+                        queueStatusBadge(item.status)
+                      )}
+                    >
+                      {queueStatusLabel(item.status)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-xs text-text2">{item.attempt_count}</td>
+                  <td className="max-w-[320px] px-3 py-2 text-xs text-red-800">
+                    {item.last_error || "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {item.status === "failed" && (
+                      <button
+                        type="button"
+                        disabled={retryingQueueID === item.id}
+                        onClick={() => void handleQueueRetry(item.id)}
+                        className="rounded-md border border-border2 px-2 py-1 text-xs hover:bg-bg2 disabled:opacity-60"
+                      >
+                        {retryingQueueID === item.id ? t("queueRetrying") : t("queueRetry")}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!queueLoading && queueItems.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm text-text3">
+                    {t("queueEmpty")}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between text-xs text-text3">
+          <span>{t("queuePagination", { page: queuePage, total: queuePages, count: queueTotal })}</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={queueOffset <= 0 || queueLoading}
+              onClick={() => void refreshQueue({ offset: Math.max(0, queueOffset - QUEUE_PAGE_SIZE) })}
+              className="rounded border border-border2 px-2 py-1 disabled:opacity-50"
+            >
+              {t("queuePrev")}
+            </button>
+            <button
+              type="button"
+              disabled={queueOffset + QUEUE_PAGE_SIZE >= queueTotal || queueLoading}
+              onClick={() => void refreshQueue({ offset: queueOffset + QUEUE_PAGE_SIZE })}
+              className="rounded border border-border2 px-2 py-1 disabled:opacity-50"
+            >
+              {t("queueNext")}
+            </button>
+          </div>
+        </div>
       </section>
 
       {error && (

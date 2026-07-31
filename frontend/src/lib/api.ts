@@ -973,6 +973,12 @@ export type TelegramBotStatus =
   | "online"
   | "offline";
 
+export type TelegramNotificationStatus =
+  | "pending"
+  | "processing"
+  | "sent"
+  | "failed";
+
 export type TelegramRuntimeStatus = {
   status: TelegramBotStatus;
   message: string;
@@ -1007,6 +1013,28 @@ export type TelegramTestResult = {
   runtime?: TelegramRuntimeStatus;
 };
 
+export type TelegramNotificationRecord = {
+  id: string;
+  kind: string;
+  payload?: Record<string, unknown>;
+  message_text: string;
+  status: TelegramNotificationStatus;
+  attempt_count: number;
+  next_attempt_at: string;
+  last_error?: string;
+  last_attempt_at?: string;
+  sent_at?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TelegramNotificationListResult = {
+  items: TelegramNotificationRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 export async function fetchAdminTelegramSettings() {
   return apiFetch<TelegramAdminView>("/admin/telegram");
 }
@@ -1031,6 +1059,26 @@ export async function restartAdminTelegramBot() {
 
 export async function sendAdminTelegramTest() {
   return apiFetch<TelegramTestResult>("/admin/telegram/test", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function fetchAdminTelegramQueue(params?: {
+  status?: TelegramNotificationStatus;
+  limit?: number;
+  offset?: number;
+}) {
+  const q = new URLSearchParams();
+  if (params?.status) q.set("status", params.status);
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.offset != null) q.set("offset", String(params.offset));
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  return apiFetch<TelegramNotificationListResult>(`/admin/telegram/queue${suffix}`);
+}
+
+export async function retryAdminTelegramQueueItem(id: string) {
+  return apiFetch<{ status: string }>(`/admin/telegram/queue/${id}/retry`, {
     method: "POST",
     body: JSON.stringify({}),
   });
