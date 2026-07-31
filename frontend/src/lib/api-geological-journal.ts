@@ -241,13 +241,15 @@ export function uploadGeologicalJournalPage(
 
 export function listGeologicalJournalPages() {
   return apiFetch<{ items: GeologicalJournalPage[] }>(
-    "/tools/geological-journal/pages"
+    "/tools/geological-journal/pages",
+    { cache: "no-store" }
   );
 }
 
 export function getGeologicalJournalPage(id: string) {
   return apiFetch<GeologicalJournalPageDetail>(
-    `/tools/geological-journal/pages/${id}`
+    `/tools/geological-journal/pages/${id}`,
+    { cache: "no-store" }
   );
 }
 
@@ -282,7 +284,9 @@ export function listGeologicalJournalExamples() {
 }
 
 export function getGeologicalJournalRun(runId: string) {
-  return apiFetch<GeologicalJournalRun>(`/runs/${runId}`);
+  return apiFetch<GeologicalJournalRun>(`/runs/${runId}`, {
+    cache: "no-store",
+  });
 }
 
 export function fetchAdminGeologicalJournalSettings() {

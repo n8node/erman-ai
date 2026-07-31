@@ -262,14 +262,23 @@ export function GeologicalJournalWorkspace() {
       const response = await request.promise;
       setUploadPercent(100);
       const detail = await getGeologicalJournalPage(response.page.id);
+      const uploadedRun =
+        detail.runs?.find((item) => item.id === response.run_id) ?? null;
+      const result = currentPageResult(detail);
       setPage(detail);
-      setRows(currentPageResult(detail)?.rows ?? []);
-      setRun({
-        id: response.run_id,
-        status: "pending",
-        created_at: new Date().toISOString(),
-      });
-      setPages((current) => [response.page, ...current]);
+      const uploadedRows = runOutputRows(uploadedRun);
+      setRows(uploadedRows.length > 0 ? uploadedRows : (result?.rows ?? []));
+      setRun(
+        uploadedRun ?? {
+          id: response.run_id,
+          status: "pending",
+          created_at: new Date().toISOString(),
+        }
+      );
+      setPages((current) => [
+        { ...response.page, latest_result: result },
+        ...current.filter((item) => item.id !== response.page.id),
+      ]);
       setDirty(false);
     } catch (err) {
       if (!(err instanceof DOMException && err.name === "AbortError")) {
