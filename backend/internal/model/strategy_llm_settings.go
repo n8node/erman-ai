@@ -1,6 +1,12 @@
 package model
 
-import "time"
+import (
+	"regexp"
+	"strings"
+	"time"
+)
+
+var yandexCloudFolderIDPattern = regexp.MustCompile(`^b1[a-z0-9]{17,25}$`)
 
 type LLMProvider string
 
@@ -136,4 +142,13 @@ func MaskFolderID(id string) string {
 		return "••••••"
 	}
 	return id[:3] + "…" + id[len(id)-3:]
+}
+
+// IsValidYandexCloudFolderID checks Yandex Cloud catalog ID (b1…), not account email.
+func IsValidYandexCloudFolderID(id string) bool {
+	id = strings.TrimSpace(id)
+	if id == "" || strings.Contains(id, "@") {
+		return false
+	}
+	return yandexCloudFolderIDPattern.MatchString(id)
 }

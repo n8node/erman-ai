@@ -307,6 +307,7 @@ export function AdminStrategyLLMEditor() {
                 setSuccess("");
               }}
             />
+            <p className="mt-1 text-xs text-text3">{t("folderHint")}</p>
           </div>
           <button
             type="button"

@@ -102,7 +102,14 @@ func (s *StrategyLLMSettingsService) Update(ctx context.Context, req model.Strat
 		cfg.YandexAPIKey = strings.TrimSpace(req.YandexAPIKey)
 	}
 	if strings.TrimSpace(req.YandexFolderID) != "" {
-		cfg.YandexFolderID = strings.TrimSpace(req.YandexFolderID)
+		folderID := strings.TrimSpace(req.YandexFolderID)
+		if !model.IsValidYandexCloudFolderID(folderID) {
+			if strings.Contains(folderID, "@") {
+				return nil, fmt.Errorf("%w: yandex folder id must be a catalog ID like b1g..., not an account email", ErrInvalidStrategyLLMSettings)
+			}
+			return nil, fmt.Errorf("%w: yandex folder id must look like b1g... from Yandex Cloud console", ErrInvalidStrategyLLMSettings)
+		}
+		cfg.YandexFolderID = folderID
 	}
 	if req.Pricing != nil {
 		if cfg.Pricing == nil {

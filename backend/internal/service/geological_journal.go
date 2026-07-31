@@ -342,6 +342,14 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(errors.New("yandex vision ocr credentials not configured in AI Strategy LLM admin settings"))
 		return
 	}
+	if !model.IsValidYandexCloudFolderID(yandexFolder) {
+		if strings.Contains(yandexFolder, "@") {
+			fail(errors.New("yandex folder id in AI Strategy LLM settings looks like an email; use catalog ID like b1gtnjtlhud3pof106in from Yandex Cloud console"))
+		} else {
+			fail(errors.New("yandex folder id in AI Strategy LLM settings is invalid; use catalog ID from Yandex Cloud console"))
+		}
+		return
+	}
 	ocrText, err := s.llm.RecognizeYandexVisionText(ctx, YandexVisionRecognizeParams{
 		APIKey:   yandexKey,
 		FolderID: yandexFolder,
