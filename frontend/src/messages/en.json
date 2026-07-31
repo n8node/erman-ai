@@ -2189,8 +2189,8 @@
       "elapsed": "Elapsed: {seconds}s",
       "done": "Ready",
       "error": "Recognition failed",
-      "emptyResult": "Empty table — legacy run with no rows",
-      "emptyResultHint": "This is from an older run. Click Recognize again — the backend now structures OCR text, not the image. If it fails again, read the red error block for the model response."
+      "emptyResult": "Recognition needs to be re-run",
+      "emptyResultHint": "You are looking at an old empty result (done with no rows), not the current OCR status. Redeploy frontend+backend, then click Recognize again. A new run will show either a table or a red error with the model response."
     },
     "actions": {
       "retry": "Retry",

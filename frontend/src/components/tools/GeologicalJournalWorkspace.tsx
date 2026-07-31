@@ -270,6 +270,7 @@ export function GeologicalJournalWorkspace() {
     if (!page) return;
     setError("");
     setSuccess("");
+    setRows([]);
     try {
       const response = await analyzeGeologicalJournalPage(page.id);
       setRun({
@@ -279,6 +280,7 @@ export function GeologicalJournalWorkspace() {
       });
       const detail = await getGeologicalJournalPage(page.id);
       setPage(detail);
+      setDirty(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.retry"));
     }
