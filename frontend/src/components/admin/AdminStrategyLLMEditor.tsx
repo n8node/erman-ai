@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ModelPicker } from "@/components/admin/ModelPicker";
+import { AdminLLMProxyFields } from "@/components/admin/AdminLLMProxyFields";
 import {
   ModelPricingFields,
   modelsCountLabel,
@@ -12,6 +13,7 @@ import {
   fetchAdminStrategyLLMSettings,
   testStrategyLLMConnection,
   updateAdminStrategyLLMSettings,
+  DEFAULT_LLM_HTTP_PROXY,
   type LLMProvider,
   type LLMProviderPricing,
   type LLMProviderStatus,
@@ -29,6 +31,8 @@ const DEFAULT_SETTINGS: StrategyLLMSettings = {
   openrouter_model: "anthropic/claude-sonnet-4-5",
   deepseek_model: "deepseek-chat",
   yandex_model: "yandexgpt/latest",
+  openrouter_proxy: DEFAULT_LLM_HTTP_PROXY,
+  deepseek_proxy: DEFAULT_LLM_HTTP_PROXY,
   system_prompt: "",
   proposal_system_prompt: "",
   temperature: 0.7,
@@ -325,6 +329,23 @@ export function AdminStrategyLLMEditor() {
             </p>
           )}
         </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("proxySection")}
+        </h2>
+        <p className="text-xs text-text3">{t("proxyScopeHint")}</p>
+        <AdminLLMProxyFields
+          providerLabel={t("providers.openrouter")}
+          value={settings.openrouter_proxy ?? DEFAULT_LLM_HTTP_PROXY}
+          onChange={(openrouter_proxy) => patch({ openrouter_proxy })}
+        />
+        <AdminLLMProxyFields
+          providerLabel={t("providers.deepseek")}
+          value={settings.deepseek_proxy ?? DEFAULT_LLM_HTTP_PROXY}
+          onChange={(deepseek_proxy) => patch({ deepseek_proxy })}
+        />
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">

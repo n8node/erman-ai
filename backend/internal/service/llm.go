@@ -39,6 +39,7 @@ type LLMCompletionRequest struct {
 	APIKey       string
 	BaseURL      string
 	FolderID     string
+	Proxy        *model.LLMHTTPProxySettings
 }
 
 type LLMCompletionResult struct {
@@ -182,7 +183,7 @@ func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*L
 
 	req.Model = s.resolveModel(req.Provider, req.Model, creds)
 	headers := s.httpHeaders(req.Provider, creds)
-	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers)
+	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers, req.Proxy)
 }
 
 // StreamComplete calls the chat API with stream=true and invokes onDelta for each content token.
@@ -212,7 +213,7 @@ func (s *LLMService) StreamComplete(ctx context.Context, req LLMCompletionReques
 
 	req.Model = s.resolveModel(req.Provider, req.Model, creds)
 	headers := s.httpHeaders(req.Provider, creds)
-	return s.postChatCompletionStream(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers, onDelta)
+	return s.postChatCompletionStream(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers, onDelta, req.Proxy)
 }
 
 type chatMessage struct {
@@ -266,7 +267,7 @@ type modelsListResponse struct {
 	} `json:"data"`
 }
 
-func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider, creds LLMCredentials) ([]string, error) {
+func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider, creds LLMCredentials, proxy *model.LLMHTTPProxySettings) ([]string, error) {
 	apiKey := s.ResolveKey(provider, creds)
 	if apiKey == "" {
 		return nil, errors.New("api key not configured")
@@ -295,7 +296,9 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 		req.Header.Set("x-data-logging-enabled", "false")
 	}
 
-	resp, err := s.client.Do(req)
+	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
+		return client.Do(req)
+	})
 	if err != nil {
 		if provider == model.LLMProviderYandex {
 			return DefaultYandexModels(creds.YandexFolderID), nil
@@ -356,6 +359,7 @@ func (s *LLMService) postChatCompletion(
 	req LLMCompletionRequest,
 	provider model.LLMProvider,
 	headers llmHTTPHeaders,
+	proxy *model.LLMHTTPProxySettings,
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: req.Model,
@@ -385,7 +389,9 @@ func (s *LLMService) postChatCompletion(
 		httpReq.Header.Set("x-data-logging-enabled", "false")
 	}
 
-	resp, err := s.client.Do(httpReq)
+	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
+		return client.Do(httpReq)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("llm request failed: %w", err)
 	}
@@ -432,6 +438,7 @@ func (s *LLMService) postChatCompletionStream(
 	provider model.LLMProvider,
 	headers llmHTTPHeaders,
 	onDelta func(string),
+	proxy *model.LLMHTTPProxySettings,
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: req.Model,
@@ -463,7 +470,9 @@ func (s *LLMService) postChatCompletionStream(
 		httpReq.Header.Set("x-data-logging-enabled", "false")
 	}
 
-	resp, err := s.client.Do(httpReq)
+	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
+		return client.Do(httpReq)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("llm stream request failed: %w", err)
 	}

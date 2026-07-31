@@ -227,33 +227,3 @@ func validateTelegramSettings(cfg model.TelegramSettings) error {
 	}
 	return nil
 }
-
-func normalizeProxyURLs(in []string) []string {
-	if len(in) == 0 {
-		return []string{}
-	}
-	out := make([]string, 0, len(in))
-	seen := map[string]struct{}{}
-	for _, raw := range in {
-		clean := strings.TrimSpace(raw)
-		if clean == "" {
-			continue
-		}
-		if _, ok := seen[clean]; ok {
-			continue
-		}
-		seen[clean] = struct{}{}
-		out = append(out, clean)
-	}
-	return out
-}
-
-func containsProxyURL(items []string, target string) bool {
-	target = strings.TrimSpace(target)
-	for _, item := range items {
-		if strings.TrimSpace(item) == target {
-			return true
-		}
-	}
-	return false
-}

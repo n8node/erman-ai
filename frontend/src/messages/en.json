@@ -672,6 +672,16 @@
       "queuePrev": "Previous",
       "queueNext": "Next"
     },
+    "llmProxy": {
+      "sectionTitle": "Proxy — {provider}",
+      "hint": "Use when the server cannot reach the provider API directly. Multiple URLs with automatic failover on failure.",
+      "enabled": "Enable proxy",
+      "list": "Proxy list (one URL per line)",
+      "listHint": "Format: http://user:pass@host:port or socks5://user:pass@host:port",
+      "active": "Active proxy",
+      "activeAuto": "Auto: first in list",
+      "autoFailover": "Try next proxy automatically on failure"
+    },
     "max": {
       "title": "MAX bot",
       "subtitle": "Urgent alerts via platform-api2.max.ru",
@@ -728,6 +738,8 @@
       "save": "Save",
       "saving": "Saving…",
       "keysSection": "API keys",
+      "proxySection": "Proxy for external LLMs",
+      "proxyScopeHint": "Applies to OpenRouter and DeepSeek for Strategy, Proposal, and Audit. Yandex GPT connects directly without proxy.",
       "keyPlaceholder": "sk-…",
       "keyPlaceholderExisting": "New key (current: {hint})",
       "keyConfigured": "Key configured",
@@ -811,6 +823,8 @@
       "save": "Save",
       "saving": "Saving…",
       "keysHint": "Keys and folder ID are configured under AI Strategy LLM.",
+      "proxySection": "Proxy for external LLMs",
+      "proxyScopeHint": "Separate proxy settings for Legal Scan. OpenRouter and DeepSeek use proxy; Yandex GPT connects directly.",
       "keyMissing": "key not set",
       "providerSection": "Provider",
       "modelsSection": "Models and parameters",

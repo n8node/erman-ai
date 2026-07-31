@@ -471,11 +471,27 @@ export async function updateAdminLegalRisk(riskId: string, payload: LegalRiskUpd
   });
 }
 
+export type LLMHTTPProxySettings = {
+  enabled: boolean;
+  proxy_urls: string[];
+  proxy_active_url: string;
+  proxy_auto_failover: boolean;
+};
+
+export const DEFAULT_LLM_HTTP_PROXY: LLMHTTPProxySettings = {
+  enabled: false,
+  proxy_urls: [],
+  proxy_active_url: "",
+  proxy_auto_failover: true,
+};
+
 export type LegalScanLLMSettings = {
   provider: LLMProvider;
   openrouter_model: string;
   deepseek_model: string;
   yandex_model: string;
+  openrouter_proxy: LLMHTTPProxySettings;
+  deepseek_proxy: LLMHTTPProxySettings;
   system_prompt: string;
   temperature: number;
   max_tokens: number;
@@ -770,6 +786,8 @@ export type StrategyLLMSettings = {
   openrouter_model: string;
   deepseek_model: string;
   yandex_model: string;
+  openrouter_proxy: LLMHTTPProxySettings;
+  deepseek_proxy: LLMHTTPProxySettings;
   system_prompt: string;
   proposal_system_prompt: string;
   temperature: number;

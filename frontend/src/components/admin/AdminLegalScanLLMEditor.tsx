@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ModelPicker } from "@/components/admin/ModelPicker";
+import { AdminLLMProxyFields } from "@/components/admin/AdminLLMProxyFields";
 import {
   fetchAdminLegalScanLLMSettings,
   updateAdminLegalScanLLMSettings,
+  DEFAULT_LLM_HTTP_PROXY,
   type LLMProvider,
   type LegalScanLLMSettings,
 } from "@/lib/api";
@@ -21,6 +23,8 @@ const DEFAULT_SETTINGS: LegalScanLLMSettings = {
   openrouter_model: "google/gemini-flash-1.5-8b",
   deepseek_model: "deepseek-chat",
   yandex_model: "yandexgpt-lite/latest",
+  openrouter_proxy: DEFAULT_LLM_HTTP_PROXY,
+  deepseek_proxy: DEFAULT_LLM_HTTP_PROXY,
   system_prompt: "",
   temperature: 0.3,
   max_tokens: 4096,
@@ -135,6 +139,23 @@ export function AdminLegalScanLLMEditor() {
             );
           })}
         </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-bg p-5 space-y-4">
+        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+          {t("proxySection")}
+        </h2>
+        <p className="text-xs text-text3">{t("proxyScopeHint")}</p>
+        <AdminLLMProxyFields
+          providerLabel={t("providers.openrouter")}
+          value={settings.openrouter_proxy ?? DEFAULT_LLM_HTTP_PROXY}
+          onChange={(openrouter_proxy) => patch({ openrouter_proxy })}
+        />
+        <AdminLLMProxyFields
+          providerLabel={t("providers.deepseek")}
+          value={settings.deepseek_proxy ?? DEFAULT_LLM_HTTP_PROXY}
+          onChange={(deepseek_proxy) => patch({ deepseek_proxy })}
+        />
       </section>
 
       <section className="rounded-xl border border-border bg-bg p-5 space-y-4">

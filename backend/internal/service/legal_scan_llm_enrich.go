@@ -89,6 +89,7 @@ func (s *LegalScanService) enrichLayer1WithLLM(
 		APIKey:      apiKey,
 		BaseURL:     s.llm.BaseURL(provider),
 		FolderID:    creds.YandexFolderID,
+		Proxy:       settings.ProxyForProvider(provider),
 	}
 
 	result, err := s.llm.Complete(ctx, req)

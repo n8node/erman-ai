@@ -44,6 +44,8 @@ func (s *StrategyLLMSettingsService) GetStored(ctx context.Context) (*model.Stra
 	s.applyPromptDefault(&rec.Config.StrategyLLMSettings)
 	s.applyProposalPromptDefault(&rec.Config.StrategyLLMSettings)
 	s.applyYandexModelDefault(&rec.Config)
+	normalizeLLMHTTPProxySettings(&rec.Config.OpenRouterProxy)
+	normalizeLLMHTTPProxySettings(&rec.Config.DeepSeekProxy)
 	if rec.Config.OpenRouterModels == nil {
 		rec.Config.OpenRouterModels = []string{}
 	}
@@ -88,6 +90,8 @@ func (s *StrategyLLMSettingsService) Update(ctx context.Context, req model.Strat
 
 	cfg := rec.Config
 	cfg.StrategyLLMSettings = req.Settings
+	normalizeLLMHTTPProxySettings(&cfg.OpenRouterProxy)
+	normalizeLLMHTTPProxySettings(&cfg.DeepSeekProxy)
 	if strings.TrimSpace(req.OpenRouterAPIKey) != "" {
 		cfg.OpenRouterAPIKey = strings.TrimSpace(req.OpenRouterAPIKey)
 	}
@@ -156,7 +160,7 @@ func (s *StrategyLLMSettingsService) TestConnection(ctx context.Context, provide
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	models, err := s.llm.ListModels(ctx, provider, creds)
+	models, err := s.llm.ListModels(ctx, provider, creds, rec.Config.StrategyLLMSettings.ProxyForProvider(provider))
 	if err != nil {
 		return &model.StrategyLLMTestConnectionResult{
 			Provider: provider,
@@ -347,6 +351,12 @@ func validateStrategyLLMSettings(settings model.StrategyLLMSettings) error {
 	}
 	if settings.MaxTokens < 256 || settings.MaxTokens > 32000 {
 		return fmt.Errorf("%w: max_tokens must be 256–32000", ErrInvalidStrategyLLMSettings)
+	}
+	if err := validateLLMHTTPProxySettings(settings.OpenRouterProxy); err != nil {
+		return fmt.Errorf("%w: openrouter proxy: %v", ErrInvalidStrategyLLMSettings, err)
+	}
+	if err := validateLLMHTTPProxySettings(settings.DeepSeekProxy); err != nil {
+		return fmt.Errorf("%w: deepseek proxy: %v", ErrInvalidStrategyLLMSettings, err)
 	}
 	return nil
 }

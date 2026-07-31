@@ -9,10 +9,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -65,7 +63,7 @@ func (s *TelegramService) doTelegramRequest(
 		return makeRequest(client)
 	}
 
-	proxies := telegramProxyOrder(cfg)
+	proxies := proxyOrder(cfg.ProxyActiveURL, cfg.ProxyURLs)
 	var lastErr error
 	for idx, proxyURL := range proxies {
 		proxyClient, err := httpClientForProxy(client, proxyURL)
@@ -92,40 +90,7 @@ func (s *TelegramService) doTelegramRequest(
 }
 
 func telegramProxyOrder(cfg model.TelegramSettings) []string {
-	urls := normalizeProxyURLs(cfg.ProxyURLs)
-	if len(urls) == 0 {
-		return nil
-	}
-	active := strings.TrimSpace(cfg.ProxyActiveURL)
-	if active == "" || !slices.Contains(urls, active) {
-		return urls
-	}
-	out := make([]string, 0, len(urls))
-	out = append(out, active)
-	for _, raw := range urls {
-		if raw == active {
-			continue
-		}
-		out = append(out, raw)
-	}
-	return out
-}
-
-func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error) {
-	parsed, err := url.Parse(strings.TrimSpace(proxyURL))
-	if err != nil {
-		return nil, err
-	}
-	if base == nil {
-		base = &http.Client{}
-	}
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(parsed),
-	}
-	return &http.Client{
-		Timeout:   base.Timeout,
-		Transport: transport,
-	}, nil
+	return proxyOrder(cfg.ProxyActiveURL, normalizeProxyURLs(cfg.ProxyURLs))
 }
 
 func (s *TelegramService) telegramAPI(ctx context.Context, token, method string, payload any) (json.RawMessage, error) {

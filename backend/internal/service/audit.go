@@ -151,6 +151,7 @@ func (s *AuditService) processRun(runID string) {
 		APIKey:       apiKey,
 		BaseURL:      s.llm.BaseURL(provider),
 		FolderID:     creds.YandexFolderID,
+		Proxy:        settings.ProxyForProvider(provider),
 	}
 
 	result, err := s.llm.Complete(ctx, req)

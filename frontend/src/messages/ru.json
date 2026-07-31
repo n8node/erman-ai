@@ -672,6 +672,16 @@
       "queuePrev": "Назад",
       "queueNext": "Далее"
     },
+    "llmProxy": {
+      "sectionTitle": "Прокси — {provider}",
+      "hint": "Используйте, если сервер не может напрямую обращаться к API провайдера. Несколько URL и автопереключение при сбое.",
+      "enabled": "Включить прокси",
+      "list": "Список прокси (по одному URL на строку)",
+      "listHint": "Формат: http://user:pass@host:port или socks5://user:pass@host:port",
+      "active": "Активный прокси",
+      "activeAuto": "Авто: первый в списке",
+      "autoFailover": "Автоматически пробовать следующий прокси при ошибке"
+    },
     "max": {
       "title": "MAX бот",
       "subtitle": "Срочные уведомления через platform-api2.max.ru",
@@ -728,6 +738,8 @@
       "save": "Сохранить",
       "saving": "Сохранение…",
       "keysSection": "API-ключи",
+      "proxySection": "Прокси для внешних LLM",
+      "proxyScopeHint": "Применяется к OpenRouter и DeepSeek для Strategy, Proposal и Audit. Yandex GPT идёт напрямую без прокси.",
       "keyPlaceholder": "sk-…",
       "keyPlaceholderExisting": "Новый ключ (текущий: {hint})",
       "keyConfigured": "Ключ задан",
@@ -811,6 +823,8 @@
       "save": "Сохранить",
       "saving": "Сохранение…",
       "keysHint": "Ключи и folder ID настраиваются в разделе «AI Strategy LLM».",
+      "proxySection": "Прокси для внешних LLM",
+      "proxyScopeHint": "Отдельные настройки прокси для Legal-скана. OpenRouter и DeepSeek — через прокси; Yandex GPT — напрямую.",
       "keyMissing": "ключ не задан",
       "providerSection": "Провайдер",
       "modelsSection": "Модели и параметры",

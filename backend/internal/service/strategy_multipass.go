@@ -70,6 +70,7 @@ func (s *StrategyService) generateStrategyOutput(
 				APIKey:       apiKey,
 				BaseURL:      baseURL,
 				FolderID:     creds.YandexFolderID,
+				Proxy:        settings.ProxyForProvider(settings.Provider),
 			}
 			result, err := s.streamWithRetry(ctx, runID, req)
 			if err != nil {
@@ -99,6 +100,7 @@ func (s *StrategyService) generateStrategyOutput(
 		APIKey:       apiKey,
 		BaseURL:      baseURL,
 		FolderID:     creds.YandexFolderID,
+		Proxy:        settings.ProxyForProvider(settings.Provider),
 	}
 	result, err := s.streamWithRetry(ctx, runID, req)
 	if err != nil {
@@ -161,6 +163,7 @@ func (s *StrategyService) postValidateAndExpand(
 		APIKey:       s.llm.ResolveKey(settings.Provider, creds),
 		BaseURL:      baseURL,
 		FolderID:     creds.YandexFolderID,
+		Proxy:        settings.ProxyForProvider(settings.Provider),
 	}
 	result, err := s.streamWithRetry(ctx, runID, req)
 	if err != nil {

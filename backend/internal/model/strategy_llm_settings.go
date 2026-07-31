@@ -23,6 +23,8 @@ type StrategyLLMSettings struct {
 	OpenRouterModel      string      `json:"openrouter_model"`
 	DeepSeekModel        string      `json:"deepseek_model"`
 	YandexModel          string      `json:"yandex_model"`
+	OpenRouterProxy      LLMHTTPProxySettings `json:"openrouter_proxy"`
+	DeepSeekProxy        LLMHTTPProxySettings `json:"deepseek_proxy"`
 	SystemPrompt         string      `json:"system_prompt"`
 	ProposalSystemPrompt string      `json:"proposal_system_prompt"`
 	Temperature          float64     `json:"temperature"`
@@ -91,6 +93,8 @@ func DefaultStrategyLLMStoredConfig() StrategyLLMStoredConfig {
 			OpenRouterModel: "anthropic/claude-sonnet-4-5",
 			DeepSeekModel:   "deepseek-chat",
 			YandexModel:     "yandexgpt/latest",
+			OpenRouterProxy: DefaultLLMHTTPProxySettings(),
+			DeepSeekProxy:   DefaultLLMHTTPProxySettings(),
 			SystemPrompt:    "",
 			Temperature:     0.7,
 			MaxTokens:       32000,

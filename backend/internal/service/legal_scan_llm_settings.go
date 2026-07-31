@@ -39,6 +39,8 @@ func (s *LegalScanLLMSettingsService) GetStored(ctx context.Context) (*model.Leg
 		return nil, err
 	}
 	s.applyPromptDefault(&rec.Config.LegalScanLLMSettings)
+	normalizeLLMHTTPProxySettings(&rec.Config.OpenRouterProxy)
+	normalizeLLMHTTPProxySettings(&rec.Config.DeepSeekProxy)
 	return rec, nil
 }
 
@@ -64,6 +66,8 @@ func (s *LegalScanLLMSettingsService) Update(ctx context.Context, req model.Lega
 	}
 	cfg := rec.Config
 	cfg.LegalScanLLMSettings = req.Settings
+	normalizeLLMHTTPProxySettings(&cfg.OpenRouterProxy)
+	normalizeLLMHTTPProxySettings(&cfg.DeepSeekProxy)
 	updated, err := s.repo.Update(ctx, cfg)
 	if err != nil {
 		return nil, err
@@ -146,6 +150,12 @@ func validateLegalScanLLMSettings(s model.LegalScanLLMSettings) error {
 	}
 	if s.MaxTokens < 256 || s.MaxTokens > 32000 {
 		return fmt.Errorf("%w: max_tokens out of range", ErrInvalidLegalScanLLMSettings)
+	}
+	if err := validateLLMHTTPProxySettings(s.OpenRouterProxy); err != nil {
+		return fmt.Errorf("%w: openrouter proxy: %v", ErrInvalidLegalScanLLMSettings, err)
+	}
+	if err := validateLLMHTTPProxySettings(s.DeepSeekProxy); err != nil {
+		return fmt.Errorf("%w: deepseek proxy: %v", ErrInvalidLegalScanLLMSettings, err)
 	}
 	return nil
 }
