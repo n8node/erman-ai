@@ -17,11 +17,13 @@ import {
   MessageCircle,
   CalendarDays,
   PanelsTopLeft,
+  NotebookTabs,
 } from "lucide-react";
 import {
   fetchAdminExternalProjects,
   fetchExternalProjects,
   fetchPublicExternalProjects,
+  fetchTools,
   type ExternalProject,
 } from "@/lib/api";
 import type { User } from "@/lib/api";
@@ -37,6 +39,7 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const [projects, setProjects] = useState<ExternalProject[]>([]);
+  const [journalAvailable, setJournalAvailable] = useState(false);
   const isSuperAdmin = user?.role === "superadmin";
 
   const loadProjects = useCallback(() => {
@@ -55,6 +58,20 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   }, [loadProjects, pathname]);
 
   useEffect(() => {
+    if (!user) {
+      setJournalAvailable(false);
+      return;
+    }
+    fetchTools()
+      .then((data) =>
+        setJournalAvailable(
+          data.tools.some((tool) => tool.slug === "geological-journal")
+        )
+      )
+      .catch(() => setJournalAvailable(false));
+  }, [user]);
+
+  useEffect(() => {
     onClose();
   }, [onClose, pathname]);
 
@@ -71,6 +88,15 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
     { href: "/tools/proposal", label: t("proposal"), icon: FileText },
     { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
     { href: "/tools/legal-scan", label: t("legalScan"), icon: ShieldCheck },
+    ...(journalAvailable
+      ? [
+          {
+            href: "/tools/geological-journal",
+            label: t("geologicalJournal"),
+            icon: NotebookTabs,
+          },
+        ]
+      : []),
     ...(isSuperAdmin
       ? [{ href: "/tools/workspace", label: t("workspace"), icon: PanelsTopLeft }]
       : []),

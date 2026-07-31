@@ -134,7 +134,9 @@ nano .env
 # WP_DB_ROOT_PASSWORD (openssl rand -base64 32)
 # JWT_SECRET (openssl rand -base64 64)
 # API_KEY_SALT (openssl rand -base64 32)
+# Минимум один LLM-провайдер:
 # OPENROUTER_API_KEY
+# или YANDEX_API_KEY + YANDEX_FOLDER_ID
 # ENVIRONMENT=production
 # DOMAIN=erman.ai
 

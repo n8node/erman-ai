@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  BookOpen,
   Brain,
   Calculator,
   ClipboardList,
@@ -54,6 +55,12 @@ const TOOLS: {
     badge: { text: "text-text2", bg: "bg-bg2" },
   },
   {
+    slug: "geological-journal",
+    href: "/tools/geological-journal",
+    icon: BookOpen,
+    badge: { text: "text-warning", bg: "bg-warning-bg" },
+  },
+  {
     slug: "workspace",
     href: "/tools/workspace",
     icon: PanelsTopLeft,
@@ -82,7 +89,9 @@ export function ToolsOverviewGrid() {
   return (
     <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {TOOLS.filter(
-        ({ slug }) => slug !== "workspace" || user?.role === "superadmin"
+        ({ slug }) =>
+          (slug !== "workspace" || user?.role === "superadmin") &&
+          (slug !== "geological-journal" || Boolean(toolMeta(slug)))
       ).map(({ slug, href, icon: Icon, badge }) => {
         const meta = toolMeta(slug);
         return (

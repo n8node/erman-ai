@@ -65,7 +65,8 @@ export type RunDetail = {
     | CalculatorOutput
     | import("./api-strategy").StrategyOutput
     | import("./api-audit").AuditOutput
-    | import("./api-legal-scan").LegalScanOutput;
+    | import("./api-legal-scan").LegalScanOutput
+    | import("./api-geological-journal").GeologicalJournalOutput;
   created_at: string;
   updated_at?: string;
   completed_at?: string;

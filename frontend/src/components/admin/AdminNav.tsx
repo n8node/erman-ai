@@ -18,6 +18,7 @@ export function AdminNav() {
     { href: "/admin/calculator-budget", label: t("calculatorBudget") },
     { href: "/admin/legal-risks", label: t("legalRisks") },
     { href: "/admin/legal-scan-llm", label: t("legalScanLlm") },
+    { href: "/admin/geological-journal", label: t("geologicalJournal") },
     { href: "/admin/strategy-llm", label: t("strategyLlm") },
     { href: "/admin/email", label: t("emailSmtp") },
     { href: "/admin/payments", label: t("payments") },

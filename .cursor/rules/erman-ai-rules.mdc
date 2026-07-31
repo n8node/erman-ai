@@ -22,19 +22,23 @@ Erman AI — личный кабинет пользователя, совмещ�
 
 2. **AI Strategy Generator** — генерирует персонализированную стратегию внедрения AI для бизнеса.
    Вход: отрасль, размер компании, цели, текущий стек. Выход: структурированный документ-стратегия
-   с roadmap, приоритетами, рисками. Генерируется через LLM (OpenRouter).
+   с roadmap, приоритетами, рисками. Генерируется через настроенный LLM-провайдер.
 
 3. **Proposal Generator** — формирует коммерческое предложение на основе результатов калькулятора.
    Вход: результаты Automation Calculator + данные клиента. Выход: готовое КП в PDF/DOCX.
 
-4. *(Зарезервировано)* — дополнительные инструменты добавляются через систему feature flags.
+4. **Geological Journal Recognizer** — принимает изображения страниц полевых геологических журналов,
+   распознаёт табличные и рукописные данные через vision-модель и возвращает редактируемую таблицу.
+   Доступ выдаётся по allowlist; по умолчанию инструмент виден только суперадмину.
+
+5. *(Зарезервировано)* — дополнительные инструменты добавляются через систему feature flags.
 
 ### Стек
 
 - **Backend:** Go 1.23+
 - **Frontend:** Next.js 15+ (App Router), TypeScript, Tailwind CSS
 - **Database:** PostgreSQL 16+ (основная БД)
-- **LLM Provider:** OpenRouter (все LLM-запросы только через OpenRouter)
+- **LLM Providers:** OpenRouter и Yandex AI Studio; DeepSeek доступен для явно предусмотренных сценариев
 - **Reverse Proxy:** Nginx (внутри Docker)
 - **Контейнеризация:** Docker + Docker Compose
 - **Очереди (production):** NATS JetStream
@@ -340,6 +344,13 @@ OPENROUTER_MODEL_FAST=google/gemini-flash-1.5-8b       # extraction, струк�
 OPENROUTER_MODEL_SMART=anthropic/claude-sonnet-4-5     # strategy, proposal
 OPENROUTER_MODEL_EMBED=openai/text-embedding-3-small
 
+# Yandex AI Studio
+YANDEX_API_KEY=
+YANDEX_FOLDER_ID=
+YANDEX_BASE_URL=https://llm.api.cloud.yandex.net/v1
+YANDEX_MODEL_FAST=yandexgpt-lite/latest
+YANDEX_MODEL_SMART=yandexgpt/latest
+
 # Backend
 SERVER_PORT=8080
 JWT_SECRET=
@@ -400,7 +411,7 @@ CERTBOT_EMAIL=hello@erman.ai
 
 1. **Nginx ВСЕГДА внутри Docker.**
 2. **PostgreSQL и MySQL порты НЕ наружу** в production.
-3. **Все LLM — только через OpenRouter.**
+3. **LLM — только через разрешённые провайдеры OpenRouter, Yandex AI Studio и явно настроенный DeepSeek. Прямые OpenAI/Anthropic/Google API запрещены.**
 4. **Фоновые LLM — через воркеры.** Handler НЕ вызывает LLM синхронно для Strategy/Proposal.
 5. **Каждый LLM-вызов → usage_log** (токены, модель, стоимость, run_id).
 6. **Каждый запуск инструмента → tool_runs** (input, output, статус).
@@ -416,3 +427,6 @@ CERTBOT_EMAIL=hello@erman.ai
 16. **Feature flags** контролируют доступ к инструментам. Проверка на backend, не только на frontend.
 17. **Суперадмин** создаётся только через CLI seed-команду.
 18. **WordPress лендинг** — для маркетинга. Dashboard — для работы. Не смешивать.
+19. **Geological Journal Recognizer** доступен только пользователям из allowlist; суперадмин имеет доступ всегда.
+20. **Изображения геологических журналов** до 10 МБ проверяются по содержимому, хранятся в пользовательской библиотеке и обрабатываются асинхронно.
+21. **История распознавания страницы** хранит все `tool_runs`, версии результата, модель, провайдера и пользовательские исправления.

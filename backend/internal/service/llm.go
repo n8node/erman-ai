@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,6 +74,12 @@ type LLMCompletionResult struct {
 	PromptTokens     int
 	CompletionTokens int
 	TotalTokens      int
+}
+
+type LLMImageCompletionRequest struct {
+	LLMCompletionRequest
+	Image     []byte
+	ImageMIME string
 }
 
 func (s *LLMService) ResolveOpenRouterKey(stored string) string {
@@ -210,6 +217,41 @@ func (s *LLMService) Complete(ctx context.Context, req LLMCompletionRequest) (*L
 	return s.postChatCompletion(ctx, baseURL+"/chat/completions", apiKey, req, req.Provider, headers, req.Proxy)
 }
 
+// CompleteWithImage sends an OpenAI-compatible multimodal content array.
+// Existing text completion behavior remains unchanged.
+func (s *LLMService) CompleteWithImage(ctx context.Context, req LLMImageCompletionRequest) (*LLMCompletionResult, error) {
+	if len(req.Image) == 0 || req.ImageMIME == "" {
+		return nil, errors.New("image and image mime type required")
+	}
+	base := req.LLMCompletionRequest
+	creds := LLMCredentials{YandexFolderID: base.FolderID}
+	apiKey := base.APIKey
+	if apiKey == "" {
+		apiKey = s.ResolveKey(base.Provider, creds)
+	}
+	baseURL := base.BaseURL
+	if baseURL == "" {
+		baseURL = s.BaseURL(base.Provider)
+	}
+	if apiKey == "" {
+		return nil, errors.New("api key not configured")
+	}
+	if base.Provider == model.LLMProviderYandex {
+		if creds.YandexFolderID == "" {
+			creds.YandexFolderID = s.cfg.YandexFolderID
+		}
+		if creds.YandexFolderID == "" {
+			return nil, errors.New("yandex folder id not configured")
+		}
+	}
+	base.Model = s.resolveModel(base.Provider, base.Model, creds)
+	content := []chatContentPart{
+		{Type: "text", Text: base.UserPrompt},
+		{Type: "image_url", ImageURL: &chatImageURL{URL: "data:" + req.ImageMIME + ";base64," + base64.StdEncoding.EncodeToString(req.Image)}},
+	}
+	return s.postMultimodalChatCompletion(ctx, baseURL+"/chat/completions", apiKey, base, content, base.Provider, s.httpHeaders(base.Provider, creds), base.Proxy)
+}
+
 // StreamComplete calls the chat API with stream=true and invokes onDelta for each content token.
 func (s *LLMService) StreamComplete(ctx context.Context, req LLMCompletionRequest, onDelta func(string)) (*LLMCompletionResult, error) {
 	creds := LLMCredentials{YandexFolderID: req.FolderID}
@@ -245,12 +287,27 @@ type chatMessage struct {
 	Content string `json:"content"`
 }
 
+type chatRequestMessage struct {
+	Role    string `json:"role"`
+	Content any    `json:"content"`
+}
+
+type chatContentPart struct {
+	Type     string        `json:"type"`
+	Text     string        `json:"text,omitempty"`
+	ImageURL *chatImageURL `json:"image_url,omitempty"`
+}
+
+type chatImageURL struct {
+	URL string `json:"url"`
+}
+
 type chatCompletionRequest struct {
-	Model       string        `json:"model"`
-	Messages    []chatMessage `json:"messages"`
-	Temperature float64       `json:"temperature"`
-	MaxTokens   int           `json:"max_tokens"`
-	Stream      bool          `json:"stream,omitempty"`
+	Model       string               `json:"model"`
+	Messages    []chatRequestMessage `json:"messages"`
+	Temperature float64              `json:"temperature"`
+	MaxTokens   int                  `json:"max_tokens"`
+	Stream      bool                 `json:"stream,omitempty"`
 }
 
 type streamChunkResponse struct {
@@ -379,7 +436,7 @@ func (s *LLMService) postChatCompletion(
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: req.Model,
-		Messages: []chatMessage{
+		Messages: []chatRequestMessage{
 			{Role: "system", Content: req.SystemPrompt},
 			{Role: "user", Content: req.UserPrompt},
 		},
@@ -440,6 +497,69 @@ func (s *LLMService) postChatCompletion(
 	}, nil
 }
 
+func (s *LLMService) postMultimodalChatCompletion(
+	ctx context.Context,
+	url, apiKey string,
+	req LLMCompletionRequest,
+	userContent []chatContentPart,
+	provider model.LLMProvider,
+	headers llmHTTPHeaders,
+	proxy *model.LLMHTTPProxySettings,
+) (*LLMCompletionResult, error) {
+	body, err := json.Marshal(chatCompletionRequest{
+		Model: req.Model,
+		Messages: []chatRequestMessage{
+			{Role: "system", Content: req.SystemPrompt},
+			{Role: "user", Content: userContent},
+		},
+		Temperature: req.Temperature,
+		MaxTokens:   req.MaxTokens,
+	})
+	if err != nil {
+		return nil, err
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	s.applyLLMHeaders(httpReq, headers)
+	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
+		return client.Do(httpReq)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("llm request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var parsed chatCompletionResponse
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, fmt.Errorf("llm response parse error: %w", err)
+	}
+	if parsed.Error != nil {
+		return nil, fmt.Errorf("llm error: %s", parsed.Error.Message)
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, string(raw))
+	}
+	if len(parsed.Choices) == 0 {
+		return nil, errors.New("llm returned empty choices")
+	}
+	modelUsed := parsed.Model
+	if modelUsed == "" {
+		modelUsed = req.Model
+	}
+	return &LLMCompletionResult{
+		Content: parsed.Choices[0].Message.Content, Model: modelUsed, Provider: provider,
+		PromptTokens: parsed.Usage.PromptTokens, CompletionTokens: parsed.Usage.CompletionTokens,
+		TotalTokens: parsed.Usage.TotalTokens,
+	}, nil
+}
+
 func (s *LLMService) postChatCompletionStream(
 	ctx context.Context,
 	url, apiKey string,
@@ -451,7 +571,7 @@ func (s *LLMService) postChatCompletionStream(
 ) (*LLMCompletionResult, error) {
 	body, err := json.Marshal(chatCompletionRequest{
 		Model: req.Model,
-		Messages: []chatMessage{
+		Messages: []chatRequestMessage{
 			{Role: "system", Content: req.SystemPrompt},
 			{Role: "user", Content: req.UserPrompt},
 		},

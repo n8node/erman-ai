@@ -6,10 +6,14 @@ alwaysApply: true
 
 # Erman AI — LLM и воркеры
 
-## LLM провайдер
+## LLM провайдеры
 
-**Единственный провайдер: OpenRouter (`https://openrouter.ai/api/v1`)**
-Никаких прямых обращений к OpenAI, Anthropic, Google API — только через OpenRouter.
+Разрешённые провайдеры:
+- **OpenRouter** (`https://openrouter.ai/api/v1`) — доступ к моделям OpenAI, Anthropic, Google и другим через единый API.
+- **Yandex AI Studio** (`https://llm.api.cloud.yandex.net/v1`) — прямой доступ к моделям и мультимодальным сервисам Yandex Cloud.
+- **DeepSeek API** — только для уже предусмотренных сценариев и явной конфигурации в админке.
+
+Прямые обращения к OpenAI, Anthropic и Google API запрещены. Инструмент может иметь собственный выбор между OpenRouter и Yandex, если настройки изолированы в его административном разделе.
 
 ### Модели
 
@@ -20,14 +24,13 @@ alwaysApply: true
 | Proposal Generator | `anthropic/claude-sonnet-4-5` | высокий |
 | Embeddings | `openai/text-embedding-3-small` | — |
 
-Изменяются через `.env`: `OPENROUTER_MODEL_FAST`, `OPENROUTER_MODEL_SMART`, `OPENROUTER_MODEL_EMBED`.
-Суперадмин может override модель для конкретного пользователя в admin UI (фича Business плана).
+Модели и ключи задаются через env и могут переопределяться в admin UI для конкретного инструмента. Секреты не возвращаются клиенту.
 
 ### Правила LLM-вызовов
 
-1. **Все вызовы — через `internal/service/llm.go`**. Прямых HTTP-запросов к OpenRouter из handler'ов нет.
-2. **Каждый вызов → запись в `usage_log`** (user_id, run_id, model, prompt_tokens, completion_tokens, cost_usd).
-3. **Стоимость считается по openrouter ценам** — хранится в конфиге/env, не захардкожена.
+1. **Все вызовы — через `internal/service/llm.go`**. Прямых HTTP-запросов к LLM-провайдерам из handler'ов нет.
+2. **Каждый вызов → запись в `usage_log`** (user_id, run_id, provider, model, prompt_tokens, completion_tokens, cost_usd/cost_rub).
+3. **Стоимость считается по тарифам выбранного провайдера** — хранится в конфиге/env или admin settings, не захардкожена.
 4. **Timeout:** стратегия/КП — 120 секунд. Превышение → статус `error` в run.
 5. **Retry:** 1 повторная попытка при сетевой ошибке. При ошибке модели — сразу `error`.
 
@@ -152,9 +155,9 @@ func (s *ToolService) CheckAndIncrementLimit(ctx context.Context, userID, toolSl
 
 ## Правила LLM (критические)
 
-1. **Все LLM — только через OpenRouter.** Прямые API запрещены.
+1. **LLM вызываются только через разрешённые провайдеры OpenRouter, Yandex AI Studio и явно настроенный DeepSeek.** Прямые API OpenAI, Anthropic и Google запрещены.
 2. **Каждый вызов → usage_log.** Без исключений.
-3. **Strategy и Proposal — только умная модель** (`OPENROUTER_MODEL_SMART`). Дешёвая ломает качество.
+3. **Strategy и Proposal используют smart-модель выбранного разрешённого провайдера.** Дешёвая extraction-модель для них запрещена.
 4. **Промпты — в отдельных файлах** `internal/prompts/strategy.go`, `internal/prompts/proposal.go`.
    Не inline в коде сервисов.
 5. **Язык ответа LLM** определяется настройкой профиля пользователя (передаётся в промпт).
