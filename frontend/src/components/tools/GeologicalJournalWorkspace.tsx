@@ -33,6 +33,7 @@ import {
   getGeologicalJournalRun,
   listGeologicalJournalExamples,
   listGeologicalJournalPages,
+  runOutputRows,
   saveGeologicalJournalResult,
   uploadGeologicalJournalPage,
   validateGeologicalJournalImage,
@@ -161,14 +162,18 @@ export function GeologicalJournalWorkspace() {
       try {
         const detail = await getGeologicalJournalPage(id);
         const result = currentPageResult(detail);
-        setPage(detail);
-        setRows(result?.rows ?? []);
-        setDirty(false);
         const active =
           detail.runs?.find((item) =>
             ["pending", "processing"].includes(item.status)
           ) ?? detail.runs?.[0] ?? null;
+        setPage(detail);
+        const activeRows = runOutputRows(active);
+        setRows(activeRows.length > 0 ? activeRows : (result?.rows ?? []));
+        setDirty(false);
         setRun(active);
+        if (active?.status === "error") {
+          setError(active.error_msg || t("errors.recognition"));
+        }
         setView("upload");
       } catch (err) {
         setError(err instanceof Error ? err.message : t("errors.loadPage"));
@@ -202,9 +207,9 @@ export function GeologicalJournalWorkspace() {
           if (stopped) return;
           setPage(detail);
           setRows(
-            next.output?.rows ??
-              currentPageResult(detail)?.rows ??
-              []
+            runOutputRows(next).length > 0
+              ? runOutputRows(next)
+              : (currentPageResult(detail)?.rows ?? [])
           );
           setDirty(false);
           setPages((current) =>

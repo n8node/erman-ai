@@ -100,6 +100,13 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 				resp["output"] = output
 			}
 		}
+	} else if run.ToolSlug == model.GeologicalJournalToolSlug {
+		if len(run.Output) > 0 {
+			var output model.GeologicalJournalOutput
+			if err := json.Unmarshal(run.Output, &output); err == nil {
+				resp["output"] = output
+			}
+		}
 	} else {
 		resp["input"] = json.RawMessage(run.Input)
 		if len(run.Output) > 0 {

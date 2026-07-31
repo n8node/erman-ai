@@ -396,7 +396,11 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		return
 	}
 	if len(output.Rows) == 0 {
-		fail(errors.New("structured output is empty: LLM did not extract table rows from OCR text"))
+		preview := strings.TrimSpace(ocrText)
+		if len(preview) > 120 {
+			preview = preview[:120] + "…"
+		}
+		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Try Yandex GPT provider or another model. OCR preview: %q", len(ocrText), preview))
 		return
 	}
 	outJSON, _ := json.Marshal(output)

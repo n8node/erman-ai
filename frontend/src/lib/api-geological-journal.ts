@@ -127,6 +127,13 @@ function parseJson<T>(value: unknown): T | null {
   return value as T;
 }
 
+export function runOutputRows(
+  run: GeologicalJournalRun | null | undefined
+): GeologicalJournalRow[] {
+  const output = parseJson<GeologicalJournalOutput>(run?.output);
+  return output?.rows ?? [];
+}
+
 export function currentPageResult(
   page: GeologicalJournalPage | GeologicalJournalPageDetail
 ): GeologicalJournalOutput | null {

@@ -2190,7 +2190,7 @@
       "done": "Ready",
       "error": "Recognition failed",
       "emptyResult": "Empty table — recognition returned no rows",
-      "emptyResultHint": "Check folder ID and ai.vision.user role for the service account in AI Strategy LLM, then use Test Vision OCR in admin."
+      "emptyResultHint": "OCR likely worked, but the LLM did not build a table. Try the Yandex provider (yandexgpt) in journal settings and run recognition again. If there is a red error block above, follow that message instead."
     },
     "actions": {
       "retry": "Retry",
