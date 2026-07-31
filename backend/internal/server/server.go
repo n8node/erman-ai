@@ -47,6 +47,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	telegramSupportThreadRepo := repository.NewTelegramSupportThreadRepository(db.Pool)
 	telegramUserStateRepo := repository.NewTelegramUserStateRepository(db.Pool)
 	telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
+	telegramQueueRepo := repository.NewTelegramNotificationQueueRepository(db.Pool)
 	maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 	yandexMetrikaSettingsRepo := repository.NewYandexMetrikaSettingsRepository(db.Pool)
 	externalProjectRepo := repository.NewExternalProjectRepository(db.Pool)
@@ -75,6 +76,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		telegramSupportThreadRepo,
 		telegramUserStateRepo,
 		telegramUrgentSendRepo,
+		telegramQueueRepo,
 		mailSvc,
 		maxSvc,
 		telegramAssets,
@@ -294,6 +296,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Get("/telegram/status", telegramHandler.GetStatus)
 			admin.Post("/telegram/restart", telegramHandler.Restart)
 			admin.Post("/telegram/test", telegramHandler.SendTest)
+			admin.Get("/telegram/queue", telegramHandler.ListQueue)
+			admin.Post("/telegram/queue/{id}/retry", telegramHandler.RetryQueueItem)
 			admin.Post("/telegram/start-image", telegramHandler.UploadStartImage)
 			admin.Get("/telegram/start-image", telegramHandler.GetStartImage)
 			admin.Get("/max", maxHandler.GetAdmin)

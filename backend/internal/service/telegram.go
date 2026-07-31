@@ -138,10 +138,16 @@ func (s *TelegramService) dispatchAdminNotification(ctx context.Context, text, k
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		if sendTelegram {
-			cfg, err := s.settings.GetEffective(ctx)
-			if err == nil && cfg.Enabled {
-				if err := s.send(ctx, cfg, text); err != nil {
-					slog.Warn("telegram notification failed", "kind", kind, "err", err)
+			if err := s.enqueueTelegramNotification(ctx, kind, text, map[string]any{"kind": kind}); err != nil {
+				if errors.Is(err, ErrTelegramQueueUnavailable) {
+					cfg, cfgErr := s.settings.GetEffective(ctx)
+					if cfgErr == nil && cfg.Enabled {
+						if sendErr := s.send(ctx, cfg, text); sendErr != nil {
+							slog.Warn("telegram notification failed", "kind", kind, "err", sendErr)
+						}
+					}
+				} else {
+					slog.Warn("telegram queue enqueue failed", "kind", kind, "err", err)
 				}
 			}
 		}

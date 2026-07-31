@@ -17,8 +17,8 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/server"
 	"github.com/erman-ai/erman-ai/internal/service"
-	"github.com/pressly/goose/v3"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 )
 
 func main() {
@@ -60,6 +60,7 @@ func main() {
 		telegramSupportRepo := repository.NewTelegramSupportThreadRepository(db.Pool)
 		telegramUserStateRepo := repository.NewTelegramUserStateRepository(db.Pool)
 		telegramUrgentSendRepo := repository.NewTelegramUrgentSendRepository(db.Pool)
+		telegramQueueRepo := repository.NewTelegramNotificationQueueRepository(db.Pool)
 		maxSettingsRepo := repository.NewMaxSettingsRepository(db.Pool)
 		tokenRepo := repository.NewEmailVerificationTokenRepository(db.Pool)
 		passwordResetTokenRepo := repository.NewPasswordResetTokenRepository(db.Pool)
@@ -70,7 +71,7 @@ func main() {
 		maxSettingsSvc := service.NewMaxSettingsService(maxSettingsRepo)
 		maxSvc := service.NewMaxService(maxSettingsSvc, logger)
 		telegramSvc := service.NewTelegramService(
-			telegramSettingsSvc, telegramSupportRepo, telegramUserStateRepo, telegramUrgentSendRepo,
+			telegramSettingsSvc, telegramSupportRepo, telegramUserStateRepo, telegramUrgentSendRepo, telegramQueueRepo,
 			mailSvc, maxSvc, telegramAssets, logger,
 		)
 		verifySvc := service.NewEmailVerificationService(userRepo, tokenRepo, mailSvc, telegramSvc, cfg)

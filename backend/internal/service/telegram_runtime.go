@@ -13,6 +13,7 @@ import (
 )
 
 const telegramHealthInterval = 30 * time.Second
+const telegramQueueInterval = 5 * time.Second
 
 // TelegramService sends notifications and runs a background health supervisor
 // that starts with the backend process (container restart / server reboot).
@@ -21,6 +22,7 @@ type TelegramService struct {
 	threads     *repository.TelegramSupportThreadRepository
 	userState   *repository.TelegramUserStateRepository
 	urgentSends *repository.TelegramUrgentSendRepository
+	queue       *repository.TelegramNotificationQueueRepository
 	mail        *MailService
 	max         *MaxService
 	assets      *TelegramAssets
@@ -36,6 +38,7 @@ type TelegramService struct {
 	stopCh            chan struct{}
 	pollStopCh        chan struct{}
 	triggerCh         chan struct{}
+	queueTriggerCh    chan struct{}
 }
 
 func NewTelegramService(
@@ -43,6 +46,7 @@ func NewTelegramService(
 	threads *repository.TelegramSupportThreadRepository,
 	userState *repository.TelegramUserStateRepository,
 	urgentSends *repository.TelegramUrgentSendRepository,
+	queue *repository.TelegramNotificationQueueRepository,
 	mail *MailService,
 	max *MaxService,
 	assets *TelegramAssets,
@@ -56,16 +60,18 @@ func NewTelegramService(
 		threads:     threads,
 		userState:   userState,
 		urgentSends: urgentSends,
+		queue:       queue,
 		mail:        mail,
 		max:         max,
 		assets:      assets,
-		client:   &http.Client{Timeout: 60 * time.Second},
-		logger:   logger,
+		client:      &http.Client{Timeout: 60 * time.Second},
+		logger:      logger,
 		runtime: model.TelegramBotRuntimeStatus{
 			Status:  model.TelegramBotStatusDisabled,
 			Message: "Супервизор не запущен",
 		},
-		triggerCh: make(chan struct{}, 1),
+		triggerCh:      make(chan struct{}, 1),
+		queueTriggerCh: make(chan struct{}, 1),
 	}
 }
 
@@ -83,6 +89,8 @@ func (s *TelegramService) Start() {
 
 	s.logger.Info("telegram bot supervisor starting")
 	go s.supervisorLoop()
+	go s.queueLoop()
+	s.triggerQueueDelivery()
 	s.ensurePollingFromSettings()
 }
 

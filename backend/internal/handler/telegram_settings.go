@@ -5,9 +5,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/erman-ai/erman-ai/internal/model"
+	"github.com/erman-ai/erman-ai/internal/repository"
 	"github.com/erman-ai/erman-ai/internal/service"
+	"github.com/go-chi/chi/v5"
 )
 
 type TelegramSettingsHandler struct {
@@ -124,4 +127,41 @@ func (h *TelegramSettingsHandler) SendTest(w http.ResponseWriter, r *http.Reques
 		result.Runtime = &st
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *TelegramSettingsHandler) ListQueue(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	status := model.TelegramNotificationStatus(r.URL.Query().Get("status"))
+
+	result, err := h.telegram.ListNotifications(r.Context(), status, limit, offset)
+	if err != nil {
+		if errors.Is(err, service.ErrTelegramQueueUnavailable) {
+			writeError(w, http.StatusServiceUnavailable, "telegram queue unavailable")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to load telegram queue")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *TelegramSettingsHandler) RetryQueueItem(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "id required")
+		return
+	}
+	if err := h.telegram.RetryNotificationNow(r.Context(), id); err != nil {
+		switch {
+		case errors.Is(err, service.ErrTelegramQueueUnavailable):
+			writeError(w, http.StatusServiceUnavailable, "telegram queue unavailable")
+		case errors.Is(err, repository.ErrNotFound):
+			writeError(w, http.StatusNotFound, "notification not found")
+		default:
+			writeError(w, http.StatusInternalServerError, "failed to retry notification")
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "queued"})
 }
