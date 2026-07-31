@@ -674,7 +674,7 @@
     },
     "max": {
       "title": "MAX bot",
-      "subtitle": "Urgent alerts via platform-api.max.ru",
+      "subtitle": "Urgent alerts via platform-api2.max.ru",
       "loading": "Loading…",
       "loadFailed": "Failed to load settings",
       "saveFailed": "Failed to save",

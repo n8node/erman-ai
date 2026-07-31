@@ -674,7 +674,7 @@
     },
     "max": {
       "title": "MAX бот",
-      "subtitle": "Срочные уведомления и интеграция с platform-api.max.ru",
+      "subtitle": "Срочные уведомления через platform-api2.max.ru",
       "loading": "Загрузка…",
       "loadFailed": "Не удалось загрузить настройки",
       "saveFailed": "Не удалось сохранить",

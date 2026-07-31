@@ -91,7 +91,7 @@ func (s *TelegramService) Start() {
 	go s.supervisorLoop()
 	go s.queueLoop()
 	s.triggerQueueDelivery()
-	s.ensurePollingFromSettings()
+	go s.ensurePollingFromSettings()
 }
 
 func (s *TelegramService) ensurePollingFromSettings() {

@@ -30,7 +30,7 @@ func NewMaxService(settings *MaxSettingsService, logger *slog.Logger) *MaxServic
 	}
 	return &MaxService{
 		settings: settings,
-		client:   &http.Client{Timeout: 20 * time.Second},
+		client:   newMaxHTTPClient(),
 		logger:   logger,
 	}
 }

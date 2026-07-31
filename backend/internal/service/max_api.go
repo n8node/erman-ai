@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const maxAPIBase = "https://platform-api.max.ru"
+const maxAPIBase = "https://platform-api2.max.ru"
 
 type maxAPIUser struct {
 	UserID   int64  `json:"user_id"`
