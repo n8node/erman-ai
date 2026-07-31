@@ -108,6 +108,7 @@
     "proposal": "Proposal",
     "audit": "Automation Audit",
     "legalScan": "Legal Site Scan",
+    "geologicalJournal": "Geological Journal",
     "workspace": "Workspace",
     "billing": "Billing",
     "apiKeys": "API Keys",
@@ -152,6 +153,11 @@
         "description": "Scan a client website for RF legal risks: policies, forms, cookies, and personal data handling.",
         "audience": "Legal, marketing, and agency teams before a launch or client site review."
       },
+      "geological-journal": {
+        "name": "Geological Journal Recognizer",
+        "description": "Turn scanned field journal pages into an editable structured table while preserving the source image.",
+        "audience": "Geologists and field teams digitizing drilling and core recovery records."
+      },
       "workspace": {
         "name": "Workspace",
         "description": "One place for documents, collaboration, and infinite visual whiteboards.",
@@ -193,6 +199,10 @@
       "legal-scan": {
         "name": "Legal Site Scan",
         "description": "RF legal risk scan for client websites"
+      },
+      "geological-journal": {
+        "name": "Geological Journal",
+        "description": "Recognize field journal tables from scans and photos"
       }
     }
   },
@@ -227,6 +237,7 @@
       "strategyLlm": "AI Strategy LLM",
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
+      "geologicalJournal": "Geological journal",
       "emailSmtp": "Email / SMTP",
       "payments": "Payments",
       "telegram": "Telegram",
@@ -235,6 +246,71 @@
       "translations": "Translations",
       "projects": "Projects",
       "publicPages": "Public pages"
+    },
+    "geologicalJournal": {
+      "title": "Geological journal",
+      "subtitle": "Configure recognition, user access, and the example gallery",
+      "loading": "Loading…",
+      "tabs": {
+        "settings": "Recognition settings",
+        "access": "Access",
+        "examples": "Examples"
+      },
+      "settings": {
+        "providerSection": "Provider",
+        "providerHint": "Credentials are configured on the backend. This page selects the provider used by the recognizer.",
+        "providers": {
+          "openrouter": "OpenRouter",
+          "yandex": "Yandex"
+        },
+        "modelsSection": "Models and generation",
+        "openrouterModel": "OpenRouter model",
+        "yandexModel": "Yandex model",
+        "temperature": "Temperature",
+        "maxTokens": "Maximum tokens",
+        "activeModel": "Active model",
+        "promptSection": "Recognition system prompt",
+        "promptHint": "Keep the required JSON structure and geological field semantics explicit.",
+        "save": "Save settings",
+        "saving": "Saving…",
+        "saved": "Recognition settings saved"
+      },
+      "access": {
+        "title": "User access",
+        "hint": "Enable the tool for individual users. Navigation still depends on the tool being returned by GET /tools.",
+        "empty": "No users available.",
+        "email": "Email",
+        "role": "Role",
+        "permission": "Has access"
+      },
+      "examples": {
+        "addTitle": "Add example",
+        "addHint": "Published examples appear in the user gallery.",
+        "chooseImage": "Choose image",
+        "formats": "JPEG, PNG, WebP or GIF · up to 10 MB",
+        "titleField": "Title",
+        "descriptionField": "Description",
+        "orderField": "Sort order",
+        "published": "Published",
+        "add": "Add example",
+        "uploading": "Uploading…",
+        "created": "Example added",
+        "saved": "Example saved",
+        "save": "Save",
+        "delete": "Delete",
+        "deleteConfirm": "Delete example “{title}”?",
+        "empty": "No examples yet."
+      },
+      "errors": {
+        "load": "Could not load geological journal settings",
+        "save": "Could not save settings",
+        "access": "Could not update access",
+        "type": "Choose a JPEG, PNG, WebP, or GIF image.",
+        "size": "The image must not exceed 10 MB.",
+        "exampleUpload": "Could not upload the example",
+        "exampleSave": "Could not save the example",
+        "exampleDelete": "Could not delete the example"
+      }
     },
     "users": {
       "title": "Users",
@@ -2042,6 +2118,116 @@
         "processing": "Generating",
         "pending": "Queued"
       }
+    }
+  },
+  "geologicalJournal": {
+    "title": "Geological journal recognizer",
+    "subtitle": "Upload a scan or photo of a field journal page, review the recognized table, and save corrections.",
+    "newPage": "New page",
+    "loading": "Loading…",
+    "tabs": {
+      "upload": "Recognition",
+      "library": "My pages",
+      "examples": "Examples"
+    },
+    "upload": {
+      "title": "Drop a journal page here",
+      "description": "Use a clear, straight-on scan or photo. Recognition starts automatically after upload.",
+      "choose": "Choose image",
+      "formats": "JPEG, PNG, WebP or GIF · up to 10 MB",
+      "uploading": "Uploading image",
+      "keepOpen": "Keep this page open until the upload is complete.",
+      "progress": "Upload progress",
+      "cancel": "Cancel upload",
+      "hints": {
+        "quality": "Sharp, evenly lit images give the best result.",
+        "privacy": "The page is available only in your account.",
+        "corrections": "Every recognized cell can be corrected."
+      }
+    },
+    "steps": {
+      "1": {
+        "title": "Upload",
+        "description": "Image received"
+      },
+      "2": {
+        "title": "Recognition",
+        "description": "Reading fields and rows"
+      },
+      "3": {
+        "title": "Review",
+        "description": "Check and save"
+      }
+    },
+    "status": {
+      "pending": "Waiting for recognition",
+      "processing": "Recognizing journal page",
+      "polling": "The result refreshes automatically every 3 seconds. Progress is based on the actual run status.",
+      "done": "Ready",
+      "error": "Recognition failed"
+    },
+    "actions": {
+      "retry": "Retry",
+      "recognizeAgain": "Recognize again"
+    },
+    "editor": {
+      "title": "Recognized table",
+      "rows": "{count, plural, =0 {No rows} =1 {# row} other {# rows}}",
+      "addRow": "Add row",
+      "deleteRow": "Delete row",
+      "save": "Save corrections",
+      "saving": "Saving…",
+      "saved": "Corrections saved",
+      "waitingTitle": "Recognition in progress",
+      "waitingText": "The editable table will appear here as soon as the run finishes.",
+      "emptyTitle": "No rows recognized",
+      "emptyText": "Add a row manually or run recognition again."
+    },
+    "columns": {
+      "date": "Date",
+      "drilling_diameter_mm": "Diameter, mm",
+      "depth_from_m": "Depth from, m",
+      "depth_to_m": "Depth to, m",
+      "drilling_run_m": "Drilling run, m",
+      "core_recovery_m": "Core recovery, m",
+      "core_recovery_pct": "Recovery, %",
+      "rock_description": "Rock description",
+      "sampling_interval": "Sampling interval",
+      "sample_number": "Sample number",
+      "notes": "Notes"
+    },
+    "history": {
+      "title": "Page history",
+      "summary": "{runs, plural, =0 {No recognition runs} =1 {# recognition run} other {# recognition runs}} · {versions, plural, =0 {no saved versions} =1 {# saved version} other {# saved versions}}",
+      "empty": "No recognition runs for this page yet."
+    },
+    "library": {
+      "emptyTitle": "No journal pages yet",
+      "emptyText": "Upload the first scan from the Recognition tab.",
+      "delete": "Delete page",
+      "deleteConfirm": "Delete this journal page and its recognition history?",
+      "recognized": "{count, plural, =0 {Recognized} =1 {# row} other {# rows}}",
+      "notRecognized": "Not recognized"
+    },
+    "examples": {
+      "title": "Journal page examples",
+      "subtitle": "Use these samples to understand the image quality and layout the recognizer handles best.",
+      "empty": "No published examples yet.",
+      "preview": "Open preview",
+      "close": "Close preview",
+      "noDescription": "Journal page example",
+      "guidance": "To recognize your own page, close this preview and upload an image in the Recognition tab. The backend does not currently support copying an example into your library."
+    },
+    "errors": {
+      "load": "Could not load geological journal data",
+      "loadPage": "Could not load this page",
+      "type": "Choose a JPEG, PNG, WebP, or GIF image.",
+      "size": "The image must not exceed 10 MB.",
+      "upload": "Could not upload the image",
+      "recognition": "The recognizer could not process this page",
+      "retry": "Could not start recognition again",
+      "save": "Could not save corrections",
+      "delete": "Could not delete the page"
     }
   }
 }

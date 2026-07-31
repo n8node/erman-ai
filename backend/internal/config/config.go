@@ -11,7 +11,7 @@ import (
 const Version = "0.1.0"
 
 type Config struct {
-	ServerPort string `env:"SERVER_PORT" envDefault:"8080"`
+	ServerPort  string `env:"SERVER_PORT" envDefault:"8080"`
 	Environment string `env:"ENVIRONMENT" envDefault:"development"`
 	LogLevel    string `env:"LOG_LEVEL" envDefault:"info"`
 
@@ -20,37 +20,38 @@ type Config struct {
 	JWTSecret  string `env:"JWT_SECRET,required"`
 	APIKeySalt string `env:"API_KEY_SALT,required"`
 
-	OpenRouterAPIKey  string `env:"OPENROUTER_API_KEY"`
-	OpenRouterBaseURL string `env:"OPENROUTER_BASE_URL" envDefault:"https://openrouter.ai/api/v1"`
+	OpenRouterAPIKey     string `env:"OPENROUTER_API_KEY"`
+	OpenRouterBaseURL    string `env:"OPENROUTER_BASE_URL" envDefault:"https://openrouter.ai/api/v1"`
 	OpenRouterModelFast  string `env:"OPENROUTER_MODEL_FAST" envDefault:"google/gemini-flash-1.5-8b"`
 	OpenRouterModelSmart string `env:"OPENROUTER_MODEL_SMART" envDefault:"anthropic/claude-sonnet-4-5"`
 	OpenRouterModelEmbed string `env:"OPENROUTER_MODEL_EMBED" envDefault:"openai/text-embedding-3-small"`
 
-	DeepSeekAPIKey        string `env:"DEEPSEEK_API_KEY"`
-	DeepSeekBaseURL       string `env:"DEEPSEEK_BASE_URL" envDefault:"https://api.deepseek.com/v1"`
-	DeepSeekModelDefault  string `env:"DEEPSEEK_MODEL_DEFAULT" envDefault:"deepseek-chat"`
+	DeepSeekAPIKey       string `env:"DEEPSEEK_API_KEY"`
+	DeepSeekBaseURL      string `env:"DEEPSEEK_BASE_URL" envDefault:"https://api.deepseek.com/v1"`
+	DeepSeekModelDefault string `env:"DEEPSEEK_MODEL_DEFAULT" envDefault:"deepseek-chat"`
 
-	YandexAPIKey       string `env:"YANDEX_API_KEY"`
-	YandexFolderID     string `env:"YANDEX_FOLDER_ID"`
-	YandexBaseURL      string `env:"YANDEX_BASE_URL" envDefault:"https://llm.api.cloud.yandex.net/v1"`
-	YandexModelSmart   string `env:"YANDEX_MODEL_SMART" envDefault:"yandexgpt/latest"`
-	YandexModelFast    string `env:"YANDEX_MODEL_FAST" envDefault:"yandexgpt-lite/latest"`
+	YandexAPIKey     string `env:"YANDEX_API_KEY"`
+	YandexFolderID   string `env:"YANDEX_FOLDER_ID"`
+	YandexBaseURL    string `env:"YANDEX_BASE_URL" envDefault:"https://llm.api.cloud.yandex.net/v1"`
+	YandexModelSmart string `env:"YANDEX_MODEL_SMART" envDefault:"yandexgpt/latest"`
+	YandexModelFast  string `env:"YANDEX_MODEL_FAST" envDefault:"yandexgpt-lite/latest"`
 
-	YandexPriceInputRUBPer1K  float64 `env:"YANDEX_PRICE_INPUT_RUB_PER_1K" envDefault:"0.6"`
-	YandexPriceOutputRUBPer1K float64 `env:"YANDEX_PRICE_OUTPUT_RUB_PER_1K" envDefault:"1.8"`
+	YandexPriceInputRUBPer1K      float64 `env:"YANDEX_PRICE_INPUT_RUB_PER_1K" envDefault:"0.6"`
+	YandexPriceOutputRUBPer1K     float64 `env:"YANDEX_PRICE_OUTPUT_RUB_PER_1K" envDefault:"1.8"`
 	OpenRouterPriceInputUSDPer1K  float64 `env:"OPENROUTER_PRICE_INPUT_USD_PER_1K" envDefault:"0.003"`
 	OpenRouterPriceOutputUSDPer1K float64 `env:"OPENROUTER_PRICE_OUTPUT_USD_PER_1K" envDefault:"0.015"`
-	DeepSeekPriceInputUSDPer1K  float64 `env:"DEEPSEEK_PRICE_INPUT_USD_PER_1K" envDefault:"0.014"`
-	DeepSeekPriceOutputUSDPer1K float64 `env:"DEEPSEEK_PRICE_OUTPUT_USD_PER_1K" envDefault:"0.028"`
+	DeepSeekPriceInputUSDPer1K    float64 `env:"DEEPSEEK_PRICE_INPUT_USD_PER_1K" envDefault:"0.014"`
+	DeepSeekPriceOutputUSDPer1K   float64 `env:"DEEPSEEK_PRICE_OUTPUT_USD_PER_1K" envDefault:"0.028"`
 
 	AutomationSavingsRate float64 `env:"AUTOMATION_SAVINGS_RATE" envDefault:"0.7"`
 
 	WorkerStrategyConcurrency int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`
 	WorkerProposalConcurrency int `env:"WORKER_PROPOSAL_CONCURRENCY" envDefault:"3"`
 
-	StorageBackend     string `env:"STORAGE_BACKEND" envDefault:"local"`
-	TelegramAssetsDir  string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
-	Domain             string `env:"DOMAIN" envDefault:"erman.ai"`
+	StorageBackend             string `env:"STORAGE_BACKEND" envDefault:"local"`
+	TelegramAssetsDir          string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
+	GeologicalJournalAssetsDir string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
+	Domain                     string `env:"DOMAIN" envDefault:"erman.ai"`
 
 	WorkspaceOIDCClientID      string `env:"WORKSPACE_OIDC_CLIENT_ID" envDefault:"erman-affine"`
 	WorkspaceOIDCClientSecret  string `env:"WORKSPACE_OIDC_CLIENT_SECRET"`

@@ -15,6 +15,10 @@ const CARD_TOOLS = [
   { slug: "legal-scan", href: "/tools/legal-scan" },
 ] as const;
 
+const CONDITIONAL_TOOLS = [
+  { slug: "geological-journal", href: "/tools/geological-journal" },
+] as const;
+
 export function DashboardToolCards() {
   const t = useTranslations("dashboard");
   const tLimits = useTranslations("toolLimits");
@@ -32,9 +36,14 @@ export function DashboardToolCards() {
     return tools.find((x) => x.slug === slug);
   }
 
+  const visibleTools = [
+    ...CARD_TOOLS,
+    ...CONDITIONAL_TOOLS.filter(({ slug }) => Boolean(toolMeta(slug))),
+  ];
+
   return (
     <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {CARD_TOOLS.map(({ slug, href }) => {
+      {visibleTools.map(({ slug, href }) => {
         const meta = toolMeta(slug);
         return (
           <Link

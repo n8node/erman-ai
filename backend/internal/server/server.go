@@ -57,6 +57,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	passwordResetTokenRepo := repository.NewPasswordResetTokenRepository(db.Pool)
 	planCheckoutRepo := repository.NewPlanCheckoutRepository(db.Pool)
 	consultationRepo := repository.NewConsultationRepository(db.Pool)
+	geologicalJournalRepo := repository.NewGeologicalJournalRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
@@ -114,6 +115,13 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	externalProjectSvc := service.NewExternalProjectService(externalProjectRepo)
 	publicPageSvc := service.NewPublicPageService(publicPageRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW, telegramSvc)
+	geologicalJournalSvc := service.NewGeologicalJournalService(
+		cfg.GeologicalJournalAssetsDir, geologicalJournalRepo, runRepo, planRepo,
+		llmSvc, strategyLLMSvc, usageLogRepo, logger,
+	)
+	if err := geologicalJournalSvc.EnsureAssetDirs(); err != nil {
+		logger.Error("geological journal asset directory unavailable", "error", err)
+	}
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg, projectInquiryRepo, proposalReqRepo)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
@@ -145,8 +153,9 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	consultationHandler := handler.NewConsultationHandler(consultationSvc)
 	inquiryRL := middleware.NewRateLimiter(5, time.Hour)
 	billingHandler := handler.NewBillingHandler(billingSvc, checkoutSvc, planRepo, runRepo)
-	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc)
+	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc, geologicalJournalSvc)
 	workspaceOIDCHandler := handler.NewWorkspaceOIDCHandler(userRepo, cfg)
+	geologicalJournalHandler := handler.NewGeologicalJournalHandler(geologicalJournalSvc)
 
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -226,6 +235,17 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			protected.Post("/tools/audit/run", auditHandler.Run)
 			protected.Post("/tools/legal-scan/run", legalScanHandler.Run)
 			protected.Post("/tools/legal-scan/export", legalScanHandler.Export)
+			protected.Route("/tools/geological-journal", func(journal chi.Router) {
+				journal.Post("/pages", geologicalJournalHandler.CreatePage)
+				journal.Get("/pages", geologicalJournalHandler.ListPages)
+				journal.Get("/pages/{id}", geologicalJournalHandler.GetPage)
+				journal.Get("/pages/{id}/image", geologicalJournalHandler.PageImage)
+				journal.Post("/pages/{id}/analyze", geologicalJournalHandler.Analyze)
+				journal.Put("/pages/{id}/result", geologicalJournalHandler.SaveResult)
+				journal.Delete("/pages/{id}", geologicalJournalHandler.DeletePage)
+				journal.Get("/examples", geologicalJournalHandler.ListExamples)
+				journal.Get("/examples/{id}/image", geologicalJournalHandler.ExampleImage)
+			})
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
 			protected.Get("/runs", runsHandler.List)
@@ -317,6 +337,16 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Post("/public-pages", publicPageHandler.CreateAdmin)
 			admin.Put("/public-pages/{id}", publicPageHandler.UpdateAdmin)
 			admin.Delete("/public-pages/{id}", publicPageHandler.DeleteAdmin)
+			admin.Route("/geological-journal", func(journal chi.Router) {
+				journal.Get("/settings", geologicalJournalHandler.GetSettings)
+				journal.Put("/settings", geologicalJournalHandler.PutSettings)
+				journal.Get("/access", geologicalJournalHandler.ListAccess)
+				journal.Put("/access/{user_id}", geologicalJournalHandler.PutAccess)
+				journal.Get("/examples", geologicalJournalHandler.AdminListExamples)
+				journal.Post("/examples", geologicalJournalHandler.AdminCreateExample)
+				journal.Put("/examples/{id}", geologicalJournalHandler.AdminUpdateExample)
+				journal.Delete("/examples/{id}", geologicalJournalHandler.AdminDeleteExample)
+			})
 		})
 	})
 
