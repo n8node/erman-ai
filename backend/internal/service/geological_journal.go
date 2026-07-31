@@ -12,10 +12,10 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,10 +91,21 @@ func ParseGeologicalJournalOutput(content string) (*model.GeologicalJournalOutpu
 }
 
 func parseGeologicalJournalJSON(content string) (*model.GeologicalJournalOutput, error) {
-	var shape struct {
-		Rows []map[string]json.RawMessage `json:"rows"`
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(content), &top); err != nil {
+		return nil, fmt.Errorf("invalid geological journal output: %w", err)
 	}
-	if err := json.Unmarshal([]byte(content), &shape); err != nil {
+	for key := range top {
+		if key != "rows" {
+			return nil, errors.New("invalid geological journal output: unexpected fields")
+		}
+	}
+	rawRows, ok := top["rows"]
+	if !ok {
+		return nil, errors.New("invalid geological journal output: rows required")
+	}
+	var shape []map[string]json.RawMessage
+	if err := json.Unmarshal(rawRows, &shape); err != nil {
 		return nil, fmt.Errorf("invalid geological journal output: %w", err)
 	}
 	required := []string{
@@ -102,31 +113,122 @@ func parseGeologicalJournalJSON(content string) (*model.GeologicalJournalOutput,
 		"core_recovery_m", "core_recovery_pct", "rock_description", "sampling_interval",
 		"sample_number", "notes", "uncertainties",
 	}
-	for i, row := range shape.Rows {
+	out := model.GeologicalJournalOutput{Rows: make([]model.GeologicalJournalRow, 0, len(shape))}
+	for i, row := range shape {
 		for _, key := range required {
 			if _, ok := row[key]; !ok {
 				return nil, fmt.Errorf("invalid geological journal output: row %d missing %s", i, key)
 			}
 		}
-	}
-	var out model.GeologicalJournalOutput
-	dec := json.NewDecoder(strings.NewReader(content))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&out); err != nil {
-		return nil, fmt.Errorf("invalid geological journal output: %w", err)
-	}
-	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return nil, errors.New("invalid geological journal output: trailing data")
-	}
-	if out.Rows == nil {
-		return nil, errors.New("invalid geological journal output: rows required")
-	}
-	for i := range out.Rows {
-		if out.Rows[i].Uncertainties == nil {
-			out.Rows[i].Uncertainties = []string{}
+		parsed, err := parseGeologicalJournalRow(row)
+		if err != nil {
+			return nil, fmt.Errorf("invalid geological journal output: row %d: %w", i, err)
 		}
+		out.Rows = append(out.Rows, parsed)
 	}
 	return &out, nil
+}
+
+func parseGeologicalJournalRow(row map[string]json.RawMessage) (model.GeologicalJournalRow, error) {
+	diameter, err := parseGeologicalJournalFlexibleFloat(row["drilling_diameter_mm"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("drilling_diameter_mm: %w", err)
+	}
+	depthFrom, err := parseGeologicalJournalFlexibleFloat(row["depth_from_m"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("depth_from_m: %w", err)
+	}
+	depthTo, err := parseGeologicalJournalFlexibleFloat(row["depth_to_m"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("depth_to_m: %w", err)
+	}
+	drillingRun, err := parseGeologicalJournalFlexibleFloat(row["drilling_run_m"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("drilling_run_m: %w", err)
+	}
+	coreM, err := parseGeologicalJournalFlexibleFloat(row["core_recovery_m"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("core_recovery_m: %w", err)
+	}
+	corePct, err := parseGeologicalJournalFlexibleFloat(row["core_recovery_pct"])
+	if err != nil {
+		return model.GeologicalJournalRow{}, fmt.Errorf("core_recovery_pct: %w", err)
+	}
+	return model.GeologicalJournalRow{
+		Date:               parseGeologicalJournalFlexibleString(row["date"]),
+		DrillingDiameterMM: diameter,
+		DepthFromM:         depthFrom,
+		DepthToM:           depthTo,
+		DrillingRunM:       drillingRun,
+		CoreRecoveryM:      coreM,
+		CoreRecoveryPct:    corePct,
+		RockDescription:    parseGeologicalJournalFlexibleString(row["rock_description"]),
+		SamplingInterval:   parseGeologicalJournalFlexibleString(row["sampling_interval"]),
+		SampleNumber:       parseGeologicalJournalFlexibleString(row["sample_number"]),
+		Notes:              parseGeologicalJournalFlexibleString(row["notes"]),
+		Uncertainties:      parseGeologicalJournalFlexibleStringSlice(row["uncertainties"]),
+	}, nil
+}
+
+func parseGeologicalJournalFlexibleFloat(raw json.RawMessage) (*float64, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, nil
+	}
+	var value float64
+	if err := json.Unmarshal(raw, &value); err == nil {
+		return &value, nil
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err != nil {
+		return nil, fmt.Errorf("expected number or string, got %s", strings.TrimSpace(string(raw)))
+	}
+	text = normalizeGeologicalJournalNumberString(text)
+	if text == "" {
+		return nil, nil
+	}
+	value, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return nil, nil
+	}
+	return &value, nil
+}
+
+func normalizeGeologicalJournalNumberString(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.ReplaceAll(raw, " ", "")
+	raw = strings.ReplaceAll(raw, ",", ".")
+	raw = strings.Trim(raw, "%")
+	return raw
+}
+
+func parseGeologicalJournalFlexibleString(raw json.RawMessage) string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return ""
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		return text
+	}
+	var value float64
+	if err := json.Unmarshal(raw, &value); err == nil {
+		return strconv.FormatFloat(value, 'f', -1, 64)
+	}
+	return strings.TrimSpace(string(raw))
+}
+
+func parseGeologicalJournalFlexibleStringSlice(raw json.RawMessage) []string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return []string{}
+	}
+	var items []string
+	if err := json.Unmarshal(raw, &items); err == nil {
+		return items
+	}
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil && strings.TrimSpace(single) != "" {
+		return []string{single}
+	}
+	return []string{}
 }
 
 func trimGeologicalJournalFence(content string) string {

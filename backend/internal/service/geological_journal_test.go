@@ -48,6 +48,19 @@ func TestParseGeologicalJournalOutputStrict(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestParseGeologicalJournalOutputCoercesStringNumbers(t *testing.T) {
+	raw := `{"rows":[{"date":"24.07.25","drilling_diameter_mm":"76","depth_from_m":"155.4","depth_to_m":"156.2","drilling_run_m":"0,8","core_recovery_m":"0.7","core_recovery_pct":"87%","rock_description":"Сланцы","sampling_interval":"","sample_number":"","notes":"","uncertainties":[]}]}`
+	out, err := ParseGeologicalJournalOutput(raw)
+	require.NoError(t, err)
+	require.Len(t, out.Rows, 1)
+	require.NotNil(t, out.Rows[0].DrillingDiameterMM)
+	require.InDelta(t, 76, *out.Rows[0].DrillingDiameterMM, 0.001)
+	require.NotNil(t, out.Rows[0].DrillingRunM)
+	require.InDelta(t, 0.8, *out.Rows[0].DrillingRunM, 0.001)
+	require.NotNil(t, out.Rows[0].CoreRecoveryPct)
+	require.InDelta(t, 87, *out.Rows[0].CoreRecoveryPct, 0.001)
+}
+
 func TestGeologicalJournalHasAccess(t *testing.T) {
 	require.True(t, GeologicalJournalHasAccess("superadmin", false))
 	require.True(t, GeologicalJournalHasAccess("user", true))
