@@ -47,6 +47,15 @@ import {
 
 type View = "upload" | "library" | "examples";
 
+const OCR_MODEL_DISPLAY_NAME = "OCR Erman Ai 0.0.13.44";
+
+function publicOCRText(value: string) {
+  return value.replace(
+    /Yandex(?:\s*GPT|\s+Vision(?:\s+OCR)?|\s+Cloud)?|Яндекс(?:\s+GPT|\s+Vision(?:\s+OCR)?|\s+Cloud)?/gi,
+    OCR_MODEL_DISPLAY_NAME
+  );
+}
+
 const emptyRow = (): GeologicalJournalRow => ({
   date: "",
   drilling_diameter_mm: null,
@@ -481,7 +490,7 @@ export function GeologicalJournalWorkspace() {
           className="flex items-start gap-2 rounded-lg border border-red-200 bg-error-bg px-3 py-2.5 text-sm text-error"
         >
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
+          <span>{publicOCRText(error)}</span>
         </div>
       )}
       {success && (
@@ -540,7 +549,7 @@ export function GeologicalJournalWorkspace() {
               <div>
                 <p className="text-sm font-medium text-error">{t("status.error")}</p>
                 <p className="mt-1 text-xs text-text2">
-                  {run.error_msg || t("errors.recognition")}
+                  {publicOCRText(run.error_msg || t("errors.recognition"))}
                 </p>
                 {rows.length > 0 && (
                   <p className="mt-1 text-xs text-text3">
@@ -1043,7 +1052,7 @@ function PageHistory({
                 <span className="text-xs text-text2">{date(item.created_at)}</span>
                 {item.model_used && (
                   <span className="hidden font-mono text-[11px] text-text3 sm:inline">
-                    {item.model_used}
+                    {OCR_MODEL_DISPLAY_NAME}
                   </span>
                 )}
               </div>
