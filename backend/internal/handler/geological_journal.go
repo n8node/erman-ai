@@ -54,6 +54,7 @@ func (h *GeologicalJournalHandler) ListPages(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	items, err := h.svc.ListPages(r.Context(), userID, role)
 	if err != nil {
 		h.writeServiceError(w, err, "failed to list pages")
@@ -64,6 +65,7 @@ func (h *GeologicalJournalHandler) ListPages(w http.ResponseWriter, r *http.Requ
 
 func (h *GeologicalJournalHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	userID, role, _ := journalIdentity(r)
+	w.Header().Set("Cache-Control", "no-store")
 	item, err := h.svc.GetPage(r.Context(), r.PathValue("id"), userID, role)
 	if err != nil {
 		h.writeServiceError(w, err, "failed to load page")

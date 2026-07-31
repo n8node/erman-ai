@@ -246,6 +246,50 @@ export function GeologicalJournalWorkspace() {
     };
   }, [activePageId, activeRunId, activeRunStatus, t]);
 
+  useEffect(() => {
+    if (activeRunStatus !== "done" || !activePageId || rows.length > 0) {
+      return;
+    }
+
+    let stopped = false;
+    let attempts = 0;
+    const syncCompletedResult = async () => {
+      attempts += 1;
+      try {
+        const detail = await getGeologicalJournalPage(activePageId);
+        if (stopped) return;
+        const completedRun = detail.runs?.find(
+          (item) => item.id === activeRunId
+        );
+        const runRows = runOutputRows(completedRun);
+        const savedRows = currentPageResult(detail)?.rows ?? [];
+        const resolvedRows = runRows.length > 0 ? runRows : savedRows;
+
+        setPage(detail);
+        setPages((current) =>
+          current.map((item) => (item.id === detail.id ? detail : item))
+        );
+        if (resolvedRows.length > 0) {
+          setRows(resolvedRows);
+          setDirty(false);
+          setError("");
+          return;
+        }
+      } catch {
+        // The completed run and saved page can become visible a moment apart.
+      }
+
+      if (!stopped && attempts < 15) {
+        window.setTimeout(syncCompletedResult, 1000);
+      }
+    };
+
+    void syncCompletedResult();
+    return () => {
+      stopped = true;
+    };
+  }, [activePageId, activeRunId, activeRunStatus, rows.length]);
+
   async function handleFile(file: File) {
     const validation = validateGeologicalJournalImage(file);
     if (validation) {

@@ -50,6 +50,7 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 
 	runID := chi.URLParam(r, "id")
 	run, err := h.runs.Get(r.Context(), runID, userID)
