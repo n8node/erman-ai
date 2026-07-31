@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"testing"
 
+	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,4 +52,19 @@ func TestGeologicalJournalHasAccess(t *testing.T) {
 	require.True(t, GeologicalJournalHasAccess("superadmin", false))
 	require.True(t, GeologicalJournalHasAccess("user", true))
 	require.False(t, GeologicalJournalHasAccess("user", false))
+}
+
+func TestApplyGeologicalJournalModelDefaultsIncludesDeepSeek(t *testing.T) {
+	settings := model.GeologicalJournalSettings{}
+	applyGeologicalJournalModelDefaults(&settings, []model.LLMProviderStatus{
+		{ID: model.LLMProviderOpenRouter, DefaultModel: "openrouter-default"},
+		{ID: model.LLMProviderDeepSeek, DefaultModel: "deepseek-default"},
+		{ID: model.LLMProviderYandex, DefaultModel: "yandex-default"},
+	})
+
+	require.Equal(t, "openrouter-default", settings.OpenRouterModel)
+	require.Equal(t, "deepseek-default", settings.DeepSeekModel)
+	require.Equal(t, "yandex-default", settings.YandexModel)
+	settings.Provider = model.LLMProviderDeepSeek
+	require.Equal(t, "deepseek-default", settings.ActiveModel())
 }

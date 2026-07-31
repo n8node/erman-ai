@@ -261,15 +261,18 @@
         "providerHint": "Ключи настраиваются на backend. Здесь выбирается провайдер, который использует распознаватель.",
         "providers": {
           "openrouter": "OpenRouter",
+          "deepseek": "DeepSeek",
           "yandex": "Яндекс"
         },
         "modelsSection": "Модели и генерация",
         "modelsHint": "Выбирайте мультимодальную модель с поддержкой анализа изображений. Список загружается из API провайдера.",
         "openrouterModel": "Модель OpenRouter",
+        "deepseekModel": "Модель DeepSeek",
         "yandexModel": "Модель Яндекса",
         "refreshModels": "Обновить список",
         "refreshingModels": "Обновление…",
         "modelsLoaded": "Загружено моделей: {count}",
+        "deepseekVisionHint": "Выбранная модель DeepSeek должна поддерживать изображения. Текстовые модели deepseek-chat и deepseek-reasoner не распознают страницу журнала.",
         "temperature": "Температура",
         "maxTokens": "Максимум токенов",
         "activeModel": "Активная модель",

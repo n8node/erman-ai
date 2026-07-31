@@ -261,15 +261,18 @@
         "providerHint": "Credentials are configured on the backend. This page selects the provider used by the recognizer.",
         "providers": {
           "openrouter": "OpenRouter",
+          "deepseek": "DeepSeek",
           "yandex": "Yandex"
         },
         "modelsSection": "Models and generation",
         "modelsHint": "Choose a multimodal model that supports image analysis. The list is loaded from the provider API.",
         "openrouterModel": "OpenRouter model",
+        "deepseekModel": "DeepSeek model",
         "yandexModel": "Yandex model",
         "refreshModels": "Refresh list",
         "refreshingModels": "Refreshing…",
         "modelsLoaded": "Models loaded: {count}",
+        "deepseekVisionHint": "The selected DeepSeek model must support image input. Text-only deepseek-chat and deepseek-reasoner models cannot recognize a journal page.",
         "temperature": "Temperature",
         "maxTokens": "Maximum tokens",
         "activeModel": "Active model",

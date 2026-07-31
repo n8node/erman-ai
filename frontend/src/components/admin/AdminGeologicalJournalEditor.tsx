@@ -45,6 +45,7 @@ const fieldClass =
 const DEFAULT_SETTINGS: GeologicalJournalSettings = {
   provider: "openrouter",
   openrouter_model: "",
+  deepseek_model: "",
   yandex_model: "",
   system_prompt: "",
   temperature: 0.2,
@@ -272,10 +273,15 @@ function SettingsPanel({
   refreshModels: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const activeModel =
-    settings.provider === "yandex"
-      ? settings.yandex_model
-      : settings.openrouter_model;
+  const modelField = {
+    openrouter: "openrouter_model",
+    deepseek: "deepseek_model",
+    yandex: "yandex_model",
+  }[settings.provider] as
+    | "openrouter_model"
+    | "deepseek_model"
+    | "yandex_model";
+  const activeModel = settings[modelField];
   const providerModels =
     providers.find((provider) => provider.id === settings.provider)?.models ?? [];
   const modelOptions = Array.from(
@@ -292,7 +298,7 @@ function SettingsPanel({
           <p className="mt-1 text-xs text-text3">{t("settings.providerHint")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(["openrouter", "yandex"] as const).map((provider) => (
+          {(["openrouter", "deepseek", "yandex"] as const).map((provider) => (
             <button
               key={provider}
               type="button"
@@ -308,6 +314,11 @@ function SettingsPanel({
             </button>
           ))}
         </div>
+        {settings.provider === "deepseek" && (
+          <p className="rounded-lg bg-warning-bg px-3 py-2 text-xs text-warning">
+            {t("settings.deepseekVisionHint")}
+          </p>
+        )}
       </section>
 
       <section className="space-y-4 rounded-xl border border-border bg-bg p-5">
@@ -335,25 +346,15 @@ function SettingsPanel({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <ModelPicker
-            label={
-              settings.provider === "yandex"
-                ? t("settings.yandexModel")
-                : t("settings.openrouterModel")
-            }
+            label={t(`settings.${settings.provider}Model`)}
             value={activeModel}
             models={modelOptions}
-            onChange={(value) =>
-              patch(
-                settings.provider === "yandex"
-                  ? { yandex_model: value }
-                  : { openrouter_model: value }
-              )
-            }
-            placeholder={
-              settings.provider === "yandex"
-                ? "yandexgpt/latest"
-                : "google/gemini-2.5-flash"
-            }
+            onChange={(value) => patch({ [modelField]: value })}
+            placeholder={{
+              openrouter: "google/gemini-2.5-flash",
+              deepseek: "deepseek-chat",
+              yandex: "yandexgpt/latest",
+            }[settings.provider]}
           />
           <Field label={t("settings.temperature")}>
             <input

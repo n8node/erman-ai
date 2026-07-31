@@ -56,6 +56,7 @@ type GeologicalJournalResultVersion struct {
 type GeologicalJournalSettings struct {
 	Provider        LLMProvider `json:"provider"`
 	OpenRouterModel string      `json:"openrouter_model"`
+	DeepSeekModel   string      `json:"deepseek_model"`
 	YandexModel     string      `json:"yandex_model"`
 	SystemPrompt    string      `json:"system_prompt"`
 	Temperature     float64     `json:"temperature"`
@@ -63,10 +64,14 @@ type GeologicalJournalSettings struct {
 }
 
 func (s GeologicalJournalSettings) ActiveModel() string {
-	if s.Provider == LLMProviderYandex {
+	switch s.Provider {
+	case LLMProviderDeepSeek:
+		return s.DeepSeekModel
+	case LLMProviderYandex:
 		return s.YandexModel
+	default:
+		return s.OpenRouterModel
 	}
-	return s.OpenRouterModel
 }
 
 type GeologicalJournalSettingsRecord struct {

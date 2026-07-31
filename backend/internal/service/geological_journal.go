@@ -465,10 +465,16 @@ func (s *GeologicalJournalService) GetSettings(ctx context.Context) (*model.Geol
 		return nil, err
 	}
 	rec.Providers = geologicalJournalProviderStatuses(adminView.Providers)
+	applyGeologicalJournalModelDefaults(&rec.Settings, rec.Providers)
 	return rec, nil
 }
 
 func (s *GeologicalJournalService) UpdateSettings(ctx context.Context, settings model.GeologicalJournalSettings) (*model.GeologicalJournalSettingsRecord, error) {
+	adminView, err := s.strategy.GetAdminView(ctx)
+	if err != nil {
+		return nil, err
+	}
+	applyGeologicalJournalModelDefaults(&settings, adminView.Providers)
 	if err := validateGeologicalJournalSettings(settings); err != nil {
 		return nil, err
 	}
@@ -479,17 +485,17 @@ func (s *GeologicalJournalService) UpdateSettings(ctx context.Context, settings 
 }
 
 func (s *GeologicalJournalService) RefreshModels(ctx context.Context, provider model.LLMProvider) (*model.StrategyLLMTestConnectionResult, error) {
-	if provider != model.LLMProviderOpenRouter && provider != model.LLMProviderYandex {
-		return nil, fmt.Errorf("%w: provider must be openrouter or yandex", ErrGeologicalJournalSettings)
+	if provider != model.LLMProviderOpenRouter && provider != model.LLMProviderDeepSeek && provider != model.LLMProviderYandex {
+		return nil, fmt.Errorf("%w: provider must be openrouter, deepseek or yandex", ErrGeologicalJournalSettings)
 	}
 	return s.strategy.TestConnection(ctx, provider)
 }
 
 func validateGeologicalJournalSettings(s model.GeologicalJournalSettings) error {
-	if s.Provider != model.LLMProviderOpenRouter && s.Provider != model.LLMProviderYandex {
-		return fmt.Errorf("%w: provider must be openrouter or yandex", ErrGeologicalJournalSettings)
+	if s.Provider != model.LLMProviderOpenRouter && s.Provider != model.LLMProviderDeepSeek && s.Provider != model.LLMProviderYandex {
+		return fmt.Errorf("%w: provider must be openrouter, deepseek or yandex", ErrGeologicalJournalSettings)
 	}
-	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.YandexModel) == "" {
+	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" || strings.TrimSpace(s.YandexModel) == "" {
 		return fmt.Errorf("%w: model names required", ErrGeologicalJournalSettings)
 	}
 	if s.Temperature < 0 || s.Temperature > 2 || s.MaxTokens < 256 || s.MaxTokens > 32000 {
@@ -567,11 +573,30 @@ func randomAssetName(ext string) string {
 }
 
 func geologicalJournalProviderStatuses(providers []model.LLMProviderStatus) []model.LLMProviderStatus {
-	filtered := make([]model.LLMProviderStatus, 0, 2)
+	filtered := make([]model.LLMProviderStatus, 0, 3)
 	for _, provider := range providers {
-		if provider.ID == model.LLMProviderOpenRouter || provider.ID == model.LLMProviderYandex {
+		if provider.ID == model.LLMProviderOpenRouter || provider.ID == model.LLMProviderDeepSeek || provider.ID == model.LLMProviderYandex {
 			filtered = append(filtered, provider)
 		}
 	}
 	return filtered
+}
+
+func applyGeologicalJournalModelDefaults(settings *model.GeologicalJournalSettings, providers []model.LLMProviderStatus) {
+	for _, provider := range providers {
+		switch provider.ID {
+		case model.LLMProviderOpenRouter:
+			if strings.TrimSpace(settings.OpenRouterModel) == "" {
+				settings.OpenRouterModel = provider.DefaultModel
+			}
+		case model.LLMProviderDeepSeek:
+			if strings.TrimSpace(settings.DeepSeekModel) == "" {
+				settings.DeepSeekModel = provider.DefaultModel
+			}
+		case model.LLMProviderYandex:
+			if strings.TrimSpace(settings.YandexModel) == "" {
+				settings.YandexModel = provider.DefaultModel
+			}
+		}
+	}
 }
