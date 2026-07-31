@@ -17,9 +17,10 @@ import (
 )
 
 type Server struct {
-	cfg      *config.Config
-	router   chi.Router
-	telegram *service.TelegramService
+	cfg                 *config.Config
+	router              chi.Router
+	telegram            *service.TelegramService
+	notificationMonitor *service.NotificationHealthMonitor
 }
 
 func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Server {
@@ -84,6 +85,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	)
 	telegramSettingsSvc.BindRuntimeStatus(telegramSvc.GetRuntimeStatus)
 	telegramSvc.Start()
+	notificationMonitor := service.NewNotificationHealthMonitor(telegramSvc, maxSvc, mailSvc, logger)
+	notificationMonitor.Start()
 	emailVerifySvc := service.NewEmailVerificationService(userRepo, emailTokenRepo, mailSvc, telegramSvc, cfg)
 	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetTokenRepo, mailSvc, cfg)
 	authSvc := service.NewAuthService(userRepo, authMW, emailVerifySvc, passwordResetSvc, telegramSvc)
@@ -317,10 +320,18 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		})
 	})
 
-	return &Server{cfg: cfg, router: r, telegram: telegramSvc}
+	return &Server{
+		cfg:                 cfg,
+		router:              r,
+		telegram:            telegramSvc,
+		notificationMonitor: notificationMonitor,
+	}
 }
 
 func (s *Server) Shutdown() {
+	if s.notificationMonitor != nil {
+		s.notificationMonitor.Stop()
+	}
 	if s.telegram != nil {
 		s.telegram.Stop()
 	}

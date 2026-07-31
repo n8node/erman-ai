@@ -145,6 +145,23 @@ func (s *TelegramService) GetRuntimeStatus() model.TelegramBotRuntimeStatus {
 	return s.runtime
 }
 
+// RunHealthCheck performs a fresh Telegram bot health check (used by ops monitors).
+func (s *TelegramService) RunHealthCheck(ctx context.Context) model.TelegramBotRuntimeStatus {
+	return s.checkHealth(ctx)
+}
+
+// SendDirectAdminMessage sends an ops alert directly to the admin chat, bypassing the queue.
+func (s *TelegramService) SendDirectAdminMessage(ctx context.Context, text string) error {
+	cfg, err := s.settings.GetEffective(ctx)
+	if err != nil {
+		return err
+	}
+	if !cfg.Enabled {
+		return ErrTelegramDisabled
+	}
+	return s.send(ctx, cfg, text)
+}
+
 func (s *TelegramService) setRuntime(st model.TelegramBotRuntimeStatus) {
 	s.mu.Lock()
 	st.SupervisorRunning = s.supervisorRunning
