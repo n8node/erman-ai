@@ -65,10 +65,32 @@ func ValidateGeologicalJournalImage(data []byte) (*ValidatedJournalImage, error)
 
 func ParseGeologicalJournalOutput(content string) (*model.GeologicalJournalOutput, error) {
 	content = strings.TrimSpace(content)
-	content = strings.TrimPrefix(content, "```json")
-	content = strings.TrimPrefix(content, "```")
-	content = strings.TrimSuffix(content, "```")
-	content = strings.TrimSpace(content)
+	candidates := []string{trimGeologicalJournalFence(content)}
+	candidates = append(candidates, extractGeologicalJournalJSONObjects(content)...)
+	var lastErr error
+	seen := make(map[string]struct{}, len(candidates))
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		if _, ok := seen[candidate]; ok {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		out, err := parseGeologicalJournalJSON(candidate)
+		if err == nil {
+			return out, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, errors.New("invalid geological journal output: JSON object not found")
+}
+
+func parseGeologicalJournalJSON(content string) (*model.GeologicalJournalOutput, error) {
 	var shape struct {
 		Rows []map[string]json.RawMessage `json:"rows"`
 	}
@@ -105,6 +127,63 @@ func ParseGeologicalJournalOutput(content string) (*model.GeologicalJournalOutpu
 		}
 	}
 	return &out, nil
+}
+
+func trimGeologicalJournalFence(content string) string {
+	content = strings.TrimSpace(content)
+	if !strings.HasPrefix(content, "```") {
+		return content
+	}
+	firstLineEnd := strings.IndexByte(content, '\n')
+	if firstLineEnd < 0 {
+		return content
+	}
+	content = content[firstLineEnd+1:]
+	if end := strings.LastIndex(content, "```"); end >= 0 {
+		content = content[:end]
+	}
+	return strings.TrimSpace(content)
+}
+
+func extractGeologicalJournalJSONObjects(content string) []string {
+	var objects []string
+	for start := 0; start < len(content); start++ {
+		if content[start] != '{' {
+			continue
+		}
+		depth := 0
+		inString := false
+		escaped := false
+		for end := start; end < len(content); end++ {
+			ch := content[end]
+			if inString {
+				if escaped {
+					escaped = false
+					continue
+				}
+				if ch == '\\' {
+					escaped = true
+				} else if ch == '"' {
+					inString = false
+				}
+				continue
+			}
+			switch ch {
+			case '"':
+				inString = true
+			case '{':
+				depth++
+			case '}':
+				depth--
+				if depth == 0 {
+					objects = append(objects, content[start:end+1])
+					start = end
+					end = len(content)
+				}
+			}
+		}
+	}
+	return objects
 }
 
 func GeologicalJournalHasAccess(role string, explicitlyEnabled bool) bool {
@@ -261,10 +340,11 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	if strings.TrimSpace(prompt) == "" {
 		prompt = prompts.DefaultGeologicalJournalSystemPrompt
 	}
+	prompt = strings.TrimSpace(prompt) + "\n\n" + prompts.GeologicalJournalJSONOnlyInstruction
 	result, err := s.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
 		LLMCompletionRequest: LLMCompletionRequest{
 			Provider: provider, Model: settings.ActiveModel(), SystemPrompt: prompt,
-			UserPrompt:  "Recognize this geological journal page and return the required strict JSON.",
+			UserPrompt:  "Recognize this geological journal page. Return only the required JSON object, without any text before or after it.",
 			Temperature: settings.Temperature, MaxTokens: settings.MaxTokens, APIKey: apiKey,
 			FolderID: creds.YandexFolderID, Proxy: strategyRec.Config.ProxyForProvider(provider),
 		},
