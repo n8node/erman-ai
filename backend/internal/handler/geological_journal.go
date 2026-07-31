@@ -165,6 +165,22 @@ func (h *GeologicalJournalHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, item)
 }
 
+func (h *GeologicalJournalHandler) RefreshModels(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Provider model.LLMProvider `json:"provider"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	result, err := h.svc.RefreshModels(r.Context(), req.Provider)
+	if err != nil {
+		h.writeServiceError(w, err, "failed to refresh models")
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 func (h *GeologicalJournalHandler) ListAccess(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.ListAccessUsers(r.Context())
 	if err != nil {

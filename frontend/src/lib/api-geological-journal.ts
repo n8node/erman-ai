@@ -1,4 +1,9 @@
-import { ApiError, apiFetch } from "./api";
+import {
+  ApiError,
+  apiFetch,
+  type LLMProviderStatus,
+  type StrategyLLMTestConnectionResult,
+} from "./api";
 
 export const GEOLOGICAL_JOURNAL_SLUG = "geological-journal";
 export const GEOLOGICAL_JOURNAL_MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -88,6 +93,7 @@ export type GeologicalJournalSettings = {
 
 export type GeologicalJournalSettingsRecord = {
   settings: GeologicalJournalSettings;
+  providers: LLMProviderStatus[];
   updated_at?: string;
 };
 
@@ -245,6 +251,15 @@ export function updateAdminGeologicalJournalSettings(
   return apiFetch<GeologicalJournalSettingsRecord>(
     "/admin/geological-journal/settings",
     { method: "PUT", body: JSON.stringify({ settings }) }
+  );
+}
+
+export function refreshAdminGeologicalJournalModels(
+  provider: GeologicalJournalSettings["provider"]
+) {
+  return apiFetch<StrategyLLMTestConnectionResult>(
+    "/admin/geological-journal/models/refresh",
+    { method: "POST", body: JSON.stringify({ provider }) }
   );
 }
 

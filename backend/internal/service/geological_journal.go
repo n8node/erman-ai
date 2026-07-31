@@ -380,6 +380,11 @@ func (s *GeologicalJournalService) GetSettings(ctx context.Context) (*model.Geol
 	if rec.Settings.SystemPrompt == "" {
 		rec.Settings.SystemPrompt = prompts.DefaultGeologicalJournalSystemPrompt
 	}
+	adminView, err := s.strategy.GetAdminView(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rec.Providers = geologicalJournalProviderStatuses(adminView.Providers)
 	return rec, nil
 }
 
@@ -387,7 +392,17 @@ func (s *GeologicalJournalService) UpdateSettings(ctx context.Context, settings 
 	if err := validateGeologicalJournalSettings(settings); err != nil {
 		return nil, err
 	}
-	return s.repo.UpdateSettings(ctx, settings)
+	if _, err := s.repo.UpdateSettings(ctx, settings); err != nil {
+		return nil, err
+	}
+	return s.GetSettings(ctx)
+}
+
+func (s *GeologicalJournalService) RefreshModels(ctx context.Context, provider model.LLMProvider) (*model.StrategyLLMTestConnectionResult, error) {
+	if provider != model.LLMProviderOpenRouter && provider != model.LLMProviderYandex {
+		return nil, fmt.Errorf("%w: provider must be openrouter or yandex", ErrGeologicalJournalSettings)
+	}
+	return s.strategy.TestConnection(ctx, provider)
 }
 
 func validateGeologicalJournalSettings(s model.GeologicalJournalSettings) error {
@@ -469,4 +484,14 @@ func randomAssetName(ext string) string {
 		return fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 	}
 	return hex.EncodeToString(b[:]) + ext
+}
+
+func geologicalJournalProviderStatuses(providers []model.LLMProviderStatus) []model.LLMProviderStatus {
+	filtered := make([]model.LLMProviderStatus, 0, 2)
+	for _, provider := range providers {
+		if provider.ID == model.LLMProviderOpenRouter || provider.ID == model.LLMProviderYandex {
+			filtered = append(filtered, provider)
+		}
+	}
+	return filtered
 }

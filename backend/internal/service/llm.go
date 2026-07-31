@@ -310,6 +310,33 @@ type chatCompletionRequest struct {
 	Stream      bool                 `json:"stream,omitempty"`
 }
 
+type llmAPIError struct {
+	Message string
+}
+
+func (e *llmAPIError) UnmarshalJSON(data []byte) error {
+	var message string
+	if err := json.Unmarshal(data, &message); err == nil {
+		e.Message = message
+		return nil
+	}
+	var payload struct {
+		Message string `json:"message"`
+		Detail  string `json:"detail"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	e.Message = payload.Message
+	if e.Message == "" {
+		e.Message = payload.Detail
+	}
+	if e.Message == "" {
+		e.Message = strings.TrimSpace(string(data))
+	}
+	return nil
+}
+
 type streamChunkResponse struct {
 	Choices []struct {
 		Delta struct {
@@ -322,9 +349,7 @@ type streamChunkResponse struct {
 		CompletionTokens int `json:"completion_tokens"`
 		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
-	Error *struct {
-		Message string `json:"message"`
-	} `json:"error"`
+	Error *llmAPIError `json:"error"`
 }
 
 type chatCompletionResponse struct {
@@ -337,9 +362,7 @@ type chatCompletionResponse struct {
 		CompletionTokens int `json:"completion_tokens"`
 		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
-	Error *struct {
-		Message string `json:"message"`
-	} `json:"error"`
+	Error *llmAPIError `json:"error"`
 }
 
 type modelsListResponse struct {
@@ -470,13 +493,16 @@ func (s *LLMService) postChatCompletion(
 
 	var parsed chatCompletionResponse
 	if err := json.Unmarshal(raw, &parsed); err != nil {
+		if resp.StatusCode >= 400 {
+			return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, formatLLMResponseError(raw))
+		}
 		return nil, fmt.Errorf("llm response parse error: %w", err)
 	}
 	if parsed.Error != nil {
 		return nil, fmt.Errorf("llm error: %s", parsed.Error.Message)
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, string(raw))
+		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, formatLLMResponseError(raw))
 	}
 	if len(parsed.Choices) == 0 {
 		return nil, errors.New("llm returned empty choices")
@@ -538,13 +564,16 @@ func (s *LLMService) postMultimodalChatCompletion(
 	}
 	var parsed chatCompletionResponse
 	if err := json.Unmarshal(raw, &parsed); err != nil {
+		if resp.StatusCode >= 400 {
+			return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, formatLLMResponseError(raw))
+		}
 		return nil, fmt.Errorf("llm response parse error: %w", err)
 	}
 	if parsed.Error != nil {
 		return nil, fmt.Errorf("llm error: %s", parsed.Error.Message)
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, string(raw))
+		return nil, fmt.Errorf("llm http %d: %s", resp.StatusCode, formatLLMResponseError(raw))
 	}
 	if len(parsed.Choices) == 0 {
 		return nil, errors.New("llm returned empty choices")
@@ -675,6 +704,17 @@ func formatLLMModelsError(provider model.LLMProvider, status int, body string) s
 	body = strings.TrimSpace(body)
 	if provider == model.LLMProviderOpenRouter && status == 403 && strings.Contains(body, "security policy") {
 		return body + " — enable OpenRouter proxy, save settings, then test again; verify API key at openrouter.ai/keys"
+	}
+	return body
+}
+
+func formatLLMResponseError(raw []byte) string {
+	body := strings.TrimSpace(string(raw))
+	if len(body) > 1000 {
+		body = body[:1000] + "…"
+	}
+	if body == "" {
+		return "empty error response"
 	}
 	return body
 }

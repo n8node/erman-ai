@@ -340,6 +340,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 			admin.Route("/geological-journal", func(journal chi.Router) {
 				journal.Get("/settings", geologicalJournalHandler.GetSettings)
 				journal.Put("/settings", geologicalJournalHandler.PutSettings)
+				journal.Post("/models/refresh", geologicalJournalHandler.RefreshModels)
 				journal.Get("/access", geologicalJournalHandler.ListAccess)
 				journal.Put("/access/{user_id}", geologicalJournalHandler.PutAccess)
 				journal.Get("/examples", geologicalJournalHandler.AdminListExamples)
