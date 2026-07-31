@@ -158,11 +158,10 @@ func formatYandexVisionAPIError(raw []byte, status string) string {
 }
 
 func geologicalJournalOCRUserPrompt(ocrText string) string {
-	return strings.TrimSpace(`The following text was extracted from a geological field journal page via Yandex Vision OCR.
-Structure it into the required JSON table. Correct obvious OCR mistakes using geological context when the meaning is clear.
-If a value is unreadable, leave the field empty/null and add a short note to uncertainties.
+	return strings.TrimSpace(`Structure the geological journal table from this OCR text.
+Return one JSON object {"rows":[...]} with one object per journal line that contains depth/rock data.
 
---- OCR TEXT ---
+--- OCR TEXT START ---
 ` + ocrText + `
----`)
+--- OCR TEXT END ---`)
 }

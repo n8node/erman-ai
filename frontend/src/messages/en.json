@@ -290,7 +290,7 @@
         "maxTokens": "Maximum tokens",
         "activeModel": "Active model",
         "promptSection": "Recognition system prompt",
-        "promptHint": "Keep the required JSON structure and geological field semantics explicit.",
+        "promptHint": "LLM step prompt: input is OCR text, not an image. Do not use phrasing like \"from an image\".",
         "save": "Save settings",
         "saving": "Saving…",
         "saved": "Recognition settings saved"
@@ -2189,8 +2189,8 @@
       "elapsed": "Elapsed: {seconds}s",
       "done": "Ready",
       "error": "Recognition failed",
-      "emptyResult": "Empty table — recognition returned no rows",
-      "emptyResultHint": "OCR likely worked, but the LLM did not build a table. Try the Yandex provider (yandexgpt) in journal settings and run recognition again. If there is a red error block above, follow that message instead."
+      "emptyResult": "Empty table — legacy run with no rows",
+      "emptyResultHint": "This is from an older run. Click Recognize again — the backend now structures OCR text, not the image. If it fails again, read the red error block for the model response."
     },
     "actions": {
       "retry": "Retry",

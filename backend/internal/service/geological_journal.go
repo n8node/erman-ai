@@ -362,10 +362,14 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(fmt.Errorf("ocr: %w", err))
 		return
 	}
+	if len(strings.TrimSpace(ocrText)) < 20 {
+		fail(fmt.Errorf("ocr text too short (%d chars) — image may be unreadable", len(strings.TrimSpace(ocrText))))
+		return
+	}
 
-	prompt := settings.SystemPrompt
-	if strings.TrimSpace(prompt) == "" {
-		prompt = prompts.DefaultGeologicalJournalSystemPrompt
+	prompt := prompts.GeologicalJournalOCRSystemPrompt
+	if custom := strings.TrimSpace(settings.SystemPrompt); custom != "" && !strings.Contains(strings.ToLower(custom), "from an image") {
+		prompt = custom
 	}
 	prompt = strings.TrimSpace(prompt) + "\n\n" + prompts.GeologicalJournalJSONOnlyInstruction
 	result, err := s.llm.Complete(ctx, LLMCompletionRequest{
@@ -396,11 +400,11 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		return
 	}
 	if len(output.Rows) == 0 {
-		preview := strings.TrimSpace(ocrText)
-		if len(preview) > 120 {
-			preview = preview[:120] + "…"
+		llmPreview := strings.TrimSpace(result.Content)
+		if len(llmPreview) > 200 {
+			llmPreview = llmPreview[:200] + "…"
 		}
-		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Try Yandex GPT provider or another model. OCR preview: %q", len(ocrText), preview))
+		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Model response: %q", len(ocrText), llmPreview))
 		return
 	}
 	outJSON, _ := json.Marshal(output)
@@ -494,8 +498,8 @@ func (s *GeologicalJournalService) GetSettings(ctx context.Context) (*model.Geol
 	if err != nil {
 		return nil, err
 	}
-	if rec.Settings.SystemPrompt == "" {
-		rec.Settings.SystemPrompt = prompts.DefaultGeologicalJournalSystemPrompt
+	if rec.Settings.SystemPrompt == "" || strings.Contains(strings.ToLower(rec.Settings.SystemPrompt), "from an image") {
+		rec.Settings.SystemPrompt = prompts.GeologicalJournalOCRSystemPrompt
 	}
 	if strings.TrimSpace(rec.Settings.OCRModel) == "" {
 		rec.Settings.OCRModel = "handwritten"
