@@ -87,6 +87,7 @@ export type GeologicalJournalSettings = {
   openrouter_model: string;
   deepseek_model: string;
   yandex_model: string;
+  ocr_model: string;
   system_prompt: string;
   temperature: number;
   max_tokens: number;

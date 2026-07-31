@@ -47,6 +47,7 @@ const DEFAULT_SETTINGS: GeologicalJournalSettings = {
   openrouter_model: "",
   deepseek_model: "",
   yandex_model: "",
+  ocr_model: "handwritten",
   system_prompt: "",
   temperature: 0.2,
   max_tokens: 4096,
@@ -315,10 +316,30 @@ function SettingsPanel({
           ))}
         </div>
         {settings.provider === "deepseek" && (
-          <p className="rounded-lg bg-warning-bg px-3 py-2 text-xs text-warning">
-            {t("settings.deepseekVisionHint")}
+          <p className="rounded-lg bg-info-bg px-3 py-2 text-xs text-accent">
+            {t("settings.deepseekTextHint")}
           </p>
         )}
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-border bg-bg p-5">
+        <div>
+          <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+            {t("settings.ocrSection")}
+          </h2>
+          <p className="mt-1 text-xs text-text3">{t("settings.ocrHint")}</p>
+        </div>
+        <Field label={t("settings.ocrModel")}>
+          <select
+            className={fieldClass}
+            value={settings.ocr_model || "handwritten"}
+            onChange={(event) => patch({ ocr_model: event.target.value })}
+          >
+            <option value="handwritten">{t("settings.ocrModels.handwritten")}</option>
+            <option value="table">{t("settings.ocrModels.table")}</option>
+            <option value="page">{t("settings.ocrModels.page")}</option>
+          </select>
+        </Field>
       </section>
 
       <section className="space-y-4 rounded-xl border border-border bg-bg p-5">

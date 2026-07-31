@@ -258,21 +258,30 @@
       },
       "settings": {
         "providerSection": "Провайдер",
-        "providerHint": "Ключи настраиваются на backend. Здесь выбирается провайдер, который использует распознаватель.",
+        "providerHint": "Ключи API настраиваются в разделе AI Strategy LLM. Здесь выбирается провайдер для структурирования текста после OCR.",
         "providers": {
           "openrouter": "OpenRouter",
           "deepseek": "DeepSeek",
           "yandex": "Яндекс"
         },
         "modelsSection": "Модели и генерация",
-        "modelsHint": "Выбирайте мультимодальную модель с поддержкой анализа изображений. Список загружается из API провайдера.",
+        "modelsHint": "После Yandex Vision OCR текст страницы передаётся в выбранную текстовую модель. Vision-модель не требуется.",
         "openrouterModel": "Модель OpenRouter",
         "deepseekModel": "Модель DeepSeek",
         "yandexModel": "Модель Яндекса",
         "refreshModels": "Обновить список",
         "refreshingModels": "Обновление…",
         "modelsLoaded": "Загружено моделей: {count}",
+        "deepseekTextHint": "DeepSeek используется только для структурирования OCR-текста в JSON. Распознавание изображения выполняет Yandex Vision.",
         "deepseekVisionHint": "Выбранная модель DeepSeek должна поддерживать изображения. Текстовые модели deepseek-chat и deepseek-reasoner не распознают страницу журнала.",
+        "ocrSection": "Yandex Vision OCR",
+        "ocrHint": "Ключ и folder ID берутся из настроек AI Strategy LLM. OCR читает изображение, LLM структурирует текст в таблицу.",
+        "ocrModel": "Модель OCR",
+        "ocrModels": {
+          "handwritten": "handwritten — рукописные журналы",
+          "table": "table — табличные формы",
+          "page": "page — печатные страницы"
+        },
         "temperature": "Температура",
         "maxTokens": "Максимум токенов",
         "activeModel": "Активная модель",
@@ -2159,8 +2168,8 @@
         "description": "Изображение получено"
       },
       "2": {
-        "title": "Распознавание",
-        "description": "Чтение полей и строк"
+        "title": "OCR и структурирование",
+        "description": "Vision OCR → LLM в таблицу"
       },
       "3": {
         "title": "Проверка",
@@ -2169,7 +2178,7 @@
     },
     "status": {
       "pending": "Ожидание распознавания",
-      "processing": "Распознаём страницу журнала",
+      "processing": "OCR и структурирование таблицы",
       "polling": "Результат обновляется автоматически каждые 3 секунды. Этап основан на реальном статусе запуска.",
       "done": "Готово",
       "error": "Ошибка распознавания"

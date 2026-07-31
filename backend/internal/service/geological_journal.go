@@ -336,19 +336,40 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(errors.New("llm api key not configured"))
 		return
 	}
+	yandexKey := creds.YandexKey
+	yandexFolder := creds.YandexFolderID
+	if yandexKey == "" || yandexFolder == "" {
+		fail(errors.New("yandex vision ocr credentials not configured in AI Strategy LLM admin settings"))
+		return
+	}
+	ocrText, err := s.llm.RecognizeYandexVisionText(ctx, YandexVisionRecognizeParams{
+		APIKey:   yandexKey,
+		FolderID: yandexFolder,
+		Image:    imageData,
+		MIME:     page.ContentType,
+		Model:    settings.OCRModel,
+		Proxy:    strategyRec.Config.ProxyForProvider(model.LLMProviderYandex),
+	})
+	if err != nil {
+		fail(fmt.Errorf("ocr: %w", err))
+		return
+	}
+
 	prompt := settings.SystemPrompt
 	if strings.TrimSpace(prompt) == "" {
 		prompt = prompts.DefaultGeologicalJournalSystemPrompt
 	}
 	prompt = strings.TrimSpace(prompt) + "\n\n" + prompts.GeologicalJournalJSONOnlyInstruction
-	result, err := s.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
-		LLMCompletionRequest: LLMCompletionRequest{
-			Provider: provider, Model: settings.ActiveModel(), SystemPrompt: prompt,
-			UserPrompt:  "Recognize this geological journal page. Return only the required JSON object, without any text before or after it.",
-			Temperature: settings.Temperature, MaxTokens: settings.MaxTokens, APIKey: apiKey,
-			FolderID: creds.YandexFolderID, Proxy: strategyRec.Config.ProxyForProvider(provider),
-		},
-		Image: imageData, ImageMIME: page.ContentType,
+	result, err := s.llm.Complete(ctx, LLMCompletionRequest{
+		Provider:     provider,
+		Model:        settings.ActiveModel(),
+		SystemPrompt: prompt,
+		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText),
+		Temperature:  settings.Temperature,
+		MaxTokens:    settings.MaxTokens,
+		APIKey:       apiKey,
+		FolderID:     creds.YandexFolderID,
+		Proxy:        strategyRec.Config.ProxyForProvider(provider),
 	})
 	if err != nil {
 		fail(err)
@@ -460,6 +481,9 @@ func (s *GeologicalJournalService) GetSettings(ctx context.Context) (*model.Geol
 	if rec.Settings.SystemPrompt == "" {
 		rec.Settings.SystemPrompt = prompts.DefaultGeologicalJournalSystemPrompt
 	}
+	if strings.TrimSpace(rec.Settings.OCRModel) == "" {
+		rec.Settings.OCRModel = "handwritten"
+	}
 	adminView, err := s.strategy.GetAdminView(ctx)
 	if err != nil {
 		return nil, err
@@ -475,6 +499,7 @@ func (s *GeologicalJournalService) UpdateSettings(ctx context.Context, settings 
 		return nil, err
 	}
 	applyGeologicalJournalModelDefaults(&settings, adminView.Providers)
+	settings.OCRModel = NormalizeYandexOCRModel(settings.OCRModel)
 	if err := validateGeologicalJournalSettings(settings); err != nil {
 		return nil, err
 	}
@@ -497,6 +522,10 @@ func validateGeologicalJournalSettings(s model.GeologicalJournalSettings) error 
 	}
 	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" || strings.TrimSpace(s.YandexModel) == "" {
 		return fmt.Errorf("%w: model names required", ErrGeologicalJournalSettings)
+	}
+	ocrModel := NormalizeYandexOCRModel(s.OCRModel)
+	if ocrModel != "handwritten" && ocrModel != "table" && ocrModel != "page" {
+		return fmt.Errorf("%w: ocr_model must be handwritten, table or page", ErrGeologicalJournalSettings)
 	}
 	if s.Temperature < 0 || s.Temperature > 2 || s.MaxTokens < 256 || s.MaxTokens > 32000 {
 		return ErrGeologicalJournalSettings

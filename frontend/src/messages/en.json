@@ -258,21 +258,30 @@
       },
       "settings": {
         "providerSection": "Provider",
-        "providerHint": "Credentials are configured on the backend. This page selects the provider used by the recognizer.",
+        "providerHint": "API keys are configured in AI Strategy LLM settings. This page selects the provider for structuring OCR text into JSON.",
         "providers": {
           "openrouter": "OpenRouter",
           "deepseek": "DeepSeek",
           "yandex": "Yandex"
         },
         "modelsSection": "Models and generation",
-        "modelsHint": "Choose a multimodal model that supports image analysis. The list is loaded from the provider API.",
+        "modelsHint": "After Yandex Vision OCR, page text is sent to the selected text model. A vision model is not required.",
         "openrouterModel": "OpenRouter model",
         "deepseekModel": "DeepSeek model",
         "yandexModel": "Yandex model",
         "refreshModels": "Refresh list",
         "refreshingModels": "Refreshing…",
         "modelsLoaded": "Models loaded: {count}",
+        "deepseekTextHint": "DeepSeek is used only to structure OCR text into JSON. Image recognition is handled by Yandex Vision.",
         "deepseekVisionHint": "The selected DeepSeek model must support image input. Text-only deepseek-chat and deepseek-reasoner models cannot recognize a journal page.",
+        "ocrSection": "Yandex Vision OCR",
+        "ocrHint": "API key and folder ID come from AI Strategy LLM settings. OCR reads the image; the LLM structures text into a table.",
+        "ocrModel": "OCR model",
+        "ocrModels": {
+          "handwritten": "handwritten — handwritten journals",
+          "table": "table — tabular forms",
+          "page": "page — printed pages"
+        },
         "temperature": "Temperature",
         "maxTokens": "Maximum tokens",
         "activeModel": "Active model",
@@ -2159,8 +2168,8 @@
         "description": "Image received"
       },
       "2": {
-        "title": "Recognition",
-        "description": "Reading fields and rows"
+        "title": "OCR and structuring",
+        "description": "Vision OCR → LLM table"
       },
       "3": {
         "title": "Review",
@@ -2169,7 +2178,7 @@
     },
     "status": {
       "pending": "Waiting for recognition",
-      "processing": "Recognizing journal page",
+      "processing": "OCR and table structuring",
       "polling": "The result refreshes automatically every 3 seconds. Progress is based on the actual run status.",
       "done": "Ready",
       "error": "Recognition failed"
