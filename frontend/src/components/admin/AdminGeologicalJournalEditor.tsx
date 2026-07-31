@@ -6,6 +6,7 @@ import {
   FileImage,
   LoaderCircle,
   Plus,
+  RefreshCw,
   Save,
   Settings2,
   Trash2,
@@ -16,6 +17,8 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { LLMProviderStatus } from "@/lib/api";
+import { ModelPicker } from "@/components/admin/ModelPicker";
 import {
   createAdminGeologicalJournalExample,
   deleteAdminGeologicalJournalExample,
@@ -23,6 +26,7 @@ import {
   fetchAdminGeologicalJournalExamples,
   fetchAdminGeologicalJournalSettings,
   geologicalJournalExampleImageUrl,
+  refreshAdminGeologicalJournalModels,
   updateAdminGeologicalJournalAccess,
   updateAdminGeologicalJournalExample,
   updateAdminGeologicalJournalSettings,
@@ -59,10 +63,12 @@ export function AdminGeologicalJournalEditor() {
   const [tab, setTab] = useState<Tab>("settings");
   const [settings, setSettings] =
     useState<GeologicalJournalSettings>(DEFAULT_SETTINGS);
+  const [providers, setProviders] = useState<LLMProviderStatus[]>([]);
   const [users, setUsers] = useState<GeologicalJournalAccessUser[]>([]);
   const [examples, setExamples] = useState<GeologicalJournalExample[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshingModels, setRefreshingModels] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -77,6 +83,7 @@ export function AdminGeologicalJournalEditor() {
         fetchAdminGeologicalJournalExamples(),
       ]);
       setSettings(settingsData.settings ?? (settingsData as unknown as GeologicalJournalSettings));
+      setProviders(settingsData.providers ?? []);
       setUsers(accessData.items ?? []);
       setExamples(examplesData.items ?? []);
     } catch (err) {
@@ -102,11 +109,36 @@ export function AdminGeologicalJournalEditor() {
     try {
       const response = await updateAdminGeologicalJournalSettings(settings);
       setSettings(response.settings ?? settings);
+      setProviders(response.providers ?? providers);
       setSuccess(t("settings.saved"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.save"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function refreshModels() {
+    setRefreshingModels(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await refreshAdminGeologicalJournalModels(settings.provider);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+      setProviders((current) =>
+        current.map((provider) =>
+          provider.id === settings.provider
+            ? { ...provider, models: result.models ?? [] }
+            : provider
+        )
+      );
+      setSuccess(t("settings.modelsLoaded", { count: result.models?.length ?? 0 }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("errors.models"));
+    } finally {
+      setRefreshingModels(false);
     }
   }
 
@@ -187,9 +219,12 @@ export function AdminGeologicalJournalEditor() {
           {tab === "settings" && (
             <SettingsPanel
               settings={settings}
+              providers={providers}
               saving={saving}
+              refreshingModels={refreshingModels}
               patch={patchSettings}
               save={saveSettings}
+              refreshModels={refreshModels}
               t={t}
             />
           )}
@@ -220,17 +255,33 @@ export function AdminGeologicalJournalEditor() {
 
 function SettingsPanel({
   settings,
+  providers,
   saving,
+  refreshingModels,
   patch,
   save,
+  refreshModels,
   t,
 }: {
   settings: GeologicalJournalSettings;
+  providers: LLMProviderStatus[];
   saving: boolean;
+  refreshingModels: boolean;
   patch: (partial: Partial<GeologicalJournalSettings>) => void;
   save: () => void;
+  refreshModels: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const activeModel =
+    settings.provider === "yandex"
+      ? settings.yandex_model
+      : settings.openrouter_model;
+  const providerModels =
+    providers.find((provider) => provider.id === settings.provider)?.models ?? [];
+  const modelOptions = Array.from(
+    new Set([activeModel, ...providerModels].filter(Boolean))
+  );
+
   return (
     <div className="space-y-5">
       <section className="space-y-4 rounded-xl border border-border bg-bg p-5">
@@ -260,26 +311,50 @@ function SettingsPanel({
       </section>
 
       <section className="space-y-4 rounded-xl border border-border bg-bg p-5">
-        <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
-          {t("settings.modelsSection")}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-[10px] font-medium uppercase tracking-wider text-text3">
+              {t("settings.modelsSection")}
+            </h2>
+            <p className="mt-1 text-xs text-text3">{t("settings.modelsHint")}</p>
+          </div>
+          <button
+            type="button"
+            onClick={refreshModels}
+            disabled={refreshingModels}
+            className="inline-flex items-center gap-2 rounded-lg border border-border2 px-3 py-2 text-xs font-medium text-text2 hover:bg-bg2 disabled:opacity-50"
+          >
+            <RefreshCw
+              size={14}
+              className={cn(refreshingModels && "animate-spin")}
+            />
+            {refreshingModels
+              ? t("settings.refreshingModels")
+              : t("settings.refreshModels")}
+          </button>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t("settings.openrouterModel")}>
-            <input
-              className={fieldClass}
-              value={settings.openrouter_model}
-              onChange={(event) => patch({ openrouter_model: event.target.value })}
-              placeholder="google/gemini-2.5-flash"
-            />
-          </Field>
-          <Field label={t("settings.yandexModel")}>
-            <input
-              className={fieldClass}
-              value={settings.yandex_model}
-              onChange={(event) => patch({ yandex_model: event.target.value })}
-              placeholder="yandexgpt/latest"
-            />
-          </Field>
+          <ModelPicker
+            label={
+              settings.provider === "yandex"
+                ? t("settings.yandexModel")
+                : t("settings.openrouterModel")
+            }
+            value={activeModel}
+            models={modelOptions}
+            onChange={(value) =>
+              patch(
+                settings.provider === "yandex"
+                  ? { yandex_model: value }
+                  : { openrouter_model: value }
+              )
+            }
+            placeholder={
+              settings.provider === "yandex"
+                ? "yandexgpt/latest"
+                : "google/gemini-2.5-flash"
+            }
+          />
           <Field label={t("settings.temperature")}>
             <input
               type="number"
@@ -305,11 +380,7 @@ function SettingsPanel({
         </div>
         <p className="text-xs text-text3">
           {t("settings.activeModel")}:{" "}
-          <span className="font-mono text-text">
-            {settings.provider === "yandex"
-              ? settings.yandex_model
-              : settings.openrouter_model}
-          </span>
+          <span className="font-mono text-text">{activeModel}</span>
         </p>
       </section>
 

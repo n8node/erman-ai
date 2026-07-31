@@ -264,8 +264,12 @@
           "yandex": "Yandex"
         },
         "modelsSection": "Models and generation",
+        "modelsHint": "Choose a multimodal model that supports image analysis. The list is loaded from the provider API.",
         "openrouterModel": "OpenRouter model",
         "yandexModel": "Yandex model",
+        "refreshModels": "Refresh list",
+        "refreshingModels": "Refreshing…",
+        "modelsLoaded": "Models loaded: {count}",
         "temperature": "Temperature",
         "maxTokens": "Maximum tokens",
         "activeModel": "Active model",
@@ -309,7 +313,8 @@
         "size": "The image must not exceed 10 MB.",
         "exampleUpload": "Could not upload the example",
         "exampleSave": "Could not save the example",
-        "exampleDelete": "Could not delete the example"
+        "exampleDelete": "Could not delete the example",
+        "models": "Could not load model list"
       }
     },
     "users": {

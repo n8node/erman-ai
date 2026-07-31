@@ -71,6 +71,7 @@ func (s GeologicalJournalSettings) ActiveModel() string {
 
 type GeologicalJournalSettingsRecord struct {
 	Settings  GeologicalJournalSettings `json:"settings"`
+	Providers []LLMProviderStatus       `json:"providers,omitempty"`
 	UpdatedAt time.Time                 `json:"updated_at"`
 }
 
