@@ -143,6 +143,43 @@ export function currentPageResult(
   );
 }
 
+/** Pick the run that drives the Recognition tab UI.
+ * Prefer in-flight runs; if the latest run failed but the page already has a
+ * saved table (Library badge), prefer the last successful run so the tabs match.
+ */
+export function pickWorkspaceRun(
+  runs: GeologicalJournalRun[] | null | undefined,
+  pageResult: GeologicalJournalOutput | null
+): GeologicalJournalRun | null {
+  const list = runs ?? [];
+  const inFlight = list.find((item) =>
+    ["pending", "processing"].includes(item.status)
+  );
+  if (inFlight) return inFlight;
+
+  const latest = list[0] ?? null;
+  if (!latest) return null;
+  if (latest.status === "done") return latest;
+
+  if ((pageResult?.rows?.length ?? 0) > 0) {
+    const lastGood =
+      list.find(
+        (item) => item.status === "done" && runOutputRows(item).length > 0
+      ) ?? list.find((item) => item.status === "done");
+    if (lastGood) return lastGood;
+    // Page already has a saved table (Library), but no successful run to bind.
+    // Present as done so Recognition matches Library instead of a stale error.
+    return {
+      id: latest.id,
+      status: "done",
+      created_at: latest.created_at,
+      output: pageResult,
+    };
+  }
+
+  return latest;
+}
+
 export function validateGeologicalJournalImage(file: File): "type" | "size" | null {
   if (!(GEOLOGICAL_JOURNAL_IMAGE_TYPES as readonly string[]).includes(file.type)) {
     return "type";

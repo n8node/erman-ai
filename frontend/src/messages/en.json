@@ -2190,7 +2190,8 @@
       "done": "Ready",
       "error": "Recognition failed",
       "emptyResult": "Recognition needs to be re-run",
-      "emptyResultHint": "You are looking at an old empty result (done with no rows), not the current OCR status. Redeploy frontend+backend, then click Recognize again. A new run will show either a table or a red error with the model response."
+      "emptyResultHint": "You are looking at an old empty result (done with no rows), not the current OCR status. Redeploy frontend+backend, then click Recognize again. A new run will show either a table or a red error with the model response.",
+      "previousResultKept": "The previously saved table is kept below — you can edit it or recognize again."
     },
     "actions": {
       "retry": "Retry",

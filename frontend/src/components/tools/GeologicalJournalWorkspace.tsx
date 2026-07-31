@@ -33,6 +33,7 @@ import {
   getGeologicalJournalRun,
   listGeologicalJournalExamples,
   listGeologicalJournalPages,
+  pickWorkspaceRun,
   runOutputRows,
   saveGeologicalJournalResult,
   uploadGeologicalJournalPage,
@@ -162,16 +163,15 @@ export function GeologicalJournalWorkspace() {
       try {
         const detail = await getGeologicalJournalPage(id);
         const result = currentPageResult(detail);
-        const active =
-          detail.runs?.find((item) =>
-            ["pending", "processing"].includes(item.status)
-          ) ?? detail.runs?.[0] ?? null;
+        const active = pickWorkspaceRun(detail.runs, result);
         setPage(detail);
         const activeRows = runOutputRows(active);
         setRows(activeRows.length > 0 ? activeRows : (result?.rows ?? []));
         setDirty(false);
         setRun(active);
-        if (active?.status === "error") {
+        // Only surface a historical error when there is no saved table yet.
+        // Library uses latest_result; Recognition must not disagree with it.
+        if (active?.status === "error" && !(result?.rows?.length)) {
           setError(active.error_msg || t("errors.recognition"));
         }
         setView("upload");
@@ -203,6 +203,7 @@ export function GeologicalJournalWorkspace() {
         if (stopped) return;
         setRun(next);
         if (next.status === "done" && activePageId) {
+          setError("");
           const detail = await getGeologicalJournalPage(activePageId);
           if (stopped) return;
           setPage(detail);
@@ -218,6 +219,20 @@ export function GeologicalJournalWorkspace() {
         }
         if (next.status === "error") {
           setError(next.error_msg || t("errors.recognition"));
+          // Keep the previously saved table visible (same source as Library).
+          if (activePageId) {
+            const detail = await getGeologicalJournalPage(activePageId);
+            if (stopped) return;
+            setPage(detail);
+            const saved = currentPageResult(detail)?.rows ?? [];
+            if (saved.length > 0) {
+              setRows(saved);
+              setDirty(false);
+            }
+            setPages((current) =>
+              current.map((item) => (item.id === detail.id ? detail : item))
+            );
+          }
         }
       } catch {
         // A transient polling failure should not stop recognition tracking.
@@ -474,6 +489,11 @@ export function GeologicalJournalWorkspace() {
                 <p className="mt-1 text-xs text-text2">
                   {run.error_msg || t("errors.recognition")}
                 </p>
+                {rows.length > 0 && (
+                  <p className="mt-1 text-xs text-text3">
+                    {t("status.previousResultKept")}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
