@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -61,6 +62,14 @@ func proxyOrder(activeURL string, urls []string) []string {
 	return out
 }
 
+func transportForHTTPProxy(proxyURL *url.URL) *http.Transport {
+	return &http.Transport{
+		Proxy:                 http.ProxyURL(proxyURL),
+		ForceAttemptHTTP2:     false,
+		TLSNextProto:          map[string]func(string, *tls.Conn) http.RoundTripper{},
+	}
+}
+
 func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error) {
 	parsed, err := url.Parse(strings.TrimSpace(proxyURL))
 	if err != nil {
@@ -73,16 +82,27 @@ func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error
 	if base.Transport != nil {
 		if t, ok := base.Transport.(*http.Transport); ok {
 			baseTransport = t.Clone()
+			baseTransport.Proxy = http.ProxyURL(parsed)
 		}
 	}
 	if baseTransport == nil {
-		baseTransport = &http.Transport{}
+		baseTransport = transportForHTTPProxy(parsed)
+	} else {
+		disableHTTP2OnTransport(baseTransport)
 	}
-	baseTransport.Proxy = http.ProxyURL(parsed)
 	return &http.Client{
 		Timeout:   base.Timeout,
 		Transport: baseTransport,
 	}, nil
+}
+
+// Squid and most HTTP proxies speak HTTP/1.1 only; Go must not attempt HTTP/2 on the proxy hop.
+func disableHTTP2OnTransport(transport *http.Transport) {
+	if transport == nil {
+		return
+	}
+	transport.ForceAttemptHTTP2 = false
+	transport.TLSNextProto = map[string]func(string, *tls.Conn) http.RoundTripper{}
 }
 
 func normalizeLLMHTTPProxySettings(cfg *model.LLMHTTPProxySettings) {
@@ -118,10 +138,15 @@ func maskProxyURL(raw string) string {
 	if err != nil || parsed.Host == "" {
 		return "proxy configured"
 	}
-	if parsed.User != nil {
-		parsed.User = url.UserPassword("***", "***")
+	host := parsed.Hostname()
+	port := parsed.Scheme + "://" + host
+	if p := parsed.Port(); p != "" {
+		port += ":" + p
 	}
-	return parsed.String()
+	if parsed.User != nil {
+		return port + " (authenticated)"
+	}
+	return port
 }
 
 func validateLLMHTTPProxySettings(cfg model.LLMHTTPProxySettings) error {
