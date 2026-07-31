@@ -83,8 +83,9 @@ export type GeologicalJournalExample = {
 };
 
 export type GeologicalJournalSettings = {
-  provider: "openrouter" | "yandex";
+  provider: "openrouter" | "deepseek" | "yandex";
   openrouter_model: string;
+  deepseek_model: string;
   yandex_model: string;
   system_prompt: string;
   temperature: number;
