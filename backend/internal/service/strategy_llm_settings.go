@@ -160,12 +160,12 @@ func (s *StrategyLLMSettingsService) TestConnection(ctx context.Context, provide
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	models, err := s.llm.ListModels(ctx, provider, creds, rec.Config.StrategyLLMSettings.ProxyForProvider(provider))
+	models, err := s.llm.ListModels(ctx, provider, creds, rec.Config.ProxyForProvider(provider))
 	if err != nil {
 		return &model.StrategyLLMTestConnectionResult{
 			Provider: provider,
 			OK:       false,
-			Message:  err.Error(),
+			Message:  fmt.Sprintf("%s (%s)", err.Error(), llmProxyRouteLabel(rec.Config.ProxyForProvider(provider))),
 		}, nil
 	}
 

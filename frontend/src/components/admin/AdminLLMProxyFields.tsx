@@ -42,14 +42,20 @@ export function AdminLLMProxyFields({ providerLabel, value, onChange }: Props) {
         <label className="mb-1.5 block text-xs font-medium">{t("list")}</label>
         <textarea
           value={(value.proxy_urls || []).join("\n")}
-          onChange={(e) =>
+          onChange={(e) => {
+            const proxy_urls = e.target.value
+              .split(/\r?\n/)
+              .map((v) => v.trim())
+              .filter(Boolean);
             patch({
-              proxy_urls: e.target.value
-                .split(/\r?\n/)
-                .map((v) => v.trim())
-                .filter(Boolean),
-            })
-          }
+              proxy_urls,
+              enabled: proxy_urls.length > 0 ? true : value.enabled,
+              proxy_active_url:
+                value.proxy_active_url && proxy_urls.includes(value.proxy_active_url)
+                  ? value.proxy_active_url
+                  : proxy_urls[0] || "",
+            });
+          }}
           className={templateClass}
           rows={3}
           placeholder="http://user:pass@5.35.83.120:3128"

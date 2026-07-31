@@ -674,7 +674,7 @@
     },
     "llmProxy": {
       "sectionTitle": "Proxy — {provider}",
-      "hint": "Use when the server cannot reach the provider API directly. Multiple URLs with automatic failover on failure.",
+      "hint": "Use when the server cannot reach the provider API directly. Adding a URL enables proxy automatically. Test connection saves settings first.",
       "enabled": "Enable proxy",
       "list": "Proxy list (one URL per line)",
       "listHint": "Format: http://user:pass@host:port or socks5://user:pass@host:port",

@@ -91,12 +91,37 @@ func normalizeLLMHTTPProxySettings(cfg *model.LLMHTTPProxySettings) {
 	}
 	cfg.ProxyURLs = normalizeProxyURLs(cfg.ProxyURLs)
 	cfg.ProxyActiveURL = strings.TrimSpace(cfg.ProxyActiveURL)
+	if len(cfg.ProxyURLs) > 0 {
+		cfg.Enabled = true
+	}
 	if cfg.Enabled && cfg.ProxyActiveURL == "" && len(cfg.ProxyURLs) > 0 {
 		cfg.ProxyActiveURL = cfg.ProxyURLs[0]
 	}
 	if !cfg.Enabled {
 		cfg.ProxyActiveURL = ""
 	}
+}
+
+func llmProxyRouteLabel(proxy *model.LLMHTTPProxySettings) string {
+	if proxy == nil || !proxy.Enabled || len(proxy.ProxyURLs) == 0 {
+		return "route: direct (proxy disabled — required for OpenRouter from RU server)"
+	}
+	active := strings.TrimSpace(proxy.ProxyActiveURL)
+	if active == "" {
+		active = proxy.ProxyURLs[0]
+	}
+	return "route: " + maskProxyURL(active)
+}
+
+func maskProxyURL(raw string) string {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || parsed.Host == "" {
+		return "proxy configured"
+	}
+	if parsed.User != nil {
+		parsed.User = url.UserPassword("***", "***")
+	}
+	return parsed.String()
 }
 
 func validateLLMHTTPProxySettings(cfg model.LLMHTTPProxySettings) error {

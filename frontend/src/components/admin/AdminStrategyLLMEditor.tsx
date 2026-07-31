@@ -146,19 +146,12 @@ export function AdminStrategyLLMEditor() {
     setError("");
     setTestStatus((prev) => ({ ...prev, [provider]: "" }));
     try {
-      const needsSave =
-        (provider === "openrouter" && openrouterKeyInput.trim()) ||
-        (provider === "deepseek" && deepseekKeyInput.trim()) ||
-        (provider === "yandex" && (yandexKeyInput.trim() || yandexFolderInput.trim()));
-
-      if (needsSave) {
-        const saved = await updateAdminStrategyLLMSettings(buildSavePayload());
-        applyView(saved);
-        setOpenrouterKeyInput("");
-        setDeepseekKeyInput("");
-        setYandexKeyInput("");
-        setYandexFolderInput("");
-      }
+      const saved = await updateAdminStrategyLLMSettings(buildSavePayload());
+      applyView(saved);
+      setOpenrouterKeyInput("");
+      setDeepseekKeyInput("");
+      setYandexKeyInput("");
+      setYandexFolderInput("");
 
       const result = await testStrategyLLMConnection(provider);
       if (!result.ok) {

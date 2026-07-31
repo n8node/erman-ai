@@ -25,7 +25,31 @@ func NewLLMService(cfg *config.Config) *LLMService {
 	return &LLMService{
 		cfg: cfg,
 		// No fixed timeout — callers pass context.WithTimeout (strategy: 120s).
-		client: &http.Client{Timeout: 0},
+		// Explicit Proxy=nil: LLM egress uses admin proxy settings only, not HTTP_PROXY env.
+		client: &http.Client{
+			Timeout: 0,
+			Transport: &http.Transport{
+				Proxy: nil,
+			},
+		},
+	}
+}
+
+const llmUserAgent = "ErmanAI/1.0 (+https://erman.ai)"
+
+func (s *LLMService) applyLLMRequestHeaders(req *http.Request, provider model.LLMProvider, creds LLMCredentials) {
+	s.applyLLMHeaders(req, s.httpHeaders(provider, creds))
+}
+
+func (s *LLMService) applyLLMHeaders(req *http.Request, headers llmHTTPHeaders) {
+	req.Header.Set("User-Agent", llmUserAgent)
+	if headers.openRouter {
+		req.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
+		req.Header.Set("X-Title", "Erman AI")
+	}
+	if headers.yandex {
+		req.Header.Set("x-folder-id", headers.folderID)
+		req.Header.Set("x-data-logging-enabled", "false")
 	}
 }
 
@@ -280,21 +304,13 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 	}
 
 	baseURL := s.BaseURL(provider)
-	headers := s.httpHeaders(provider, creds)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/models", nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	if headers.openRouter {
-		req.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
-		req.Header.Set("X-Title", "Erman AI")
-	}
-	if headers.yandex {
-		req.Header.Set("x-folder-id", headers.folderID)
-		req.Header.Set("x-data-logging-enabled", "false")
-	}
+	s.applyLLMRequestHeaders(req, provider, creds)
 
 	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
 		return client.Do(req)
@@ -315,7 +331,7 @@ func (s *LLMService) ListModels(ctx context.Context, provider model.LLMProvider,
 		if provider == model.LLMProviderYandex {
 			return DefaultYandexModels(creds.YandexFolderID), nil
 		}
-		return nil, fmt.Errorf("models http %d: %s", resp.StatusCode, string(raw))
+		return nil, fmt.Errorf("models http %d: %s", resp.StatusCode, formatLLMModelsError(provider, resp.StatusCode, string(raw)))
 	}
 
 	var parsed modelsListResponse
@@ -380,14 +396,7 @@ func (s *LLMService) postChatCompletion(
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
-	if headers.openRouter {
-		httpReq.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
-		httpReq.Header.Set("X-Title", "Erman AI")
-	}
-	if headers.yandex {
-		httpReq.Header.Set("x-folder-id", headers.folderID)
-		httpReq.Header.Set("x-data-logging-enabled", "false")
-	}
+	s.applyLLMHeaders(httpReq, headers)
 
 	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
 		return client.Do(httpReq)
@@ -461,14 +470,7 @@ func (s *LLMService) postChatCompletionStream(
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 	httpReq.Header.Set("Accept", "text/event-stream")
-	if headers.openRouter {
-		httpReq.Header.Set("HTTP-Referer", s.cfg.PublicBaseURL())
-		httpReq.Header.Set("X-Title", "Erman AI")
-	}
-	if headers.yandex {
-		httpReq.Header.Set("x-folder-id", headers.folderID)
-		httpReq.Header.Set("x-data-logging-enabled", "false")
-	}
+	s.applyLLMHeaders(httpReq, headers)
 
 	resp, err := doHTTPWithProxy(ctx, s.client, proxy, func(client *http.Client) (*http.Response, error) {
 		return client.Do(httpReq)
@@ -547,4 +549,12 @@ func (s *LLMService) postChatCompletionStream(
 		CompletionTokens: completionTokens,
 		TotalTokens:      totalTokens,
 	}, nil
+}
+
+func formatLLMModelsError(provider model.LLMProvider, status int, body string) string {
+	body = strings.TrimSpace(body)
+	if provider == model.LLMProviderOpenRouter && status == 403 && strings.Contains(body, "security policy") {
+		return body + " — enable OpenRouter proxy, save settings, then test again; verify API key at openrouter.ai/keys"
+	}
+	return body
 }
