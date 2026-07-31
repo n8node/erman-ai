@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"slices"
@@ -62,12 +65,112 @@ func proxyOrder(activeURL string, urls []string) []string {
 	return out
 }
 
-func transportForHTTPProxy(proxyURL *url.URL) *http.Transport {
+func transportViaHTTPConnectProxy(proxyURL *url.URL) *http.Transport {
+	proxy := cloneProxyURL(proxyURL)
 	return &http.Transport{
-		Proxy:                 http.ProxyURL(proxyURL),
+		Proxy:                 nil,
 		ForceAttemptHTTP2:     false,
 		TLSNextProto:          map[string]func(string, *tls.Conn) http.RoundTripper{},
+		DialContext:           directDialContext,
+		DialTLSContext:        dialTLSViaHTTPConnectProxy(proxy),
 	}
+}
+
+func cloneProxyURL(u *url.URL) *url.URL {
+	if u == nil {
+		return nil
+	}
+	c := *u
+	return &c
+}
+
+func directDialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+	var dialer net.Dialer
+	return dialer.DialContext(ctx, network, addr)
+}
+
+func dialTLSViaHTTPConnectProxy(proxyURL *url.URL) func(context.Context, string, string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if network != "tcp" && network != "tcp4" && network != "tcp6" {
+			return nil, fmt.Errorf("unsupported network %q", network)
+		}
+		conn, err := connectViaHTTPProxy(ctx, proxyURL, addr)
+		if err != nil {
+			return nil, err
+		}
+		host, _, splitErr := net.SplitHostPort(addr)
+		if splitErr != nil {
+			conn.Close()
+			return nil, splitErr
+		}
+		tlsConn := tls.Client(conn, &tls.Config{
+			ServerName: host,
+			MinVersion: tls.VersionTLS12,
+			NextProtos: []string{"http/1.1"},
+		})
+		if err := tlsConn.HandshakeContext(ctx); err != nil {
+			conn.Close()
+			return nil, err
+		}
+		return tlsConn, nil
+	}
+}
+
+func connectViaHTTPProxy(ctx context.Context, proxyURL *url.URL, targetAddr string) (net.Conn, error) {
+	if proxyURL == nil {
+		return nil, errors.New("proxy url is required")
+	}
+	scheme := strings.ToLower(strings.TrimSpace(proxyURL.Scheme))
+	if scheme != "http" {
+		return nil, fmt.Errorf("unsupported proxy scheme %q (use http://)", proxyURL.Scheme)
+	}
+
+	proxyAddr := proxyURL.Host
+	if _, _, err := net.SplitHostPort(proxyAddr); err != nil {
+		proxyAddr = net.JoinHostPort(proxyAddr, "80")
+	}
+
+	var dialer net.Dialer
+	conn, err := dialer.DialContext(ctx, "tcp", proxyAddr)
+	if err != nil {
+		return nil, fmt.Errorf("proxy dial: %w", err)
+	}
+
+	var req strings.Builder
+	req.WriteString("CONNECT ")
+	req.WriteString(targetAddr)
+	req.WriteString(" HTTP/1.1\r\nHost: ")
+	req.WriteString(targetAddr)
+	req.WriteString("\r\n")
+	if proxyURL.User != nil {
+		user := proxyURL.User.Username()
+		pass, _ := proxyURL.User.Password()
+		token := base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
+		req.WriteString("Proxy-Authorization: Basic ")
+		req.WriteString(token)
+		req.WriteString("\r\n")
+	}
+	req.WriteString("User-Agent: ErmanAI-ProxyConnect/1.0\r\n")
+	req.WriteString("Proxy-Connection: Keep-Alive\r\n")
+	req.WriteString("\r\n")
+
+	if _, err := conn.Write([]byte(req.String())); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("proxy connect write: %w", err)
+	}
+
+	br := bufio.NewReader(conn)
+	resp, err := http.ReadResponse(br, &http.Request{Method: http.MethodConnect})
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("proxy connect response: %w", err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		conn.Close()
+		return nil, fmt.Errorf("proxy connect status %s", resp.Status)
+	}
+	return conn, nil
 }
 
 func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error) {
@@ -75,34 +178,16 @@ func httpClientForProxy(base *http.Client, proxyURL string) (*http.Client, error
 	if err != nil {
 		return nil, err
 	}
+	if parsed.Scheme == "" || parsed.Host == "" {
+		return nil, fmt.Errorf("invalid proxy url %q", proxyURL)
+	}
 	if base == nil {
 		base = &http.Client{}
 	}
-	var baseTransport *http.Transport
-	if base.Transport != nil {
-		if t, ok := base.Transport.(*http.Transport); ok {
-			baseTransport = t.Clone()
-			baseTransport.Proxy = http.ProxyURL(parsed)
-		}
-	}
-	if baseTransport == nil {
-		baseTransport = transportForHTTPProxy(parsed)
-	} else {
-		disableHTTP2OnTransport(baseTransport)
-	}
 	return &http.Client{
 		Timeout:   base.Timeout,
-		Transport: baseTransport,
+		Transport: transportViaHTTPConnectProxy(parsed),
 	}, nil
-}
-
-// Squid and most HTTP proxies speak HTTP/1.1 only; Go must not attempt HTTP/2 on the proxy hop.
-func disableHTTP2OnTransport(transport *http.Transport) {
-	if transport == nil {
-		return
-	}
-	transport.ForceAttemptHTTP2 = false
-	transport.TLSNextProto = map[string]func(string, *tls.Conn) http.RoundTripper{}
 }
 
 func normalizeLLMHTTPProxySettings(cfg *model.LLMHTTPProxySettings) {
@@ -162,6 +247,9 @@ func validateLLMHTTPProxySettings(cfg model.LLMHTTPProxySettings) error {
 		u, err := url.Parse(raw)
 		if err != nil || u.Scheme == "" || u.Host == "" {
 			return fmt.Errorf("invalid proxy url %q", raw)
+		}
+		if strings.ToLower(u.Scheme) != "http" {
+			return fmt.Errorf("proxy url %q: only http:// proxies are supported", raw)
 		}
 	}
 	if cfg.ProxyActiveURL == "" {
