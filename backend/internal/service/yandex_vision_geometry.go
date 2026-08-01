@@ -193,49 +193,6 @@ func visionWordCenterX(word VisionWord) float64 {
 	return (word.XMin + word.XMax) / 2
 }
 
-func groupVisionWordsIntoRows(words []VisionWord, imageHeight int) [][]VisionWord {
-	if len(words) == 0 {
-		return nil
-	}
-	tolerance := float64(imageHeight) * 0.012
-	if tolerance < 8 {
-		tolerance = 8
-	}
-	if tolerance > 24 {
-		tolerance = 24
-	}
-
-	sorted := append([]VisionWord(nil), words...)
-	sort.Slice(sorted, func(i, j int) bool {
-		cyI := visionWordCenterY(sorted[i])
-		cyJ := visionWordCenterY(sorted[j])
-		if math.Abs(cyI-cyJ) > tolerance/2 {
-			return cyI < cyJ
-		}
-		return visionWordCenterX(sorted[i]) < visionWordCenterX(sorted[j])
-	})
-
-	var rows [][]VisionWord
-	var current []VisionWord
-	var currentY float64
-	for idx, word := range sorted {
-		cy := visionWordCenterY(word)
-		if idx == 0 || math.Abs(cy-currentY) > tolerance {
-			if len(current) > 0 {
-				rows = append(rows, sortVisionWordsByX(current))
-			}
-			current = []VisionWord{word}
-			currentY = cy
-			continue
-		}
-		current = append(current, word)
-	}
-	if len(current) > 0 {
-		rows = append(rows, sortVisionWordsByX(current))
-	}
-	return rows
-}
-
 func sortVisionWordsByX(words []VisionWord) []VisionWord {
 	out := append([]VisionWord(nil), words...)
 	sort.Slice(out, func(i, j int) bool {
@@ -359,7 +316,29 @@ func estimateVisionRowBands(annotation *VisionAnnotation) int {
 	if annotation == nil {
 		return 0
 	}
-	return len(groupVisionWordsIntoRows(annotation.Words, annotation.Height))
+	imageHeight := annotation.Height
+	if imageHeight <= 0 {
+		imageHeight = 1
+	}
+	leftWords := make([]VisionWord, 0, len(annotation.Words)/2)
+	rightWords := make([]VisionWord, 0, len(annotation.Words)/2)
+	splitX := float64(annotation.Width) / 2
+	if splitX <= 0 {
+		splitX = 500
+	}
+	for _, word := range annotation.Words {
+		if visionWordCenterX(word) < splitX {
+			leftWords = append(leftWords, word)
+		} else {
+			rightWords = append(rightWords, word)
+		}
+	}
+	pairs := pairSpreadVisionRows(
+		groupVisionWordsIntoRows(leftWords, imageHeight),
+		groupVisionWordsIntoRows(rightWords, imageHeight),
+		imageHeight,
+	)
+	return len(buildLogicalRecordsFromSpreadPairs(pairs))
 }
 
 func formatVisionRowWords(words []VisionWord) string {
@@ -368,16 +347,6 @@ func formatVisionRowWords(words []VisionWord) string {
 		parts = append(parts, word.Text)
 	}
 	return strings.Join(parts, " | ")
-}
-
-func formatVisionRowBand(index int, yNorm float64, leftWords, rightWords []VisionWord) string {
-	left := formatVisionRowWords(leftWords)
-	right := formatVisionRowWords(rightWords)
-	if left == "" && right == "" {
-		return ""
-	}
-	return fmt.Sprintf("--- ROW %03d y=%.3f ---\nL: %s\nR: %s",
-		index+1, yNorm, left, right)
 }
 
 func buildSpreadStructuredOCRText(annotation *VisionAnnotation, splitX float64) string {
@@ -401,28 +370,23 @@ func buildSpreadStructuredOCRText(annotation *VisionAnnotation, splitX float64) 
 			rightWords = append(rightWords, word)
 		}
 	}
-	leftRows := groupVisionWordsIntoRows(leftWords, imageHeight)
-	rightRows := groupVisionWordsIntoRows(rightWords, imageHeight)
-	pairs := pairSpreadVisionRows(leftRows, rightRows, imageHeight)
-
-	var builder strings.Builder
-	builder.WriteString("# Geological journal OCR — spread geometry\n")
-	builder.WriteString(fmt.Sprintf("# Words: %d, row bands: %d, split_x: %.0f\n",
-		len(annotation.Words), len(pairs), splitX))
-	builder.WriteString("# LEFT columns ~1-10, RIGHT columns ~11-15. One band = one logical table row.\n\n")
-	for i, pair := range pairs {
-		section := formatVisionRowBand(i, pair.YNorm, pair.Left, pair.Right)
-		if section == "" {
-			continue
-		}
-		builder.WriteString(section)
-		builder.WriteByte('\n')
+	pairs := pairSpreadVisionRows(
+		groupVisionWordsIntoRows(leftWords, imageHeight),
+		groupVisionWordsIntoRows(rightWords, imageHeight),
+		imageHeight,
+	)
+	records := buildLogicalRecordsFromSpreadPairs(pairs)
+	if len(records) == 0 {
+		return strings.TrimSpace(annotation.FullText)
 	}
-	return strings.TrimSpace(builder.String())
+	return formatLogicalRecordsText(records, true, len(annotation.Words))
 }
 
 func buildSingleStructuredOCRText(annotation *VisionAnnotation) string {
-	if annotation == nil || len(annotation.Words) == 0 {
+	if annotation == nil {
+		return ""
+	}
+	if len(annotation.Words) == 0 {
 		return strings.TrimSpace(annotation.FullText)
 	}
 	imageHeight := annotation.Height
@@ -430,18 +394,11 @@ func buildSingleStructuredOCRText(annotation *VisionAnnotation) string {
 		imageHeight = 1
 	}
 	rows := groupVisionWordsIntoRows(annotation.Words, imageHeight)
-	var builder strings.Builder
-	builder.WriteString("# Geological journal OCR — geometry rows\n")
-	builder.WriteString(fmt.Sprintf("# Words: %d, row bands: %d\n\n", len(annotation.Words), len(rows)))
-	for i, row := range rows {
-		line := formatVisionRowWords(row)
-		if line == "" {
-			continue
-		}
-		yNorm := visionRowBandYNorm(row, imageHeight)
-		builder.WriteString(fmt.Sprintf("--- ROW %03d y=%.3f ---\n%s\n\n", i+1, yNorm, line))
+	records := buildLogicalRecordsFromSingleRows(rows, imageHeight)
+	if len(records) == 0 {
+		return strings.TrimSpace(annotation.FullText)
 	}
-	return strings.TrimSpace(builder.String())
+	return formatLogicalRecordsText(records, false, len(annotation.Words))
 }
 
 type spreadVisionRowPair struct {
@@ -554,7 +511,7 @@ func splitStructuredOCRTextIntoChunks(text string, maxRowsPerChunk int) []string
 			header = append(header, line)
 			continue
 		}
-		if strings.HasPrefix(line, "--- ROW ") {
+		if strings.HasPrefix(line, "--- RECORD ") {
 			if rowCount >= maxRowsPerChunk {
 				flushSection()
 			}
@@ -583,13 +540,7 @@ func splitStructuredOCRTextIntoChunks(text string, maxRowsPerChunk int) []string
 }
 
 func countStructuredOCRRows(text string) int {
-	count := 0
-	for _, line := range strings.Split(text, "\n") {
-		if strings.HasPrefix(line, "--- ROW ") {
-			count++
-		}
-	}
-	if count > 0 {
+	if count := countLogicalRecords(text); count > 0 {
 		return count
 	}
 	return estimateGeologicalJournalRowCountForHint(text)
@@ -598,8 +549,8 @@ func countStructuredOCRRows(text string) int {
 func formatChunkStructuringPrompt(chunk string, chunkIndex, chunkTotal int, estimatedRows int) string {
 	header := fmt.Sprintf("Structure chunk %d of %d from a geological journal OCR table.\n", chunkIndex+1, chunkTotal)
 	if estimatedRows > 0 {
-		header += fmt.Sprintf("This chunk contains about %d logical row bands.\n", estimatedRows)
+		header += fmt.Sprintf("This chunk contains about %d RECORD markers.\n", estimatedRows)
 	}
-	header += "Return rows in the same order as ROW markers. Do not skip bands with partial data.\n\n"
+	header += "Return exactly one JSON row per RECORD marker, in the same order. Skip nothing inside this chunk.\n\n"
 	return header + chunk
 }

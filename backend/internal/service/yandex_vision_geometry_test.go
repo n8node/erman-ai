@@ -45,8 +45,8 @@ func TestBuildSpreadStructuredOCRText(t *testing.T) {
 		},
 	}
 	text := buildSpreadStructuredOCRText(annotation, 1000)
-	require.Contains(t, text, "spread geometry")
-	require.Contains(t, text, "ROW 001")
+	require.Contains(t, text, "depth-anchored records")
+	require.Contains(t, text, "RECORD 001")
 	require.Contains(t, text, "49.0")
 	require.Contains(t, text, "кварциты")
 }
@@ -55,7 +55,7 @@ func TestSplitStructuredOCRTextIntoChunks(t *testing.T) {
 	var builder string
 	builder = "# header\n\n"
 	for i := 1; i <= 20; i++ {
-		builder += "--- ROW 001 y=0.100 ---\nL: depth\nR: rock\n\n"
+		builder += "--- RECORD 001 type=data y=0.100 ---\nL: depth\nR: rock\n\n"
 	}
 	chunks := splitStructuredOCRTextIntoChunks(builder, 5)
 	require.GreaterOrEqual(t, len(chunks), 2)

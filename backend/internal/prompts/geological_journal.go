@@ -27,15 +27,15 @@ Typical Russian journal columns map as:
 - номер пробы → sample_number
 
 Logical row rules for field journals:
-- One JSON row per --- ROW band (or per depth interval when geometry markers are absent).
-- Printed grid lines are NOT rows — a rock description may span several grid lines but belongs to one depth interval.
-- Date may appear once per day block; leave date "" on continuation rows unless OCR repeats it.
-- Skip completely empty ROW bands with no numbers and no text.
+- One JSON row per --- RECORD --- marker only (not per printed grid line).
+- type=empty → blank table row with null/"" fields.
+- type=data → depth interval anchors depth_from_m / depth_to_m; rock text from R: → rock_description.
+- Never emit more JSON rows than RECORD markers in the OCR text.
 
 Use JSON numbers for confidently recognized numeric values and null when a numeric value is absent or uncertain.
 Use strings for text fields (empty string when absent). uncertainties must always be an array of short strings.
-Preserve top-to-bottom order. Never skip a ROW band that contains depth values or rock descriptions.
-Never merge two ROW bands into one JSON row. Never return {"rows":[]} when OCR contains table data.
+Preserve top-to-bottom order. Never return {"rows":[]} when OCR contains RECORD markers.
+Never merge two RECORD rows into one JSON row. Never split one RECORD into multiple JSON rows.
 Do not invent values. Preserve the source language in rock_description and notes.
 The first character of your response must be { and the last character must be }.`
 

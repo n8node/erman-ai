@@ -32,7 +32,7 @@ func TestGeologicalJournalOCRUserPrompt(t *testing.T) {
 	prompt := geologicalJournalOCRUserPrompt("sample text", 5, true)
 	require.Contains(t, prompt, "sample text")
 	require.Contains(t, prompt, "OCR TEXT")
-	require.Contains(t, prompt, "Expected logical rows")
+	require.Contains(t, prompt, "Expected table rows")
 	require.Contains(t, prompt, "5")
-	require.Contains(t, prompt, "two-page spread")
+	require.Contains(t, prompt, "RECORD")
 }

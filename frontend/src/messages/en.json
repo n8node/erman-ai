@@ -2183,7 +2183,7 @@
       "title": "OCR diagnostics",
       "subtitle": "Stats from the last run — helps see where rows are lost.",
       "layout": "Layout",
-      "rowBands": "Row bands",
+      "rowBands": "Records (RECORD)",
       "depthRows": "Depth intervals",
       "words": "OCR words",
       "spreadSplit": "Spread split",

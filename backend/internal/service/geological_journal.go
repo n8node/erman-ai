@@ -632,6 +632,8 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID, layoutMode 
 		return
 	}
 	NormalizeGeologicalJournalRows(output, ocrResult.StructuredText)
+	ConsolidateGeologicalJournalRows(output)
+	prunePhantomJournalRows(output, ocrDiagnostics.StructuredRowBands+5)
 	ValidateGeologicalJournalOutput(output)
 	outJSON, _ := json.Marshal(output)
 	if _, err := s.repo.SaveResult(ctx, pageID, userID, outJSON); err != nil {

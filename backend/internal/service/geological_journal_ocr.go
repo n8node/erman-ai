@@ -111,14 +111,14 @@ func (s *GeologicalJournalService) recognizeGeologicalJournalOCR(
 		CharCount:          len(structuredText),
 		WordCount:          len(merged.Words),
 		EstimatedDepthRows: countVisionDepthPairs(merged.Words),
-		StructuredRowBands: estimateVisionRowBands(merged),
+		StructuredRowBands: countLogicalRecords(structuredText),
 		GeometryUsed:       len(merged.Words) > 0,
 		SpreadSplit:        spreadSplit,
 		LayoutMode:         normalizedLayout,
 		OCRPreview:         truncateVisionPreview(structuredText, 800),
 	}
 	if diagnostics.StructuredRowBands == 0 {
-		diagnostics.StructuredRowBands = countStructuredOCRRows(structuredText)
+		diagnostics.StructuredRowBands = estimateGeologicalJournalRowCountForHint(structuredText)
 	}
 	if diagnostics.EstimatedDepthRows == 0 {
 		diagnostics.EstimatedDepthRows = estimateGeologicalJournalRowCountForHint(structuredText)

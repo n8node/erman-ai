@@ -163,24 +163,23 @@ func formatYandexVisionAPIError(raw []byte, status string) string {
 
 func geologicalJournalOCRUserPrompt(ocrText string, estimatedRows int, spreadLayout bool) string {
 	countHint := ""
-	if estimatedRows >= 3 && estimatedRows <= 120 {
-		countHint = "Expected logical rows (depth intervals): about " + strconv.Itoa(estimatedRows) + ".\n"
+	if estimatedRows >= 1 && estimatedRows <= 120 {
+		countHint = "Expected table rows in this chunk: about " + strconv.Itoa(estimatedRows) + " RECORD markers.\n"
 	}
 	layoutHint := ""
-	if spreadLayout || strings.Contains(ocrText, "spread geometry") {
-		layoutHint = `This is a two-page spread journal (columns 1-10 on LEFT, 11-15 on RIGHT).
-Each --- ROW band is one logical record. Anchor rows on depth_from_m / depth_to_m when present.
-Rock description in RIGHT may span multiple printed grid lines — keep it in one JSON row per ROW band.
-Date may appear only once per day block — copy forward only when clearly the same drilling day.
-Skip completely empty ROW bands (no numbers and no text on both sides).
+	if spreadLayout || strings.Contains(ocrText, "depth-anchored records") {
+		layoutHint = `Field journal with LEFT (cols 1-10) and RIGHT (cols 11-15) sides.
+One JSON row per --- RECORD --- marker only. type=empty → blank printed row (null/"" cells).
+type=data with depth= → set depth_from_m / depth_to_m from that interval; map rock text from R: to rock_description.
+Do NOT create extra rows beyond RECORD markers. Do NOT split one RECORD into multiple rows.
 `
 	}
 	return strings.TrimSpace(`Structure the geological journal table from this OCR text.
-Return one JSON object {"rows":[...]} with one object per logical ROW band in order.
-A logical row is defined by a depth interval (depth_from_m, depth_to_m) when visible; otherwise one ROW band.
-Include sparse rows: blank cells become null (numbers) or "" (text).
-Preserve top-to-bottom order. Do not skip ROW bands that contain depth values or rock descriptions.
-Do not merge two ROW bands into one JSON row. Do not emit one JSON row per isolated OCR word.
+Return one JSON object {"rows":[...]} with exactly one object per --- RECORD --- marker, same order.
+Printed grid lines without RECORD markers must be ignored.
+For type=empty records output a row with null numbers and empty strings.
+For type=data records extract depth, core, date, and rock description from L:/R: lines.
+Do not invent values. Preserve Russian text in rock_description and notes.
 ` + layoutHint + countHint + `
 --- OCR TEXT START ---
 ` + ocrText + `

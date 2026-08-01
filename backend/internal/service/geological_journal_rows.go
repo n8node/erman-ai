@@ -136,12 +136,12 @@ func NormalizeGeologicalJournalRows(output *model.GeologicalJournalOutput, _ str
 		return
 	}
 	original := len(output.Rows)
-	extraCap := original / 10
+	extraCap := original / 20
 	if extraCap < 1 {
 		extraCap = 1
 	}
-	if extraCap > geologicalJournalMaxExtraRows {
-		extraCap = geologicalJournalMaxExtraRows
+	if extraCap > 3 {
+		extraCap = 3
 	}
 	output.Rows = fillGeologicalJournalDepthGaps(output.Rows, extraCap)
 }
