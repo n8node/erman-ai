@@ -27,7 +27,10 @@ Typical Russian journal columns map as:
 
 Use JSON numbers for confidently recognized numeric values and null when a numeric value is absent or uncertain.
 Use strings for text fields (empty string when absent). uncertainties must always be an array of short strings.
-Extract every journal data row present in the OCR text. Never return {"rows":[]} when the OCR text contains table data.
+The rows array must contain one object for every physical table row on the page, in top-to-bottom order.
+Include completely empty rows: use null for numeric fields and "" for text fields when a cell is blank.
+Never skip a row because it has no depth or rock data. Never merge two physical rows into one JSON row.
+Extract every table row visible in the OCR text. Never return {"rows":[]} when the OCR text contains table data.
 Do not invent values. Preserve the source language in rock_description and notes.
 The first character of your response must be { and the last character must be }.`
 

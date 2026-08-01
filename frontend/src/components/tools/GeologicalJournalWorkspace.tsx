@@ -108,6 +108,19 @@ const columns: { key: keyof GeologicalJournalRow; width: string }[] = [
   { key: "notes", width: "min-w-[220px]" },
 ];
 
+function formatRowUncertainty(
+  value: string,
+  t: ReturnType<typeof useTranslations>
+) {
+  const [prefix, suffix] = value.split(":", 2);
+  if (suffix === undefined) return value;
+  const key = prefix as "row_gap" | "row_padding";
+  if (key === "row_gap" || key === "row_padding") {
+    return t(`uncertainties.${key}`);
+  }
+  return value;
+}
+
 function formatBytes(bytes: number) {
   if (!bytes) return "—";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -743,6 +756,11 @@ export function GeologicalJournalWorkspace() {
                       {visibleRowEntries.map(({ row, index: rowIndex }) => {
                         const issues = rowFieldIssues(row, rowIndex, rows);
                         const rowIssueCount = Object.keys(issues).length;
+                        const hasInsertedRow = row.uncertainties?.some(
+                          (item) =>
+                            item.startsWith("row_gap:") || item.startsWith("row_padding:")
+                        );
+                        const showRowWarning = rowIssueCount > 0 || hasInsertedRow;
                         return (
                         <tr
                           key={rowIndex}
@@ -752,16 +770,22 @@ export function GeologicalJournalWorkspace() {
                           }}
                           className={cn(
                             "border-b border-border align-top last:border-0",
-                            rowIssueCount > 0 && "bg-warning-bg/40"
+                            showRowWarning && "bg-warning-bg/40"
                           )}
                         >
                           <td className="px-2 py-2 text-center text-text3">
                             <span className="inline-flex items-center gap-1">
-                              {rowIssueCount > 0 && (
+                              {showRowWarning && (
                                 <AlertCircle
                                   size={12}
                                   className="text-warning"
-                                  aria-label={t("review.rowIssues", { count: rowIssueCount })}
+                                  aria-label={
+                                    row.uncertainties?.length
+                                      ? row.uncertainties
+                                          .map((item) => formatRowUncertainty(item, t))
+                                          .join(", ")
+                                      : t("review.rowIssues", { count: rowIssueCount })
+                                  }
                                 />
                               )}
                               {rowIndex + 1}

@@ -2253,6 +2253,10 @@
       "depth_continuity": "Depth from is below the previous row depth to",
       "missing_rock_description": "Rock description is empty for a row with depths"
     },
+    "uncertainties": {
+      "row_gap": "Possible missing row — depth gap detected",
+      "row_padding": "Row added automatically — check for an OCR skip"
+    },
     "columns": {
       "date": "Date",
       "drilling_diameter_mm": "Diameter, mm",

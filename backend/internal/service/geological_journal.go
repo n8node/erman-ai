@@ -583,7 +583,7 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
 		SystemPrompt: prompt,
-		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText),
+		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText, estimateGeologicalJournalRowCount(ocrText)),
 		Temperature:  settings.Temperature,
 		MaxTokens:    settings.MaxTokens,
 		APIKey:       apiKey,
@@ -614,6 +614,7 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Model response: %q", len(ocrText), llmPreview))
 		return
 	}
+	NormalizeGeologicalJournalRows(output, ocrText)
 	ValidateGeologicalJournalOutput(output)
 	outJSON, _ := json.Marshal(output)
 	if _, err := s.repo.SaveResult(ctx, pageID, userID, outJSON); err != nil {

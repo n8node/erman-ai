@@ -29,7 +29,9 @@ func TestParseYandexVisionRecognizeResponse(t *testing.T) {
 }
 
 func TestGeologicalJournalOCRUserPrompt(t *testing.T) {
-	prompt := geologicalJournalOCRUserPrompt("sample text")
+	prompt := geologicalJournalOCRUserPrompt("sample text", 5)
 	require.Contains(t, prompt, "sample text")
 	require.Contains(t, prompt, "OCR TEXT")
+	require.Contains(t, prompt, "Estimated physical table rows")
+	require.Contains(t, prompt, "5")
 }

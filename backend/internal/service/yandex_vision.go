@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/erman-ai/erman-ai/internal/model"
@@ -157,10 +158,18 @@ func formatYandexVisionAPIError(raw []byte, status string) string {
 	return msg
 }
 
-func geologicalJournalOCRUserPrompt(ocrText string) string {
+func geologicalJournalOCRUserPrompt(ocrText string, estimatedRows int) string {
+	countHint := ""
+	if estimatedRows > 0 {
+		countHint = "Estimated physical table rows in OCR (including blank lines): " +
+			strconv.Itoa(estimatedRows) + ".\n" +
+			"The rows array length must match this count unless OCR clearly shows fewer lines.\n"
+	}
 	return strings.TrimSpace(`Structure the geological journal table from this OCR text.
-Return one JSON object {"rows":[...]} with one object per journal line that contains depth/rock data.
-
+Return one JSON object {"rows":[...]} with exactly one object per physical table row on the page.
+Include empty rows: blank cells become null (numbers) or "" (text).
+Preserve top-to-bottom order. Do not skip rows without depth values.
+` + countHint + `
 --- OCR TEXT START ---
 ` + ocrText + `
 --- OCR TEXT END ---`)
