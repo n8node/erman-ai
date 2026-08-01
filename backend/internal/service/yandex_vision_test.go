@@ -29,10 +29,10 @@ func TestParseYandexVisionRecognizeResponse(t *testing.T) {
 }
 
 func TestGeologicalJournalOCRUserPrompt(t *testing.T) {
-	prompt := geologicalJournalOCRUserPrompt("sample text", 5)
+	prompt := geologicalJournalOCRUserPrompt("sample text", 5, true)
 	require.Contains(t, prompt, "sample text")
 	require.Contains(t, prompt, "OCR TEXT")
-	require.Contains(t, prompt, "OCR rough hint")
+	require.Contains(t, prompt, "Expected logical rows")
 	require.Contains(t, prompt, "5")
-	require.Contains(t, prompt, "Do not inflate row count")
+	require.Contains(t, prompt, "two-page spread")
 }

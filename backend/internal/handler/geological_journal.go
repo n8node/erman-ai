@@ -40,7 +40,7 @@ func (h *GeologicalJournalHandler) CreatePage(w http.ResponseWriter, r *http.Req
 		writeError(w, http.StatusBadRequest, "valid JPEG, PNG, WebP, or GIF image up to 10 MiB required")
 		return
 	}
-	page, run, err := h.svc.CreatePage(r.Context(), userID, role, name, image)
+	page, run, err := h.svc.CreatePage(r.Context(), userID, role, name, r.FormValue("layout_mode"), image)
 	if err != nil {
 		h.writeServiceError(w, err, "failed to create page")
 		return
@@ -102,7 +102,17 @@ func (h *GeologicalJournalHandler) PagePreprocessedImage(w http.ResponseWriter, 
 
 func (h *GeologicalJournalHandler) Analyze(w http.ResponseWriter, r *http.Request) {
 	userID, role, _ := journalIdentity(r)
-	run, err := h.svc.StartAnalysis(r.Context(), r.PathValue("id"), userID, role)
+	layoutMode := string(model.GeologicalJournalLayoutAuto)
+	var req struct {
+		LayoutMode string `json:"layout_mode"`
+	}
+	if r.Body != nil {
+		_ = json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req)
+	}
+	if strings.TrimSpace(req.LayoutMode) != "" {
+		layoutMode = req.LayoutMode
+	}
+	run, err := h.svc.StartAnalysisWithLayout(r.Context(), r.PathValue("id"), userID, role, layoutMode)
 	if err != nil {
 		h.writeServiceError(w, err, "failed to start analysis")
 		return

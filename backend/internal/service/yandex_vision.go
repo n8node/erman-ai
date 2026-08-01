@@ -30,9 +30,7 @@ type yandexVisionRecognizeRequest struct {
 
 type yandexVisionRecognizeResponse struct {
 	Result *struct {
-		TextAnnotation *struct {
-			FullText string `json:"fullText"`
-		} `json:"textAnnotation"`
+		TextAnnotation *yandexVisionTextAnnotation `json:"textAnnotation"`
 	} `json:"result"`
 	Error *llmAPIError `json:"error"`
 }
@@ -68,14 +66,14 @@ func yandexVisionMimeType(contentType string) string {
 	}
 }
 
-func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params YandexVisionRecognizeParams) (string, error) {
+func (s *LLMService) recognizeYandexVisionRaw(ctx context.Context, params YandexVisionRecognizeParams) ([]byte, error) {
 	apiKey := strings.TrimSpace(params.APIKey)
 	folderID := strings.TrimSpace(params.FolderID)
 	if apiKey == "" || folderID == "" {
-		return "", ErrYandexVisionNotConfigured
+		return nil, ErrYandexVisionNotConfigured
 	}
 	if len(params.Image) == 0 {
-		return "", errors.New("image required for yandex vision ocr")
+		return nil, errors.New("image required for yandex vision ocr")
 	}
 
 	body, err := json.Marshal(yandexVisionRecognizeRequest{
@@ -85,12 +83,12 @@ func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params Yande
 		Content:       base64.StdEncoding.EncodeToString(params.Image),
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, yandexVisionRecognizeURL, strings.NewReader(string(body)))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Key "+apiKey)
@@ -101,33 +99,38 @@ func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params Yande
 		return client.Do(req)
 	})
 	if err != nil {
-		return "", fmt.Errorf("yandex vision ocr request failed: %w", err)
+		return nil, fmt.Errorf("yandex vision ocr request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("yandex vision ocr: %s", formatYandexVisionAPIError(raw, resp.Status))
+		return nil, fmt.Errorf("yandex vision ocr: %s", formatYandexVisionAPIError(raw, resp.Status))
 	}
+	return raw, nil
+}
 
-	var parsed yandexVisionRecognizeResponse
-	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return "", fmt.Errorf("yandex vision ocr response parse failed: %w", err)
+func (s *LLMService) RecognizeYandexVisionText(ctx context.Context, params YandexVisionRecognizeParams) (string, error) {
+	raw, err := s.recognizeYandexVisionRaw(ctx, params)
+	if err != nil {
+		return "", err
 	}
-	if parsed.Error != nil && strings.TrimSpace(parsed.Error.Message) != "" {
-		return "", fmt.Errorf("yandex vision ocr: %s", parsed.Error.Message)
+	annotation, err := parseYandexVisionAnnotation(raw)
+	if err != nil {
+		return "", err
 	}
-	if parsed.Result == nil || parsed.Result.TextAnnotation == nil {
-		return "", ErrYandexVisionEmptyText
+	return annotation.FullText, nil
+}
+
+func (s *LLMService) RecognizeYandexVisionAnnotation(ctx context.Context, params YandexVisionRecognizeParams) (*VisionAnnotation, error) {
+	raw, err := s.recognizeYandexVisionRaw(ctx, params)
+	if err != nil {
+		return nil, err
 	}
-	fullText := strings.TrimSpace(parsed.Result.TextAnnotation.FullText)
-	if fullText == "" {
-		return "", ErrYandexVisionEmptyText
-	}
-	return fullText, nil
+	return parseYandexVisionAnnotation(raw)
 }
 
 type yandexVisionAPIErrorBody struct {
@@ -158,19 +161,27 @@ func formatYandexVisionAPIError(raw []byte, status string) string {
 	return msg
 }
 
-func geologicalJournalOCRUserPrompt(ocrText string, estimatedRows int) string {
+func geologicalJournalOCRUserPrompt(ocrText string, estimatedRows int, spreadLayout bool) string {
 	countHint := ""
 	if estimatedRows >= 3 && estimatedRows <= 120 {
-		countHint = "OCR rough hint: about " + strconv.Itoa(estimatedRows) +
-			" lines contain paired numeric values. " +
-			"Many OCR lines are fragments of the same table row — do not emit one JSON row per OCR line.\n"
+		countHint = "Expected logical rows (depth intervals): about " + strconv.Itoa(estimatedRows) + ".\n"
+	}
+	layoutHint := ""
+	if spreadLayout || strings.Contains(ocrText, "spread geometry") {
+		layoutHint = `This is a two-page spread journal (columns 1-10 on LEFT, 11-15 on RIGHT).
+Each --- ROW band is one logical record. Anchor rows on depth_from_m / depth_to_m when present.
+Rock description in RIGHT may span multiple printed grid lines — keep it in one JSON row per ROW band.
+Date may appear only once per day block — copy forward only when clearly the same drilling day.
+Skip completely empty ROW bands (no numbers and no text on both sides).
+`
 	}
 	return strings.TrimSpace(`Structure the geological journal table from this OCR text.
-Return one JSON object {"rows":[...]} with exactly one object per physical table row on the page.
-Include empty rows: blank cells become null (numbers) or "" (text).
-Preserve top-to-bottom order. Do not skip rows without depth values.
-Do not inflate row count: merge OCR fragments that belong to the same handwritten line.
-` + countHint + `
+Return one JSON object {"rows":[...]} with one object per logical ROW band in order.
+A logical row is defined by a depth interval (depth_from_m, depth_to_m) when visible; otherwise one ROW band.
+Include sparse rows: blank cells become null (numbers) or "" (text).
+Preserve top-to-bottom order. Do not skip ROW bands that contain depth values or rock descriptions.
+Do not merge two ROW bands into one JSON row. Do not emit one JSON row per isolated OCR word.
+` + layoutHint + countHint + `
 --- OCR TEXT START ---
 ` + ocrText + `
 --- OCR TEXT END ---`)

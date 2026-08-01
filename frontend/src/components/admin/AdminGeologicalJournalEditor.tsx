@@ -51,7 +51,7 @@ const DEFAULT_SETTINGS: GeologicalJournalSettings = {
   ocr_model: "handwritten",
   system_prompt: "",
   temperature: 0.2,
-  max_tokens: 4096,
+  max_tokens: 8192,
 };
 
 const EMPTY_EXAMPLE: GeologicalJournalExampleMetadata = {

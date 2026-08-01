@@ -2168,6 +2168,32 @@
         "corrections": "Every recognized cell can be corrected."
       }
     },
+    "layout": {
+      "title": "Page layout",
+      "auto": "Auto",
+      "spread": "Spread",
+      "single": "Single page",
+      "hints": {
+        "auto": "Wide scans are treated as a two-page spread (cols 1–10 left, 11–15 right).",
+        "spread": "Force split the image in half before OCR.",
+        "single": "Single page or crop — no left/right split."
+      }
+    },
+    "diagnostics": {
+      "title": "OCR diagnostics",
+      "subtitle": "Stats from the last run — helps see where rows are lost.",
+      "layout": "Layout",
+      "rowBands": "Row bands",
+      "depthRows": "Depth intervals",
+      "words": "OCR words",
+      "spreadSplit": "Spread split",
+      "chunks": "LLM chunks",
+      "llmTokens": "LLM tokens (in/out)",
+      "yes": "Yes",
+      "no": "No",
+      "showPreview": "Show OCR text",
+      "hidePreview": "Hide OCR text"
+    },
     "steps": {
       "1": {
         "title": "Upload",

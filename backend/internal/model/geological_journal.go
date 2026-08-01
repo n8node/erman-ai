@@ -129,8 +129,32 @@ type GeologicalJournalPreprocessingInfo struct {
 	FallbackReason       string  `json:"fallback_reason,omitempty"`
 }
 
+type GeologicalJournalLayoutMode string
+
+const (
+	GeologicalJournalLayoutAuto   GeologicalJournalLayoutMode = "auto"
+	GeologicalJournalLayoutSpread GeologicalJournalLayoutMode = "spread"
+	GeologicalJournalLayoutSingle GeologicalJournalLayoutMode = "single"
+)
+
+type GeologicalJournalOCRDiagnostics struct {
+	CharCount           int    `json:"char_count"`
+	WordCount           int    `json:"word_count"`
+	EstimatedDepthRows  int    `json:"estimated_depth_rows"`
+	StructuredRowBands  int    `json:"structured_row_bands"`
+	GeometryUsed        bool   `json:"geometry_used"`
+	SpreadSplit         bool   `json:"spread_split"`
+	LayoutMode          string `json:"layout_mode"`
+	StructuringChunks   int    `json:"structuring_chunks"`
+	LLMPromptTokens     int    `json:"llm_prompt_tokens,omitempty"`
+	LLMCompletionTokens int    `json:"llm_completion_tokens,omitempty"`
+	OCRPreview          string `json:"ocr_preview,omitempty"`
+}
+
 type GeologicalJournalRunInput struct {
 	PageID        string                              `json:"page_id"`
 	Phase         GeologicalJournalRunPhase           `json:"phase,omitempty"`
+	LayoutMode    GeologicalJournalLayoutMode         `json:"layout_mode,omitempty"`
 	Preprocessing *GeologicalJournalPreprocessingInfo `json:"preprocessing,omitempty"`
+	OCR           *GeologicalJournalOCRDiagnostics    `json:"ocr,omitempty"`
 }

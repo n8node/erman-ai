@@ -55,6 +55,7 @@ import {
   type GeologicalJournalPage,
   type GeologicalJournalPageDetail,
   type GeologicalJournalRow,
+  type GeologicalJournalLayoutMode,
   type GeologicalJournalRun,
   type GeologicalJournalRunInput,
 } from "@/lib/api-geological-journal";
@@ -149,6 +150,7 @@ export function GeologicalJournalWorkspace() {
     null
   );
   const [imageView, setImageView] = useState<"original" | "preprocessed">("original");
+  const [layoutMode, setLayoutMode] = useState<GeologicalJournalLayoutMode>("auto");
   const [issuesOnly, setIssuesOnly] = useState(false);
   const abortUploadRef = useRef<(() => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -287,6 +289,14 @@ export function GeologicalJournalWorkspace() {
 
   const runInput = runJournalInput(run);
   const preprocessing = runInput?.preprocessing;
+  const ocrDiagnostics = runInput?.ocr;
+
+  useEffect(() => {
+    const mode = runInput?.layout_mode;
+    if (mode === "auto" || mode === "spread" || mode === "single") {
+      setLayoutMode(mode);
+    }
+  }, [runInput?.layout_mode, run?.id]);
 
   useEffect(() => {
     if (preprocessing?.has_preprocessed_image || page?.has_preprocessed_image) {
@@ -352,7 +362,7 @@ export function GeologicalJournalWorkspace() {
     setError("");
     setSuccess("");
     setUploadPercent(0);
-    const request = uploadGeologicalJournalPage(file, setUploadPercent);
+    const request = uploadGeologicalJournalPage(file, setUploadPercent, layoutMode);
     abortUploadRef.current = request.abort;
     try {
       const response = await request.promise;
@@ -394,7 +404,7 @@ export function GeologicalJournalWorkspace() {
     setRows([]);
     setImageView("original");
     try {
-      const response = await analyzeGeologicalJournalPage(page.id);
+      const response = await analyzeGeologicalJournalPage(page.id, layoutMode);
       setRun({
         id: response.run_id,
         status: response.status || "pending",
@@ -569,6 +579,8 @@ export function GeologicalJournalWorkspace() {
         <UploadPanel
           active={dragActive}
           progress={uploadPercent}
+          layoutMode={layoutMode}
+          onLayoutModeChange={setLayoutMode}
           onActive={setDragActive}
           onFile={handleFile}
           onBrowse={() => fileInputRef.current?.click()}
@@ -591,6 +603,10 @@ export function GeologicalJournalWorkspace() {
 
           {recognizing && (
             <ProcessingBanner run={run} t={t} />
+          )}
+
+          {ocrDiagnostics && !recognizing && (
+            <OCRDiagnosticsPanel diagnostics={ocrDiagnostics} t={t} />
           )}
 
           {run?.status === "done" && rows.length === 0 && !recognizing && (
@@ -861,6 +877,8 @@ export function GeologicalJournalWorkspace() {
             runs={page.runs ?? []}
             versions={page.versions?.length ?? 0}
             date={date}
+            layoutMode={layoutMode}
+            onLayoutModeChange={setLayoutMode}
             onRetry={handleRetry}
             disabled={recognizing}
             t={t}
@@ -912,9 +930,117 @@ export function GeologicalJournalWorkspace() {
   );
 }
 
+function LayoutModeSelector({
+  value,
+  onChange,
+  disabled,
+  t,
+}: {
+  value: GeologicalJournalLayoutMode;
+  onChange: (value: GeologicalJournalLayoutMode) => void;
+  disabled?: boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {(["auto", "spread", "single"] as const).map((mode) => (
+        <button
+          key={mode}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(mode)}
+          className={cn(
+            "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-150",
+            value === mode
+              ? "border-accent bg-accent-bg text-accent"
+              : "border-border2 bg-bg text-text2 hover:bg-bg2",
+            disabled && "opacity-50"
+          )}
+        >
+          {t(`layout.${mode}`)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OCRDiagnosticsPanel({
+  diagnostics,
+  t,
+}: {
+  diagnostics: NonNullable<GeologicalJournalRunInput["ocr"]>;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-bg2/40 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-text">{t("diagnostics.title")}</p>
+          <p className="mt-1 text-xs text-text2">{t("diagnostics.subtitle")}</p>
+        </div>
+        {diagnostics.ocr_preview && (
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            {expanded ? t("diagnostics.hidePreview") : t("diagnostics.showPreview")}
+          </button>
+        )}
+      </div>
+      <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt className="text-text3">{t("diagnostics.layout")}</dt>
+          <dd className="font-medium text-text">
+            {t(`layout.${diagnostics.layout_mode || "auto"}`)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-text3">{t("diagnostics.rowBands")}</dt>
+          <dd className="font-medium text-text">{diagnostics.structured_row_bands}</dd>
+        </div>
+        <div>
+          <dt className="text-text3">{t("diagnostics.depthRows")}</dt>
+          <dd className="font-medium text-text">{diagnostics.estimated_depth_rows}</dd>
+        </div>
+        <div>
+          <dt className="text-text3">{t("diagnostics.words")}</dt>
+          <dd className="font-medium text-text">{diagnostics.word_count}</dd>
+        </div>
+        <div>
+          <dt className="text-text3">{t("diagnostics.spreadSplit")}</dt>
+          <dd className="font-medium text-text">
+            {diagnostics.spread_split ? t("diagnostics.yes") : t("diagnostics.no")}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-text3">{t("diagnostics.chunks")}</dt>
+          <dd className="font-medium text-text">{diagnostics.structuring_chunks || 1}</dd>
+        </div>
+        {(diagnostics.llm_prompt_tokens ?? 0) > 0 && (
+          <div>
+            <dt className="text-text3">{t("diagnostics.llmTokens")}</dt>
+            <dd className="font-medium text-text">
+              {diagnostics.llm_prompt_tokens}/{diagnostics.llm_completion_tokens}
+            </dd>
+          </div>
+        )}
+      </dl>
+      {expanded && diagnostics.ocr_preview && (
+        <pre className="mt-3 max-h-48 overflow-auto rounded-lg border border-border bg-bg p-3 text-[11px] leading-5 text-text2 whitespace-pre-wrap">
+          {diagnostics.ocr_preview}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 function UploadPanel({
   active,
   progress,
+  layoutMode,
+  onLayoutModeChange,
   onActive,
   onFile,
   onBrowse,
@@ -923,6 +1049,8 @@ function UploadPanel({
 }: {
   active: boolean;
   progress: number | null;
+  layoutMode: GeologicalJournalLayoutMode;
+  onLayoutModeChange: (value: GeologicalJournalLayoutMode) => void;
   onActive: (active: boolean) => void;
   onFile: (file: File) => void;
   onBrowse: () => void;
@@ -1004,6 +1132,18 @@ function UploadPanel({
             <p className="mt-4 text-xs text-text3">{t("upload.formats")}</p>
           </>
         )}
+      </div>
+      <div className="mt-4 space-y-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-text3">
+          {t("layout.title")}
+        </p>
+        <LayoutModeSelector
+          value={layoutMode}
+          onChange={onLayoutModeChange}
+          disabled={uploading}
+          t={t}
+        />
+        <p className="text-xs text-text3">{t(`layout.hints.${layoutMode}`)}</p>
       </div>
       <div className="mt-4 grid gap-3 text-xs text-text2 sm:grid-cols-3">
         {(["quality", "privacy", "corrections"] as const).map((key) => (
@@ -1343,6 +1483,8 @@ function PageHistory({
   runs,
   versions,
   date,
+  layoutMode,
+  onLayoutModeChange,
   onRetry,
   disabled,
   t,
@@ -1350,6 +1492,8 @@ function PageHistory({
   runs: GeologicalJournalRun[];
   versions: number;
   date: (value: string) => string;
+  layoutMode: GeologicalJournalLayoutMode;
+  onLayoutModeChange: (value: GeologicalJournalLayoutMode) => void;
   onRetry: () => void;
   disabled: boolean;
   t: ReturnType<typeof useTranslations>;
@@ -1363,15 +1507,23 @@ function PageHistory({
             {t("history.summary", { runs: runs.length, versions })}
           </p>
         </div>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border2 px-3 py-2 text-xs font-medium text-text2 hover:bg-bg2 disabled:opacity-50"
-        >
-          <RefreshCw size={14} />
-          {t("actions.recognizeAgain")}
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <LayoutModeSelector
+            value={layoutMode}
+            onChange={onLayoutModeChange}
+            disabled={disabled}
+            t={t}
+          />
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={onRetry}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border2 px-3 py-2 text-xs font-medium text-text2 hover:bg-bg2 disabled:opacity-50"
+          >
+            <RefreshCw size={14} />
+            {t("actions.recognizeAgain")}
+          </button>
+        </div>
       </div>
       {runs.length === 0 ? (
         <p className="px-4 py-5 text-sm text-text3">{t("history.empty")}</p>

@@ -374,7 +374,7 @@ func (s *GeologicalJournalService) CheckAccess(ctx context.Context, userID, role
 	return nil
 }
 
-func (s *GeologicalJournalService) CreatePage(ctx context.Context, userID, role, originalName string, image *ValidatedJournalImage) (*model.GeologicalJournalPage, *model.ToolRun, error) {
+func (s *GeologicalJournalService) CreatePage(ctx context.Context, userID, role, originalName, layoutMode string, image *ValidatedJournalImage) (*model.GeologicalJournalPage, *model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, nil, err
 	}
@@ -393,7 +393,7 @@ func (s *GeologicalJournalService) CreatePage(ctx context.Context, userID, role,
 		_ = os.Remove(path)
 		return nil, nil, err
 	}
-	run, err := s.StartAnalysis(ctx, page.ID, userID, role)
+	run, err := s.StartAnalysisWithLayout(ctx, page.ID, userID, role, layoutMode)
 	if err != nil {
 		_, _ = s.repo.DeletePage(ctx, page.ID, userID)
 		_ = os.Remove(path)
@@ -403,6 +403,10 @@ func (s *GeologicalJournalService) CreatePage(ctx context.Context, userID, role,
 }
 
 func (s *GeologicalJournalService) StartAnalysis(ctx context.Context, pageID, userID, role string) (*model.ToolRun, error) {
+	return s.StartAnalysisWithLayout(ctx, pageID, userID, role, string(model.GeologicalJournalLayoutAuto))
+}
+
+func (s *GeologicalJournalService) StartAnalysisWithLayout(ctx context.Context, pageID, userID, role, layoutMode string) (*model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
@@ -415,8 +419,9 @@ func (s *GeologicalJournalService) StartAnalysis(ctx context.Context, pageID, us
 		return nil, err
 	}
 	input, _ := json.Marshal(model.GeologicalJournalRunInput{
-		PageID: page.ID,
-		Phase:  model.GeologicalJournalPhasePreprocessing,
+		PageID:     page.ID,
+		Phase:      model.GeologicalJournalPhasePreprocessing,
+		LayoutMode: model.GeologicalJournalLayoutMode(normalizeGeologicalJournalLayoutMode(layoutMode)),
 	})
 	run, err := s.runs.CreatePending(ctx, userID, model.GeologicalJournalToolSlug, up.PlanSlug, input)
 	if err != nil {
@@ -426,12 +431,12 @@ func (s *GeologicalJournalService) StartAnalysis(ctx context.Context, pageID, us
 		_ = s.runs.UpdateRunError(ctx, run.ID, "failed to attach page")
 		return nil, err
 	}
-	go s.processRun(run.ID, page.ID, userID)
+	go s.processRun(run.ID, page.ID, userID, normalizeGeologicalJournalLayoutMode(layoutMode))
 	return run, nil
 }
 
-func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+func (s *GeologicalJournalService) processRun(runID, pageID, userID, layoutMode string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 	fail := func(err error) {
 		msg := err.Error()
@@ -462,8 +467,9 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	ocrMIME := page.ContentType
 	prepInfo := model.GeologicalJournalPreprocessingInfo{}
 	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
-		PageID: pageID,
-		Phase:  model.GeologicalJournalPhasePreprocessing,
+		PageID:     pageID,
+		Phase:      model.GeologicalJournalPhasePreprocessing,
+		LayoutMode: model.GeologicalJournalLayoutMode(normalizeGeologicalJournalLayoutMode(layoutMode)),
 	})
 	if s.preprocessor.Enabled() {
 		preprocessCtx, cancelPreprocess := context.WithTimeout(ctx, 30*time.Second)
@@ -518,6 +524,7 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
 		PageID:        pageID,
 		Phase:         model.GeologicalJournalPhaseOCR,
+		LayoutMode:    model.GeologicalJournalLayoutMode(normalizeGeologicalJournalLayoutMode(layoutMode)),
 		Preprocessing: &prepInfo,
 	})
 	settingsRec, err := s.repo.GetSettings(ctx)
@@ -552,26 +559,33 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		}
 		return
 	}
-	ocrText, err := s.llm.RecognizeYandexVisionText(ctx, YandexVisionRecognizeParams{
-		APIKey:   yandexKey,
-		FolderID: yandexFolder,
-		Image:    ocrImage,
-		MIME:     ocrMIME,
-		Model:    settings.OCRModel,
-		Proxy:    strategyRec.Config.ProxyForProvider(model.LLMProviderYandex),
-	})
+	ocrResult, err := s.recognizeGeologicalJournalOCR(
+		ctx,
+		ocrImage,
+		ocrMIME,
+		page.Width,
+		page.Height,
+		layoutMode,
+		yandexKey,
+		yandexFolder,
+		settings.OCRModel,
+		strategyRec.Config.ProxyForProvider(model.LLMProviderYandex),
+	)
 	if err != nil {
 		fail(fmt.Errorf("ocr: %w", err))
 		return
 	}
-	if len(strings.TrimSpace(ocrText)) < 20 {
-		fail(fmt.Errorf("ocr text too short (%d chars) — image may be unreadable", len(strings.TrimSpace(ocrText))))
+	if len(strings.TrimSpace(ocrResult.StructuredText)) < 20 {
+		fail(fmt.Errorf("ocr text too short (%d chars) — image may be unreadable", len(strings.TrimSpace(ocrResult.StructuredText))))
 		return
 	}
+	ocrDiagnostics := ocrResult.Diagnostics
 	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
 		PageID:        pageID,
 		Phase:         model.GeologicalJournalPhaseStructuring,
+		LayoutMode:    model.GeologicalJournalLayoutMode(normalizeGeologicalJournalLayoutMode(layoutMode)),
 		Preprocessing: &prepInfo,
+		OCR:           &ocrDiagnostics,
 	})
 
 	prompt := prompts.GeologicalJournalOCRSystemPrompt
@@ -579,21 +593,31 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		prompt = custom
 	}
 	prompt = strings.TrimSpace(prompt) + "\n\n" + prompts.GeologicalJournalJSONOnlyInstruction
-	result, err := s.llm.Complete(ctx, LLMCompletionRequest{
-		Provider:     provider,
-		Model:        settings.ActiveModel(),
-		SystemPrompt: prompt,
-		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText, estimateGeologicalJournalRowCountForHint(ocrText)),
-		Temperature:  settings.Temperature,
-		MaxTokens:    settings.MaxTokens,
-		APIKey:       apiKey,
-		FolderID:     creds.YandexFolderID,
-		Proxy:        strategyRec.Config.ProxyForProvider(provider),
-	})
+	structureResult, err := s.structureGeologicalJournalOCR(
+		ctx,
+		ocrResult.StructuredText,
+		ocrDiagnostics.SpreadSplit,
+		settings,
+		prompt,
+		apiKey,
+		creds.YandexFolderID,
+		strategyRec.Config.ProxyForProvider(provider),
+	)
 	if err != nil {
 		fail(err)
 		return
 	}
+	result := structureResult
+	ocrDiagnostics.StructuringChunks = result.StructuringChunks
+	ocrDiagnostics.LLMPromptTokens = result.PromptTokens
+	ocrDiagnostics.LLMCompletionTokens = result.CompletionTokens
+	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
+		PageID:        pageID,
+		Phase:         model.GeologicalJournalPhaseStructuring,
+		LayoutMode:    model.GeologicalJournalLayoutMode(normalizeGeologicalJournalLayoutMode(layoutMode)),
+		Preprocessing: &prepInfo,
+		OCR:           &ocrDiagnostics,
+	})
 	costUSD, costRUB := s.strategy.UsageCosts(strategyRec.Config, provider, result.Model, result.PromptTokens, result.CompletionTokens)
 	usageCtx, cancelUsage := context.WithTimeout(context.Background(), 5*time.Second)
 	if err := s.usageLog.Create(usageCtx, userID, runID, string(provider), result.Model, result.PromptTokens, result.CompletionTokens, costUSD, costRUB); err != nil {
@@ -601,20 +625,13 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	}
 	cancelUsage()
 
-	output, err := ParseGeologicalJournalOutput(result.Content)
-	if err != nil {
-		fail(err)
+	output := structureResult.Output
+	if output == nil || len(output.Rows) == 0 {
+		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars, %d row bands). Check OCR preview in run diagnostics.",
+			ocrDiagnostics.CharCount, ocrDiagnostics.StructuredRowBands))
 		return
 	}
-	if len(output.Rows) == 0 {
-		llmPreview := strings.TrimSpace(result.Content)
-		if len(llmPreview) > 200 {
-			llmPreview = llmPreview[:200] + "…"
-		}
-		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Model response: %q", len(ocrText), llmPreview))
-		return
-	}
-	NormalizeGeologicalJournalRows(output, ocrText)
+	NormalizeGeologicalJournalRows(output, ocrResult.StructuredText)
 	ValidateGeologicalJournalOutput(output)
 	outJSON, _ := json.Marshal(output)
 	if _, err := s.repo.SaveResult(ctx, pageID, userID, outJSON); err != nil {

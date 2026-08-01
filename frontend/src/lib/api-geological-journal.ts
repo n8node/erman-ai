@@ -49,10 +49,28 @@ export type GeologicalJournalPreprocessing = {
   fallback_reason?: string;
 };
 
+export type GeologicalJournalLayoutMode = "auto" | "spread" | "single";
+
+export type GeologicalJournalOCRDiagnostics = {
+  char_count: number;
+  word_count: number;
+  estimated_depth_rows: number;
+  structured_row_bands: number;
+  geometry_used: boolean;
+  spread_split: boolean;
+  layout_mode: GeologicalJournalLayoutMode | string;
+  structuring_chunks: number;
+  llm_prompt_tokens?: number;
+  llm_completion_tokens?: number;
+  ocr_preview?: string;
+};
+
 export type GeologicalJournalRunInput = {
   page_id: string;
   phase?: "preprocessing" | "ocr" | "structuring";
+  layout_mode?: GeologicalJournalLayoutMode;
   preprocessing?: GeologicalJournalPreprocessing;
+  ocr?: GeologicalJournalOCRDiagnostics;
 };
 
 export type GeologicalJournalRun = {
@@ -236,7 +254,8 @@ export function geologicalJournalExampleImageUrl(exampleId: string) {
 
 export function uploadGeologicalJournalPage(
   file: File,
-  onProgress: (percent: number) => void
+  onProgress: (percent: number) => void,
+  layoutMode: GeologicalJournalLayoutMode = "auto"
 ): { promise: Promise<{ page: GeologicalJournalPage; run_id: string }>; abort: () => void } {
   const xhr = new XMLHttpRequest();
   const promise = new Promise<{ page: GeologicalJournalPage; run_id: string }>(
@@ -271,6 +290,7 @@ export function uploadGeologicalJournalPage(
       };
       const form = new FormData();
       form.append("image", file);
+      form.append("layout_mode", layoutMode);
       xhr.send(form);
     }
   );
@@ -291,10 +311,13 @@ export function getGeologicalJournalPage(id: string) {
   );
 }
 
-export function analyzeGeologicalJournalPage(id: string) {
+export function analyzeGeologicalJournalPage(
+  id: string,
+  layoutMode: GeologicalJournalLayoutMode = "auto"
+) {
   return apiFetch<{ run_id: string; status?: string }>(
     `/tools/geological-journal/pages/${id}/analyze`,
-    { method: "POST", body: JSON.stringify({}) }
+    { method: "POST", body: JSON.stringify({ layout_mode: layoutMode }) }
   );
 }
 

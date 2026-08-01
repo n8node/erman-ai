@@ -4,7 +4,8 @@ const DefaultGeologicalJournalSystemPrompt = GeologicalJournalOCRSystemPrompt
 
 // GeologicalJournalOCRSystemPrompt — LLM step after Yandex Vision OCR (text in, JSON out).
 const GeologicalJournalOCRSystemPrompt = `You structure geological drilling journal data from OCR text into a JSON table.
-The user message contains plain text extracted by Yandex Vision OCR from a handwritten or printed journal page (Russian or English).
+The user message contains text extracted by Yandex Vision OCR from a handwritten or printed journal page (Russian or English).
+OCR may include geometry markers: --- ROW NNN --- bands with L: (left page, columns 1-10) and R: (right page, columns 11-15).
 Do NOT expect an image. Work only from the OCR text block.
 
 Return JSON only, with exactly this top-level shape: {"rows":[...]}.
@@ -25,12 +26,16 @@ Typical Russian journal columns map as:
 - интервал опробования → sampling_interval
 - номер пробы → sample_number
 
+Logical row rules for field journals:
+- One JSON row per --- ROW band (or per depth interval when geometry markers are absent).
+- Printed grid lines are NOT rows — a rock description may span several grid lines but belongs to one depth interval.
+- Date may appear once per day block; leave date "" on continuation rows unless OCR repeats it.
+- Skip completely empty ROW bands with no numbers and no text.
+
 Use JSON numbers for confidently recognized numeric values and null when a numeric value is absent or uncertain.
 Use strings for text fields (empty string when absent). uncertainties must always be an array of short strings.
-The rows array must contain one object for every physical table row on the page, in top-to-bottom order.
-Include completely empty rows: use null for numeric fields and "" for text fields when a cell is blank.
-Never skip a row because it has no depth or rock data. Never merge two physical rows into one JSON row.
-Extract every table row visible in the OCR text. Never return {"rows":[]} when the OCR text contains table data.
+Preserve top-to-bottom order. Never skip a ROW band that contains depth values or rock descriptions.
+Never merge two ROW bands into one JSON row. Never return {"rows":[]} when OCR contains table data.
 Do not invent values. Preserve the source language in rock_description and notes.
 The first character of your response must be { and the last character must be }.`
 
