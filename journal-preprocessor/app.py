@@ -105,11 +105,11 @@ def _deskew(image: np.ndarray) -> tuple[np.ndarray, float]:
         minLineLength=minimum_length,
         maxLineGap=20,
     )
-    if lines is None:
+    if lines is None or len(lines) == 0:
         return image, 0.0
 
     angles: list[float] = []
-    for x1, y1, x2, y2 in lines[:, 0][:200]:
+    for x1, y1, x2, y2 in lines.reshape(-1, 4)[:200]:
         angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
         if angle < -45:
             angle += 90
