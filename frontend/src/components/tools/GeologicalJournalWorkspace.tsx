@@ -263,10 +263,14 @@ export function GeologicalJournalWorkspace() {
   const preprocessing = runInput?.preprocessing;
 
   useEffect(() => {
-    if (preprocessing?.has_preprocessed_image) {
+    if (preprocessing?.has_preprocessed_image || page?.has_preprocessed_image) {
       setImageView("preprocessed");
     }
-  }, [preprocessing?.has_preprocessed_image, run?.id]);
+  }, [
+    preprocessing?.has_preprocessed_image,
+    page?.has_preprocessed_image,
+    run?.id,
+  ]);
 
   useEffect(() => {
     if (activeRunStatus !== "done" || !activePageId || rows.length > 0) {
@@ -332,6 +336,7 @@ export function GeologicalJournalWorkspace() {
         detail.runs?.find((item) => item.id === response.run_id) ?? null;
       const result = currentPageResult(detail);
       setPage(detail);
+      setLocalPreview("");
       const uploadedRows = runOutputRows(uploadedRun);
       setRows(uploadedRows.length > 0 ? uploadedRows : (result?.rows ?? []));
       setRun(
@@ -361,6 +366,7 @@ export function GeologicalJournalWorkspace() {
     setError("");
     setSuccess("");
     setRows([]);
+    setImageView("original");
     try {
       const response = await analyzeGeologicalJournalPage(page.id);
       setRun({
@@ -985,14 +991,17 @@ function PageImagePanel({
   runId?: string;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const showPreprocessedTab = Boolean(preprocessing?.has_preprocessed_image);
+  const showPreprocessedTab = Boolean(
+    page.has_preprocessed_image || preprocessing?.has_preprocessed_image
+  );
   const preprocessedSrc = showPreprocessedTab
     ? geologicalJournalPreprocessedImageUrl(page.id, runId)
     : "";
+  const originalSrc = localPreview || geologicalJournalPageImageUrl(page.id);
   const activeSrc =
-    imageView === "preprocessed" && showPreprocessedTab && !localPreview
+    imageView === "preprocessed" && showPreprocessedTab
       ? preprocessedSrc
-      : localPreview || geologicalJournalPageImageUrl(page.id);
+      : originalSrc;
   const displayWidth =
     imageView === "preprocessed" && preprocessing?.width
       ? preprocessing.width
@@ -1015,7 +1024,7 @@ function PageImagePanel({
         <FileImage size={17} className="shrink-0 text-text3" />
       </div>
 
-      {showPreprocessedTab && !localPreview && (
+      {showPreprocessedTab && (
         <div className="flex gap-1 border-b border-border px-3 py-2">
           {(["original", "preprocessed"] as const).map((tab) => (
             <button
@@ -1035,7 +1044,7 @@ function PageImagePanel({
         </div>
       )}
 
-      {preprocessing?.fallback_reason && !localPreview && (
+      {preprocessing?.fallback_reason && (
         <div className="border-b border-border bg-warning-bg px-4 py-2.5 text-xs text-warning">
           {t("imagePanel.fallback")}
         </div>
@@ -1062,12 +1071,12 @@ function PageImagePanel({
       )}
 
       <div className="flex min-h-[420px] items-start justify-center overflow-auto bg-bg2 p-3 xl:max-h-[72vh]">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={activeSrc}
           alt={page.original_name}
           width={displayWidth}
           height={displayHeight}
-          unoptimized
           className="h-auto max-w-full rounded border border-border bg-white object-contain"
         />
       </div>

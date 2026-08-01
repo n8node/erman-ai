@@ -78,6 +78,7 @@ export type GeologicalJournalPage = {
   size_bytes: number;
   width: number;
   height: number;
+  has_preprocessed_image?: boolean;
   latest_result?: GeologicalJournalOutput | null;
   current_result?: GeologicalJournalOutput | null;
   created_at: string;

@@ -27,16 +27,17 @@ type GeologicalJournalOutput struct {
 }
 
 type GeologicalJournalPage struct {
-	ID           string          `json:"id"`
-	UserID       string          `json:"user_id,omitempty"`
-	OriginalName string          `json:"original_name"`
-	ContentType  string          `json:"content_type"`
-	SizeBytes    int64           `json:"size_bytes"`
-	Width        int             `json:"width"`
-	Height       int             `json:"height"`
-	LatestResult json.RawMessage `json:"latest_result,omitempty"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
+	ID                   string          `json:"id"`
+	UserID               string          `json:"user_id,omitempty"`
+	OriginalName         string          `json:"original_name"`
+	ContentType          string          `json:"content_type"`
+	SizeBytes            int64           `json:"size_bytes"`
+	Width                int             `json:"width"`
+	Height               int             `json:"height"`
+	HasPreprocessedImage bool            `json:"has_preprocessed_image"`
+	LatestResult         json.RawMessage `json:"latest_result,omitempty"`
+	CreatedAt            time.Time       `json:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at"`
 }
 
 type GeologicalJournalPageDetail struct {

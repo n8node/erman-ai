@@ -339,6 +339,18 @@ func (s *GeologicalJournalService) preprocessedImagePath(pageID string) string {
 	return filepath.Join(s.assetsDir, "pages", "preprocessed", pageID+".png")
 }
 
+func (s *GeologicalJournalService) pageHasPreprocessedImage(pageID string) bool {
+	info, err := os.Stat(s.preprocessedImagePath(pageID))
+	return err == nil && info.Size() > 0
+}
+
+func (s *GeologicalJournalService) enrichPage(page *model.GeologicalJournalPage) {
+	if page == nil {
+		return
+	}
+	page.HasPreprocessedImage = s.pageHasPreprocessedImage(page.ID)
+}
+
 func (s *GeologicalJournalService) saveRunInput(
 	ctx context.Context,
 	runID string,
@@ -490,6 +502,9 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 			ocrImage = preprocessResult.Image
 			ocrMIME = preprocessResult.ContentType
 			prepInfo = preprocessResult.Metadata
+			prepInfo.Applied = true
+			prepInfo.UsedForOCR = true
+			prepInfo.HasPreprocessedImage = true
 			s.logger.Info(
 				"geological journal image preprocessed",
 				"run_id", runID,
@@ -613,7 +628,14 @@ func (s *GeologicalJournalService) ListPages(ctx context.Context, userID, role s
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
-	return s.repo.ListPages(ctx, userID)
+	items, err := s.repo.ListPages(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range items {
+		s.enrichPage(&items[i])
+	}
+	return items, nil
 }
 
 func (s *GeologicalJournalService) GetPage(ctx context.Context, pageID, userID, role string) (*model.GeologicalJournalPageDetail, error) {
@@ -632,6 +654,7 @@ func (s *GeologicalJournalService) GetPage(ctx context.Context, pageID, userID, 
 	if err != nil {
 		return nil, err
 	}
+	s.enrichPage(page)
 	return &model.GeologicalJournalPageDetail{GeologicalJournalPage: *page, Runs: runs, Versions: versions}, nil
 }
 
