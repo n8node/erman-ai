@@ -2174,13 +2174,34 @@
         "description": "Image received"
       },
       "2": {
-        "title": "OCR and structuring",
-        "description": "OCR Erman Ai 0.0.13.44 → table"
+        "title": "Preparation",
+        "description": "Alignment and crop"
       },
       "3": {
+        "title": "OCR",
+        "description": "OCR Erman Ai 0.0.13.44"
+      },
+      "4": {
+        "title": "Table",
+        "description": "Row structuring"
+      },
+      "5": {
         "title": "Review",
         "description": "Check and save"
       }
+    },
+    "processing": {
+      "preprocessing": "Image preparation",
+      "ocr": "Text recognition",
+      "structuring": "Building the table"
+    },
+    "imagePanel": {
+      "original": "Original",
+      "preprocessed": "Prepared for OCR",
+      "fallback": "Preparation unavailable — recognition uses the original image.",
+      "perspective": "Perspective corrected",
+      "deskew": "Rotation {angle}°",
+      "scale": "Scale ×{value}"
     },
     "status": {
       "pending": "Waiting for recognition",

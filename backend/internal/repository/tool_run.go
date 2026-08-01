@@ -37,6 +37,20 @@ func (r *ToolRunRepository) CreatePending(ctx context.Context, userID, toolSlug,
 	return r.scan(r.pool.QueryRow(ctx, q, userID, toolSlug, planTier, input))
 }
 
+func (r *ToolRunRepository) UpdateRunInput(ctx context.Context, id string, input json.RawMessage) error {
+	const q = `
+		UPDATE tool_runs SET input = $2, updated_at = NOW() WHERE id = $1
+	`
+	tag, err := r.pool.Exec(ctx, q, id, input)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *ToolRunRepository) UpdateStatus(ctx context.Context, id string, status model.RunStatus) error {
 	const q = `
 		UPDATE tool_runs SET status = $2, updated_at = NOW() WHERE id = $1

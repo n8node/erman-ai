@@ -102,6 +102,10 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if run.ToolSlug == model.GeologicalJournalToolSlug {
+		var input model.GeologicalJournalRunInput
+		if err := json.Unmarshal(run.Input, &input); err == nil {
+			resp["input"] = input
+		}
 		if len(run.Output) > 0 {
 			var output model.GeologicalJournalOutput
 			if err := json.Unmarshal(run.Output, &output); err == nil {

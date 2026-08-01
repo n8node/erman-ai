@@ -106,3 +106,29 @@ type GeologicalJournalExampleMetadata struct {
 	SortOrder   int    `json:"sort_order"`
 	IsPublished bool   `json:"is_published"`
 }
+
+type GeologicalJournalRunPhase string
+
+const (
+	GeologicalJournalPhasePreprocessing GeologicalJournalRunPhase = "preprocessing"
+	GeologicalJournalPhaseOCR           GeologicalJournalRunPhase = "ocr"
+	GeologicalJournalPhaseStructuring   GeologicalJournalRunPhase = "structuring"
+)
+
+type GeologicalJournalPreprocessingInfo struct {
+	Applied              bool    `json:"applied"`
+	UsedForOCR           bool    `json:"used_for_ocr"`
+	HasPreprocessedImage bool    `json:"has_preprocessed_image"`
+	PerspectiveCorrected bool    `json:"perspective_corrected"`
+	DeskewAngle          float64 `json:"deskew_angle"`
+	Scale                float64 `json:"scale"`
+	Width                int     `json:"width"`
+	Height               int     `json:"height"`
+	FallbackReason       string  `json:"fallback_reason,omitempty"`
+}
+
+type GeologicalJournalRunInput struct {
+	PageID        string                              `json:"page_id"`
+	Phase         GeologicalJournalRunPhase           `json:"phase,omitempty"`
+	Preprocessing *GeologicalJournalPreprocessingInfo `json:"preprocessing,omitempty"`
+}

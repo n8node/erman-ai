@@ -323,12 +323,32 @@ func NewGeologicalJournalService(
 }
 
 func (s *GeologicalJournalService) EnsureAssetDirs() error {
-	for _, dir := range []string{filepath.Join(s.assetsDir, "pages"), filepath.Join(s.assetsDir, "examples")} {
+	for _, dir := range []string{
+		filepath.Join(s.assetsDir, "pages"),
+		filepath.Join(s.assetsDir, "pages", "preprocessed"),
+		filepath.Join(s.assetsDir, "examples"),
+	} {
 		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (s *GeologicalJournalService) preprocessedImagePath(pageID string) string {
+	return filepath.Join(s.assetsDir, "pages", "preprocessed", pageID+".png")
+}
+
+func (s *GeologicalJournalService) saveRunInput(
+	ctx context.Context,
+	runID string,
+	input model.GeologicalJournalRunInput,
+) error {
+	raw, err := json.Marshal(input)
+	if err != nil {
+		return err
+	}
+	return s.runs.UpdateRunInput(ctx, runID, raw)
 }
 
 func (s *GeologicalJournalService) CheckAccess(ctx context.Context, userID, role string) error {
@@ -382,7 +402,10 @@ func (s *GeologicalJournalService) StartAnalysis(ctx context.Context, pageID, us
 	if err != nil {
 		return nil, err
 	}
-	input, _ := json.Marshal(map[string]string{"page_id": page.ID})
+	input, _ := json.Marshal(model.GeologicalJournalRunInput{
+		PageID: page.ID,
+		Phase:  model.GeologicalJournalPhasePreprocessing,
+	})
 	run, err := s.runs.CreatePending(ctx, userID, model.GeologicalJournalToolSlug, up.PlanSlug, input)
 	if err != nil {
 		return nil, err
@@ -425,37 +448,63 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	}
 	ocrImage := imageData
 	ocrMIME := page.ContentType
+	prepInfo := model.GeologicalJournalPreprocessingInfo{}
+	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
+		PageID: pageID,
+		Phase:  model.GeologicalJournalPhasePreprocessing,
+	})
 	if s.preprocessor.Enabled() {
 		preprocessCtx, cancelPreprocess := context.WithTimeout(ctx, 30*time.Second)
-		processed, processedMIME, preprocessErr := s.preprocessor.Preprocess(
+		preprocessResult, preprocessErr := s.preprocessor.Preprocess(
 			preprocessCtx,
 			imageData,
 			page.ContentType,
 		)
 		cancelPreprocess()
 		if preprocessErr != nil {
+			prepInfo.FallbackReason = preprocessErr.Error()
 			s.logger.Warn(
 				"geological journal preprocessing failed; using original image",
 				"run_id", runID,
 				"error", preprocessErr,
 			)
-		} else if int64(len(processed)) > GeologicalJournalMaxImageBytes {
+		} else if int64(len(preprocessResult.Image)) > GeologicalJournalMaxImageBytes {
+			prepInfo.FallbackReason = "preprocessed image exceeds size limit"
 			s.logger.Warn(
 				"geological journal preprocessed image is too large; using original image",
 				"run_id", runID,
-				"size_bytes", len(processed),
+				"size_bytes", len(preprocessResult.Image),
+			)
+		} else if err := os.WriteFile(
+			s.preprocessedImagePath(pageID),
+			preprocessResult.Image,
+			0o640,
+		); err != nil {
+			prepInfo.FallbackReason = "failed to save preprocessed image"
+			s.logger.Warn(
+				"geological journal preprocessed image save failed; using original image",
+				"run_id", runID,
+				"error", err,
 			)
 		} else {
-			ocrImage = processed
-			ocrMIME = processedMIME
+			ocrImage = preprocessResult.Image
+			ocrMIME = preprocessResult.ContentType
+			prepInfo = preprocessResult.Metadata
 			s.logger.Info(
 				"geological journal image preprocessed",
 				"run_id", runID,
 				"input_bytes", len(imageData),
-				"output_bytes", len(processed),
+				"output_bytes", len(preprocessResult.Image),
 			)
 		}
+	} else {
+		prepInfo.FallbackReason = "image preprocessor unavailable"
 	}
+	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
+		PageID:        pageID,
+		Phase:         model.GeologicalJournalPhaseOCR,
+		Preprocessing: &prepInfo,
+	})
 	settingsRec, err := s.repo.GetSettings(ctx)
 	if err != nil {
 		fail(err)
@@ -504,6 +553,11 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(fmt.Errorf("ocr text too short (%d chars) — image may be unreadable", len(strings.TrimSpace(ocrText))))
 		return
 	}
+	_ = s.saveRunInput(ctx, runID, model.GeologicalJournalRunInput{
+		PageID:        pageID,
+		Phase:         model.GeologicalJournalPhaseStructuring,
+		Preprocessing: &prepInfo,
+	})
 
 	prompt := prompts.GeologicalJournalOCRSystemPrompt
 	if custom := strings.TrimSpace(settings.SystemPrompt); custom != "" && !strings.Contains(strings.ToLower(custom), "from an image") {
@@ -593,6 +647,23 @@ func (s *GeologicalJournalService) PageImage(ctx context.Context, pageID, userID
 	return path, page.ContentType, err
 }
 
+func (s *GeologicalJournalService) PagePreprocessedImage(ctx context.Context, pageID, userID, role string) (string, error) {
+	if err := s.CheckAccess(ctx, userID, role); err != nil {
+		return "", err
+	}
+	if _, err := s.repo.GetPage(ctx, pageID, userID); err != nil {
+		return "", err
+	}
+	path := s.preprocessedImagePath(pageID)
+	if _, err := os.Stat(path); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", repository.ErrNotFound
+		}
+		return "", err
+	}
+	return path, nil
+}
+
 func (s *GeologicalJournalService) SaveCorrectedResult(ctx context.Context, pageID, userID, role string, result json.RawMessage) (*model.GeologicalJournalResultVersion, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
@@ -627,6 +698,9 @@ func (s *GeologicalJournalService) DeletePage(ctx context.Context, pageID, userI
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		s.logger.Warn("geological journal asset delete failed", "path", path, "error", err)
+	}
+	if err := os.Remove(s.preprocessedImagePath(pageID)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		s.logger.Warn("geological journal preprocessed asset delete failed", "page_id", pageID, "error", err)
 	}
 	return nil
 }

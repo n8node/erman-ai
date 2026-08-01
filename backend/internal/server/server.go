@@ -241,6 +241,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				journal.Get("/pages", geologicalJournalHandler.ListPages)
 				journal.Get("/pages/{id}", geologicalJournalHandler.GetPage)
 				journal.Get("/pages/{id}/image", geologicalJournalHandler.PageImage)
+				journal.Get("/pages/{id}/preprocessed-image", geologicalJournalHandler.PagePreprocessedImage)
 				journal.Post("/pages/{id}/analyze", geologicalJournalHandler.Analyze)
 				journal.Put("/pages/{id}/result", geologicalJournalHandler.SaveResult)
 				journal.Delete("/pages/{id}", geologicalJournalHandler.DeletePage)

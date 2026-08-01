@@ -83,6 +83,20 @@ func (h *GeologicalJournalHandler) PageImage(w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Cache-Control", "no-store")
+	http.ServeFile(w, r, path)
+}
+
+func (h *GeologicalJournalHandler) PagePreprocessedImage(w http.ResponseWriter, r *http.Request) {
+	userID, role, _ := journalIdentity(r)
+	path, err := h.svc.PagePreprocessedImage(r.Context(), r.PathValue("id"), userID, role)
+	if err != nil {
+		h.writeServiceError(w, err, "failed to load preprocessed image")
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Cache-Control", "no-store")
 	http.ServeFile(w, r, path)
 }
 

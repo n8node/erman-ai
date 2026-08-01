@@ -29,11 +29,13 @@ import {
   deleteGeologicalJournalPage,
   geologicalJournalExampleImageUrl,
   geologicalJournalPageImageUrl,
+  geologicalJournalPreprocessedImageUrl,
   getGeologicalJournalPage,
   getGeologicalJournalRun,
   listGeologicalJournalExamples,
   listGeologicalJournalPages,
   pickWorkspaceRun,
+  runJournalInput,
   runOutputRows,
   saveGeologicalJournalResult,
   uploadGeologicalJournalPage,
@@ -43,6 +45,7 @@ import {
   type GeologicalJournalPageDetail,
   type GeologicalJournalRow,
   type GeologicalJournalRun,
+  type GeologicalJournalRunInput,
 } from "@/lib/api-geological-journal";
 
 type View = "upload" | "library" | "examples";
@@ -121,6 +124,7 @@ export function GeologicalJournalWorkspace() {
   const [previewExample, setPreviewExample] = useState<GeologicalJournalExample | null>(
     null
   );
+  const [imageView, setImageView] = useState<"original" | "preprocessed">("original");
   const abortUploadRef = useRef<(() => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -254,6 +258,15 @@ export function GeologicalJournalWorkspace() {
       window.clearInterval(timer);
     };
   }, [activePageId, activeRunId, activeRunStatus, t]);
+
+  const runInput = runJournalInput(run);
+  const preprocessing = runInput?.preprocessing;
+
+  useEffect(() => {
+    if (preprocessing?.has_preprocessed_image) {
+      setImageView("preprocessed");
+    }
+  }, [preprocessing?.has_preprocessed_image, run?.id]);
 
   useEffect(() => {
     if (activeRunStatus !== "done" || !activePageId || rows.length > 0) {
@@ -517,7 +530,7 @@ export function GeologicalJournalWorkspace() {
           <RecognitionSteps
             uploadDone
             recognizing={recognizing}
-            runStatus={run?.status}
+            run={run}
             rowCount={rows.length}
             failed={run?.status === "error"}
             t={t}
@@ -570,29 +583,15 @@ export function GeologicalJournalWorkspace() {
 
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(320px,0.78fr)_minmax(0,1.45fr)]">
             <section className="min-w-0 rounded-xl border border-border bg-bg">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div className="min-w-0">
-                  <h2 className="truncate text-sm font-medium">{page.original_name}</h2>
-                  <p className="mt-0.5 text-xs text-text3">
-                    {formatBytes(page.size_bytes)}
-                    {page.width > 0 && page.height > 0
-                      ? ` · ${page.width} × ${page.height}`
-                      : ""}
-                  </p>
-                </div>
-                <FileImage size={17} className="shrink-0 text-text3" />
-              </div>
-              <div className="flex min-h-[420px] items-start justify-center overflow-auto bg-bg2 p-3 xl:max-h-[72vh]">
-                {/* Authenticated API image; the browser sends the session cookie. */}
-                <Image
-                  src={localPreview || geologicalJournalPageImageUrl(page.id)}
-                  alt={page.original_name}
-                  width={page.width || 1600}
-                  height={page.height || 1200}
-                  unoptimized
-                  className="h-auto max-w-full rounded border border-border bg-white object-contain"
-                />
-              </div>
+              <PageImagePanel
+                page={page}
+                localPreview={localPreview}
+                preprocessing={preprocessing}
+                imageView={imageView}
+                onImageViewChange={setImageView}
+                runId={run?.id}
+                t={t}
+              />
             </section>
 
             <section className="min-w-0 rounded-xl border border-border bg-bg">
@@ -903,6 +902,30 @@ function ProcessingBanner({
   t: ReturnType<typeof useTranslations>;
 }) {
   const [elapsed, setElapsed] = useState(0);
+  const input = runJournalInput(run);
+  const phase = input?.phase;
+  const substeps: Array<{
+    key: "preprocessing" | "ocr" | "structuring";
+    done: boolean;
+    active: boolean;
+  }> = [
+    {
+      key: "preprocessing",
+      done: phase === "ocr" || phase === "structuring",
+      active: !phase || phase === "preprocessing",
+    },
+    {
+      key: "ocr",
+      done: phase === "structuring",
+      active: phase === "ocr",
+    },
+    {
+      key: "structuring",
+      done: false,
+      active: phase === "structuring",
+    },
+  ];
+
   useEffect(() => {
     if (!run?.created_at) return;
     const started = new Date(run.created_at).getTime();
@@ -911,42 +934,185 @@ function ProcessingBanner({
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
   }, [run?.created_at, run?.id]);
+
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[#d6d2f4] bg-ai-bg p-4">
-      <LoaderCircle size={18} className="mt-0.5 shrink-0 animate-spin text-ai" />
-      <div>
-        <p className="text-sm font-medium text-ai">
-          {t(`status.${run?.status === "pending" ? "pending" : "processing"}`)}
-        </p>
-        <p className="mt-1 text-xs text-text2">
-          {t("status.polling")} {t("status.elapsed", { seconds: elapsed })}
-        </p>
+    <div className="rounded-xl border border-[#d6d2f4] bg-ai-bg p-4">
+      <div className="flex items-start gap-3">
+        <LoaderCircle size={18} className="mt-0.5 shrink-0 animate-spin text-ai" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ai">
+            {t(`status.${run?.status === "pending" ? "pending" : "processing"}`)}
+          </p>
+          <p className="mt-1 text-xs text-text2">
+            {t("status.polling")} {t("status.elapsed", { seconds: elapsed })}
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {substeps.map((step) => (
+              <li key={step.key} className="flex items-center gap-2 text-xs">
+                {step.done ? (
+                  <Check size={14} className="shrink-0 text-success" />
+                ) : step.active ? (
+                  <LoaderCircle size={14} className="shrink-0 animate-spin text-ai" />
+                ) : (
+                  <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border border-border2 bg-bg" />
+                )}
+                <span className={cn(step.active || step.done ? "text-text" : "text-text3")}>
+                  {t(`processing.${step.key}`)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
+  );
+}
+
+function PageImagePanel({
+  page,
+  localPreview,
+  preprocessing,
+  imageView,
+  onImageViewChange,
+  runId,
+  t,
+}: {
+  page: GeologicalJournalPageDetail;
+  localPreview: string;
+  preprocessing?: GeologicalJournalRunInput["preprocessing"];
+  imageView: "original" | "preprocessed";
+  onImageViewChange: (view: "original" | "preprocessed") => void;
+  runId?: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const showPreprocessedTab = Boolean(preprocessing?.has_preprocessed_image);
+  const preprocessedSrc = showPreprocessedTab
+    ? geologicalJournalPreprocessedImageUrl(page.id, runId)
+    : "";
+  const activeSrc =
+    imageView === "preprocessed" && showPreprocessedTab && !localPreview
+      ? preprocessedSrc
+      : localPreview || geologicalJournalPageImageUrl(page.id);
+  const displayWidth =
+    imageView === "preprocessed" && preprocessing?.width
+      ? preprocessing.width
+      : page.width || 1600;
+  const displayHeight =
+    imageView === "preprocessed" && preprocessing?.height
+      ? preprocessing.height
+      : page.height || 1200;
+
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-medium">{page.original_name}</h2>
+          <p className="mt-0.5 text-xs text-text3">
+            {formatBytes(page.size_bytes)}
+            {page.width > 0 && page.height > 0 ? ` · ${page.width} × ${page.height}` : ""}
+          </p>
+        </div>
+        <FileImage size={17} className="shrink-0 text-text3" />
+      </div>
+
+      {showPreprocessedTab && !localPreview && (
+        <div className="flex gap-1 border-b border-border px-3 py-2">
+          {(["original", "preprocessed"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => onImageViewChange(tab)}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150",
+                imageView === tab
+                  ? "bg-bg2 text-text"
+                  : "text-text3 hover:bg-bg2 hover:text-text2"
+              )}
+            >
+              {t(`imagePanel.${tab}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {preprocessing?.fallback_reason && !localPreview && (
+        <div className="border-b border-border bg-warning-bg px-4 py-2.5 text-xs text-warning">
+          {t("imagePanel.fallback")}
+        </div>
+      )}
+
+      {preprocessing?.applied && showPreprocessedTab && imageView === "preprocessed" && (
+        <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2">
+          {preprocessing.perspective_corrected && (
+            <span className="rounded-md bg-bg2 px-2 py-1 text-[11px] text-text2">
+              {t("imagePanel.perspective")}
+            </span>
+          )}
+          {Math.abs(preprocessing.deskew_angle) >= 0.1 && (
+            <span className="rounded-md bg-bg2 px-2 py-1 text-[11px] text-text2">
+              {t("imagePanel.deskew", { angle: preprocessing.deskew_angle.toFixed(1) })}
+            </span>
+          )}
+          {preprocessing.scale > 0 && preprocessing.scale !== 1 && (
+            <span className="rounded-md bg-bg2 px-2 py-1 text-[11px] text-text2">
+              {t("imagePanel.scale", { value: preprocessing.scale.toFixed(2) })}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="flex min-h-[420px] items-start justify-center overflow-auto bg-bg2 p-3 xl:max-h-[72vh]">
+        <Image
+          src={activeSrc}
+          alt={page.original_name}
+          width={displayWidth}
+          height={displayHeight}
+          unoptimized
+          className="h-auto max-w-full rounded border border-border bg-white object-contain"
+        />
+      </div>
+    </>
   );
 }
 
 function RecognitionSteps({
   uploadDone,
   recognizing,
-  runStatus,
+  run,
   rowCount,
   failed,
   t,
 }: {
   uploadDone: boolean;
   recognizing: boolean;
-  runStatus?: string;
+  run: GeologicalJournalRun | null;
   rowCount: number;
   failed: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const runStatus = run?.status;
+  const phase = runJournalInput(run)?.phase;
   const emptyDone = runStatus === "done" && rowCount === 0;
+  const pipelineFinished = runStatus === "done" || runStatus === "error";
+
   const states = [
     { done: uploadDone, active: false, failed: false },
     {
-      done: (runStatus === "done" && rowCount > 0) || failed || emptyDone,
-      active: recognizing,
+      done:
+        pipelineFinished ||
+        phase === "ocr" ||
+        phase === "structuring",
+      active: recognizing && (!phase || phase === "preprocessing"),
+      failed: false,
+    },
+    {
+      done: pipelineFinished || phase === "structuring",
+      active: recognizing && phase === "ocr",
+      failed: failed && phase === "ocr",
+    },
+    {
+      done: pipelineFinished,
+      active: recognizing && phase === "structuring",
       failed: failed || emptyDone,
     },
     {
@@ -955,9 +1121,10 @@ function RecognitionSteps({
       failed: false,
     },
   ];
+
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-bg px-4 py-3">
-      <ol className="flex min-w-[560px] items-center">
+      <ol className="flex min-w-[920px] items-center">
         {states.map((state, index) => (
           <li key={index} className="flex flex-1 items-center last:flex-none">
             <div className="flex items-center gap-2">
@@ -995,7 +1162,7 @@ function RecognitionSteps({
               </div>
             </div>
             {index < states.length - 1 && (
-              <ChevronRight size={15} className="mx-4 text-border2" />
+              <ChevronRight size={15} className="mx-3 text-border2" />
             )}
           </li>
         ))}

@@ -18,20 +18,29 @@ func TestJournalImagePreprocessorPreprocess(t *testing.T) {
 		assert.Equal(t, "/preprocess", r.URL.Path)
 		assert.Equal(t, "image/jpeg", r.Header.Get("Content-Type"))
 		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set(
+			"X-Preprocessing-Metadata",
+			`{"perspective_corrected":true,"deskew_angle":1.2,"scale":2,"width":1200,"height":800}`,
+		)
 		_, _ = w.Write(expected)
 	}))
 	defer server.Close()
 
 	preprocessor := NewJournalImagePreprocessor(server.URL)
-	actual, contentType, err := preprocessor.Preprocess(
+	result, err := preprocessor.Preprocess(
 		context.Background(),
 		[]byte("source-image"),
 		"image/jpeg",
 	)
 
 	require.NoError(t, err)
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, "image/png", contentType)
+	require.NotNil(t, result)
+	assert.Equal(t, expected, result.Image)
+	assert.Equal(t, "image/png", result.ContentType)
+	assert.True(t, result.Metadata.Applied)
+	assert.True(t, result.Metadata.HasPreprocessedImage)
+	assert.True(t, result.Metadata.PerspectiveCorrected)
+	assert.Equal(t, 1200, result.Metadata.Width)
 }
 
 func TestJournalImagePreprocessorDisabledForInvalidURL(t *testing.T) {
@@ -39,7 +48,7 @@ func TestJournalImagePreprocessorDisabledForInvalidURL(t *testing.T) {
 	preprocessor := NewJournalImagePreprocessor("not-a-url")
 
 	assert.False(t, preprocessor.Enabled())
-	_, _, err := preprocessor.Preprocess(
+	_, err := preprocessor.Preprocess(
 		context.Background(),
 		[]byte("source-image"),
 		"image/jpeg",

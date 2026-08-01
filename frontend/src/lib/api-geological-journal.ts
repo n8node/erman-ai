@@ -33,9 +33,28 @@ export type GeologicalJournalOutput = {
   rows: GeologicalJournalRow[];
 };
 
+export type GeologicalJournalPreprocessing = {
+  applied: boolean;
+  used_for_ocr: boolean;
+  has_preprocessed_image: boolean;
+  perspective_corrected: boolean;
+  deskew_angle: number;
+  scale: number;
+  width: number;
+  height: number;
+  fallback_reason?: string;
+};
+
+export type GeologicalJournalRunInput = {
+  page_id: string;
+  phase?: "preprocessing" | "ocr" | "structuring";
+  preprocessing?: GeologicalJournalPreprocessing;
+};
+
 export type GeologicalJournalRun = {
   id: string;
   status: "pending" | "processing" | "done" | "error" | string;
+  input?: GeologicalJournalRunInput;
   output?: GeologicalJournalOutput | null;
   error_msg?: string;
   model_used?: string;
@@ -188,8 +207,22 @@ export function validateGeologicalJournalImage(file: File): "type" | "size" | nu
   return null;
 }
 
+export function runJournalInput(
+  run: GeologicalJournalRun | null | undefined
+): GeologicalJournalRunInput | null {
+  return parseJson<GeologicalJournalRunInput>(run?.input);
+}
+
 export function geologicalJournalPageImageUrl(pageId: string) {
   return `${apiBase()}/tools/geological-journal/pages/${pageId}/image`;
+}
+
+export function geologicalJournalPreprocessedImageUrl(
+  pageId: string,
+  cacheKey?: string
+) {
+  const url = `${apiBase()}/tools/geological-journal/pages/${pageId}/preprocessed-image`;
+  return cacheKey ? `${url}?v=${encodeURIComponent(cacheKey)}` : url;
 }
 
 export function geologicalJournalExampleImageUrl(exampleId: string) {
