@@ -583,7 +583,7 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		Provider:     provider,
 		Model:        settings.ActiveModel(),
 		SystemPrompt: prompt,
-		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText, estimateGeologicalJournalRowCount(ocrText)),
+		UserPrompt:   geologicalJournalOCRUserPrompt(ocrText, estimateGeologicalJournalRowCountForHint(ocrText)),
 		Temperature:  settings.Temperature,
 		MaxTokens:    settings.MaxTokens,
 		APIKey:       apiKey,

@@ -160,15 +160,16 @@ func formatYandexVisionAPIError(raw []byte, status string) string {
 
 func geologicalJournalOCRUserPrompt(ocrText string, estimatedRows int) string {
 	countHint := ""
-	if estimatedRows > 0 {
-		countHint = "Estimated physical table rows in OCR (including blank lines): " +
-			strconv.Itoa(estimatedRows) + ".\n" +
-			"The rows array length must match this count unless OCR clearly shows fewer lines.\n"
+	if estimatedRows >= 3 && estimatedRows <= 120 {
+		countHint = "OCR rough hint: about " + strconv.Itoa(estimatedRows) +
+			" lines contain paired numeric values. " +
+			"Many OCR lines are fragments of the same table row — do not emit one JSON row per OCR line.\n"
 	}
 	return strings.TrimSpace(`Structure the geological journal table from this OCR text.
 Return one JSON object {"rows":[...]} with exactly one object per physical table row on the page.
 Include empty rows: blank cells become null (numbers) or "" (text).
 Preserve top-to-bottom order. Do not skip rows without depth values.
+Do not inflate row count: merge OCR fragments that belong to the same handwritten line.
 ` + countHint + `
 --- OCR TEXT START ---
 ` + ocrText + `
