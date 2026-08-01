@@ -8,6 +8,7 @@ import {
   Clock3,
   FileImage,
   Images,
+  ListFilter,
   LoaderCircle,
   PencilLine,
   Plus,
@@ -20,8 +21,18 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { intlLocale } from "@/i18n/intl-locale";
+import {
+  countIssueCells,
+  countIssueRows,
+  firstIssueRowIndex,
+  issueLabels,
+  rowFieldIssues,
+  rowHasIssues,
+  type GeologicalJournalFieldKey,
+  type GeologicalJournalIssueCode,
+} from "@/lib/geological-journal-validate";
 import { cn } from "@/lib/utils";
 import {
   analyzeGeologicalJournalPage,
@@ -125,8 +136,10 @@ export function GeologicalJournalWorkspace() {
     null
   );
   const [imageView, setImageView] = useState<"original" | "preprocessed">("original");
+  const [issuesOnly, setIssuesOnly] = useState(false);
   const abortUploadRef = useRef<(() => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
 
   const date = useCallback(
     (value: string) =>
@@ -454,6 +467,26 @@ export function GeologicalJournalWorkspace() {
     run && ["pending", "processing"].includes(run.status)
   );
 
+  const issueCellCount = useMemo(() => countIssueCells(rows), [rows]);
+  const issueRowCount = useMemo(() => countIssueRows(rows), [rows]);
+
+  const visibleRowEntries = useMemo(() => {
+    const entries = rows.map((row, index) => ({ row, index }));
+    if (!issuesOnly) return entries;
+    return entries.filter(({ row, index }) => rowHasIssues(row, index, rows));
+  }, [issuesOnly, rows]);
+
+  const translateIssue = useCallback(
+    (code: GeologicalJournalIssueCode) => t(`validation.${code}`),
+    [t]
+  );
+
+  const scrollToFirstIssue = useCallback(() => {
+    const index = firstIssueRowIndex(rows);
+    if (index < 0) return;
+    rowRefs.current.get(index)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [rows]);
+
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -538,6 +571,7 @@ export function GeologicalJournalWorkspace() {
             recognizing={recognizing}
             run={run}
             rowCount={rows.length}
+            issueCellCount={issueCellCount}
             failed={run?.status === "error"}
             t={t}
           />
@@ -587,6 +621,15 @@ export function GeologicalJournalWorkspace() {
             </div>
           )}
 
+          {!recognizing && rows.length > 0 && issueCellCount > 0 && (
+            <ReviewBanner
+              cellCount={issueCellCount}
+              rowCount={issueRowCount}
+              onJump={scrollToFirstIssue}
+              t={t}
+            />
+          )}
+
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(320px,0.78fr)_minmax(0,1.45fr)]">
             <section className="min-w-0 rounded-xl border border-border bg-bg">
               <PageImagePanel
@@ -609,6 +652,21 @@ export function GeologicalJournalWorkspace() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {issueCellCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIssuesOnly((current) => !current)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors duration-150",
+                        issuesOnly
+                          ? "border-warning bg-warning-bg text-warning"
+                          : "border-border2 text-text2 hover:bg-bg2"
+                      )}
+                    >
+                      <ListFilter size={14} />
+                      {issuesOnly ? t("review.showAll") : t("review.filterIssues")}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -651,6 +709,19 @@ export function GeologicalJournalWorkspace() {
                     {recognizing ? t("editor.waitingText") : t("editor.emptyText")}
                   </p>
                 </div>
+              ) : visibleRowEntries.length === 0 ? (
+                <div className="flex min-h-[200px] flex-col items-center justify-center px-6 text-center">
+                  <Check size={22} className="text-success" />
+                  <p className="mt-3 text-sm font-medium">{t("review.noIssuesTitle")}</p>
+                  <p className="mt-1 text-xs text-text3">{t("review.noIssuesText")}</p>
+                  <button
+                    type="button"
+                    onClick={() => setIssuesOnly(false)}
+                    className="mt-4 rounded-lg border border-border2 px-3 py-2 text-xs font-medium text-text2 hover:bg-bg2"
+                  >
+                    {t("review.showAll")}
+                  </button>
+                </div>
               ) : (
                 <div className="max-h-[72vh] overflow-auto">
                   <table className="w-full border-collapse text-xs">
@@ -669,53 +740,74 @@ export function GeologicalJournalWorkspace() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row, rowIndex) => (
+                      {visibleRowEntries.map(({ row, index: rowIndex }) => {
+                        const issues = rowFieldIssues(row, rowIndex, rows);
+                        const rowIssueCount = Object.keys(issues).length;
+                        return (
                         <tr
                           key={rowIndex}
+                          ref={(node) => {
+                            if (node) rowRefs.current.set(rowIndex, node);
+                            else rowRefs.current.delete(rowIndex);
+                          }}
                           className={cn(
                             "border-b border-border align-top last:border-0",
-                            row.uncertainties?.length > 0 && "bg-warning-bg/40"
+                            rowIssueCount > 0 && "bg-warning-bg/40"
                           )}
                         >
                           <td className="px-2 py-2 text-center text-text3">
                             <span className="inline-flex items-center gap-1">
-                              {row.uncertainties?.length > 0 && (
+                              {rowIssueCount > 0 && (
                                 <AlertCircle
                                   size={12}
                                   className="text-warning"
-                                  aria-label={row.uncertainties.join(", ")}
+                                  aria-label={t("review.rowIssues", { count: rowIssueCount })}
                                 />
                               )}
                               {rowIndex + 1}
                             </span>
                           </td>
-                          {columns.map((column) => (
+                          {columns.map((column) => {
+                            const cellIssues = issues[column.key as GeologicalJournalFieldKey];
+                            const issueHint = cellIssues?.length
+                              ? issueLabels(cellIssues, translateIssue).join("; ")
+                              : undefined;
+                            const cellClassName = cn(
+                              "w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 outline-none hover:border-border2 focus:border-accent focus:bg-bg",
+                              cellIssues?.length
+                                ? "border-warning/60 bg-warning-bg/70 hover:border-warning focus:border-warning"
+                                : undefined
+                            );
+                            return (
                             <td key={column.key} className="p-1.5">
                               {column.key === "rock_description" ||
                               column.key === "notes" ? (
                                 <textarea
                                   rows={2}
                                   aria-label={t(`columns.${column.key}`)}
+                                  title={issueHint}
                                   value={String(row[column.key] ?? "")}
                                   onChange={(event) =>
                                     updateRow(rowIndex, column.key, event.target.value)
                                   }
-                                  className="w-full resize-y rounded-md border border-transparent bg-transparent px-2 py-1.5 leading-5 outline-none hover:border-border2 focus:border-accent focus:bg-bg"
+                                  className={cn(cellClassName, "resize-y leading-5")}
                                 />
                               ) : (
                                 <input
                                   type={numericFields.has(column.key) ? "number" : "text"}
                                   step="any"
                                   aria-label={t(`columns.${column.key}`)}
+                                  title={issueHint}
                                   value={String(row[column.key] ?? "")}
                                   onChange={(event) =>
                                     updateRow(rowIndex, column.key, event.target.value)
                                   }
-                                  className="w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 outline-none hover:border-border2 focus:border-accent focus:bg-bg"
+                                  className={cellClassName}
                                 />
                               )}
                             </td>
-                          ))}
+                          );
+                          })}
                           <td className="sticky right-0 bg-bg p-1.5">
                             <button
                               type="button"
@@ -732,7 +824,8 @@ export function GeologicalJournalWorkspace() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -897,6 +990,37 @@ function UploadPanel({
         ))}
       </div>
     </section>
+  );
+}
+
+function ReviewBanner({
+  cellCount,
+  rowCount,
+  onJump,
+  t,
+}: {
+  cellCount: number;
+  rowCount: number;
+  onJump: () => void;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-bg p-4">
+      <div>
+        <p className="text-sm font-medium text-warning">{t("review.bannerTitle")}</p>
+        <p className="mt-1 text-xs text-text2">
+          {t("review.bannerText", { cells: cellCount, rows: rowCount })}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onJump}
+        className="inline-flex items-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm font-medium text-text hover:bg-bg2"
+      >
+        <AlertCircle size={15} />
+        {t("review.jumpToFirst")}
+      </button>
+    </div>
   );
 }
 
@@ -1089,6 +1213,7 @@ function RecognitionSteps({
   recognizing,
   run,
   rowCount,
+  issueCellCount,
   failed,
   t,
 }: {
@@ -1096,6 +1221,7 @@ function RecognitionSteps({
   recognizing: boolean;
   run: GeologicalJournalRun | null;
   rowCount: number;
+  issueCellCount: number;
   failed: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
@@ -1103,9 +1229,11 @@ function RecognitionSteps({
   const phase = runJournalInput(run)?.phase;
   const emptyDone = runStatus === "done" && rowCount === 0;
   const pipelineFinished = runStatus === "done" || runStatus === "error";
+  const reviewDone = runStatus === "done" && rowCount > 0 && issueCellCount === 0;
+  const reviewNeedsAttention = runStatus === "done" && rowCount > 0 && issueCellCount > 0;
 
   const states = [
-    { done: uploadDone, active: false, failed: false },
+    { done: uploadDone, active: false, failed: false, warning: false },
     {
       done:
         pipelineFinished ||
@@ -1113,21 +1241,25 @@ function RecognitionSteps({
         phase === "structuring",
       active: recognizing && (!phase || phase === "preprocessing"),
       failed: false,
+      warning: false,
     },
     {
       done: pipelineFinished || phase === "structuring",
       active: recognizing && phase === "ocr",
       failed: failed && phase === "ocr",
+      warning: false,
     },
     {
       done: pipelineFinished,
       active: recognizing && phase === "structuring",
       failed: failed || emptyDone,
+      warning: false,
     },
     {
-      done: runStatus === "done" && rowCount > 0,
+      done: reviewDone,
       active: false,
       failed: false,
+      warning: reviewNeedsAttention,
     },
   ];
 
@@ -1141,13 +1273,16 @@ function RecognitionSteps({
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium",
                   state.failed && "bg-error-bg text-error",
-                  state.done && "bg-success-bg text-success",
-                  state.active && !state.failed && "bg-ai-bg text-ai",
-                  !state.done && !state.active && !state.failed && "bg-bg2 text-text3"
+                  state.warning && !state.failed && "bg-warning-bg text-warning",
+                  state.done && !state.failed && !state.warning && "bg-success-bg text-success",
+                  state.active && !state.failed && !state.warning && "bg-ai-bg text-ai",
+                  !state.done && !state.active && !state.failed && !state.warning && "bg-bg2 text-text3"
                 )}
               >
                 {state.failed ? (
                   <X size={14} />
+                ) : state.warning ? (
+                  <AlertCircle size={14} />
                 ) : state.done ? (
                   <Check size={14} />
                 ) : state.active ? (

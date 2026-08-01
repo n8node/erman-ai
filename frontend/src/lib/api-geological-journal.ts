@@ -4,6 +4,9 @@ import {
   type LLMProviderStatus,
   type StrategyLLMTestConnectionResult,
 } from "./api";
+import type { GeologicalJournalIssueCode } from "./geological-journal-validate";
+
+export type { GeologicalJournalIssueCode } from "./geological-journal-validate";
 
 export const GEOLOGICAL_JOURNAL_SLUG = "geological-journal";
 export const GEOLOGICAL_JOURNAL_MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -27,6 +30,7 @@ export type GeologicalJournalRow = {
   sample_number: string;
   notes: string;
   uncertainties: string[];
+  field_issues?: Partial<Record<string, GeologicalJournalIssueCode[]>>;
 };
 
 export type GeologicalJournalOutput = {

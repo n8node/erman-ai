@@ -2231,6 +2231,28 @@
       "emptyTitle": "No rows recognized",
       "emptyText": "Add a row manually or run recognition again."
     },
+    "review": {
+      "bannerTitle": "Manual review recommended",
+      "bannerText": "Check {cells, plural, one {# cell} other {# cells}} across {rows, plural, one {# row} other {# rows}} — values fail geological consistency rules.",
+      "jumpToFirst": "Jump to first issue",
+      "filterIssues": "Issues only",
+      "showAll": "All rows",
+      "noIssuesTitle": "No rows with issues",
+      "noIssuesText": "The filter hides rows without validation warnings.",
+      "rowIssues": "{count, plural, one {# field needs review} other {# fields need review}}"
+    },
+    "validation": {
+      "missing_date": "Date is missing for a row with depth values",
+      "invalid_date": "Date format looks invalid",
+      "diameter_range": "Diameter is outside the typical 20–500 mm range",
+      "depth_order": "Depth to is less than depth from",
+      "run_mismatch": "Drilling run does not match the depth interval",
+      "core_m_exceeds_run": "Core recovery (m) exceeds drilling run",
+      "core_pct_range": "Core recovery (%) must be between 0 and 100",
+      "core_pct_inconsistent": "Recovery percent is inconsistent with meters and run",
+      "depth_continuity": "Depth from is below the previous row depth to",
+      "missing_rock_description": "Rock description is empty for a row with depths"
+    },
     "columns": {
       "date": "Date",
       "drilling_diameter_mm": "Diameter, mm",

@@ -614,6 +614,7 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(fmt.Errorf("LLM returned empty table after OCR (%d chars). Model response: %q", len(ocrText), llmPreview))
 		return
 	}
+	ValidateGeologicalJournalOutput(output)
 	outJSON, _ := json.Marshal(output)
 	if _, err := s.repo.SaveResult(ctx, pageID, userID, outJSON); err != nil {
 		fail(err)
@@ -695,6 +696,7 @@ func (s *GeologicalJournalService) SaveCorrectedResult(ctx context.Context, page
 	if err != nil {
 		return nil, ErrInvalidInput
 	}
+	ValidateGeologicalJournalOutput(parsed)
 	normalized, err := json.Marshal(parsed)
 	if err != nil {
 		return nil, err

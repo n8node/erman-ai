@@ -8,18 +8,19 @@ import (
 const GeologicalJournalToolSlug = "geological-journal"
 
 type GeologicalJournalRow struct {
-	Date               string   `json:"date"`
-	DrillingDiameterMM *float64 `json:"drilling_diameter_mm"`
-	DepthFromM         *float64 `json:"depth_from_m"`
-	DepthToM           *float64 `json:"depth_to_m"`
-	DrillingRunM       *float64 `json:"drilling_run_m"`
-	CoreRecoveryM      *float64 `json:"core_recovery_m"`
-	CoreRecoveryPct    *float64 `json:"core_recovery_pct"`
-	RockDescription    string   `json:"rock_description"`
-	SamplingInterval   string   `json:"sampling_interval"`
-	SampleNumber       string   `json:"sample_number"`
-	Notes              string   `json:"notes"`
-	Uncertainties      []string `json:"uncertainties"`
+	Date               string              `json:"date"`
+	DrillingDiameterMM *float64            `json:"drilling_diameter_mm"`
+	DepthFromM         *float64            `json:"depth_from_m"`
+	DepthToM           *float64            `json:"depth_to_m"`
+	DrillingRunM       *float64            `json:"drilling_run_m"`
+	CoreRecoveryM      *float64            `json:"core_recovery_m"`
+	CoreRecoveryPct    *float64            `json:"core_recovery_pct"`
+	RockDescription    string              `json:"rock_description"`
+	SamplingInterval   string              `json:"sampling_interval"`
+	SampleNumber       string              `json:"sample_number"`
+	Notes              string              `json:"notes"`
+	Uncertainties      []string            `json:"uncertainties"`
+	FieldIssues        map[string][]string `json:"field_issues,omitempty"`
 }
 
 type GeologicalJournalOutput struct {
