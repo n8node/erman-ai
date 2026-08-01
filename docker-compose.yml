@@ -22,12 +22,24 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       TELEGRAM_ASSETS_DIR: /app/data/telegram
       GEOLOGICAL_JOURNAL_ASSETS_DIR: /app/data/geological-journal
+      JOURNAL_PREPROCESSOR_URL: http://journal-preprocessor:8090
     volumes:
       - telegram_assets:/app/data/telegram
       - geological_journal_assets:/app/data/geological-journal
     depends_on:
       postgres:
         condition: service_healthy
+      journal-preprocessor:
+        condition: service_healthy
+    restart: unless-stopped
+
+  journal-preprocessor:
+    build:
+      context: ./journal-preprocessor
+      dockerfile: Dockerfile
+    environment:
+      PORT: "8090"
+      LOG_LEVEL: info
     restart: unless-stopped
 
   frontend:

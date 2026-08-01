@@ -116,7 +116,8 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	publicPageSvc := service.NewPublicPageService(publicPageRepo)
 	adminUserSvc := service.NewAdminUserService(userRepo, planRepo, authMW, telegramSvc)
 	geologicalJournalSvc := service.NewGeologicalJournalService(
-		cfg.GeologicalJournalAssetsDir, geologicalJournalRepo, runRepo, planRepo,
+		cfg.GeologicalJournalAssetsDir, cfg.JournalPreprocessorURL,
+		geologicalJournalRepo, runRepo, planRepo,
 		llmSvc, strategyLLMSvc, usageLogRepo, logger,
 	)
 	if err := geologicalJournalSvc.EnsureAssetDirs(); err != nil {

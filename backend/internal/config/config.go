@@ -51,6 +51,7 @@ type Config struct {
 	StorageBackend             string `env:"STORAGE_BACKEND" envDefault:"local"`
 	TelegramAssetsDir          string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
 	GeologicalJournalAssetsDir string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
+	JournalPreprocessorURL     string `env:"JOURNAL_PREPROCESSOR_URL"`
 	Domain                     string `env:"DOMAIN" envDefault:"erman.ai"`
 
 	WorkspaceOIDCClientID      string `env:"WORKSPACE_OIDC_CLIENT_ID" envDefault:"erman-affine"`

@@ -25,6 +25,18 @@ services:
           cpus: "1"
           memory: 512M
 
+  journal-preprocessor:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 768M
+
   frontend:
     logging:
       driver: json-file

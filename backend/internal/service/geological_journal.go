@@ -293,18 +293,20 @@ func GeologicalJournalHasAccess(role string, explicitlyEnabled bool) bool {
 }
 
 type GeologicalJournalService struct {
-	assetsDir string
-	repo      *repository.GeologicalJournalRepository
-	runs      *repository.ToolRunRepository
-	plans     *repository.PlanRepository
-	llm       *LLMService
-	strategy  *StrategyLLMSettingsService
-	usageLog  *repository.UsageLogRepository
-	logger    *slog.Logger
+	assetsDir    string
+	repo         *repository.GeologicalJournalRepository
+	runs         *repository.ToolRunRepository
+	plans        *repository.PlanRepository
+	llm          *LLMService
+	strategy     *StrategyLLMSettingsService
+	usageLog     *repository.UsageLogRepository
+	preprocessor *JournalImagePreprocessor
+	logger       *slog.Logger
 }
 
 func NewGeologicalJournalService(
 	assetsDir string,
+	preprocessorURL string,
 	repo *repository.GeologicalJournalRepository,
 	runs *repository.ToolRunRepository,
 	plans *repository.PlanRepository,
@@ -315,7 +317,8 @@ func NewGeologicalJournalService(
 ) *GeologicalJournalService {
 	return &GeologicalJournalService{
 		assetsDir: assetsDir, repo: repo, runs: runs, plans: plans, llm: llm,
-		strategy: strategy, usageLog: usageLog, logger: logger,
+		strategy: strategy, usageLog: usageLog,
+		preprocessor: NewJournalImagePreprocessor(preprocessorURL), logger: logger,
 	}
 }
 
@@ -420,6 +423,39 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 		fail(err)
 		return
 	}
+	ocrImage := imageData
+	ocrMIME := page.ContentType
+	if s.preprocessor.Enabled() {
+		preprocessCtx, cancelPreprocess := context.WithTimeout(ctx, 30*time.Second)
+		processed, processedMIME, preprocessErr := s.preprocessor.Preprocess(
+			preprocessCtx,
+			imageData,
+			page.ContentType,
+		)
+		cancelPreprocess()
+		if preprocessErr != nil {
+			s.logger.Warn(
+				"geological journal preprocessing failed; using original image",
+				"run_id", runID,
+				"error", preprocessErr,
+			)
+		} else if int64(len(processed)) > GeologicalJournalMaxImageBytes {
+			s.logger.Warn(
+				"geological journal preprocessed image is too large; using original image",
+				"run_id", runID,
+				"size_bytes", len(processed),
+			)
+		} else {
+			ocrImage = processed
+			ocrMIME = processedMIME
+			s.logger.Info(
+				"geological journal image preprocessed",
+				"run_id", runID,
+				"input_bytes", len(imageData),
+				"output_bytes", len(processed),
+			)
+		}
+	}
 	settingsRec, err := s.repo.GetSettings(ctx)
 	if err != nil {
 		fail(err)
@@ -455,8 +491,8 @@ func (s *GeologicalJournalService) processRun(runID, pageID, userID string) {
 	ocrText, err := s.llm.RecognizeYandexVisionText(ctx, YandexVisionRecognizeParams{
 		APIKey:   yandexKey,
 		FolderID: yandexFolder,
-		Image:    imageData,
-		MIME:     page.ContentType,
+		Image:    ocrImage,
+		MIME:     ocrMIME,
 		Model:    settings.OCRModel,
 		Proxy:    strategyRec.Config.ProxyForProvider(model.LLMProviderYandex),
 	})
