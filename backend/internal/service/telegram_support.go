@@ -67,9 +67,19 @@ func (s *TelegramService) beginConsultation(ctx context.Context, cfg model.Teleg
 		return err
 	}
 	if existing != nil {
-		_ = s.threads.Touch(ctx, userChatID)
-		return s.telegramSendMessageOpts(ctx, cfg.BotToken, userChatID,
-			"Консультация уже открыта. Напишите сообщение — мы ответим в этом чате.", 0, nil)
+		if s.supportThreadCurrent(existing, forumID) {
+			_ = s.threads.Touch(ctx, userChatID)
+			return s.telegramSendMessageOpts(ctx, cfg.BotToken, userChatID,
+				"Консультация уже открыта. Напишите сообщение — мы ответим в этом чате.", 0, nil)
+		}
+		s.logger.Info("telegram consultation thread stale, recreating",
+			"chat_id", userChatID,
+			"old_forum", existing.ForumChatID,
+			"new_forum", forumID,
+		)
+		if err := s.threads.DeleteByUserChatID(ctx, userChatID); err != nil {
+			return err
+		}
 	}
 
 	topicName := truncateRunes("👤 "+display, 128)
@@ -142,16 +152,80 @@ func (s *TelegramService) handleUserMessage(ctx context.Context, cfg model.Teleg
 		return
 	}
 
+	if !s.supportThreadCurrent(thread, strings.TrimSpace(cfg.SupportForumChatID)) {
+		s.logger.Info("telegram consultation thread stale on message, recreating",
+			"chat_id", userChatID,
+			"old_forum", thread.ForumChatID,
+			"new_forum", cfg.SupportForumChatID,
+		)
+		_ = s.threads.DeleteByUserChatID(ctx, userChatID)
+		if err := s.beginConsultation(ctx, cfg, userChatID, msg.From); err != nil {
+			s.logger.Warn("telegram consultation recreate failed", "chat_id", userChatID, "err", err)
+			_ = s.telegramSendMessageOpts(ctx, token, userChatID,
+				"Не удалось открыть консультацию. Нажмите «Консультация» ещё раз.", 0, nil)
+			return
+		}
+		thread, err = s.threads.GetByUserChatID(ctx, userChatID)
+		if err != nil || thread == nil {
+			return
+		}
+	}
+
 	dest := map[string]any{
-		"chat_id":              thread.ForumChatID,
-		"message_thread_id":    thread.TopicID,
-		"from_chat_id":         userChatID,
-		"message_id":           msg.MessageID,
+		"chat_id":           thread.ForumChatID,
+		"message_thread_id": thread.TopicID,
+		"from_chat_id":      userChatID,
+		"message_id":        msg.MessageID,
 	}
 	if err := s.telegramCopyMessage(ctx, token, dest); err != nil {
-		s.logger.Warn("telegram forward user->forum failed", "err", err)
+		s.logger.Warn("telegram forward user->forum failed", "chat_id", userChatID, "err", err)
+		if s.healSupportThread(ctx, cfg, userChatID, msg.From) {
+			thread, lookupErr := s.threads.GetByUserChatID(ctx, userChatID)
+			if lookupErr == nil && thread != nil {
+				dest["message_thread_id"] = thread.TopicID
+				dest["chat_id"] = thread.ForumChatID
+				if retryErr := s.telegramCopyMessage(ctx, token, dest); retryErr == nil {
+					_ = s.threads.Touch(ctx, userChatID)
+					return
+				}
+			}
+		}
+		_ = s.telegramSendMessageOpts(ctx, token, userChatID,
+			"Не удалось передать сообщение консультанту. Нажмите «Консультация» и попробуйте снова.", 0, nil)
+		return
 	}
 	_ = s.threads.Touch(ctx, userChatID)
+}
+
+func (s *TelegramService) supportThreadCurrent(thread *model.TelegramSupportThread, forumChatID string) bool {
+	if thread == nil {
+		return false
+	}
+	return chatIDEqual(parseChatID(forumChatID), thread.ForumChatID) ||
+		strings.TrimSpace(thread.ForumChatID) == strings.TrimSpace(forumChatID)
+}
+
+func parseChatID(raw string) int64 {
+	parsed, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return parsed
+}
+
+func (s *TelegramService) healSupportThread(ctx context.Context, cfg model.TelegramSettings, userChatID string, from *telegramUser) bool {
+	if s.threads == nil {
+		return false
+	}
+	if err := s.threads.DeleteByUserChatID(ctx, userChatID); err != nil {
+		s.logger.Warn("telegram support thread delete failed", "chat_id", userChatID, "err", err)
+		return false
+	}
+	if err := s.beginConsultation(ctx, cfg, userChatID, from); err != nil {
+		s.logger.Warn("telegram support thread heal failed", "chat_id", userChatID, "err", err)
+		return false
+	}
+	return true
 }
 
 func (s *TelegramService) handleForumMessage(ctx context.Context, cfg model.TelegramSettings, msg *telegramMessage) {

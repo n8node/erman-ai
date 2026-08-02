@@ -22,8 +22,8 @@ func (s *TelegramService) SendTest(ctx context.Context) (bool, string) {
 	if err != nil {
 		return false, err.Error()
 	}
-	if !cfg.Enabled {
-		return false, "Включите Telegram-уведомления в настройках"
+	if !cfg.Enabled && !cfg.UrgentEnabled {
+		return false, "Включите Telegram-уведомления или срочную связь в настройках"
 	}
 	if strings.TrimSpace(cfg.BotToken) == "" || strings.TrimSpace(cfg.ChatID) == "" {
 		return false, "Укажите токен бота и ID чата"

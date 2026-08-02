@@ -49,6 +49,9 @@ func (s *TelegramService) botNeedsPolling(cfg model.TelegramSettings) bool {
 	if cfg.StartEnabled {
 		return true
 	}
+	if cfg.UrgentEnabled {
+		return true
+	}
 	return s.supportConfigured(cfg)
 }
 

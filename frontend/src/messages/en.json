@@ -725,7 +725,7 @@
       "proxyEnabled": "Enable proxy for Telegram API requests",
       "proxyHint": "Use this when your server has unstable access to api.telegram.org. You can add multiple proxies and switch between them.",
       "proxyList": "Proxy list (one URL per line)",
-      "proxyListHint": "Supported format: http://user:pass@host:port or socks5://user:pass@host:port.",
+      "proxyListHint": "Only http://user:pass@host:port (HTTP CONNECT) is supported. SOCKS5 is not supported.",
       "proxyActive": "Active proxy",
       "proxyActiveAuto": "Auto: first in list",
       "proxyAutoFailover": "Automatically try the next proxy on failure",

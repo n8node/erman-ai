@@ -76,3 +76,8 @@ func (r *TelegramSupportThreadRepository) Touch(ctx context.Context, userChatID 
 	`, userChatID, time.Now())
 	return err
 }
+
+func (r *TelegramSupportThreadRepository) DeleteByUserChatID(ctx context.Context, userChatID string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM telegram_support_threads WHERE user_chat_id = $1`, userChatID)
+	return err
+}

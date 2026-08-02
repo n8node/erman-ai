@@ -65,9 +65,9 @@ func (s *TelegramService) handleUrgentUserMessage(ctx context.Context, cfg model
 	}
 
 	alertText := formatUrgentAlert(msg, userChatID, text)
-	delivered := s.dispatchUrgentAlert(ctx, cfg, alertText)
+	telegramOK, otherDelivered := s.dispatchUrgentAlert(ctx, cfg, alertText)
 
-	if delivered == 0 {
+	if !telegramOK && otherDelivered == 0 {
 		_ = s.telegramSendMessageOpts(ctx, token, userChatID,
 			"Не удалось доставить сообщение. Попробуйте позже или напишите напрямую в Telegram.", 0, nil)
 		return
@@ -79,8 +79,11 @@ func (s *TelegramService) handleUrgentUserMessage(ctx context.Context, cfg model
 	}
 	_ = s.userState.SetMode(ctx, userChatID, model.TelegramUserModeIdle)
 
-	_ = s.telegramSendMessageOpts(ctx, token, userChatID,
-		"Сообщение отправлено. Ответим в Telegram или по контактам, которые вы указали.", 0, nil)
+	reply := "Сообщение отправлено. Ответим в Telegram или по контактам, которые вы указали."
+	if !telegramOK && otherDelivered > 0 {
+		reply = "Сообщение отправлено на резервные каналы. Если нужен ответ в Telegram — напишите @username в тексте."
+	}
+	_ = s.telegramSendMessageOpts(ctx, token, userChatID, reply, 0, nil)
 }
 
 func formatUrgentAlert(msg *telegramMessage, userChatID, text string) string {
@@ -91,13 +94,11 @@ func formatUrgentAlert(msg *telegramMessage, userChatID, text string) string {
 	)
 }
 
-func (s *TelegramService) dispatchUrgentAlert(ctx context.Context, cfg model.TelegramSettings, alertText string) int {
-	delivered := 0
-
+func (s *TelegramService) dispatchUrgentAlert(ctx context.Context, cfg model.TelegramSettings, alertText string) (telegramOK bool, otherDelivered int) {
 	if err := s.sendUrgentTelegram(ctx, cfg, alertText); err != nil {
-		s.logger.Warn("urgent telegram delivery failed", "err", err)
+		s.logger.Warn("urgent telegram delivery failed", "chat_id", strings.TrimSpace(cfg.ChatID), "err", err)
 	} else {
-		delivered++
+		telegramOK = true
 	}
 
 	email := strings.TrimSpace(cfg.UrgentEmail)
@@ -110,7 +111,7 @@ func (s *TelegramService) dispatchUrgentAlert(ctx context.Context, cfg model.Tel
 		if err := s.mail.Send(ctx, email, subject, body); err != nil {
 			s.logger.Warn("urgent email delivery failed", "err", err)
 		} else {
-			delivered++
+			otherDelivered++
 		}
 	}
 
@@ -120,11 +121,11 @@ func (s *TelegramService) dispatchUrgentAlert(ctx context.Context, cfg model.Tel
 				s.logger.Warn("urgent max delivery failed", "err", err)
 			}
 		} else {
-			delivered++
+			otherDelivered++
 		}
 	}
 
-	return delivered
+	return telegramOK, otherDelivered
 }
 
 func (s *TelegramService) sendUrgentTelegram(ctx context.Context, cfg model.TelegramSettings, text string) error {

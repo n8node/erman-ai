@@ -725,7 +725,7 @@
       "proxyEnabled": "Включить прокси для запросов к Telegram API",
       "proxyHint": "Используйте, если сервер в регионе с нестабильным доступом к api.telegram.org. Можно указать несколько прокси и переключаться между ними.",
       "proxyList": "Список прокси (по одному URL на строку)",
-      "proxyListHint": "Поддерживается формат http://user:pass@host:port или socks5://user:pass@host:port.",
+      "proxyListHint": "Поддерживается только http://user:pass@host:port (HTTP CONNECT). SOCKS5 не поддерживается.",
       "proxyActive": "Активный прокси",
       "proxyActiveAuto": "Авто: первый в списке",
       "proxyAutoFailover": "Автоматически пробовать следующий прокси при ошибке",

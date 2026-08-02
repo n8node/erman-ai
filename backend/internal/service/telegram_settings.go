@@ -177,6 +177,9 @@ func validateTelegramSettings(cfg model.TelegramSettings) error {
 			if err != nil || u.Scheme == "" || u.Host == "" {
 				return fmt.Errorf("%w: invalid proxy url %q", ErrInvalidTelegramSettings, raw)
 			}
+			if strings.ToLower(u.Scheme) != "http" {
+				return fmt.Errorf("%w: proxy url %q: only http:// proxies are supported", ErrInvalidTelegramSettings, raw)
+			}
 		}
 		if cfg.ProxyActiveURL == "" {
 			cfg.ProxyActiveURL = cfg.ProxyURLs[0]

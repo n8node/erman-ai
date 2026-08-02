@@ -295,7 +295,7 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 
 	if cfg.Enabled {
 		if chatID == "" {
-			if !cfg.StartEnabled && !cfg.SupportEnabled {
+			if !cfg.StartEnabled && !cfg.SupportEnabled && !cfg.UrgentEnabled {
 				return model.TelegramBotRuntimeStatus{
 					Status:      model.TelegramBotStatusMisconfigured,
 					Message:     "Не задан ID чата для уведомлений",
@@ -304,7 +304,7 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 			}
 			notifyWarn = "ID чата для уведомлений не задан"
 		} else if err := s.telegramGetChat(ctx, token, chatID); err != nil {
-			if !cfg.StartEnabled && !cfg.SupportEnabled {
+			if !cfg.StartEnabled && !cfg.SupportEnabled && !cfg.UrgentEnabled {
 				return model.TelegramBotRuntimeStatus{
 					Status:      model.TelegramBotStatusOffline,
 					Message:     "Бот не видит указанный чат",
@@ -314,6 +314,24 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 				}
 			}
 			notifyWarn = "уведомления в чат недоступны: " + err.Error()
+		}
+	} else if cfg.UrgentEnabled {
+		if chatID == "" {
+			return model.TelegramBotRuntimeStatus{
+				Status:      model.TelegramBotStatusMisconfigured,
+				Message:     "Не задан ID чата для срочных обращений",
+				BotUsername: me.Username,
+				LastCheckAt: now,
+			}
+		}
+		if err := s.telegramGetChat(ctx, token, chatID); err != nil {
+			return model.TelegramBotRuntimeStatus{
+				Status:      model.TelegramBotStatusOffline,
+				Message:     "Бот не может отправлять срочные обращения в указанный чат",
+				BotUsername: me.Username,
+				LastError:   err.Error(),
+				LastCheckAt: now,
+			}
 		}
 	}
 
