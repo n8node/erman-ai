@@ -16,37 +16,36 @@ import (
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
 
-const (
-	AudioTranscriptionMaxUploadBytes int64 = 500 << 20 // 500 MiB server limit
-)
+const VideoTranscriptionMaxUploadBytes int64 = 500 << 20 // 500 MiB
 
 var (
-	ErrAudioTranscriptionForbidden         = errors.New("audio transcription access denied")
-	ErrAudioTranscriptionInvalidAudio      = errors.New("invalid audio file")
-	ErrAudioTranscriptionSettings          = errors.New("invalid audio transcription settings")
-	ErrAudioTranscriptionAlreadyProcessing = errors.New("audio transcription already in progress")
+	ErrVideoTranscriptionForbidden         = errors.New("video transcription access denied")
+	ErrVideoTranscriptionInvalidVideo      = errors.New("invalid video file")
+	ErrVideoTranscriptionSettings          = errors.New("invalid video transcription settings")
+	ErrVideoTranscriptionAlreadyProcessing = errors.New("video transcription already in progress")
+	ErrVideoTranscriptionNoAudio           = errors.New("video has no audio track")
 )
 
-func AudioTranscriptionHasAccess(role string, explicitlyEnabled bool) bool {
+func VideoTranscriptionHasAccess(role string, explicitlyEnabled bool) bool {
 	return role == "superadmin" || explicitlyEnabled
 }
 
-type AudioTranscriptionService struct {
-	cfg      *config.Config
+type VideoTranscriptionService struct {
+	cfg       *config.Config
 	assetsDir string
-	repo     *repository.AudioTranscriptionRepository
-	runs     *repository.ToolRunRepository
-	plans    *repository.PlanRepository
-	billing  *BillingService
-	llm      *LLMService
-	strategy *StrategyLLMSettingsService
-	usageLog *repository.UsageLogRepository
-	logger   *slog.Logger
+	repo      *repository.VideoTranscriptionRepository
+	runs      *repository.ToolRunRepository
+	plans     *repository.PlanRepository
+	billing   *BillingService
+	llm       *LLMService
+	strategy  *StrategyLLMSettingsService
+	usageLog  *repository.UsageLogRepository
+	logger    *slog.Logger
 }
 
-func NewAudioTranscriptionService(
+func NewVideoTranscriptionService(
 	cfg *config.Config,
-	repo *repository.AudioTranscriptionRepository,
+	repo *repository.VideoTranscriptionRepository,
 	runs *repository.ToolRunRepository,
 	plans *repository.PlanRepository,
 	billing *BillingService,
@@ -54,10 +53,10 @@ func NewAudioTranscriptionService(
 	strategy *StrategyLLMSettingsService,
 	usageLog *repository.UsageLogRepository,
 	logger *slog.Logger,
-) *AudioTranscriptionService {
-	return &AudioTranscriptionService{
+) *VideoTranscriptionService {
+	return &VideoTranscriptionService{
 		cfg:       cfg,
-		assetsDir: cfg.AudioTranscriptionAssetsDir,
+		assetsDir: cfg.VideoTranscriptionAssetsDir,
 		repo:      repo,
 		runs:      runs,
 		plans:     plans,
@@ -69,7 +68,7 @@ func NewAudioTranscriptionService(
 	}
 }
 
-func (s *AudioTranscriptionService) EnsureAssetDirs() error {
+func (s *VideoTranscriptionService) EnsureAssetDirs() error {
 	for _, sub := range []string{"uploads", "work", "transcripts"} {
 		if err := os.MkdirAll(filepath.Join(s.assetsDir, sub), 0o750); err != nil {
 			return err
@@ -78,41 +77,41 @@ func (s *AudioTranscriptionService) EnsureAssetDirs() error {
 	return nil
 }
 
-func (s *AudioTranscriptionService) CheckAccess(ctx context.Context, userID, role string) error {
+func (s *VideoTranscriptionService) CheckAccess(ctx context.Context, userID, role string) error {
 	explicit, err := s.repo.HasExplicitAccess(ctx, userID)
 	if err != nil {
 		return err
 	}
-	if !AudioTranscriptionHasAccess(role, explicit) {
-		return ErrAudioTranscriptionForbidden
+	if !VideoTranscriptionHasAccess(role, explicit) {
+		return ErrVideoTranscriptionForbidden
 	}
 	return nil
 }
 
-func ValidateAudioTranscriptionFile(data []byte, contentType string) error {
-	if len(data) == 0 || int64(len(data)) > AudioTranscriptionMaxUploadBytes {
-		return ErrAudioTranscriptionInvalidAudio
+func ValidateVideoTranscriptionFile(data []byte, contentType string) error {
+	if len(data) == 0 || int64(len(data)) > VideoTranscriptionMaxUploadBytes {
+		return ErrVideoTranscriptionInvalidVideo
 	}
 	ct := strings.ToLower(strings.TrimSpace(contentType))
 	allowed := []string{
-		"audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave",
-		"audio/ogg", "audio/opus", "audio/webm", "audio/mp4", "audio/x-m4a",
+		"video/mp4", "video/webm", "video/quicktime", "video/x-msvideo",
+		"video/x-matroska", "video/mpeg", "video/ogg",
 	}
 	for _, a := range allowed {
 		if ct == a || strings.HasPrefix(ct, a+";") {
 			return nil
 		}
 	}
-	return ErrAudioTranscriptionInvalidAudio
+	return ErrVideoTranscriptionInvalidVideo
 }
 
-func (s *AudioTranscriptionService) resolveSpeechKitParams(ctx context.Context, settings model.AudioTranscriptionSettings) (YandexSpeechKitParams, error) {
+func (s *VideoTranscriptionService) resolveSpeechKitParams(ctx context.Context, settings model.VideoTranscriptionSettings) (YandexSpeechKitParams, error) {
 	strategyRec, err := s.strategy.GetStored(ctx)
 	if err != nil {
 		return YandexSpeechKitParams{}, err
 	}
 	creds := s.llm.CredentialsFromStored(strategyRec.Config)
-	settings = model.ApplyAudioTranscriptionDefaults(settings)
+	settings = model.ApplyVideoTranscriptionDefaults(settings)
 	params := YandexSpeechKitParams{
 		APIKey:                   creds.YandexKey,
 		FolderID:                 creds.YandexFolderID,
@@ -128,21 +127,21 @@ func (s *AudioTranscriptionService) resolveSpeechKitParams(ctx context.Context, 
 	return params, nil
 }
 
-func (s *AudioTranscriptionService) UploadAndTranscribe(ctx context.Context, userID, role, originalName, contentType string, data []byte) (*model.AudioTranscriptionFile, *model.ToolRun, error) {
+func (s *VideoTranscriptionService) UploadAndTranscribe(ctx context.Context, userID, role, originalName, contentType string, data []byte) (*model.VideoTranscriptionFile, *model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, nil, err
 	}
-	if err := ValidateAudioTranscriptionFile(data, contentType); err != nil {
+	if err := ValidateVideoTranscriptionFile(data, contentType); err != nil {
 		return nil, nil, err
 	}
-	if err := s.billing.CheckToolLimit(ctx, userID, model.AudioTranscriptionToolSlug); err != nil {
+	if err := s.billing.CheckToolLimit(ctx, userID, model.VideoTranscriptionToolSlug); err != nil {
 		return nil, nil, err
 	}
 	if err := s.EnsureAssetDirs(); err != nil {
 		return nil, nil, err
 	}
 
-	ext := audioExtensionFromContentType(contentType, originalName)
+	ext := videoExtensionFromContentType(contentType, originalName)
 	path := filepath.Join(s.assetsDir, "uploads", randomMediaAssetName(ext))
 	if err := os.WriteFile(path, data, 0o640); err != nil {
 		return nil, nil, err
@@ -166,11 +165,11 @@ func (s *AudioTranscriptionService) UploadAndTranscribe(ctx context.Context, use
 	return file, run, nil
 }
 
-func (s *AudioTranscriptionService) RetranscribeFile(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {
+func (s *VideoTranscriptionService) RetranscribeFile(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
-	if err := s.billing.CheckToolLimit(ctx, userID, model.AudioTranscriptionToolSlug); err != nil {
+	if err := s.billing.CheckToolLimit(ctx, userID, model.VideoTranscriptionToolSlug); err != nil {
 		return nil, err
 	}
 	if _, err := s.repo.GetFile(ctx, fileID, userID); err != nil {
@@ -183,7 +182,7 @@ func (s *AudioTranscriptionService) RetranscribeFile(ctx context.Context, fileID
 	if len(runs) > 0 {
 		latest := runs[0]
 		if latest.Status == model.RunStatusPending || latest.Status == model.RunStatusProcessing {
-			return nil, ErrAudioTranscriptionAlreadyProcessing
+			return nil, ErrVideoTranscriptionAlreadyProcessing
 		}
 	}
 	if path, _, err := s.repo.TranscriptPath(ctx, fileID, userID); err == nil {
@@ -193,7 +192,7 @@ func (s *AudioTranscriptionService) RetranscribeFile(ctx context.Context, fileID
 	return s.startTranscription(ctx, fileID, userID, role)
 }
 
-func (s *AudioTranscriptionService) startTranscription(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {
+func (s *VideoTranscriptionService) startTranscription(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
@@ -201,8 +200,8 @@ func (s *AudioTranscriptionService) startTranscription(ctx context.Context, file
 	if err != nil {
 		return nil, err
 	}
-	input, _ := json.Marshal(model.AudioTranscriptionRunInput{FileID: fileID})
-	run, err := s.runs.CreatePending(ctx, userID, model.AudioTranscriptionToolSlug, up.PlanSlug, input)
+	input, _ := json.Marshal(model.VideoTranscriptionRunInput{FileID: fileID})
+	run, err := s.runs.CreatePending(ctx, userID, model.VideoTranscriptionToolSlug, up.PlanSlug, input)
 	if err != nil {
 		return nil, err
 	}
@@ -214,12 +213,12 @@ func (s *AudioTranscriptionService) startTranscription(ctx context.Context, file
 	return run, nil
 }
 
-func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
+func (s *VideoTranscriptionService) processRun(runID, fileID, userID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
 	defer cancel()
 
 	fail := func(err error) {
-		s.logger.Error("audio transcription run failed", "run_id", runID, "file_id", fileID, "error", err)
+		s.logger.Error("video transcription run failed", "run_id", runID, "file_id", fileID, "error", err)
 		msg := err.Error()
 		if len(msg) > 500 {
 			msg = msg[:500]
@@ -236,7 +235,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		fail(err)
 		return
 	}
-	settings := model.ApplyAudioTranscriptionDefaults(settingsRec.Settings)
+	settings := model.ApplyVideoTranscriptionDefaults(settingsRec.Settings)
 	if strings.TrimSpace(settings.Model) == "" {
 		settings.Model = "general"
 	}
@@ -249,7 +248,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		fail(err)
 		return
 	}
-	if err := ensureReadableAudioAsset(assetPath); err != nil {
+	if err := ensureReadableVideoAsset(assetPath); err != nil {
 		fail(err)
 		return
 	}
@@ -266,13 +265,23 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	}
 	defer os.RemoveAll(workDir)
 
+	extractedPath := filepath.Join(workDir, "extracted.wav")
+	if err := ffmpegExtractAudioFromVideo(ctx, assetPath, extractedPath); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "no audio track") {
+			fail(ErrVideoTranscriptionNoAudio)
+			return
+		}
+		fail(fmt.Errorf("audio extract: %w", err))
+		return
+	}
+
 	params, err := s.resolveSpeechKitParams(ctx, settings)
 	if err != nil {
 		fail(err)
 		return
 	}
 
-	result, err := transcribeSpeechKitAsset(ctx, s.llm, assetPath, workDir, speechKitTranscriptionSettings{
+	result, err := transcribeSpeechKitAsset(ctx, s.llm, extractedPath, workDir, speechKitTranscriptionSettings{
 		Model:                    settings.Model,
 		LanguageCode:             settings.LanguageCode,
 		TextNormalizationEnabled: settings.TextNormalizationEnabled,
@@ -304,7 +313,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	if duration != nil {
 		durVal = *duration
 	}
-	output, _ := json.Marshal(model.AudioTranscriptionOutput{
+	output, _ := json.Marshal(model.VideoTranscriptionOutput{
 		Text:        fullText,
 		Language:    settings.LanguageCode,
 		Model:       settings.Model,
@@ -313,7 +322,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		Preview:     preview,
 	})
 
-	artifactURL := fmt.Sprintf("/api/v1/tools/audio-transcription/files/%s/download", fileID)
+	artifactURL := fmt.Sprintf("/api/v1/tools/video-transcription/files/%s/download", fileID)
 	modelUsed := settings.Model
 	if err := s.runs.UpdateRunDoneWithArtifact(ctx, runID, output, 0, modelUsed, artifactURL); err != nil {
 		fail(err)
@@ -327,14 +336,14 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	_ = s.usageLog.Create(ctx, userID, runID, "yandex-speechkit", settings.Model, 0, 0, 0, costRUB)
 }
 
-func (s *AudioTranscriptionService) ListFiles(ctx context.Context, userID, role string) ([]model.AudioTranscriptionFile, error) {
+func (s *VideoTranscriptionService) ListFiles(ctx context.Context, userID, role string) ([]model.VideoTranscriptionFile, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
 	return s.repo.ListFiles(ctx, userID)
 }
 
-func (s *AudioTranscriptionService) GetFile(ctx context.Context, fileID, userID, role string) (*model.AudioTranscriptionFileDetail, error) {
+func (s *VideoTranscriptionService) GetFile(ctx context.Context, fileID, userID, role string) (*model.VideoTranscriptionFileDetail, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, err
 	}
@@ -346,17 +355,17 @@ func (s *AudioTranscriptionService) GetFile(ctx context.Context, fileID, userID,
 	if err != nil {
 		return nil, err
 	}
-	return &model.AudioTranscriptionFileDetail{AudioTranscriptionFile: *file, Runs: runs}, nil
+	return &model.VideoTranscriptionFileDetail{VideoTranscriptionFile: *file, Runs: runs}, nil
 }
 
-func (s *AudioTranscriptionService) TranscriptDownload(ctx context.Context, fileID, userID, role string) (path, downloadName string, err error) {
+func (s *VideoTranscriptionService) TranscriptDownload(ctx context.Context, fileID, userID, role string) (path, downloadName string, err error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return "", "", err
 	}
 	return s.repo.TranscriptPath(ctx, fileID, userID)
 }
 
-func (s *AudioTranscriptionService) DeleteFile(ctx context.Context, fileID, userID, role string) error {
+func (s *VideoTranscriptionService) DeleteFile(ctx context.Context, fileID, userID, role string) error {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return err
 	}
@@ -372,53 +381,57 @@ func (s *AudioTranscriptionService) DeleteFile(ctx context.Context, fileID, user
 	return nil
 }
 
-func (s *AudioTranscriptionService) ListAccessUsers(ctx context.Context) ([]model.AudioTranscriptionAccessUser, error) {
+func (s *VideoTranscriptionService) ListAccessUsers(ctx context.Context) ([]model.VideoTranscriptionAccessUser, error) {
 	return s.repo.ListAccessUsers(ctx)
 }
 
-func (s *AudioTranscriptionService) SetAccess(ctx context.Context, userID string, enabled bool) error {
+func (s *VideoTranscriptionService) SetAccess(ctx context.Context, userID string, enabled bool) error {
 	return s.repo.SetAccess(ctx, userID, enabled)
 }
 
-func (s *AudioTranscriptionService) GetSettings(ctx context.Context) (*model.AudioTranscriptionSettingsRecord, error) {
+func (s *VideoTranscriptionService) GetSettings(ctx context.Context) (*model.VideoTranscriptionSettingsRecord, error) {
 	rec, err := s.repo.GetSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
-	rec.Settings = model.ApplyAudioTranscriptionDefaults(rec.Settings)
+	rec.Settings = model.ApplyVideoTranscriptionDefaults(rec.Settings)
 	return rec, nil
 }
 
-func (s *AudioTranscriptionService) UpdateSettings(ctx context.Context, settings model.AudioTranscriptionSettings) (*model.AudioTranscriptionSettingsRecord, error) {
-	settings = model.ApplyAudioTranscriptionDefaults(settings)
+func (s *VideoTranscriptionService) UpdateSettings(ctx context.Context, settings model.VideoTranscriptionSettings) (*model.VideoTranscriptionSettingsRecord, error) {
+	settings = model.ApplyVideoTranscriptionDefaults(settings)
 	settings.Model = normalizeSpeechKitModel(settings.Model)
 	settings.LanguageCode = normalizeSpeechKitLanguage(settings.LanguageCode)
 	if settings.LiteratureText && !settings.TextNormalizationEnabled {
 		settings.TextNormalizationEnabled = true
 	}
 	if settings.PriceRUBPerMinute < 0 {
-		return nil, ErrAudioTranscriptionSettings
+		return nil, ErrVideoTranscriptionSettings
 	}
 	rec, err := s.repo.UpdateSettings(ctx, settings)
 	if err != nil {
 		return nil, err
 	}
-	rec.Settings = model.ApplyAudioTranscriptionDefaults(rec.Settings)
+	rec.Settings = model.ApplyVideoTranscriptionDefaults(rec.Settings)
 	return rec, nil
 }
 
-func audioExtensionFromContentType(contentType, originalName string) string {
+func videoExtensionFromContentType(contentType, originalName string) string {
 	switch strings.ToLower(strings.TrimSpace(contentType)) {
-	case "audio/mpeg", "audio/mp3":
-		return ".mp3"
-	case "audio/wav", "audio/x-wav", "audio/wave":
-		return ".wav"
-	case "audio/ogg", "audio/opus":
-		return ".ogg"
-	case "audio/webm":
+	case "video/mp4":
+		return ".mp4"
+	case "video/webm":
 		return ".webm"
-	case "audio/mp4", "audio/x-m4a":
-		return ".m4a"
+	case "video/quicktime":
+		return ".mov"
+	case "video/x-msvideo":
+		return ".avi"
+	case "video/x-matroska":
+		return ".mkv"
+	case "video/mpeg":
+		return ".mpeg"
+	case "video/ogg":
+		return ".ogv"
 	default:
 		ext := strings.ToLower(filepath.Ext(originalName))
 		if ext != "" {

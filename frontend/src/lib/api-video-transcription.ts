@@ -1,20 +1,18 @@
 import { ApiError, apiFetch } from "./api";
 
-export const AUDIO_TRANSCRIPTION_SLUG = "audio-transcription";
-export const AUDIO_TRANSCRIPTION_MAX_FILE_SIZE = 500 * 1024 * 1024;
-export const AUDIO_TRANSCRIPTION_TYPES = [
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/wav",
-  "audio/x-wav",
-  "audio/ogg",
-  "audio/opus",
-  "audio/webm",
-  "audio/mp4",
-  "audio/x-m4a",
+export const VIDEO_TRANSCRIPTION_SLUG = "video-transcription";
+export const VIDEO_TRANSCRIPTION_MAX_FILE_SIZE = 500 * 1024 * 1024;
+export const VIDEO_TRANSCRIPTION_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/x-matroska",
+  "video/mpeg",
+  "video/ogg",
 ] as const;
 
-export type AudioTranscriptionFile = {
+export type VideoTranscriptionFile = {
   id: string;
   original_name: string;
   content_type: string;
@@ -27,7 +25,7 @@ export type AudioTranscriptionFile = {
   latest_run_status?: string | null;
 };
 
-export type AudioTranscriptionOutput = {
+export type VideoTranscriptionOutput = {
   text: string;
   language: string;
   model: string;
@@ -36,22 +34,22 @@ export type AudioTranscriptionOutput = {
   preview?: string;
 };
 
-export type AudioTranscriptionRun = {
+export type VideoTranscriptionRun = {
   id: string;
   tool_slug: string;
   status: string;
-  output?: AudioTranscriptionOutput;
+  output?: VideoTranscriptionOutput;
   artifact_url?: string | null;
   error_msg?: string | null;
   created_at: string;
   completed_at?: string | null;
 };
 
-export type AudioTranscriptionFileDetail = {
-  runs: AudioTranscriptionRun[];
-} & AudioTranscriptionFile;
+export type VideoTranscriptionFileDetail = {
+  runs: VideoTranscriptionRun[];
+} & VideoTranscriptionFile;
 
-export type AudioTranscriptionSettings = {
+export type VideoTranscriptionSettings = {
   model: string;
   language_code: string;
   price_rub_per_minute: number;
@@ -60,12 +58,12 @@ export type AudioTranscriptionSettings = {
   profanity_filter: boolean;
 };
 
-export type AudioTranscriptionSettingsRecord = {
-  settings: AudioTranscriptionSettings;
+export type VideoTranscriptionSettingsRecord = {
+  settings: VideoTranscriptionSettings;
   updated_at: string;
 };
 
-export type AudioTranscriptionAccessUser = {
+export type VideoTranscriptionAccessUser = {
   id: string;
   email: string;
   role: string;
@@ -75,34 +73,34 @@ export type AudioTranscriptionAccessUser = {
 const apiBase = () =>
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "/api/v1";
 
-export function audioTranscriptionDownloadUrl(fileId: string) {
-  return `${apiBase()}/tools/audio-transcription/files/${fileId}/download`;
+export function videoTranscriptionDownloadUrl(fileId: string) {
+  return `${apiBase()}/tools/video-transcription/files/${fileId}/download`;
 }
 
-export function validateAudioTranscriptionFile(file: File): string | null {
-  if (file.size > AUDIO_TRANSCRIPTION_MAX_FILE_SIZE) {
+export function validateVideoTranscriptionFile(file: File): string | null {
+  if (file.size > VIDEO_TRANSCRIPTION_MAX_FILE_SIZE) {
     return "file_too_large";
   }
   const type = file.type.toLowerCase();
-  const ok = AUDIO_TRANSCRIPTION_TYPES.some(
+  const ok = VIDEO_TRANSCRIPTION_TYPES.some(
     (allowed) => type === allowed || type.startsWith(`${allowed};`)
   );
   if (!ok) {
     const ext = file.name.split(".").pop()?.toLowerCase();
-    const extOk = ["mp3", "wav", "ogg", "opus", "webm", "m4a"].includes(ext || "");
+    const extOk = ["mp4", "webm", "mov", "avi", "mkv", "mpeg", "mpg", "ogv"].includes(ext || "");
     if (!extOk) return "invalid_type";
   }
   return null;
 }
 
-export function uploadAudioTranscriptionFile(
+export function uploadVideoTranscriptionFile(
   file: File,
   onProgress: (percent: number) => void
-): { promise: Promise<{ file: AudioTranscriptionFile; run_id: string }>; abort: () => void } {
+): { promise: Promise<{ file: VideoTranscriptionFile; run_id: string }>; abort: () => void } {
   const xhr = new XMLHttpRequest();
-  const promise = new Promise<{ file: AudioTranscriptionFile; run_id: string }>(
+  const promise = new Promise<{ file: VideoTranscriptionFile; run_id: string }>(
     (resolve, reject) => {
-      xhr.open("POST", `${apiBase()}/tools/audio-transcription/files`);
+      xhr.open("POST", `${apiBase()}/tools/video-transcription/files`);
       xhr.withCredentials = true;
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -128,7 +126,7 @@ export function uploadAudioTranscriptionFile(
           );
           return;
         }
-        resolve(data as { file: AudioTranscriptionFile; run_id: string });
+        resolve(data as { file: VideoTranscriptionFile; run_id: string });
       };
       const form = new FormData();
       form.append("file", file);
@@ -138,66 +136,66 @@ export function uploadAudioTranscriptionFile(
   return { promise, abort: () => xhr.abort() };
 }
 
-export function listAudioTranscriptionFiles() {
-  return apiFetch<{ items: AudioTranscriptionFile[] }>(
-    "/tools/audio-transcription/files",
+export function listVideoTranscriptionFiles() {
+  return apiFetch<{ items: VideoTranscriptionFile[] }>(
+    "/tools/video-transcription/files",
     { cache: "no-store" }
   );
 }
 
-export function getAudioTranscriptionFile(id: string) {
-  return apiFetch<AudioTranscriptionFileDetail>(
-    `/tools/audio-transcription/files/${id}`,
+export function getVideoTranscriptionFile(id: string) {
+  return apiFetch<VideoTranscriptionFileDetail>(
+    `/tools/video-transcription/files/${id}`,
     { cache: "no-store" }
   );
 }
 
-export function deleteAudioTranscriptionFile(id: string) {
-  return apiFetch<void>(`/tools/audio-transcription/files/${id}`, {
+export function deleteVideoTranscriptionFile(id: string) {
+  return apiFetch<void>(`/tools/video-transcription/files/${id}`, {
     method: "DELETE",
   });
 }
 
-export function transcribeAudioTranscriptionFile(id: string) {
+export function transcribeVideoTranscriptionFile(id: string) {
   return apiFetch<{ run_id: string; status?: string }>(
-    `/tools/audio-transcription/files/${id}/transcribe`,
+    `/tools/video-transcription/files/${id}/transcribe`,
     { method: "POST" }
   );
 }
 
-export function getAudioTranscriptionRun(runId: string) {
-  return apiFetch<AudioTranscriptionRun>(`/runs/${runId}`, {
+export function getVideoTranscriptionRun(runId: string) {
+  return apiFetch<VideoTranscriptionRun>(`/runs/${runId}`, {
     cache: "no-store",
   });
 }
 
-export function fetchAdminAudioTranscriptionSettings() {
-  return apiFetch<AudioTranscriptionSettingsRecord>(
-    "/admin/audio-transcription/settings"
+export function fetchAdminVideoTranscriptionSettings() {
+  return apiFetch<VideoTranscriptionSettingsRecord>(
+    "/admin/video-transcription/settings"
   );
 }
 
-export function updateAdminAudioTranscriptionSettings(
-  settings: AudioTranscriptionSettings
+export function updateAdminVideoTranscriptionSettings(
+  settings: VideoTranscriptionSettings
 ) {
-  return apiFetch<AudioTranscriptionSettingsRecord>(
-    "/admin/audio-transcription/settings",
+  return apiFetch<VideoTranscriptionSettingsRecord>(
+    "/admin/video-transcription/settings",
     { method: "PUT", body: JSON.stringify(settings) }
   );
 }
 
-export function fetchAdminAudioTranscriptionAccess() {
-  return apiFetch<{ items: AudioTranscriptionAccessUser[] }>(
-    "/admin/audio-transcription/access"
+export function fetchAdminVideoTranscriptionAccess() {
+  return apiFetch<{ items: VideoTranscriptionAccessUser[] }>(
+    "/admin/video-transcription/access"
   );
 }
 
-export function updateAdminAudioTranscriptionAccess(
+export function updateAdminVideoTranscriptionAccess(
   userId: string,
   enabled: boolean
 ) {
   return apiFetch<{ user_id: string; enabled: boolean }>(
-    `/admin/audio-transcription/access/${userId}`,
+    `/admin/video-transcription/access/${userId}`,
     { method: "PUT", body: JSON.stringify({ enabled }) }
   );
 }

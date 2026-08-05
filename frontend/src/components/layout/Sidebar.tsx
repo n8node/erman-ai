@@ -19,6 +19,7 @@ import {
   PanelsTopLeft,
   NotebookTabs,
   Mic,
+  Video,
 } from "lucide-react";
 import {
   fetchAdminExternalProjects,
@@ -42,6 +43,7 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   const [projects, setProjects] = useState<ExternalProject[]>([]);
   const [journalAvailable, setJournalAvailable] = useState(false);
   const [transcriptionAvailable, setTranscriptionAvailable] = useState(false);
+  const [videoTranscriptionAvailable, setVideoTranscriptionAvailable] = useState(false);
   const isSuperAdmin = user?.role === "superadmin";
 
   const loadProjects = useCallback(() => {
@@ -63,6 +65,7 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
     if (!user) {
       setJournalAvailable(false);
       setTranscriptionAvailable(false);
+      setVideoTranscriptionAvailable(false);
       return;
     }
     fetchTools()
@@ -73,10 +76,14 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
         setTranscriptionAvailable(
           data.tools.some((tool) => tool.slug === "audio-transcription")
         );
+        setVideoTranscriptionAvailable(
+          data.tools.some((tool) => tool.slug === "video-transcription")
+        );
       })
       .catch(() => {
         setJournalAvailable(false);
         setTranscriptionAvailable(false);
+        setVideoTranscriptionAvailable(false);
       });
   }, [user]);
 
@@ -112,6 +119,15 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
             href: "/tools/audio-transcription",
             label: t("audioTranscription"),
             icon: Mic,
+          },
+        ]
+      : []),
+    ...(videoTranscriptionAvailable
+      ? [
+          {
+            href: "/tools/video-transcription",
+            label: t("videoTranscription"),
+            icon: Video,
           },
         ]
       : []),

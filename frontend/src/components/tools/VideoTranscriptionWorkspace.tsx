@@ -4,7 +4,7 @@ import {
   AlertCircle,
   Check,
   Download,
-  FileAudio,
+  FileVideo,
   LoaderCircle,
   RotateCcw,
   Trash2,
@@ -14,22 +14,22 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { intlLocale } from "@/i18n/intl-locale";
 import {
-  audioTranscriptionDownloadUrl,
-  deleteAudioTranscriptionFile,
-  getAudioTranscriptionFile,
-  getAudioTranscriptionRun,
-  listAudioTranscriptionFiles,
-  transcribeAudioTranscriptionFile,
-  uploadAudioTranscriptionFile,
-  validateAudioTranscriptionFile,
-  type AudioTranscriptionFile,
-  type AudioTranscriptionOutput,
-  type AudioTranscriptionRun,
-} from "@/lib/api-audio-transcription";
+  videoTranscriptionDownloadUrl,
+  deleteVideoTranscriptionFile,
+  getVideoTranscriptionFile,
+  getVideoTranscriptionRun,
+  listVideoTranscriptionFiles,
+  transcribeVideoTranscriptionFile,
+  uploadVideoTranscriptionFile,
+  validateVideoTranscriptionFile,
+  type VideoTranscriptionFile,
+  type VideoTranscriptionOutput,
+  type VideoTranscriptionRun,
+} from "@/lib/api-video-transcription";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-function parseTranscriptionOutput(raw: unknown): AudioTranscriptionOutput | null {
+function parseTranscriptionOutput(raw: unknown): VideoTranscriptionOutput | null {
   if (!raw) return null;
   if (typeof raw === "string") {
     try {
@@ -39,7 +39,7 @@ function parseTranscriptionOutput(raw: unknown): AudioTranscriptionOutput | null
     }
   }
   if (typeof raw === "object" && raw !== null && "text" in raw) {
-    const value = raw as AudioTranscriptionOutput;
+    const value = raw as VideoTranscriptionOutput;
     return {
       text: value.text ?? "",
       language: value.language ?? "",
@@ -65,13 +65,13 @@ function formatDuration(sec?: number | null) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function AudioTranscriptionWorkspace() {
-  const t = useTranslations("audioTranscription");
+export function VideoTranscriptionWorkspace() {
+  const t = useTranslations("videoTranscription");
   const locale = useLocale();
-  const [files, setFiles] = useState<AudioTranscriptionFile[]>([]);
+  const [files, setFiles] = useState<VideoTranscriptionFile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [output, setOutput] = useState<AudioTranscriptionOutput | null>(null);
-  const [run, setRun] = useState<AudioTranscriptionRun | null>(null);
+  const [output, setOutput] = useState<VideoTranscriptionOutput | null>(null);
+  const [run, setRun] = useState<VideoTranscriptionRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -84,7 +84,7 @@ export function AudioTranscriptionWorkspace() {
 
   useEffect(() => {
     let cancelled = false;
-    listAudioTranscriptionFiles()
+    listVideoTranscriptionFiles()
       .then((data) => {
         if (!cancelled) setFiles(Array.isArray(data.items) ? data.items : []);
       })
@@ -112,7 +112,7 @@ export function AudioTranscriptionWorkspace() {
   }, []);
 
   async function reloadFiles() {
-    const data = await listAudioTranscriptionFiles();
+    const data = await listVideoTranscriptionFiles();
     setFiles(Array.isArray(data.items) ? data.items : []);
   }
 
@@ -123,13 +123,13 @@ export function AudioTranscriptionWorkspace() {
     setOutput(null);
     setRun(null);
     try {
-      const detail = await getAudioTranscriptionFile(id);
+      const detail = await getVideoTranscriptionFile(id);
       const latest = detail.runs?.[0];
       if (latest?.status === "done") {
         const parsed = parseTranscriptionOutput(latest.output);
         if (parsed) {
           setOutput(parsed);
-          setRun(latest as AudioTranscriptionRun);
+          setRun(latest as VideoTranscriptionRun);
         }
       } else if (latest && (latest.status === "pending" || latest.status === "processing")) {
         setRun(latest);
@@ -147,7 +147,7 @@ export function AudioTranscriptionWorkspace() {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
       try {
-        const current = await getAudioTranscriptionRun(runId);
+        const current = await getVideoTranscriptionRun(runId);
         setRun(current);
         if (current.status === "done") {
           if (pollRef.current) clearInterval(pollRef.current);
@@ -169,7 +169,7 @@ export function AudioTranscriptionWorkspace() {
   async function handleUpload(file: File) {
     setError("");
     setSuccess("");
-    const validation = validateAudioTranscriptionFile(file);
+    const validation = validateVideoTranscriptionFile(file);
     if (validation === "file_too_large") {
       setError(t("errors.fileTooLarge"));
       return;
@@ -179,7 +179,7 @@ export function AudioTranscriptionWorkspace() {
       return;
     }
     setUploadPercent(0);
-    const { promise } = uploadAudioTranscriptionFile(file, setUploadPercent);
+    const { promise } = uploadVideoTranscriptionFile(file, setUploadPercent);
     try {
       const result = await promise;
       setUploadPercent(null);
@@ -207,10 +207,10 @@ export function AudioTranscriptionWorkspace() {
     setSuccess("");
     setOutput(null);
     try {
-      const response = await transcribeAudioTranscriptionFile(selectedId);
+      const response = await transcribeVideoTranscriptionFile(selectedId);
       setRun({
         id: response.run_id,
-        tool_slug: "audio-transcription",
+        tool_slug: "video-transcription",
         status: response.status || "pending",
         created_at: new Date().toISOString(),
       });
@@ -235,7 +235,7 @@ export function AudioTranscriptionWorkspace() {
     setDeleting(true);
     setError("");
     try {
-      await deleteAudioTranscriptionFile(selectedId);
+      await deleteVideoTranscriptionFile(selectedId);
       setSelectedId(null);
       setOutput(null);
       setRun(null);
@@ -284,7 +284,7 @@ export function AudioTranscriptionWorkspace() {
         onDragLeave={() => setDragActive(false)}
         onDrop={onDrop}
       >
-        <FileAudio className="mx-auto h-8 w-8 text-text3" />
+        <FileVideo className="mx-auto h-8 w-8 text-text3" />
         <p className="mt-3 text-sm font-medium text-text">{t("dropTitle")}</p>
         <p className="mt-1 text-xs text-text3">{t("dropHint")}</p>
         <button
@@ -298,7 +298,7 @@ export function AudioTranscriptionWorkspace() {
         <input
           ref={inputRef}
           type="file"
-          accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm"
+          accept="video/*,.mp4,.webm,.mov,.avi,.mkv"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -385,7 +385,7 @@ export function AudioTranscriptionWorkspace() {
                   </button>
                   {selected.has_transcript && (
                     <a
-                      href={audioTranscriptionDownloadUrl(selected.id)}
+                      href={videoTranscriptionDownloadUrl(selected.id)}
                       className="inline-flex items-center gap-1 rounded-lg border border-border2 px-3 py-1.5 text-sm hover:bg-bg2"
                     >
                       <Download className="h-4 w-4" />

@@ -417,6 +417,7 @@ type ToolsHandler struct {
 	billing *service.BillingService
 	journal *service.GeologicalJournalService
 	audio   *service.AudioTranscriptionService
+	video   *service.VideoTranscriptionService
 }
 
 func NewToolsHandler(
@@ -425,8 +426,9 @@ func NewToolsHandler(
 	billing *service.BillingService,
 	journal *service.GeologicalJournalService,
 	audio *service.AudioTranscriptionService,
+	video *service.VideoTranscriptionService,
 ) *ToolsHandler {
-	return &ToolsHandler{plans: plans, runs: runs, billing: billing, journal: journal, audio: audio}
+	return &ToolsHandler{plans: plans, runs: runs, billing: billing, journal: journal, audio: audio, video: video}
 }
 
 func (h *ToolsHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -466,6 +468,9 @@ func (h *ToolsHandler) List(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if t.Slug == model.AudioTranscriptionToolSlug && h.audio.CheckAccess(r.Context(), userID, role) != nil {
+			continue
+		}
+		if t.Slug == model.VideoTranscriptionToolSlug && h.video.CheckAccess(r.Context(), userID, role) != nil {
 			continue
 		}
 		limit := -1

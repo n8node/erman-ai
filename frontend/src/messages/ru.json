@@ -110,6 +110,7 @@
     "legalScan": "Legal-скан сайта",
     "geologicalJournal": "Геологический журнал",
     "audioTranscription": "Транскрибация аудио",
+    "videoTranscription": "Транскрибация видео",
     "workspace": "Workspace",
     "billing": "Биллинг",
     "apiKeys": "API-ключи",
@@ -164,6 +165,11 @@
         "description": "Преобразование аудиозаписей в текст с возможностью скачать результат в формате TXT.",
         "audience": "Командам, которым нужно быстро получить текст из интервью, созвонов и полевых записей."
       },
+      "video-transcription": {
+        "name": "Транскрибация видео",
+        "description": "Извлечение аудиодорожки из видео и распознавание речи в текст с экспортом в TXT.",
+        "audience": "Командам с записями встреч, вебинаров и интервью в формате MP4, WebM, MOV."
+      },
       "workspace": {
         "name": "Workspace",
         "description": "Единое пространство для документов, совместной работы и бесконечных визуальных досок.",
@@ -213,6 +219,10 @@
       "audio-transcription": {
         "name": "Транскрибация аудио",
         "description": "Распознавание речи в текстовый файл TXT"
+      },
+      "video-transcription": {
+        "name": "Транскрибация видео",
+        "description": "Извлечение аудио из видео и экспорт речи в TXT"
       }
     }
   },
@@ -249,6 +259,7 @@
       "legalScanLlm": "Legal-скан: модель",
       "geologicalJournal": "Геологический журнал",
       "audioTranscription": "Транскрибация аудио",
+      "videoTranscription": "Транскрибация видео",
       "emailSmtp": "Email / SMTP",
       "payments": "Платежи",
       "telegram": "Telegram",
@@ -348,6 +359,35 @@
     "audioTranscription": {
       "title": "Транскрибация аудио",
       "subtitle": "Yandex SpeechKit STT и доступ пользователей",
+      "loading": "Загрузка…",
+      "loadFailed": "Не удалось загрузить настройки",
+      "saveFailed": "Не удалось сохранить настройки",
+      "accessFailed": "Не удалось изменить доступ",
+      "saved": "Настройки сохранены",
+      "tabSettings": "Настройки",
+      "tabAccess": "Доступ",
+      "settingsTitle": "SpeechKit",
+      "model": "Модель STT",
+      "language": "Язык",
+      "formattingTitle": "Форматирование текста",
+      "textNormalization": "Пунктуация и нормализация",
+      "textNormalizationHint": "Точки, запятые, числа и даты в читаемом виде (SpeechKit TEXT_NORMALIZATION_ENABLED).",
+      "literatureText": "Литературный текст",
+      "literatureTextHint": "Заглавные буквы в начале предложений и у имён. Требует включённой нормализации.",
+      "profanityFilter": "Фильтр ненормативной лексики",
+      "profanityFilterHint": "Маскирует нецензурные слова в транскрипте.",
+      "pricePerMinute": "Стоимость, ₽/мин (учёт)",
+      "save": "Сохранить",
+      "accessTitle": "Доступ пользователей",
+      "colEmail": "Email",
+      "colRole": "Роль",
+      "colAccess": "Доступ",
+      "accessOn": "Включён",
+      "accessOff": "Выключен"
+    },
+    "videoTranscription": {
+      "title": "Транскрибация видео",
+      "subtitle": "Yandex SpeechKit STT, извлечение аудио из видео и доступ пользователей",
       "loading": "Загрузка…",
       "loadFailed": "Не удалось загрузить настройки",
       "saveFailed": "Не удалось сохранить настройки",
@@ -1168,7 +1208,8 @@
       "strategy": "AI-стратегия",
       "proposal": "Генератор КП",
       "legal-scan": "Legal-скан сайта",
-      "audio-transcription": "Транскрибация аудио"
+      "audio-transcription": "Транскрибация аудио",
+      "video-transcription": "Транскрибация видео"
     },
     "features": {
       "export_pdf": "Экспорт PDF",
@@ -2400,10 +2441,46 @@
     "deleted": "Файл удалён",
     "errors": {
       "fileTooLarge": "Размер файла не должен превышать 500 МБ",
-      "invalidType": "Поддерживаются MP3, WAV, OGG, M4A, WebM и MP4 с аудиодорожкой",
+      "invalidType": "Поддерживаются MP3, WAV, OGG, M4A и WebM",
       "accessDenied": "Инструмент недоступен. Попросите администратора включить доступ в Admin → Транскрибация аудио.",
       "alreadyProcessing": "Транскрибация этого файла уже выполняется",
       "limitExceeded": "Исчерпан лимит запусков на этот месяц"
+    }
+  },
+  "videoTranscription": {
+    "title": "Транскрибация видео",
+    "subtitle": "Загрузите видеофайл — сервис извлечёт аудиодорожку, распознает речь и подготовит текст для скачивания в TXT.",
+    "dropTitle": "Перетащите видеофайл сюда",
+    "dropHint": "MP4, WebM, MOV, AVI, MKV · до 500 МБ",
+    "chooseFile": "Выбрать файл",
+    "uploading": "Загрузка {percent}%",
+    "history": "История",
+    "loading": "Загрузка…",
+    "empty": "Пока нет загруженных файлов",
+    "selectFile": "Выберите файл из истории или загрузите новый",
+    "downloadTxt": "Скачать TXT",
+    "delete": "Удалить",
+    "deleteConfirm": "Удалить файл и транскрипт?",
+    "processing": "Извлечение аудио и распознавание речи…",
+    "result": "Транскрипт",
+    "meta": "Фрагментов: {chunks} · модель {model} · {language}",
+    "uploadStarted": "Файл загружен, начинается транскрибация",
+    "transcriptionDone": "Транскрибация завершена",
+    "transcriptionFailed": "Не удалось распознать видео",
+    "retryTranscription": "Повторить транскрибацию",
+    "retryStarted": "Транскрибация запущена повторно",
+    "retryFailed": "Не удалось запустить транскрибацию повторно",
+    "uploadFailed": "Не удалось загрузить файл",
+    "loadFailed": "Не удалось загрузить данные",
+    "deleteFailed": "Не удалось удалить файл",
+    "deleted": "Файл удалён",
+    "errors": {
+      "fileTooLarge": "Размер файла не должен превышать 500 МБ",
+      "invalidType": "Поддерживаются MP4, WebM, MOV, AVI и MKV",
+      "accessDenied": "Инструмент недоступен. Попросите администратора включить доступ в Admin → Транскрибация видео.",
+      "alreadyProcessing": "Транскрибация этого файла уже выполняется",
+      "limitExceeded": "Исчерпан лимит запусков на этот месяц",
+      "noAudio": "В видеофайле нет аудиодорожки"
     }
   }
 }

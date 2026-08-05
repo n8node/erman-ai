@@ -110,6 +110,7 @@
     "legalScan": "Legal Site Scan",
     "geologicalJournal": "Geological Journal",
     "audioTranscription": "Audio Transcription",
+    "videoTranscription": "Video Transcription",
     "workspace": "Workspace",
     "billing": "Billing",
     "apiKeys": "API Keys",
@@ -164,6 +165,11 @@
         "description": "Convert audio recordings to text and download the result as TXT.",
         "audience": "Teams that need quick transcripts from interviews, calls, and field recordings."
       },
+      "video-transcription": {
+        "name": "Video transcription",
+        "description": "Extract audio from video and transcribe speech to text with TXT export.",
+        "audience": "Teams with meeting, webinar, and interview recordings in MP4, WebM, or MOV."
+      },
       "workspace": {
         "name": "Workspace",
         "description": "One place for documents, collaboration, and infinite visual whiteboards.",
@@ -213,6 +219,10 @@
       "audio-transcription": {
         "name": "Audio transcription",
         "description": "Speech-to-text export as TXT"
+      },
+      "video-transcription": {
+        "name": "Video transcription",
+        "description": "Extract audio from video and export speech as TXT"
       }
     }
   },
@@ -249,6 +259,7 @@
       "legalScanLlm": "Legal scan: model",
       "geologicalJournal": "Geological journal",
       "audioTranscription": "Audio transcription",
+      "videoTranscription": "Video transcription",
       "emailSmtp": "Email / SMTP",
       "payments": "Payments",
       "telegram": "Telegram",
@@ -348,6 +359,35 @@
     "audioTranscription": {
       "title": "Audio transcription",
       "subtitle": "Yandex SpeechKit STT and user access",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save settings",
+      "accessFailed": "Failed to update access",
+      "saved": "Settings saved",
+      "tabSettings": "Settings",
+      "tabAccess": "Access",
+      "settingsTitle": "SpeechKit",
+      "model": "STT model",
+      "language": "Language",
+      "formattingTitle": "Text formatting",
+      "textNormalization": "Punctuation and normalization",
+      "textNormalizationHint": "Periods, commas, numbers and dates in readable form (SpeechKit TEXT_NORMALIZATION_ENABLED).",
+      "literatureText": "Literary text",
+      "literatureTextHint": "Capital letters at sentence starts and for proper nouns. Requires normalization enabled.",
+      "profanityFilter": "Profanity filter",
+      "profanityFilterHint": "Masks profanity in the transcript.",
+      "pricePerMinute": "Cost, RUB/min (tracking)",
+      "save": "Save",
+      "accessTitle": "User access",
+      "colEmail": "Email",
+      "colRole": "Role",
+      "colAccess": "Access",
+      "accessOn": "Enabled",
+      "accessOff": "Disabled"
+    },
+    "videoTranscription": {
+      "title": "Video transcription",
+      "subtitle": "Yandex SpeechKit STT, audio extraction from video, and user access",
       "loading": "Loading…",
       "loadFailed": "Failed to load settings",
       "saveFailed": "Failed to save settings",
@@ -1168,7 +1208,8 @@
       "strategy": "AI Strategy",
       "proposal": "Proposal Generator",
       "legal-scan": "Legal Site Scan",
-      "audio-transcription": "Audio transcription"
+      "audio-transcription": "Audio transcription",
+      "video-transcription": "Video transcription"
     },
     "features": {
       "export_pdf": "PDF export",
@@ -2400,10 +2441,46 @@
     "deleted": "File deleted",
     "errors": {
       "fileTooLarge": "File size must not exceed 500 MB",
-      "invalidType": "Supported formats: MP3, WAV, OGG, M4A, WebM, and MP4 with audio",
+      "invalidType": "Supported formats: MP3, WAV, OGG, M4A, and WebM",
       "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Audio transcription.",
       "alreadyProcessing": "This file is already being transcribed",
       "limitExceeded": "Monthly run limit reached for this tool"
+    }
+  },
+  "videoTranscription": {
+    "title": "Video transcription",
+    "subtitle": "Upload a video file — the service extracts the audio track, transcribes speech, and prepares a TXT download.",
+    "dropTitle": "Drop a video file here",
+    "dropHint": "MP4, WebM, MOV, AVI, MKV · up to 500 MB",
+    "chooseFile": "Choose file",
+    "uploading": "Uploading {percent}%",
+    "history": "History",
+    "loading": "Loading…",
+    "empty": "No uploaded files yet",
+    "selectFile": "Select a file from history or upload a new one",
+    "downloadTxt": "Download TXT",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the file and transcript?",
+    "processing": "Extracting audio and transcribing speech…",
+    "result": "Transcript",
+    "meta": "Chunks: {chunks} · model {model} · {language}",
+    "uploadStarted": "File uploaded, transcription started",
+    "transcriptionDone": "Transcription completed",
+    "transcriptionFailed": "Could not transcribe the video",
+    "retryTranscription": "Transcribe again",
+    "retryStarted": "Transcription restarted",
+    "retryFailed": "Could not restart transcription",
+    "uploadFailed": "Could not upload the file",
+    "loadFailed": "Could not load data",
+    "deleteFailed": "Could not delete the file",
+    "deleted": "File deleted",
+    "errors": {
+      "fileTooLarge": "File size must not exceed 500 MB",
+      "invalidType": "Supported formats: MP4, WebM, MOV, AVI, and MKV",
+      "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Video transcription.",
+      "alreadyProcessing": "This file is already being transcribed",
+      "limitExceeded": "Monthly run limit reached for this tool",
+      "noAudio": "The video file has no audio track"
     }
   }
 }

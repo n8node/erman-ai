@@ -52,6 +52,7 @@ type Config struct {
 	TelegramAssetsDir          string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
 	GeologicalJournalAssetsDir    string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
 	AudioTranscriptionAssetsDir   string `env:"AUDIO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/audio-transcription"`
+	VideoTranscriptionAssetsDir   string `env:"VIDEO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/video-transcription"`
 	JournalPreprocessorURL        string `env:"JOURNAL_PREPROCESSOR_URL"`
 	Domain                     string `env:"DOMAIN" envDefault:"erman.ai"`
 

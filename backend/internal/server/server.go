@@ -59,6 +59,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	consultationRepo := repository.NewConsultationRepository(db.Pool)
 	geologicalJournalRepo := repository.NewGeologicalJournalRepository(db.Pool)
 	audioTranscriptionRepo := repository.NewAudioTranscriptionRepository(db.Pool)
+	videoTranscriptionRepo := repository.NewVideoTranscriptionRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
@@ -130,6 +131,12 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	if err := audioTranscriptionSvc.EnsureAssetDirs(); err != nil {
 		logger.Error("audio transcription asset directory unavailable", "error", err)
 	}
+	videoTranscriptionSvc := service.NewVideoTranscriptionService(
+		cfg, videoTranscriptionRepo, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger,
+	)
+	if err := videoTranscriptionSvc.EnsureAssetDirs(); err != nil {
+		logger.Error("video transcription asset directory unavailable", "error", err)
+	}
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg, projectInquiryRepo, proposalReqRepo)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
@@ -161,10 +168,11 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	consultationHandler := handler.NewConsultationHandler(consultationSvc)
 	inquiryRL := middleware.NewRateLimiter(5, time.Hour)
 	billingHandler := handler.NewBillingHandler(billingSvc, checkoutSvc, planRepo, runRepo)
-	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc, geologicalJournalSvc, audioTranscriptionSvc)
+	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc, geologicalJournalSvc, audioTranscriptionSvc, videoTranscriptionSvc)
 	workspaceOIDCHandler := handler.NewWorkspaceOIDCHandler(userRepo, cfg)
 	geologicalJournalHandler := handler.NewGeologicalJournalHandler(geologicalJournalSvc)
 	audioTranscriptionHandler := handler.NewAudioTranscriptionHandler(audioTranscriptionSvc)
+	videoTranscriptionHandler := handler.NewVideoTranscriptionHandler(videoTranscriptionSvc)
 
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -263,6 +271,14 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				at.Get("/files/{id}/download", audioTranscriptionHandler.DownloadTranscript)
 				at.Post("/files/{id}/transcribe", audioTranscriptionHandler.TranscribeFile)
 				at.Delete("/files/{id}", audioTranscriptionHandler.DeleteFile)
+			})
+			protected.Route("/tools/video-transcription", func(vt chi.Router) {
+				vt.Post("/files", videoTranscriptionHandler.UploadFile)
+				vt.Get("/files", videoTranscriptionHandler.ListFiles)
+				vt.Get("/files/{id}", videoTranscriptionHandler.GetFile)
+				vt.Get("/files/{id}/download", videoTranscriptionHandler.DownloadTranscript)
+				vt.Post("/files/{id}/transcribe", videoTranscriptionHandler.TranscribeFile)
+				vt.Delete("/files/{id}", videoTranscriptionHandler.DeleteFile)
 			})
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
@@ -372,6 +388,12 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				at.Put("/settings", audioTranscriptionHandler.PutSettings)
 				at.Get("/access", audioTranscriptionHandler.ListAccess)
 				at.Put("/access/{user_id}", audioTranscriptionHandler.PutAccess)
+			})
+			admin.Route("/video-transcription", func(vt chi.Router) {
+				vt.Get("/settings", videoTranscriptionHandler.GetSettings)
+				vt.Put("/settings", videoTranscriptionHandler.PutSettings)
+				vt.Get("/access", videoTranscriptionHandler.ListAccess)
+				vt.Put("/access/{user_id}", videoTranscriptionHandler.PutAccess)
 			})
 		})
 	})
