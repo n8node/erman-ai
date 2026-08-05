@@ -196,7 +196,8 @@ func (s *LLMService) TranscribeYandexSpeechKitAsync(ctx context.Context, params 
 	if err := s.waitYandexSTTOperation(ctx, apiKey, started.ID); err != nil {
 		return "", err
 	}
-	return s.fetchYandexSTTRecognition(ctx, apiKey, folderID, started.ID)
+	preferNormalized := params.TextNormalizationEnabled || params.LiteratureText
+	return s.fetchYandexSTTRecognition(ctx, apiKey, folderID, started.ID, preferNormalized)
 }
 
 func (s *LLMService) TranscribeYandexSpeechKitSync(ctx context.Context, params YandexSpeechKitParams, audio []byte, format string) (string, error) {
@@ -297,7 +298,7 @@ func (s *LLMService) waitYandexSTTOperation(ctx context.Context, apiKey, operati
 	}
 }
 
-func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, folderID, operationID string) (string, error) {
+func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, folderID, operationID string, preferNormalized bool) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, yandexSTTGetRecognitionURL+"?operation_id="+operationID, nil)
 	if err != nil {
 		return "", err
@@ -311,7 +312,8 @@ func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, fold
 	}
 	defer resp.Body.Close()
 
-	var parts []string
+	var normalizedParts []string
+	var rawParts []string
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	for scanner.Scan() {
@@ -319,9 +321,11 @@ func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, fold
 		if line == "" {
 			continue
 		}
-		text := extractYandexSTTLineText(line)
-		if text != "" {
-			parts = append(parts, text)
+		if text := extractYandexSTTFinalRefinementText(line); text != "" {
+			normalizedParts = append(normalizedParts, text)
+		}
+		if text := extractYandexSTTFinalText(line); text != "" {
+			rawParts = append(rawParts, text)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -331,6 +335,10 @@ func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, fold
 		return "", fmt.Errorf("speechkit getRecognition failed: status %d", resp.StatusCode)
 	}
 
+	parts := rawParts
+	if preferNormalized && len(normalizedParts) > 0 {
+		parts = normalizedParts
+	}
 	merged := strings.TrimSpace(strings.Join(parts, " "))
 	if merged == "" {
 		return "", ErrYandexSpeechKitEmptyResult
@@ -338,27 +346,55 @@ func (s *LLMService) fetchYandexSTTRecognition(ctx context.Context, apiKey, fold
 	return merged, nil
 }
 
-func extractYandexSTTLineText(line string) string {
-	var payload map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(line), &payload); err != nil {
-		return ""
-	}
-	raw, ok := payload["result"]
-	if !ok {
-		return ""
-	}
-	var result map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &result); err != nil {
-		return ""
-	}
-	for _, key := range []string{"normalizedText", "finalRefinement", "final"} {
-		if chunk, ok := result[key]; ok {
-			if text := extractYandexSTTAlternatives(chunk); text != "" {
+func extractYandexSTTFinalRefinementText(line string) string {
+	for _, obj := range yandexSTTLineObjects(line) {
+		raw, ok := obj["finalRefinement"]
+		if !ok {
+			continue
+		}
+		var refinement map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &refinement); err != nil {
+			continue
+		}
+		if normRaw, ok := refinement["normalizedText"]; ok {
+			if text := extractYandexSTTAlternatives(normRaw); text != "" {
 				return text
 			}
 		}
 	}
 	return ""
+}
+
+func extractYandexSTTFinalText(line string) string {
+	for _, obj := range yandexSTTLineObjects(line) {
+		if raw, ok := obj["final"]; ok {
+			if text := extractYandexSTTAlternatives(raw); text != "" {
+				return text
+			}
+		}
+	}
+	return ""
+}
+
+func yandexSTTLineObjects(line string) []map[string]json.RawMessage {
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(line), &payload); err != nil {
+		return nil
+	}
+	if raw, ok := payload["result"]; ok {
+		var inner map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &inner); err == nil {
+			return []map[string]json.RawMessage{inner}
+		}
+	}
+	return []map[string]json.RawMessage{payload}
+}
+
+func extractYandexSTTLineText(line string) string {
+	if text := extractYandexSTTFinalRefinementText(line); text != "" {
+		return text
+	}
+	return extractYandexSTTFinalText(line)
 }
 
 func extractYandexSTTAlternatives(raw json.RawMessage) string {
