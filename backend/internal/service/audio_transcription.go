@@ -29,9 +29,10 @@ const (
 )
 
 var (
-	ErrAudioTranscriptionForbidden    = errors.New("audio transcription access denied")
-	ErrAudioTranscriptionInvalidAudio = errors.New("invalid audio file")
-	ErrAudioTranscriptionSettings     = errors.New("invalid audio transcription settings")
+	ErrAudioTranscriptionForbidden         = errors.New("audio transcription access denied")
+	ErrAudioTranscriptionInvalidAudio      = errors.New("invalid audio file")
+	ErrAudioTranscriptionSettings          = errors.New("invalid audio transcription settings")
+	ErrAudioTranscriptionAlreadyProcessing = errors.New("audio transcription already in progress")
 )
 
 func AudioTranscriptionHasAccess(role string, explicitlyEnabled bool) bool {
@@ -168,6 +169,33 @@ func (s *AudioTranscriptionService) UploadAndTranscribe(ctx context.Context, use
 		return nil, nil, err
 	}
 	return file, run, nil
+}
+
+func (s *AudioTranscriptionService) RetranscribeFile(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {
+	if err := s.CheckAccess(ctx, userID, role); err != nil {
+		return nil, err
+	}
+	if err := s.billing.CheckToolLimit(ctx, userID, model.AudioTranscriptionToolSlug); err != nil {
+		return nil, err
+	}
+	if _, err := s.repo.GetFile(ctx, fileID, userID); err != nil {
+		return nil, err
+	}
+	runs, err := s.repo.ListFileRuns(ctx, fileID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if len(runs) > 0 {
+		latest := runs[0]
+		if latest.Status == model.RunStatusPending || latest.Status == model.RunStatusProcessing {
+			return nil, ErrAudioTranscriptionAlreadyProcessing
+		}
+	}
+	if path, _, err := s.repo.TranscriptPath(ctx, fileID, userID); err == nil {
+		_ = os.Remove(path)
+	}
+	_ = s.repo.ClearTranscript(ctx, fileID, userID)
+	return s.startTranscription(ctx, fileID, userID, role)
 }
 
 func (s *AudioTranscriptionService) startTranscription(ctx context.Context, fileID, userID, role string) (*model.ToolRun, error) {

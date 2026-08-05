@@ -6,6 +6,7 @@ import {
   Download,
   FileAudio,
   LoaderCircle,
+  RotateCcw,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import {
   getAudioTranscriptionFile,
   getAudioTranscriptionRun,
   listAudioTranscriptionFiles,
+  transcribeAudioTranscriptionFile,
   uploadAudioTranscriptionFile,
   validateAudioTranscriptionFile,
   type AudioTranscriptionFile,
@@ -76,6 +78,7 @@ export function AudioTranscriptionWorkspace() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -195,6 +198,36 @@ export function AudioTranscriptionWorkspace() {
     setDragActive(false);
     const file = e.dataTransfer.files[0];
     if (file) void handleUpload(file);
+  }
+
+  async function handleRetry() {
+    if (!selectedId || isProcessing) return;
+    setRetrying(true);
+    setError("");
+    setSuccess("");
+    setOutput(null);
+    try {
+      const response = await transcribeAudioTranscriptionFile(selectedId);
+      setRun({
+        id: response.run_id,
+        tool_slug: "audio-transcription",
+        status: response.status || "pending",
+        created_at: new Date().toISOString(),
+      });
+      setSuccess(t("retryStarted"));
+      await reloadFiles();
+      startPolling(response.run_id, selectedId);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setError(t("errors.alreadyProcessing"));
+      } else if (err instanceof ApiError && err.status === 402) {
+        setError(t("errors.limitExceeded"));
+      } else {
+        setError(err instanceof Error ? err.message : t("retryFailed"));
+      }
+    } finally {
+      setRetrying(false);
+    }
   }
 
   async function handleDelete() {
@@ -336,7 +369,20 @@ export function AudioTranscriptionWorkspace() {
                     {formatBytes(selected.size_bytes)} · {formatDuration(selected.duration_sec)}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={isProcessing || retrying}
+                    onClick={() => void handleRetry()}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border2 px-3 py-1.5 text-sm hover:bg-bg2 disabled:opacity-50"
+                  >
+                    {retrying ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="h-4 w-4" />
+                    )}
+                    {t("retryTranscription")}
+                  </button>
                   {selected.has_transcript && (
                     <a
                       href={audioTranscriptionDownloadUrl(selected.id)}
@@ -357,6 +403,12 @@ export function AudioTranscriptionWorkspace() {
                   </button>
                 </div>
               </div>
+
+              {run?.status === "error" && !isProcessing && (
+                <div className="rounded-lg border border-error/20 bg-[#fcebeb] px-3 py-2 text-sm text-[#a32d2d]">
+                  {run.error_msg || t("transcriptionFailed")}
+                </div>
+              )}
 
               {isProcessing && (
                 <div className="flex items-center gap-2 rounded-lg bg-bg2 px-3 py-2 text-sm text-text2">

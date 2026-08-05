@@ -2384,6 +2384,9 @@
     "uploadStarted": "File uploaded, transcription started",
     "transcriptionDone": "Transcription completed",
     "transcriptionFailed": "Could not transcribe the audio",
+    "retryTranscription": "Transcribe again",
+    "retryStarted": "Transcription restarted",
+    "retryFailed": "Could not restart transcription",
     "uploadFailed": "Could not upload the file",
     "loadFailed": "Could not load data",
     "deleteFailed": "Could not delete the file",
@@ -2391,7 +2394,9 @@
     "errors": {
       "fileTooLarge": "File size must not exceed 500 MB",
       "invalidType": "Supported formats: MP3, WAV, OGG, M4A, WebM, and MP4 with audio",
-      "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Audio transcription."
+      "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Audio transcription.",
+      "alreadyProcessing": "This file is already being transcribed",
+      "limitExceeded": "Monthly run limit reached for this tool"
     }
   }
 }

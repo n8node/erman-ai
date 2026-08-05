@@ -159,6 +159,20 @@ func (r *AudioTranscriptionRepository) TranscriptPath(ctx context.Context, fileI
 	return path, name, err
 }
 
+func (r *AudioTranscriptionRepository) ClearTranscript(ctx context.Context, fileID, userID string) error {
+	tag, err := r.pool.Exec(ctx, `
+		UPDATE audio_transcription_files
+		SET transcript_path=NULL, updated_at=NOW()
+		WHERE id=$1 AND user_id=$2`, fileID, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *AudioTranscriptionRepository) SetTranscriptPath(ctx context.Context, fileID, userID, transcriptPath string, duration *float64) error {
 	tag, err := r.pool.Exec(ctx, `
 		UPDATE audio_transcription_files

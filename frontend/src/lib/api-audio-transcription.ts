@@ -157,6 +157,13 @@ export function deleteAudioTranscriptionFile(id: string) {
   });
 }
 
+export function transcribeAudioTranscriptionFile(id: string) {
+  return apiFetch<{ run_id: string; status?: string }>(
+    `/tools/audio-transcription/files/${id}/transcribe`,
+    { method: "POST" }
+  );
+}
+
 export function getAudioTranscriptionRun(runId: string) {
   return apiFetch<AudioTranscriptionRun>(`/runs/${runId}`, {
     cache: "no-store",

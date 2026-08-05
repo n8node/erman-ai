@@ -261,6 +261,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				at.Get("/files", audioTranscriptionHandler.ListFiles)
 				at.Get("/files/{id}", audioTranscriptionHandler.GetFile)
 				at.Get("/files/{id}/download", audioTranscriptionHandler.DownloadTranscript)
+				at.Post("/files/{id}/transcribe", audioTranscriptionHandler.TranscribeFile)
 				at.Delete("/files/{id}", audioTranscriptionHandler.DeleteFile)
 			})
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)

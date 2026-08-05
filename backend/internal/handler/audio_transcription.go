@@ -92,6 +92,20 @@ func (h *AudioTranscriptionHandler) DownloadTranscript(w http.ResponseWriter, r 
 	http.ServeFile(w, r, path)
 }
 
+func (h *AudioTranscriptionHandler) TranscribeFile(w http.ResponseWriter, r *http.Request) {
+	userID, role, ok := audioTranscriptionIdentity(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	run, err := h.svc.RetranscribeFile(r.Context(), r.PathValue("id"), userID, role)
+	if err != nil {
+		h.writeServiceError(w, err, "failed to start transcription")
+		return
+	}
+	writeJSON(w, http.StatusAccepted, map[string]any{"run_id": run.ID, "status": run.Status})
+}
+
 func (h *AudioTranscriptionHandler) DeleteFile(w http.ResponseWriter, r *http.Request) {
 	userID, role, ok := audioTranscriptionIdentity(r)
 	if !ok {
@@ -194,6 +208,8 @@ func (h *AudioTranscriptionHandler) writeServiceError(w http.ResponseWriter, err
 		writeError(w, http.StatusPaymentRequired, "tool limit exceeded")
 	case errors.Is(err, repository.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not found")
+	case errors.Is(err, service.ErrAudioTranscriptionAlreadyProcessing):
+		writeError(w, http.StatusConflict, "audio transcription already in progress")
 	case errors.Is(err, service.ErrYandexSpeechKitNotConfigured):
 		writeError(w, http.StatusServiceUnavailable, "yandex speechkit not configured")
 	default:
