@@ -224,6 +224,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	defer cancel()
 
 	fail := func(err error) {
+		s.logger.Error("audio transcription run failed", "run_id", runID, "file_id", fileID, "error", err)
 		msg := err.Error()
 		if len(msg) > 500 {
 			msg = msg[:500]
@@ -253,6 +254,14 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		fail(err)
 		return
 	}
+	if err := ensureReadableAudioAsset(assetPath); err != nil {
+		fail(err)
+		return
+	}
+	if err := s.EnsureAssetDirs(); err != nil {
+		fail(err)
+		return
+	}
 
 	workDir := filepath.Join(s.assetsDir, "work", fileID)
 	_ = os.RemoveAll(workDir)
@@ -262,11 +271,12 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	}
 	defer os.RemoveAll(workDir)
 
-	normalized := filepath.Join(workDir, "normalized.ogg")
-	if err := ffmpegNormalizeAudio(ctx, assetPath, normalized); err != nil {
+	normalizedMedia, err := normalizeAudioForSpeechKit(ctx, assetPath, workDir)
+	if err != nil {
 		fail(fmt.Errorf("audio normalize: %w", err))
 		return
 	}
+	normalized := normalizedMedia.path
 
 	duration, err := ffprobeDuration(ctx, normalized)
 	if err != nil {
@@ -289,7 +299,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		chunks = [][]byte{normalizedData}
 	} else {
 		segmentDir := filepath.Join(workDir, "segments")
-		if err := ffmpegSegmentAudio(ctx, normalized, segmentDir, AudioTranscriptionSegmentSec); err != nil {
+		if err := ffmpegSegmentAudio(ctx, normalized, segmentDir, AudioTranscriptionSegmentSec, normalizedMedia.segmentCopy); err != nil {
 			fail(fmt.Errorf("audio split: %w", err))
 			return
 		}
@@ -299,7 +309,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 			return
 		}
 		for _, entry := range entries {
-			if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".ogg") {
+			if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), normalizedMedia.segmentExt) {
 				continue
 			}
 			part, err := os.ReadFile(filepath.Join(segmentDir, entry.Name()))
@@ -308,7 +318,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 				return
 			}
 			if int64(len(part)) > AudioTranscriptionAsyncMaxBytes {
-				subParts, err := s.splitWithSyncChunks(ctx, part, workDir)
+				subParts, err := s.splitWithSyncChunks(ctx, part, workDir, normalizedMedia)
 				if err != nil {
 					fail(err)
 					return
@@ -326,7 +336,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 
 	var transcriptParts []string
 	for i, chunk := range chunks {
-		text, err := s.transcribeChunk(ctx, params, chunk, "audio/ogg")
+		text, err := s.transcribeChunk(ctx, params, chunk, normalizedMedia.contentType, normalizedMedia.syncFormat)
 		if err != nil {
 			fail(fmt.Errorf("chunk %d: %w", i+1, err))
 			return
@@ -381,9 +391,15 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 	_ = s.usageLog.Create(ctx, userID, runID, "yandex-speechkit", settings.Model, 0, 0, 0, costRUB)
 }
 
-func (s *AudioTranscriptionService) transcribeChunk(ctx context.Context, params YandexSpeechKitParams, chunk []byte, contentType string) (string, error) {
+func (s *AudioTranscriptionService) transcribeChunk(ctx context.Context, params YandexSpeechKitParams, chunk []byte, contentType, syncFormat string) (string, error) {
+	if syncFormat == "" {
+		syncFormat = "oggopus"
+	}
+	if contentType == "" {
+		contentType = "audio/ogg"
+	}
 	if int64(len(chunk)) <= AudioTranscriptionSyncMaxBytes {
-		text, syncErr := s.llm.TranscribeYandexSpeechKitSync(ctx, params, chunk, "oggopus")
+		text, syncErr := s.llm.TranscribeYandexSpeechKitSync(ctx, params, chunk, syncFormat)
 		if syncErr == nil {
 			return text, nil
 		}
@@ -391,13 +407,13 @@ func (s *AudioTranscriptionService) transcribeChunk(ctx context.Context, params 
 	return s.llm.TranscribeYandexSpeechKitAsync(ctx, params, chunk, contentType)
 }
 
-func (s *AudioTranscriptionService) splitWithSyncChunks(ctx context.Context, part []byte, workDir string) ([][]byte, error) {
-	partPath := filepath.Join(workDir, "oversized.ogg")
+func (s *AudioTranscriptionService) splitWithSyncChunks(ctx context.Context, part []byte, workDir string, media normalizedAudioMedia) ([][]byte, error) {
+	partPath := filepath.Join(workDir, "oversized"+media.segmentExt)
 	if err := os.WriteFile(partPath, part, 0o640); err != nil {
 		return nil, err
 	}
 	syncDir := filepath.Join(workDir, "sync_segments")
-	if err := ffmpegSegmentAudio(ctx, partPath, syncDir, AudioTranscriptionSyncMaxSec); err != nil {
+	if err := ffmpegSegmentAudio(ctx, partPath, syncDir, AudioTranscriptionSyncMaxSec, media.segmentCopy); err != nil {
 		return nil, err
 	}
 	entries, err := os.ReadDir(syncDir)
@@ -406,7 +422,7 @@ func (s *AudioTranscriptionService) splitWithSyncChunks(ctx context.Context, par
 	}
 	var out [][]byte
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".ogg") {
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), media.segmentExt) {
 			continue
 		}
 		data, err := os.ReadFile(filepath.Join(syncDir, entry.Name()))
@@ -515,36 +531,157 @@ func audioExtensionFromContentType(contentType, originalName string) string {
 }
 
 func ffmpegNormalizeAudio(ctx context.Context, input, output string) error {
-	cmd := exec.CommandContext(ctx, "ffmpeg",
-		"-y", "-i", input,
+	return ffmpegNormalizeAudioWithArgs(ctx, input, output,
+		"-map", "0:a:0",
 		"-ac", "1", "-ar", "16000",
-		"-c:a", "libopus", "-b:a", "32k",
-		output,
+		"-c:a", "libopus", "-application", "voip", "-b:a", "32k",
+		"-f", "ogg",
 	)
-	out, err := cmd.CombinedOutput()
+}
+
+func ffmpegNormalizeAudioWAV(ctx context.Context, input, output string) error {
+	return ffmpegNormalizeAudioWithArgs(ctx, input, output,
+		"-map", "0:a:0",
+		"-ac", "1", "-ar", "16000",
+		"-c:a", "pcm_s16le",
+		"-f", "wav",
+	)
+}
+
+type normalizedAudioMedia struct {
+	path        string
+	contentType string
+	syncFormat  string
+	segmentExt  string
+	segmentCopy bool
+}
+
+func normalizeAudioForSpeechKit(ctx context.Context, input, workDir string) (normalizedAudioMedia, error) {
+	oggPath := filepath.Join(workDir, "normalized.ogg")
+	oggErr := ffmpegNormalizeAudio(ctx, input, oggPath)
+	if oggErr == nil {
+		return normalizedAudioMedia{
+			path:        oggPath,
+			contentType: "audio/ogg",
+			syncFormat:  "oggopus",
+			segmentExt:  ".ogg",
+			segmentCopy: true,
+		}, nil
+	}
+
+	wavPath := filepath.Join(workDir, "normalized.wav")
+	if wavErr := ffmpegNormalizeAudioWAV(ctx, input, wavPath); wavErr == nil {
+		return normalizedAudioMedia{
+			path:        wavPath,
+			contentType: "audio/wav",
+			syncFormat:  "lpcm",
+			segmentExt:  ".wav",
+			segmentCopy: false,
+		}, nil
+	} else if wavErr != nil {
+		return normalizedAudioMedia{}, fmt.Errorf("ogg: %v; wav: %w", oggErr, wavErr)
+	}
+	return normalizedAudioMedia{}, fmt.Errorf("ogg: %w", oggErr)
+}
+
+func ensureReadableAudioAsset(path string) error {
+	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("%w: %s", err, strings.TrimSpace(string(out)))
+		if os.IsNotExist(err) {
+			return fmt.Errorf("uploaded audio file is missing on server; upload the file again")
+		}
+		return fmt.Errorf("uploaded audio file unavailable: %w", err)
+	}
+	if info.Size() == 0 {
+		return errors.New("uploaded audio file is empty")
 	}
 	return nil
 }
 
-func ffmpegSegmentAudio(ctx context.Context, input, outputPattern string, segmentSec float64) error {
+func ffmpegNormalizeAudioWithArgs(ctx context.Context, input, output string, encodeArgs ...string) error {
+	if err := ensureReadableAudioAsset(input); err != nil {
+		return err
+	}
+	args := []string{
+		"-nostdin", "-hide_banner", "-loglevel", "error",
+		"-probesize", "50M", "-analyzeduration", "50M",
+		"-y", "-i", input,
+		"-vn", "-sn", "-dn",
+	}
+	args = append(args, encodeArgs...)
+	args = append(args, output)
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return ffmpegCommandError(err, out)
+	}
+	info, statErr := os.Stat(output)
+	if statErr != nil || info.Size() == 0 {
+		return errors.New("ffmpeg produced an empty output file")
+	}
+	return nil
+}
+
+func ffmpegSegmentAudio(ctx context.Context, input, outputPattern string, segmentSec float64, useCopy bool) error {
 	pattern := filepath.Join(outputPattern, "chunk_%03d.ogg")
 	if err := os.MkdirAll(outputPattern, 0o750); err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "ffmpeg",
+	args := []string{
+		"-nostdin", "-hide_banner", "-loglevel", "error",
 		"-y", "-i", input,
 		"-f", "segment",
 		"-segment_time", fmt.Sprintf("%.0f", segmentSec),
-		"-c", "copy",
-		pattern,
-	)
+	}
+	if useCopy {
+		args = append(args, "-c", "copy")
+	} else {
+		pattern = filepath.Join(outputPattern, "chunk_%03d.wav")
+		args = append(args, "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le")
+	}
+	args = append(args, pattern)
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%w: %s", err, strings.TrimSpace(string(out)))
+		return ffmpegCommandError(err, out)
 	}
 	return nil
+}
+
+func ffmpegCommandError(err error, output []byte) error {
+	if err == nil {
+		return nil
+	}
+	msg := extractFFmpegError(output)
+	if msg == "" {
+		msg = strings.TrimSpace(string(output))
+	}
+	if len(msg) > 500 {
+		msg = msg[len(msg)-500:]
+	}
+	if msg == "" {
+		return err
+	}
+	return fmt.Errorf("%w: %s", err, msg)
+}
+
+func extractFFmpegError(output []byte) string {
+	var parts []string
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		lower := strings.ToLower(line)
+		if strings.Contains(lower, "error") ||
+			strings.Contains(lower, "invalid") ||
+			strings.Contains(lower, "no such file") ||
+			strings.Contains(lower, "does not contain") ||
+			strings.Contains(lower, "could not") {
+			parts = append(parts, line)
+		}
+	}
+	return strings.Join(parts, "; ")
 }
 
 func ffprobeDuration(ctx context.Context, input string) (*float64, error) {

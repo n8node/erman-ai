@@ -22,10 +22,12 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       TELEGRAM_ASSETS_DIR: /app/data/telegram
       GEOLOGICAL_JOURNAL_ASSETS_DIR: /app/data/geological-journal
+      AUDIO_TRANSCRIPTION_ASSETS_DIR: /app/data/audio-transcription
       JOURNAL_PREPROCESSOR_URL: http://journal-preprocessor:8090
     volumes:
       - telegram_assets:/app/data/telegram
       - geological_journal_assets:/app/data/geological-journal
+      - audio_transcription_assets:/app/data/audio-transcription
     depends_on:
       postgres:
         condition: service_healthy
@@ -179,6 +181,7 @@ volumes:
   wp_uploads:
   telegram_assets:
   geological_journal_assets:
+  audio_transcription_assets:
   affine_postgres_data:
   affine_storage:
   affine_config:
