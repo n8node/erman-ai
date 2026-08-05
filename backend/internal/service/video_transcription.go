@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -88,10 +89,7 @@ func (s *VideoTranscriptionService) CheckAccess(ctx context.Context, userID, rol
 	return nil
 }
 
-func ValidateVideoTranscriptionFile(data []byte, contentType string) error {
-	if len(data) == 0 || int64(len(data)) > VideoTranscriptionMaxUploadBytes {
-		return ErrVideoTranscriptionInvalidVideo
-	}
+func ValidateVideoTranscriptionContentType(contentType string) error {
 	ct := strings.ToLower(strings.TrimSpace(contentType))
 	allowed := []string{
 		"video/mp4", "video/webm", "video/quicktime", "video/x-msvideo",
@@ -103,6 +101,13 @@ func ValidateVideoTranscriptionFile(data []byte, contentType string) error {
 		}
 	}
 	return ErrVideoTranscriptionInvalidVideo
+}
+
+func ValidateVideoTranscriptionFile(data []byte, contentType string) error {
+	if len(data) == 0 || int64(len(data)) > VideoTranscriptionMaxUploadBytes {
+		return ErrVideoTranscriptionInvalidVideo
+	}
+	return ValidateVideoTranscriptionContentType(contentType)
 }
 
 func (s *VideoTranscriptionService) resolveSpeechKitParams(ctx context.Context, settings model.VideoTranscriptionSettings) (YandexSpeechKitParams, error) {
@@ -127,11 +132,11 @@ func (s *VideoTranscriptionService) resolveSpeechKitParams(ctx context.Context, 
 	return params, nil
 }
 
-func (s *VideoTranscriptionService) UploadAndTranscribe(ctx context.Context, userID, role, originalName, contentType string, data []byte) (*model.VideoTranscriptionFile, *model.ToolRun, error) {
+func (s *VideoTranscriptionService) UploadAndTranscribe(ctx context.Context, userID, role, originalName, contentType string, src io.Reader) (*model.VideoTranscriptionFile, *model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, nil, err
 	}
-	if err := ValidateVideoTranscriptionFile(data, contentType); err != nil {
+	if err := ValidateVideoTranscriptionContentType(contentType); err != nil {
 		return nil, nil, err
 	}
 	if err := s.billing.CheckToolLimit(ctx, userID, model.VideoTranscriptionToolSlug); err != nil {
@@ -143,11 +148,27 @@ func (s *VideoTranscriptionService) UploadAndTranscribe(ctx context.Context, use
 
 	ext := videoExtensionFromContentType(contentType, originalName)
 	path := filepath.Join(s.assetsDir, "uploads", randomMediaAssetName(ext))
-	if err := os.WriteFile(path, data, 0o640); err != nil {
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o640)
+	if err != nil {
 		return nil, nil, err
 	}
+	limited := io.LimitReader(src, VideoTranscriptionMaxUploadBytes+1)
+	written, copyErr := io.Copy(out, limited)
+	closeErr := out.Close()
+	if copyErr != nil {
+		_ = os.Remove(path)
+		return nil, nil, copyErr
+	}
+	if closeErr != nil {
+		_ = os.Remove(path)
+		return nil, nil, closeErr
+	}
+	if written == 0 || written > VideoTranscriptionMaxUploadBytes {
+		_ = os.Remove(path)
+		return nil, nil, ErrVideoTranscriptionInvalidVideo
+	}
 
-	file, err := s.repo.CreateFile(ctx, userID, filepath.Base(originalName), path, contentType, int64(len(data)), nil)
+	file, err := s.repo.CreateFile(ctx, userID, filepath.Base(originalName), path, contentType, written, nil)
 	if err != nil {
 		_ = os.Remove(path)
 		return nil, nil, err

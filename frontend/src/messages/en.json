@@ -2480,7 +2480,8 @@
       "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Video transcription.",
       "alreadyProcessing": "This file is already being transcribed",
       "limitExceeded": "Monthly run limit reached for this tool",
-      "noAudio": "The video file has no audio track"
+      "noAudio": "The video file has no audio track",
+      "serverUnavailable": "The server could not finish processing the upload. Try again in a minute or use a smaller file."
     }
   }
 }

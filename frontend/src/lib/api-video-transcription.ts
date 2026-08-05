@@ -117,9 +117,16 @@ export function uploadVideoTranscriptionFile(
           // handled below
         }
         if (xhr.status < 200 || xhr.status >= 300) {
+          let message =
+            typeof data.error === "string" ? data.error : "upload failed";
+          if (xhr.status === 502 || xhr.status === 504) {
+            message = "server_timeout_or_unavailable";
+          } else if (xhr.status === 413) {
+            message = "file_too_large";
+          }
           reject(
             new ApiError(
-              typeof data.error === "string" ? data.error : "upload failed",
+              message,
               xhr.status,
               typeof data.code === "string" ? data.code : undefined
             )

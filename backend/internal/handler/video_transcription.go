@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -35,12 +34,13 @@ func (h *VideoTranscriptionHandler) UploadFile(w http.ResponseWriter, r *http.Re
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	data, name, contentType, err := readVideoMultipartFile(w, r)
+	part, err := openStreamingMultipartFile(w, r, service.VideoTranscriptionMaxUploadBytes+(1<<20), "file", "video")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "valid video file up to 500 MiB required (MP4, WebM, MOV, AVI, MKV)")
 		return
 	}
-	file, run, err := h.svc.UploadAndTranscribe(r.Context(), userID, role, name, contentType, data)
+	defer part.Reader.Close()
+	file, run, err := h.svc.UploadAndTranscribe(r.Context(), userID, role, part.Filename, part.ContentType, part.Reader)
 	if err != nil {
 		h.writeServiceError(w, err, "failed to upload video")
 		return
@@ -164,38 +164,6 @@ func (h *VideoTranscriptionHandler) PutSettings(w http.ResponseWriter, r *http.R
 		return
 	}
 	writeJSON(w, http.StatusOK, rec)
-}
-
-func readVideoMultipartFile(w http.ResponseWriter, r *http.Request) ([]byte, string, string, error) {
-	const maxBytes = service.VideoTranscriptionMaxUploadBytes + (1 << 20)
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
-	if err := r.ParseMultipartForm(maxBytes); err != nil {
-		return nil, "", "", err
-	}
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		file, header, err = r.FormFile("video")
-	}
-	if err != nil {
-		return nil, "", "", err
-	}
-	defer file.Close()
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return nil, "", "", err
-	}
-	contentType := header.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-	if err := service.ValidateVideoTranscriptionFile(data, contentType); err != nil {
-		return nil, "", "", err
-	}
-	name := header.Filename
-	if strings.TrimSpace(name) == "" {
-		name = "video"
-	}
-	return data, name, contentType, nil
 }
 
 func (h *VideoTranscriptionHandler) writeServiceError(w http.ResponseWriter, err error, fallback string) {

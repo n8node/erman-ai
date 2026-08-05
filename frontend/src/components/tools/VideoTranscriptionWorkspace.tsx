@@ -189,7 +189,21 @@ export function VideoTranscriptionWorkspace() {
       startPolling(result.run_id, result.file.id);
     } catch (err) {
       setUploadPercent(null);
-      setError(err instanceof Error ? err.message : t("uploadFailed"));
+      if (err instanceof ApiError) {
+        if (err.status === 502 || err.status === 504) {
+          setError(t("errors.serverUnavailable"));
+        } else if (err.status === 413) {
+          setError(t("errors.fileTooLarge"));
+        } else if (err.status === 403) {
+          setError(t("errors.accessDenied"));
+        } else if (err.status === 402) {
+          setError(t("errors.limitExceeded"));
+        } else {
+          setError(err.message || t("uploadFailed"));
+        }
+      } else {
+        setError(err instanceof Error ? err.message : t("uploadFailed"));
+      }
     }
   }
 
