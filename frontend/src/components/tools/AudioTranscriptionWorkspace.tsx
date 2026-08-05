@@ -83,7 +83,7 @@ export function AudioTranscriptionWorkspace() {
     let cancelled = false;
     listAudioTranscriptionFiles()
       .then((data) => {
-        if (!cancelled) setFiles(data.items);
+        if (!cancelled) setFiles(Array.isArray(data.items) ? data.items : []);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -110,7 +110,7 @@ export function AudioTranscriptionWorkspace() {
 
   async function reloadFiles() {
     const data = await listAudioTranscriptionFiles();
-    setFiles(data.items);
+    setFiles(Array.isArray(data.items) ? data.items : []);
   }
 
   async function selectFile(id: string) {
@@ -215,7 +215,7 @@ export function AudioTranscriptionWorkspace() {
     }
   }
 
-  const selected = files.find((f) => f.id === selectedId) || null;
+  const selected = (files ?? []).find((f) => f.id === selectedId) || null;
   const isProcessing =
     run?.status === "pending" || run?.status === "processing";
 
@@ -293,11 +293,11 @@ export function AudioTranscriptionWorkspace() {
           </div>
           {loading ? (
             <p className="px-4 py-6 text-sm text-text2">{t("loading")}</p>
-          ) : files.length === 0 ? (
+          ) : (files ?? []).length === 0 ? (
             <p className="px-4 py-6 text-sm text-text2">{t("empty")}</p>
           ) : (
             <ul className="max-h-[420px] overflow-y-auto">
-              {files.map((file) => (
+              {(files ?? []).map((file) => (
                 <li key={file.id}>
                   <button
                     type="button"

@@ -44,7 +44,7 @@ export function AdminAudioTranscriptionEditor() {
         fetchAdminAudioTranscriptionAccess(),
       ]);
       setSettings({ ...DEFAULT_SETTINGS, ...settingsRes.settings });
-      setUsers(accessRes.items);
+      setUsers(Array.isArray(accessRes.items) ? accessRes.items : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {

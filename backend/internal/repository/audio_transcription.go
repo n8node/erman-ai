@@ -49,7 +49,7 @@ func (r *AudioTranscriptionRepository) ListAccessUsers(ctx context.Context) ([]m
 		return nil, err
 	}
 	defer rows.Close()
-	var out []model.AudioTranscriptionAccessUser
+	var out = make([]model.AudioTranscriptionAccessUser, 0)
 	for rows.Next() {
 		var item model.AudioTranscriptionAccessUser
 		if err := rows.Scan(&item.ID, &item.Email, &item.Role, &item.HasAccess); err != nil {
@@ -116,7 +116,7 @@ func (r *AudioTranscriptionRepository) ListFiles(ctx context.Context, userID str
 		return nil, err
 	}
 	defer rows.Close()
-	var out []model.AudioTranscriptionFile
+	var out = make([]model.AudioTranscriptionFile, 0)
 	for rows.Next() {
 		item, err := scanAudioFileWithRun(rows)
 		if err != nil {
