@@ -125,7 +125,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 		logger.Error("geological journal asset directory unavailable", "error", err)
 	}
 	audioTranscriptionSvc := service.NewAudioTranscriptionService(
-		cfg, audioTranscriptionRepo, runRepo, planRepo, billingSvc, llmSvc, usageLogRepo, logger,
+		cfg, audioTranscriptionRepo, runRepo, planRepo, billingSvc, llmSvc, strategyLLMSvc, usageLogRepo, logger,
 	)
 	if err := audioTranscriptionSvc.EnsureAssetDirs(); err != nil {
 		logger.Error("audio transcription asset directory unavailable", "error", err)

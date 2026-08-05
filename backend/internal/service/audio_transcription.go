@@ -46,6 +46,7 @@ type AudioTranscriptionService struct {
 	plans    *repository.PlanRepository
 	billing  *BillingService
 	llm      *LLMService
+	strategy *StrategyLLMSettingsService
 	usageLog *repository.UsageLogRepository
 	logger   *slog.Logger
 }
@@ -57,6 +58,7 @@ func NewAudioTranscriptionService(
 	plans *repository.PlanRepository,
 	billing *BillingService,
 	llm *LLMService,
+	strategy *StrategyLLMSettingsService,
 	usageLog *repository.UsageLogRepository,
 	logger *slog.Logger,
 ) *AudioTranscriptionService {
@@ -68,6 +70,7 @@ func NewAudioTranscriptionService(
 		plans:     plans,
 		billing:   billing,
 		llm:       llm,
+		strategy:  strategy,
 		usageLog:  usageLog,
 		logger:    logger,
 	}
@@ -111,13 +114,22 @@ func ValidateAudioTranscriptionFile(data []byte, contentType string) error {
 	return ErrAudioTranscriptionInvalidAudio
 }
 
-func (s *AudioTranscriptionService) speechKitParams(settings model.AudioTranscriptionSettings) YandexSpeechKitParams {
-	return YandexSpeechKitParams{
-		APIKey:       s.llm.ResolveYandexKey(s.cfg.YandexAPIKey),
-		FolderID:     s.llm.ResolveYandexFolderID(s.cfg.YandexFolderID),
+func (s *AudioTranscriptionService) resolveSpeechKitParams(ctx context.Context, settings model.AudioTranscriptionSettings) (YandexSpeechKitParams, error) {
+	strategyRec, err := s.strategy.GetStored(ctx)
+	if err != nil {
+		return YandexSpeechKitParams{}, err
+	}
+	creds := s.llm.CredentialsFromStored(strategyRec.Config)
+	params := YandexSpeechKitParams{
+		APIKey:       creds.YandexKey,
+		FolderID:     creds.YandexFolderID,
 		LanguageCode: settings.LanguageCode,
 		Model:        settings.Model,
 	}
+	if strings.TrimSpace(params.APIKey) == "" || strings.TrimSpace(params.FolderID) == "" {
+		return params, fmt.Errorf("%w: set Yandex API key and folder ID in Admin → AI Strategy LLM or server .env", ErrYandexSpeechKitNotConfigured)
+	}
+	return params, nil
 }
 
 func (s *AudioTranscriptionService) UploadAndTranscribe(ctx context.Context, userID, role, originalName, contentType string, data []byte) (*model.AudioTranscriptionFile, *model.ToolRun, error) {
@@ -239,7 +251,11 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		return
 	}
 
-	params := s.speechKitParams(settings)
+	params, err := s.resolveSpeechKitParams(ctx, settings)
+	if err != nil {
+		fail(err)
+		return
+	}
 	var chunks [][]byte
 	if int64(len(normalizedData)) <= AudioTranscriptionAsyncMaxBytes {
 		chunks = [][]byte{normalizedData}
