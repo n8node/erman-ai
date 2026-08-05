@@ -18,6 +18,7 @@ import {
   CalendarDays,
   PanelsTopLeft,
   NotebookTabs,
+  Mic,
 } from "lucide-react";
 import {
   fetchAdminExternalProjects,
@@ -40,6 +41,7 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   const pathname = usePathname();
   const [projects, setProjects] = useState<ExternalProject[]>([]);
   const [journalAvailable, setJournalAvailable] = useState(false);
+  const [transcriptionAvailable, setTranscriptionAvailable] = useState(false);
   const isSuperAdmin = user?.role === "superadmin";
 
   const loadProjects = useCallback(() => {
@@ -60,15 +62,22 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   useEffect(() => {
     if (!user) {
       setJournalAvailable(false);
+      setTranscriptionAvailable(false);
       return;
     }
     fetchTools()
-      .then((data) =>
+      .then((data) => {
         setJournalAvailable(
           data.tools.some((tool) => tool.slug === "geological-journal")
-        )
-      )
-      .catch(() => setJournalAvailable(false));
+        );
+        setTranscriptionAvailable(
+          data.tools.some((tool) => tool.slug === "audio-transcription")
+        );
+      })
+      .catch(() => {
+        setJournalAvailable(false);
+        setTranscriptionAvailable(false);
+      });
   }, [user]);
 
   useEffect(() => {
@@ -94,6 +103,15 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
             href: "/tools/geological-journal",
             label: t("geologicalJournal"),
             icon: NotebookTabs,
+          },
+        ]
+      : []),
+    ...(transcriptionAvailable
+      ? [
+          {
+            href: "/tools/audio-transcription",
+            label: t("audioTranscription"),
+            icon: Mic,
           },
         ]
       : []),

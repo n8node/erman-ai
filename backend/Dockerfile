@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOBIN=/go/bin go install github.com/pressly/goose/v
 FROM alpine:3.20
 COPY internal/service/certs/russian_trusted_root_ca.pem /usr/local/share/ca-certificates/russian_trusted_root_ca.crt
 COPY internal/service/certs/russian_trusted_sub_ca.pem /usr/local/share/ca-certificates/russian_trusted_sub_ca.crt
-RUN apk add --no-cache ca-certificates tzdata chromium nss freetype harfbuzz font-noto ttf-freefont \
+RUN apk add --no-cache ca-certificates tzdata chromium nss freetype harfbuzz font-noto ttf-freefont ffmpeg \
  && update-ca-certificates
 ENV CHROME_PATH=/usr/bin/chromium
 WORKDIR /app

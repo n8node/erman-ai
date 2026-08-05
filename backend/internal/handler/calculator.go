@@ -416,10 +416,17 @@ type ToolsHandler struct {
 	runs    *repository.ToolRunRepository
 	billing *service.BillingService
 	journal *service.GeologicalJournalService
+	audio   *service.AudioTranscriptionService
 }
 
-func NewToolsHandler(plans *repository.PlanRepository, runs *repository.ToolRunRepository, billing *service.BillingService, journal *service.GeologicalJournalService) *ToolsHandler {
-	return &ToolsHandler{plans: plans, runs: runs, billing: billing, journal: journal}
+func NewToolsHandler(
+	plans *repository.PlanRepository,
+	runs *repository.ToolRunRepository,
+	billing *service.BillingService,
+	journal *service.GeologicalJournalService,
+	audio *service.AudioTranscriptionService,
+) *ToolsHandler {
+	return &ToolsHandler{plans: plans, runs: runs, billing: billing, journal: journal, audio: audio}
 }
 
 func (h *ToolsHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -456,6 +463,9 @@ func (h *ToolsHandler) List(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if t.Slug == model.GeologicalJournalToolSlug && h.journal.CheckAccess(r.Context(), userID, role) != nil {
+			continue
+		}
+		if t.Slug == model.AudioTranscriptionToolSlug && h.audio.CheckAccess(r.Context(), userID, role) != nil {
 			continue
 		}
 		limit := -1

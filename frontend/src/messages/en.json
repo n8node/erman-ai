@@ -109,6 +109,7 @@
     "audit": "Automation Audit",
     "legalScan": "Legal Site Scan",
     "geologicalJournal": "Geological Journal",
+    "audioTranscription": "Audio Transcription",
     "workspace": "Workspace",
     "billing": "Billing",
     "apiKeys": "API Keys",
@@ -158,6 +159,11 @@
         "description": "Turn scanned field journal pages into an editable structured table while preserving the source image.",
         "audience": "Geologists and field teams digitizing drilling and core recovery records."
       },
+      "audio-transcription": {
+        "name": "Audio transcription",
+        "description": "Convert audio recordings to text and download the result as TXT.",
+        "audience": "Teams that need quick transcripts from interviews, calls, and field recordings."
+      },
       "workspace": {
         "name": "Workspace",
         "description": "One place for documents, collaboration, and infinite visual whiteboards.",
@@ -203,6 +209,10 @@
       "geological-journal": {
         "name": "Geological Journal",
         "description": "Recognize field journal tables from scans and photos"
+      },
+      "audio-transcription": {
+        "name": "Audio transcription",
+        "description": "Speech-to-text export as TXT"
       }
     }
   },
@@ -238,6 +248,7 @@
       "legalRisks": "Legal scan: risks",
       "legalScanLlm": "Legal scan: model",
       "geologicalJournal": "Geological journal",
+      "audioTranscription": "Audio transcription",
       "emailSmtp": "Email / SMTP",
       "payments": "Payments",
       "telegram": "Telegram",
@@ -333,6 +344,28 @@
         "models": "Could not load model list",
         "ocrTest": "Vision OCR test failed"
       }
+    },
+    "audioTranscription": {
+      "title": "Audio transcription",
+      "subtitle": "Yandex SpeechKit STT and user access",
+      "loading": "Loading…",
+      "loadFailed": "Failed to load settings",
+      "saveFailed": "Failed to save settings",
+      "accessFailed": "Failed to update access",
+      "saved": "Settings saved",
+      "tabSettings": "Settings",
+      "tabAccess": "Access",
+      "settingsTitle": "SpeechKit",
+      "model": "STT model",
+      "language": "Language",
+      "pricePerMinute": "Cost, RUB/min (tracking)",
+      "save": "Save",
+      "accessTitle": "User access",
+      "colEmail": "Email",
+      "colRole": "Role",
+      "colAccess": "Access",
+      "accessOn": "Enabled",
+      "accessOff": "Disabled"
     },
     "users": {
       "title": "Users",
@@ -2328,6 +2361,35 @@
       "retry": "Could not start recognition again",
       "save": "Could not save corrections",
       "delete": "Could not delete the page"
+    }
+  },
+  "audioTranscription": {
+    "title": "Audio transcription",
+    "subtitle": "Upload an audio file — the service will transcribe speech and prepare a TXT download.",
+    "dropTitle": "Drop an audio file here",
+    "dropHint": "MP3, WAV, OGG, M4A, WebM · up to 500 MB",
+    "chooseFile": "Choose file",
+    "uploading": "Uploading {percent}%",
+    "history": "History",
+    "loading": "Loading…",
+    "empty": "No uploaded files yet",
+    "selectFile": "Select a file from history or upload a new one",
+    "downloadTxt": "Download TXT",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the file and transcript?",
+    "processing": "Transcribing speech…",
+    "result": "Transcript",
+    "meta": "Chunks: {chunks} · model {model} · {language}",
+    "uploadStarted": "File uploaded, transcription started",
+    "transcriptionDone": "Transcription completed",
+    "transcriptionFailed": "Could not transcribe the audio",
+    "uploadFailed": "Could not upload the file",
+    "loadFailed": "Could not load data",
+    "deleteFailed": "Could not delete the file",
+    "deleted": "File deleted",
+    "errors": {
+      "fileTooLarge": "File size must not exceed 500 MB",
+      "invalidType": "Supported formats: MP3, WAV, OGG, M4A, WebM, and MP4 with audio"
     }
   }
 }

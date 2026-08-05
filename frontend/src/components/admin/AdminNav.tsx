@@ -19,6 +19,7 @@ export function AdminNav() {
     { href: "/admin/legal-risks", label: t("legalRisks") },
     { href: "/admin/legal-scan-llm", label: t("legalScanLlm") },
     { href: "/admin/geological-journal", label: t("geologicalJournal") },
+    { href: "/admin/audio-transcription", label: t("audioTranscription") },
     { href: "/admin/strategy-llm", label: t("strategyLlm") },
     { href: "/admin/email", label: t("emailSmtp") },
     { href: "/admin/payments", label: t("payments") },

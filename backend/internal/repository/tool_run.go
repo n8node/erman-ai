@@ -82,13 +82,17 @@ func (r *ToolRunRepository) UpdateRunProcessingOutput(ctx context.Context, id st
 }
 
 func (r *ToolRunRepository) UpdateRunDone(ctx context.Context, id string, output json.RawMessage, tokens int64, modelUsed string) error {
+	return r.UpdateRunDoneWithArtifact(ctx, id, output, tokens, modelUsed, "")
+}
+
+func (r *ToolRunRepository) UpdateRunDoneWithArtifact(ctx context.Context, id string, output json.RawMessage, tokens int64, modelUsed, artifactURL string) error {
 	const q = `
 		UPDATE tool_runs
 		SET status = 'done', output = $2, tokens_used = $3, model_used = $4,
-		    completed_at = NOW(), updated_at = NOW(), error_msg = NULL
+		    artifact_url = NULLIF($5, ''), completed_at = NOW(), updated_at = NOW(), error_msg = NULL
 		WHERE id = $1
 	`
-	tag, err := r.pool.Exec(ctx, q, id, output, tokens, modelUsed)
+	tag, err := r.pool.Exec(ctx, q, id, output, tokens, modelUsed, artifactURL)
 	if err != nil {
 		return err
 	}

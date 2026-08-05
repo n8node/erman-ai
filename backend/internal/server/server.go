@@ -58,6 +58,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	planCheckoutRepo := repository.NewPlanCheckoutRepository(db.Pool)
 	consultationRepo := repository.NewConsultationRepository(db.Pool)
 	geologicalJournalRepo := repository.NewGeologicalJournalRepository(db.Pool)
+	audioTranscriptionRepo := repository.NewAudioTranscriptionRepository(db.Pool)
 
 	usageLogRepo := repository.NewUsageLogRepository(db.Pool)
 
@@ -123,6 +124,12 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	if err := geologicalJournalSvc.EnsureAssetDirs(); err != nil {
 		logger.Error("geological journal asset directory unavailable", "error", err)
 	}
+	audioTranscriptionSvc := service.NewAudioTranscriptionService(
+		cfg, audioTranscriptionRepo, runRepo, planRepo, billingSvc, llmSvc, usageLogRepo, logger,
+	)
+	if err := audioTranscriptionSvc.EnsureAssetDirs(); err != nil {
+		logger.Error("audio transcription asset directory unavailable", "error", err)
+	}
 
 	authHandler := handler.NewAuthHandler(authSvc, authMW, cfg, projectInquiryRepo, proposalReqRepo)
 	calcHandler := handler.NewCalculatorHandler(calcSvc, billingSvc, authSvc, cfg)
@@ -154,9 +161,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	consultationHandler := handler.NewConsultationHandler(consultationSvc)
 	inquiryRL := middleware.NewRateLimiter(5, time.Hour)
 	billingHandler := handler.NewBillingHandler(billingSvc, checkoutSvc, planRepo, runRepo)
-	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc, geologicalJournalSvc)
+	toolsHandler := handler.NewToolsHandler(planRepo, runRepo, billingSvc, geologicalJournalSvc, audioTranscriptionSvc)
 	workspaceOIDCHandler := handler.NewWorkspaceOIDCHandler(userRepo, cfg)
 	geologicalJournalHandler := handler.NewGeologicalJournalHandler(geologicalJournalSvc)
+	audioTranscriptionHandler := handler.NewAudioTranscriptionHandler(audioTranscriptionSvc)
 
 	r.Use(chimw.RequestID)
 	r.Use(chimw.RealIP)
@@ -247,6 +255,13 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				journal.Delete("/pages/{id}", geologicalJournalHandler.DeletePage)
 				journal.Get("/examples", geologicalJournalHandler.ListExamples)
 				journal.Get("/examples/{id}/image", geologicalJournalHandler.ExampleImage)
+			})
+			protected.Route("/tools/audio-transcription", func(at chi.Router) {
+				at.Post("/files", audioTranscriptionHandler.UploadFile)
+				at.Get("/files", audioTranscriptionHandler.ListFiles)
+				at.Get("/files/{id}", audioTranscriptionHandler.GetFile)
+				at.Get("/files/{id}/download", audioTranscriptionHandler.DownloadTranscript)
+				at.Delete("/files/{id}", audioTranscriptionHandler.DeleteFile)
 			})
 			protected.Get("/runs/{id}/stream", strategyHandler.Stream)
 
@@ -350,6 +365,12 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				journal.Post("/examples", geologicalJournalHandler.AdminCreateExample)
 				journal.Put("/examples/{id}", geologicalJournalHandler.AdminUpdateExample)
 				journal.Delete("/examples/{id}", geologicalJournalHandler.AdminDeleteExample)
+			})
+			admin.Route("/audio-transcription", func(at chi.Router) {
+				at.Get("/settings", audioTranscriptionHandler.GetSettings)
+				at.Put("/settings", audioTranscriptionHandler.PutSettings)
+				at.Get("/access", audioTranscriptionHandler.ListAccess)
+				at.Put("/access/{user_id}", audioTranscriptionHandler.PutAccess)
 			})
 		})
 	})
