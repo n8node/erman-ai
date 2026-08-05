@@ -1160,7 +1160,8 @@
       "calculator": "Калькулятор автоматизации",
       "strategy": "AI-стратегия",
       "proposal": "Генератор КП",
-      "legal-scan": "Legal-скан сайта"
+      "legal-scan": "Legal-скан сайта",
+      "audio-transcription": "Транскрибация аудио"
     },
     "features": {
       "export_pdf": "Экспорт PDF",
@@ -2389,7 +2390,8 @@
     "deleted": "Файл удалён",
     "errors": {
       "fileTooLarge": "Размер файла не должен превышать 500 МБ",
-      "invalidType": "Поддерживаются MP3, WAV, OGG, M4A, WebM и MP4 с аудиодорожкой"
+      "invalidType": "Поддерживаются MP3, WAV, OGG, M4A, WebM и MP4 с аудиодорожкой",
+      "accessDenied": "Инструмент недоступен. Попросите администратора включить доступ в Admin → Транскрибация аудио."
     }
   }
 }

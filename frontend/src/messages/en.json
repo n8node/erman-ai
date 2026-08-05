@@ -1160,7 +1160,8 @@
       "calculator": "Automation Calculator",
       "strategy": "AI Strategy",
       "proposal": "Proposal Generator",
-      "legal-scan": "Legal Site Scan"
+      "legal-scan": "Legal Site Scan",
+      "audio-transcription": "Audio transcription"
     },
     "features": {
       "export_pdf": "PDF export",
@@ -2389,7 +2390,8 @@
     "deleted": "File deleted",
     "errors": {
       "fileTooLarge": "File size must not exceed 500 MB",
-      "invalidType": "Supported formats: MP3, WAV, OGG, M4A, WebM, and MP4 with audio"
+      "invalidType": "Supported formats: MP3, WAV, OGG, M4A, WebM, and MP4 with audio",
+      "accessDenied": "This tool is not enabled for your account. Ask an admin to grant access under Admin → Audio transcription."
     }
   }
 }

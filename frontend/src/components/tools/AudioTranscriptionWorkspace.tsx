@@ -10,7 +10,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { intlLocale } from "@/i18n/intl-locale";
 import {
   audioTranscriptionDownloadUrl,
@@ -24,7 +24,31 @@ import {
   type AudioTranscriptionOutput,
   type AudioTranscriptionRun,
 } from "@/lib/api-audio-transcription";
+import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+function parseTranscriptionOutput(raw: unknown): AudioTranscriptionOutput | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    try {
+      return parseTranscriptionOutput(JSON.parse(raw));
+    } catch {
+      return { text: raw, language: "", model: "", duration_sec: 0, chunk_count: 0 };
+    }
+  }
+  if (typeof raw === "object" && raw !== null && "text" in raw) {
+    const value = raw as AudioTranscriptionOutput;
+    return {
+      text: value.text ?? "",
+      language: value.language ?? "",
+      model: value.model ?? "",
+      duration_sec: value.duration_sec ?? 0,
+      chunk_count: value.chunk_count ?? 0,
+      preview: value.preview,
+    };
+  }
+  return null;
+}
 
 function formatBytes(bytes: number) {
   if (!bytes) return "—";
@@ -55,22 +79,39 @@ export function AudioTranscriptionWorkspace() {
   const inputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadFiles = useCallback(async () => {
-    const data = await listAudioTranscriptionFiles();
-    setFiles(data.items);
-  }, []);
-
   useEffect(() => {
-    loadFiles()
-      .catch((err) => setError(err instanceof Error ? err.message : t("loadFailed")))
-      .finally(() => setLoading(false));
-  }, [loadFiles, t]);
+    let cancelled = false;
+    listAudioTranscriptionFiles()
+      .then((data) => {
+        if (!cancelled) setFiles(data.items);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 403) {
+          setError(t("errors.accessDenied"));
+          return;
+        }
+        setError(err instanceof Error ? err.message : t("loadFailed"));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
 
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
+
+  async function reloadFiles() {
+    const data = await listAudioTranscriptionFiles();
+    setFiles(data.items);
+  }
 
   async function selectFile(id: string) {
     setSelectedId(id);
@@ -80,10 +121,13 @@ export function AudioTranscriptionWorkspace() {
     setRun(null);
     try {
       const detail = await getAudioTranscriptionFile(id);
-      const latest = detail.runs[0];
-      if (latest?.status === "done" && latest.output) {
-        setOutput(latest.output as AudioTranscriptionOutput);
-        setRun(latest);
+      const latest = detail.runs?.[0];
+      if (latest?.status === "done") {
+        const parsed = parseTranscriptionOutput(latest.output);
+        if (parsed) {
+          setOutput(parsed);
+          setRun(latest as AudioTranscriptionRun);
+        }
       } else if (latest && (latest.status === "pending" || latest.status === "processing")) {
         setRun(latest);
         startPolling(latest.id, id);
@@ -104,14 +148,14 @@ export function AudioTranscriptionWorkspace() {
         setRun(current);
         if (current.status === "done") {
           if (pollRef.current) clearInterval(pollRef.current);
-          setOutput((current.output as AudioTranscriptionOutput) || null);
+          setOutput(parseTranscriptionOutput(current.output));
           setSuccess(t("transcriptionDone"));
-          await loadFiles();
+          await reloadFiles();
           await selectFile(fileId);
         } else if (current.status === "error") {
           if (pollRef.current) clearInterval(pollRef.current);
           setError(current.error_msg || t("transcriptionFailed"));
-          await loadFiles();
+          await reloadFiles();
         }
       } catch {
         // keep polling
@@ -136,7 +180,7 @@ export function AudioTranscriptionWorkspace() {
     try {
       const result = await promise;
       setUploadPercent(null);
-      await loadFiles();
+      await reloadFiles();
       setSelectedId(result.file.id);
       setSuccess(t("uploadStarted"));
       startPolling(result.run_id, result.file.id);
@@ -162,7 +206,7 @@ export function AudioTranscriptionWorkspace() {
       setSelectedId(null);
       setOutput(null);
       setRun(null);
-      await loadFiles();
+      await reloadFiles();
       setSuccess(t("deleted"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("deleteFailed"));
@@ -331,9 +375,9 @@ export function AudioTranscriptionWorkspace() {
                   </div>
                   <p className="text-xs text-text3">
                     {t("meta", {
-                      chunks: output.chunk_count,
-                      model: output.model,
-                      language: output.language,
+                      chunks: output.chunk_count ?? 0,
+                      model: output.model || "—",
+                      language: output.language || "—",
                     })}
                   </p>
                 </div>
