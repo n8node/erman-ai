@@ -57,6 +57,9 @@ export type AudioTranscriptionSettings = {
   model: string;
   language_code: string;
   price_rub_per_minute: number;
+  text_normalization_enabled: boolean;
+  literature_text: boolean;
+  profanity_filter: boolean;
 };
 
 export type AudioTranscriptionSettingsRecord = {

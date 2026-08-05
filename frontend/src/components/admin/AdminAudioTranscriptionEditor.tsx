@@ -22,6 +22,9 @@ const DEFAULT_SETTINGS: AudioTranscriptionSettings = {
   model: "general",
   language_code: "ru-RU",
   price_rub_per_minute: 0.16,
+  text_normalization_enabled: true,
+  literature_text: true,
+  profanity_filter: false,
 };
 
 export function AdminAudioTranscriptionEditor() {
@@ -162,6 +165,58 @@ export function AdminAudioTranscriptionEditor() {
               <option value="tr-TR">tr-TR</option>
             </select>
           </label>
+          <div className="space-y-3 rounded-lg border border-border bg-bg2 p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-text3">
+              {t("formattingTitle")}
+            </p>
+            <label className="flex items-start gap-3 text-sm text-text">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={settings.text_normalization_enabled}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    text_normalization_enabled: e.target.checked,
+                    literature_text: e.target.checked ? s.literature_text : false,
+                  }))
+                }
+              />
+              <span>
+                <span className="font-medium">{t("textNormalization")}</span>
+                <span className="mt-1 block text-xs text-text2">{t("textNormalizationHint")}</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 text-sm text-text">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={settings.literature_text}
+                disabled={!settings.text_normalization_enabled}
+                onChange={(e) =>
+                  setSettings((s) => ({ ...s, literature_text: e.target.checked }))
+                }
+              />
+              <span>
+                <span className="font-medium">{t("literatureText")}</span>
+                <span className="mt-1 block text-xs text-text2">{t("literatureTextHint")}</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 text-sm text-text">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={settings.profanity_filter}
+                onChange={(e) =>
+                  setSettings((s) => ({ ...s, profanity_filter: e.target.checked }))
+                }
+              />
+              <span>
+                <span className="font-medium">{t("profanityFilter")}</span>
+                <span className="mt-1 block text-xs text-text2">{t("profanityFilterHint")}</span>
+              </span>
+            </label>
+          </div>
           <label className="block space-y-1">
             <span className="text-xs font-medium text-text2">{t("pricePerMinute")}</span>
             <input

@@ -1,13 +1,29 @@
 package model
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 const AudioTranscriptionToolSlug = "audio-transcription"
 
 type AudioTranscriptionSettings struct {
-	Model             string  `json:"model"`
-	LanguageCode      string  `json:"language_code"`
-	PriceRUBPerMinute float64 `json:"price_rub_per_minute"`
+	Model                      string  `json:"model"`
+	LanguageCode               string  `json:"language_code"`
+	PriceRUBPerMinute          float64 `json:"price_rub_per_minute"`
+	TextNormalizationEnabled   bool    `json:"text_normalization_enabled"`
+	LiteratureText             bool    `json:"literature_text"`
+	ProfanityFilter            bool    `json:"profanity_filter"`
+}
+
+func ApplyAudioTranscriptionDefaults(settings AudioTranscriptionSettings) AudioTranscriptionSettings {
+	if strings.TrimSpace(settings.Model) == "" {
+		settings.Model = "general"
+	}
+	if strings.TrimSpace(settings.LanguageCode) == "" {
+		settings.LanguageCode = "ru-RU"
+	}
+	return settings
 }
 
 type AudioTranscriptionSettingsRecord struct {

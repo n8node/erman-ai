@@ -121,11 +121,15 @@ func (s *AudioTranscriptionService) resolveSpeechKitParams(ctx context.Context, 
 		return YandexSpeechKitParams{}, err
 	}
 	creds := s.llm.CredentialsFromStored(strategyRec.Config)
+	settings = model.ApplyAudioTranscriptionDefaults(settings)
 	params := YandexSpeechKitParams{
-		APIKey:       creds.YandexKey,
-		FolderID:     creds.YandexFolderID,
-		LanguageCode: settings.LanguageCode,
-		Model:        settings.Model,
+		APIKey:                   creds.YandexKey,
+		FolderID:                 creds.YandexFolderID,
+		LanguageCode:             settings.LanguageCode,
+		Model:                    settings.Model,
+		TextNormalizationEnabled: settings.TextNormalizationEnabled,
+		LiteratureText:           settings.LiteratureText,
+		ProfanityFilter:          settings.ProfanityFilter,
 	}
 	if strings.TrimSpace(params.APIKey) == "" || strings.TrimSpace(params.FolderID) == "" {
 		return params, fmt.Errorf("%w: set Yandex API key and folder ID in Admin → AI Strategy LLM or server .env", ErrYandexSpeechKitNotConfigured)
@@ -241,7 +245,7 @@ func (s *AudioTranscriptionService) processRun(runID, fileID, userID string) {
 		fail(err)
 		return
 	}
-	settings := settingsRec.Settings
+	settings := model.ApplyAudioTranscriptionDefaults(settingsRec.Settings)
 	if strings.TrimSpace(settings.Model) == "" {
 		settings.Model = "general"
 	}
@@ -398,7 +402,7 @@ func (s *AudioTranscriptionService) transcribeChunk(ctx context.Context, params 
 	if contentType == "" {
 		contentType = "audio/ogg"
 	}
-	if int64(len(chunk)) <= AudioTranscriptionSyncMaxBytes {
+	if !params.PreferAsyncRecognition() && int64(len(chunk)) <= AudioTranscriptionSyncMaxBytes {
 		text, syncErr := s.llm.TranscribeYandexSpeechKitSync(ctx, params, chunk, syncFormat)
 		if syncErr == nil {
 			return text, nil
@@ -488,16 +492,30 @@ func (s *AudioTranscriptionService) SetAccess(ctx context.Context, userID string
 }
 
 func (s *AudioTranscriptionService) GetSettings(ctx context.Context) (*model.AudioTranscriptionSettingsRecord, error) {
-	return s.repo.GetSettings(ctx)
+	rec, err := s.repo.GetSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rec.Settings = model.ApplyAudioTranscriptionDefaults(rec.Settings)
+	return rec, nil
 }
 
 func (s *AudioTranscriptionService) UpdateSettings(ctx context.Context, settings model.AudioTranscriptionSettings) (*model.AudioTranscriptionSettingsRecord, error) {
+	settings = model.ApplyAudioTranscriptionDefaults(settings)
 	settings.Model = normalizeSpeechKitModel(settings.Model)
 	settings.LanguageCode = normalizeSpeechKitLanguage(settings.LanguageCode)
+	if settings.LiteratureText && !settings.TextNormalizationEnabled {
+		settings.TextNormalizationEnabled = true
+	}
 	if settings.PriceRUBPerMinute < 0 {
 		return nil, ErrAudioTranscriptionSettings
 	}
-	return s.repo.UpdateSettings(ctx, settings)
+	rec, err := s.repo.UpdateSettings(ctx, settings)
+	if err != nil {
+		return nil, err
+	}
+	rec.Settings = model.ApplyAudioTranscriptionDefaults(rec.Settings)
+	return rec, nil
 }
 
 func randomAudioAssetName(ext string) string {

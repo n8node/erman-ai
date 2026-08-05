@@ -27,21 +27,31 @@ var (
 )
 
 type YandexSpeechKitParams struct {
-	APIKey       string
-	FolderID     string
-	LanguageCode string
-	Model        string
+	APIKey                   string
+	FolderID                 string
+	LanguageCode             string
+	Model                    string
+	TextNormalizationEnabled bool
+	LiteratureText           bool
+	ProfanityFilter          bool
 }
 
 type yandexSTTAsyncRequest struct {
-	Content          string                  `json:"content"`
+	Content          string                    `json:"content"`
 	RecognitionModel yandexSTTRecognitionModel `json:"recognitionModel"`
 }
 
 type yandexSTTRecognitionModel struct {
-	Model               string                      `json:"model"`
-	AudioFormat         yandexSTTAudioFormatOptions `json:"audioFormat"`
+	Model               string                       `json:"model"`
+	AudioFormat         yandexSTTAudioFormatOptions  `json:"audioFormat"`
+	TextNormalization   *yandexSTTTextNormalization    `json:"textNormalization,omitempty"`
 	LanguageRestriction yandexSTTLanguageRestriction `json:"languageRestriction"`
+}
+
+type yandexSTTTextNormalization struct {
+	TextNormalization string `json:"textNormalization"`
+	ProfanityFilter   bool   `json:"profanityFilter"`
+	LiteratureText    bool   `json:"literatureText"`
 }
 
 type yandexSTTAudioFormatOptions struct {
@@ -102,6 +112,25 @@ func speechKitContainerType(contentType string) string {
 	}
 }
 
+func buildSpeechKitTextNormalization(params YandexSpeechKitParams) *yandexSTTTextNormalization {
+	if !params.TextNormalizationEnabled && !params.LiteratureText && !params.ProfanityFilter {
+		return nil
+	}
+	mode := "TEXT_NORMALIZATION_DISABLED"
+	if params.TextNormalizationEnabled || params.LiteratureText {
+		mode = "TEXT_NORMALIZATION_ENABLED"
+	}
+	return &yandexSTTTextNormalization{
+		TextNormalization: mode,
+		ProfanityFilter:   params.ProfanityFilter,
+		LiteratureText:    params.LiteratureText,
+	}
+}
+
+func (params YandexSpeechKitParams) PreferAsyncRecognition() bool {
+	return params.TextNormalizationEnabled || params.LiteratureText
+}
+
 func (s *LLMService) TranscribeYandexSpeechKitAsync(ctx context.Context, params YandexSpeechKitParams, audio []byte, contentType string) (string, error) {
 	apiKey := strings.TrimSpace(params.APIKey)
 	folderID := strings.TrimSpace(params.FolderID)
@@ -123,6 +152,7 @@ func (s *LLMService) TranscribeYandexSpeechKitAsync(ctx context.Context, params 
 			AudioFormat: yandexSTTAudioFormatOptions{
 				ContainerAudio: &yandexSTTContainerAudio{ContainerAudioType: containerType},
 			},
+			TextNormalization: buildSpeechKitTextNormalization(params),
 			LanguageRestriction: yandexSTTLanguageRestriction{
 				RestrictionType: "WHITELIST",
 				LanguageCode:    []string{lang},
@@ -321,7 +351,7 @@ func extractYandexSTTLineText(line string) string {
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return ""
 	}
-	for _, key := range []string{"final", "finalRefinement", "normalizedText"} {
+	for _, key := range []string{"normalizedText", "finalRefinement", "final"} {
 		if chunk, ok := result[key]; ok {
 			if text := extractYandexSTTAlternatives(chunk); text != "" {
 				return text
