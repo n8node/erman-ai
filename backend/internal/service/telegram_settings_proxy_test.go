@@ -6,17 +6,28 @@ import (
 	"github.com/erman-ai/erman-ai/internal/model"
 )
 
-func TestNormalizeTelegramSettingsFromStorageEnablesProxyWhenURLsPresent(t *testing.T) {
+func TestNormalizeTelegramSettingsFromStorageSelectsActiveProxy(t *testing.T) {
+	cfg := model.TelegramSettings{
+		ProxyEnabled: true,
+		ProxyURLs:    []string{"http://127.0.0.1:3128"},
+	}
+	normalizeTelegramSettingsFromStorage(&cfg)
+	if !cfg.ProxyEnabled {
+		t.Fatal("expected proxy_enabled to stay true")
+	}
+	if cfg.ProxyActiveURL != "http://127.0.0.1:3128" {
+		t.Fatalf("expected active proxy auto-selected, got %q", cfg.ProxyActiveURL)
+	}
+}
+
+func TestNormalizeTelegramSettingsFromStorageKeepsProxyDisabled(t *testing.T) {
 	cfg := model.TelegramSettings{
 		ProxyEnabled: false,
 		ProxyURLs:    []string{"http://127.0.0.1:3128"},
 	}
 	normalizeTelegramSettingsFromStorage(&cfg)
-	if !cfg.ProxyEnabled {
-		t.Fatal("expected proxy_enabled=true when proxy urls exist")
-	}
-	if cfg.ProxyActiveURL != "http://127.0.0.1:3128" {
-		t.Fatalf("expected active proxy auto-selected, got %q", cfg.ProxyActiveURL)
+	if cfg.ProxyEnabled {
+		t.Fatal("expected proxy_enabled=false to be preserved when explicitly disabled")
 	}
 }
 

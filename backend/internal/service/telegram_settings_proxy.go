@@ -20,9 +20,6 @@ func parseTelegramProxyURLs(raw string) []string {
 func normalizeTelegramSettingsFromStorage(cfg *model.TelegramSettings) {
 	cfg.ProxyURLs = normalizeProxyURLs(cfg.ProxyURLs)
 	cfg.ProxyActiveURL = strings.TrimSpace(cfg.ProxyActiveURL)
-	if len(cfg.ProxyURLs) > 0 && !cfg.ProxyEnabled {
-		cfg.ProxyEnabled = true
-	}
 	if cfg.ProxyEnabled && cfg.ProxyActiveURL == "" && len(cfg.ProxyURLs) > 0 {
 		cfg.ProxyActiveURL = cfg.ProxyURLs[0]
 	}

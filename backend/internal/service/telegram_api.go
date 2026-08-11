@@ -98,8 +98,16 @@ func (s *TelegramService) doTelegramRequest(
 			return resp, nil
 		}
 		lastErr = fmt.Errorf("proxy %q: %w", proxyURL, reqErr)
-		if !cfg.ProxyAutoFailover || idx == len(proxies)-1 {
+		if !cfg.ProxyAutoFailover {
 			return nil, lastErr
+		}
+		if idx == len(proxies)-1 {
+			break
+		}
+	}
+	if lastErr != nil && cfg.ProxyAutoFailover {
+		if resp, err := makeRequest(client); err == nil {
+			return resp, nil
 		}
 	}
 	if lastErr != nil {
