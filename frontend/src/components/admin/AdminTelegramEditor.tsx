@@ -39,6 +39,8 @@ function statusDotClass(status: TelegramBotStatus): string {
   switch (status) {
     case "online":
       return "bg-[#3b6d11]";
+    case "degraded":
+      return "bg-[#ba7517]";
     case "offline":
     case "misconfigured":
       return "bg-[#a32d2d]";
@@ -356,6 +358,10 @@ export function AdminTelegramEditor() {
                 (runtime.status === "offline" ||
                   runtime.status === "misconfigured") && (
                   <p className="mt-2 text-xs text-red-800">{runtime.last_error}</p>
+                )}
+              {runtime.last_error &&
+                (runtime.status === "online" || runtime.status === "degraded") && (
+                  <p className="mt-2 text-xs text-amber-800">{runtime.last_error}</p>
                 )}
               {lastCheckLabel && (
                 <p className="mt-2 text-xs text-text3">

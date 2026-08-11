@@ -339,11 +339,15 @@ func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRunt
 	if me.Username != "" {
 		msg = "Бот работает (@" + me.Username + ")"
 	}
+	status := model.TelegramBotStatusOnline
 	if notifyWarn != "" {
 		msg += " — " + notifyWarn
+		if cfg.Enabled || cfg.UrgentEnabled {
+			status = model.TelegramBotStatusDegraded
+		}
 	}
 	return model.TelegramBotRuntimeStatus{
-		Status:      model.TelegramBotStatusOnline,
+		Status:      status,
 		Message:     msg,
 		BotUsername: me.Username,
 		LastError:   notifyWarn,

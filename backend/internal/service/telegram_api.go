@@ -31,8 +31,27 @@ type telegramForumTopic struct {
 
 type telegramAPIResponse struct {
 	OK          bool            `json:"ok"`
+	ErrorCode   int             `json:"error_code"`
 	Description string          `json:"description"`
 	Result      json.RawMessage `json:"result"`
+}
+
+func formatTelegramAPIError(_ string, parsed telegramAPIResponse) error {
+	desc := strings.TrimSpace(parsed.Description)
+	switch {
+	case parsed.ErrorCode == 404 || strings.EqualFold(desc, "Not Found"):
+		return fmt.Errorf("telegram api: неверный токен бота — получите новый у @BotFather и сохраните в настройках")
+	case strings.Contains(strings.ToLower(desc), "chat not found"):
+		return fmt.Errorf("telegram api: бот не видит указанный чат — проверьте chat_id и что бот добавлен в группу")
+	case strings.Contains(strings.ToLower(desc), "bot was blocked"):
+		return fmt.Errorf("telegram api: пользователь заблокировал бота")
+	case strings.Contains(strings.ToLower(desc), "not enough rights"):
+		return fmt.Errorf("telegram api: у бота нет прав отправлять сообщения в этот чат")
+	case desc != "":
+		return fmt.Errorf("telegram api: %s", desc)
+	default:
+		return fmt.Errorf("telegram api: request failed")
+	}
 }
 
 func (s *TelegramService) doTelegramRequest(
@@ -123,10 +142,7 @@ func (s *TelegramService) telegramAPI(ctx context.Context, token, method string,
 		return nil, fmt.Errorf("telegram api: invalid response")
 	}
 	if !parsed.OK {
-		if parsed.Description != "" {
-			return nil, fmt.Errorf("telegram api: %s", parsed.Description)
-		}
-		return nil, fmt.Errorf("telegram api: request failed")
+		return nil, formatTelegramAPIError(method, parsed)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("telegram api: status %d", resp.StatusCode)
@@ -260,10 +276,7 @@ func (s *TelegramService) telegramSendPhotoFile(ctx context.Context, token, chat
 		return fmt.Errorf("telegram api: invalid response")
 	}
 	if !parsed.OK {
-		if parsed.Description != "" {
-			return fmt.Errorf("telegram api: %s", parsed.Description)
-		}
-		return fmt.Errorf("telegram api: sendPhoto failed")
+		return formatTelegramAPIError("sendPhoto", parsed)
 	}
 	return nil
 }

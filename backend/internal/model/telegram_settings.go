@@ -45,6 +45,7 @@ const (
 	TelegramBotStatusMisconfigured TelegramBotStatus = "misconfigured"
 	TelegramBotStatusStarting      TelegramBotStatus = "starting"
 	TelegramBotStatusOnline        TelegramBotStatus = "online"
+	TelegramBotStatusDegraded      TelegramBotStatus = "degraded"
 	TelegramBotStatusOffline       TelegramBotStatus = "offline"
 )
 

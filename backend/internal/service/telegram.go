@@ -25,11 +25,22 @@ func (s *TelegramService) SendTest(ctx context.Context) (bool, string) {
 	if !cfg.Enabled && !cfg.UrgentEnabled {
 		return false, "Включите Telegram-уведомления или срочную связь в настройках"
 	}
-	if strings.TrimSpace(cfg.BotToken) == "" || strings.TrimSpace(cfg.ChatID) == "" {
+	token := strings.TrimSpace(cfg.BotToken)
+	chatID := strings.TrimSpace(cfg.ChatID)
+	if token == "" || chatID == "" {
 		return false, "Укажите токен бота и ID чата"
+	}
+	if _, err := s.telegramGetMe(ctx, token); err != nil {
+		s.triggerHealthCheck()
+		return false, "Проверка токена: " + err.Error()
+	}
+	if err := s.telegramGetChat(ctx, token, chatID); err != nil {
+		s.triggerHealthCheck()
+		return false, "Проверка чата: " + err.Error()
 	}
 	text := "✅ Тестовое сообщение Erman AI\nБот подключён и может отправлять уведомления в этот чат."
 	if err := s.send(ctx, cfg, text); err != nil {
+		s.triggerHealthCheck()
 		return false, err.Error()
 	}
 	s.triggerHealthCheck()

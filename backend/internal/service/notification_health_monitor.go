@@ -200,7 +200,7 @@ func isMaxMonitored(ctx context.Context, max *MaxService) bool {
 
 func isTelegramUnhealthy(st model.TelegramBotRuntimeStatus) bool {
 	switch st.Status {
-	case model.TelegramBotStatusOffline, model.TelegramBotStatusMisconfigured:
+	case model.TelegramBotStatusOffline, model.TelegramBotStatusMisconfigured, model.TelegramBotStatusDegraded:
 		return true
 	default:
 		return false

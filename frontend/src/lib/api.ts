@@ -994,6 +994,7 @@ export type TelegramBotStatus =
   | "misconfigured"
   | "starting"
   | "online"
+  | "degraded"
   | "offline";
 
 export type TelegramNotificationStatus =
