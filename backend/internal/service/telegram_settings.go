@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/erman-ai/erman-ai/internal/config"
 	"github.com/erman-ai/erman-ai/internal/model"
 	"github.com/erman-ai/erman-ai/internal/repository"
 )
@@ -19,11 +21,21 @@ var ErrInvalidTelegramSettings = errors.New("invalid telegram settings")
 type TelegramSettingsService struct {
 	repo    *repository.TelegramSettingsRepository
 	assets  *TelegramAssets
+	env     *config.Config
+	logger  *slog.Logger
 	runtime func() model.TelegramBotRuntimeStatus
 }
 
-func NewTelegramSettingsService(repo *repository.TelegramSettingsRepository, assets *TelegramAssets) *TelegramSettingsService {
-	return &TelegramSettingsService{repo: repo, assets: assets}
+func NewTelegramSettingsService(
+	repo *repository.TelegramSettingsRepository,
+	assets *TelegramAssets,
+	env *config.Config,
+	logger *slog.Logger,
+) *TelegramSettingsService {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &TelegramSettingsService{repo: repo, assets: assets, env: env, logger: logger}
 }
 
 func (s *TelegramSettingsService) BindRuntimeStatus(fn func() model.TelegramBotRuntimeStatus) {
@@ -40,15 +52,76 @@ func (s *TelegramSettingsService) currentRuntime() model.TelegramBotRuntimeStatu
 	}
 }
 
+func (s *TelegramSettingsService) finalizeSettings(cfg model.TelegramSettings) model.TelegramSettings {
+	s.applyTelegramProxyEnv(&cfg)
+	normalizeTelegramSettingsFromStorage(&cfg)
+	return cfg
+}
+
+func (s *TelegramSettingsService) envProxyConfigured() bool {
+	if s.env == nil {
+		return false
+	}
+	if len(parseTelegramProxyURLs(s.env.TelegramProxyURLs)) > 0 {
+		return true
+	}
+	if strings.TrimSpace(s.env.TelegramProxyActiveURL) != "" {
+		return true
+	}
+	return s.env.TelegramProxyEnabled
+}
+
+func (s *TelegramSettingsService) applyTelegramProxyEnv(cfg *model.TelegramSettings) {
+	if !s.envProxyConfigured() {
+		return
+	}
+	envURLs := parseTelegramProxyURLs(s.env.TelegramProxyURLs)
+	if len(envURLs) > 0 {
+		cfg.ProxyURLs = envURLs
+		cfg.ProxyEnabled = true
+	}
+	if s.env.TelegramProxyEnabled {
+		cfg.ProxyEnabled = true
+	}
+	if active := strings.TrimSpace(s.env.TelegramProxyActiveURL); active != "" {
+		cfg.ProxyActiveURL = active
+	}
+	cfg.ProxyAutoFailover = s.env.TelegramProxyAutoFailover
+}
+
+// EnsureEnvProxyPersisted writes Telegram proxy settings from .env into the DB on startup.
+func (s *TelegramSettingsService) EnsureEnvProxyPersisted(ctx context.Context) error {
+	if s.env == nil || !s.envProxyConfigured() {
+		return nil
+	}
+
+	rec, err := s.GetStored(ctx)
+	if err != nil {
+		return err
+	}
+	next := rec.Config
+	s.applyTelegramProxyEnv(&next)
+	normalizeTelegramSettingsFromStorage(&next)
+	if telegramProxyConfigEqual(rec.Config, next) {
+		return nil
+	}
+	if _, err := s.repo.Update(ctx, next); err != nil {
+		return err
+	}
+	s.logger.Info("telegram proxy settings synced from environment")
+	return nil
+}
+
 func (s *TelegramSettingsService) GetStored(ctx context.Context) (*model.TelegramSettingsRecord, error) {
 	rec, err := s.repo.Get(ctx)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			def := model.DefaultTelegramSettings()
+			def := s.finalizeSettings(model.DefaultTelegramSettings())
 			return &model.TelegramSettingsRecord{Config: def}, nil
 		}
 		return nil, err
 	}
+	rec.Config = s.finalizeSettings(rec.Config)
 	return rec, nil
 }
 
@@ -74,7 +147,7 @@ func (s *TelegramSettingsService) Update(ctx context.Context, req model.Telegram
 		return nil, err
 	}
 
-	cfg := req.Settings
+	cfg := mergeTelegramSettingsUpdate(rec.Config, req.Settings)
 	if strings.TrimSpace(req.BotToken) != "" {
 		cfg.BotToken = strings.TrimSpace(req.BotToken)
 	} else {

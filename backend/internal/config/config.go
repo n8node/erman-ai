@@ -50,6 +50,10 @@ type Config struct {
 
 	StorageBackend             string `env:"STORAGE_BACKEND" envDefault:"local"`
 	TelegramAssetsDir          string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
+	TelegramProxyEnabled       bool   `env:"TELEGRAM_PROXY_ENABLED" envDefault:"false"`
+	TelegramProxyURLs          string `env:"TELEGRAM_PROXY_URLS"`
+	TelegramProxyActiveURL     string `env:"TELEGRAM_PROXY_ACTIVE_URL"`
+	TelegramProxyAutoFailover  bool   `env:"TELEGRAM_PROXY_AUTO_FAILOVER" envDefault:"true"`
 	GeologicalJournalAssetsDir    string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
 	AudioTranscriptionAssetsDir   string `env:"AUDIO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/audio-transcription"`
 	VideoTranscriptionAssetsDir   string `env:"VIDEO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/video-transcription"`

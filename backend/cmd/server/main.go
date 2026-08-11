@@ -67,7 +67,7 @@ func main() {
 		smtpSvc := service.NewSMTPSettingsService(smtpRepo)
 		mailSvc := service.NewMailService(smtpSvc)
 		telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
-		telegramSettingsSvc := service.NewTelegramSettingsService(telegramRepo, telegramAssets)
+		telegramSettingsSvc := service.NewTelegramSettingsService(telegramRepo, telegramAssets, cfg, logger)
 		maxSettingsSvc := service.NewMaxSettingsService(maxSettingsRepo)
 		maxSvc := service.NewMaxService(maxSettingsSvc, logger)
 		telegramSvc := service.NewTelegramService(

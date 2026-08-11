@@ -68,7 +68,10 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	mailSvc := service.NewMailService(smtpSettingsSvc)
 	telegramAssets := service.NewTelegramAssets(cfg.TelegramAssetsDir)
 	_ = telegramAssets.EnsureDir()
-	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo, telegramAssets)
+	telegramSettingsSvc := service.NewTelegramSettingsService(telegramSettingsRepo, telegramAssets, cfg, logger)
+	if err := telegramSettingsSvc.EnsureEnvProxyPersisted(context.Background()); err != nil {
+		logger.Warn("telegram proxy env sync failed", "err", err)
+	}
 	maxSettingsSvc := service.NewMaxSettingsService(maxSettingsRepo)
 	yandexMetrikaSettingsSvc := service.NewYandexMetrikaSettingsService(yandexMetrikaSettingsRepo)
 	maxSvc := service.NewMaxService(maxSettingsSvc, logger)
