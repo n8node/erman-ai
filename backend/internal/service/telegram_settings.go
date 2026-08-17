@@ -301,5 +301,8 @@ func validateTelegramSettings(cfg model.TelegramSettings) error {
 			return fmt.Errorf("%w: start text exceeds %d characters", ErrInvalidTelegramSettings, model.TelegramMessageMaxRunes)
 		}
 	}
+	if err := validateTelegramBotToken(cfg.BotToken); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidTelegramSettings, err.Error())
+	}
 	return nil
 }

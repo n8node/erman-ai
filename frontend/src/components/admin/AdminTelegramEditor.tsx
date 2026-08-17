@@ -21,6 +21,7 @@ import {
   type TelegramSettings,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { validateTelegramBotToken } from "@/lib/bot-token-validation";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
@@ -187,6 +188,13 @@ export function AdminTelegramEditor() {
     setSuccess("");
   }
 
+  function assertTelegramTokenInput(): boolean {
+    const code = validateTelegramBotToken(tokenInput);
+    if (!code) return true;
+    setError(t(code));
+    return false;
+  }
+
   async function handleImageUpload(file: File) {
     setUploadingImage(true);
     setError("");
@@ -226,6 +234,10 @@ export function AdminTelegramEditor() {
     setSaving(true);
     setError("");
     setSuccess("");
+    if (!assertTelegramTokenInput()) {
+      setSaving(false);
+      return;
+    }
     try {
       const data = await updateAdminTelegramSettings({
         settings,
@@ -246,6 +258,10 @@ export function AdminTelegramEditor() {
     setTesting(true);
     setTestMessage("");
     setError("");
+    if (!assertTelegramTokenInput()) {
+      setTesting(false);
+      return;
+    }
     try {
       if (tokenInput.trim()) {
         const saved = await updateAdminTelegramSettings({
@@ -533,7 +549,10 @@ export function AdminTelegramEditor() {
           <div className="relative">
             <input
               type={showToken ? "text" : "password"}
-              autoComplete="off"
+              autoComplete="new-password"
+              name="erman-telegram-bot-token"
+              data-1p-ignore
+              data-lpignore="true"
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder={

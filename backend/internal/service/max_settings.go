@@ -99,10 +99,16 @@ func (s *MaxSettingsService) Update(ctx context.Context, req model.MaxAdminUpdat
 
 func validateMaxSettings(cfg model.MaxSettings) error {
 	if !cfg.Enabled {
+		if err := validateMaxBotToken(cfg.BotToken); err != nil {
+			return fmt.Errorf("%w: %s", ErrInvalidMaxSettings, err.Error())
+		}
 		return nil
 	}
 	if strings.TrimSpace(cfg.BotToken) == "" {
 		return fmt.Errorf("%w: bot token required when MAX enabled", ErrInvalidMaxSettings)
+	}
+	if err := validateMaxBotToken(cfg.BotToken); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidMaxSettings, err.Error())
 	}
 	hasUser := strings.TrimSpace(cfg.NotifyUserID) != ""
 	hasChat := strings.TrimSpace(cfg.NotifyChatID) != ""

@@ -14,6 +14,7 @@ import {
   type MaxSettings,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { validateMaxBotToken } from "@/lib/bot-token-validation";
 
 const fieldClass =
   "w-full rounded-lg border border-border2 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
@@ -95,10 +96,21 @@ export function AdminMaxEditor() {
     setSuccess("");
   }
 
+  function assertMaxTokenInput(): boolean {
+    const code = validateMaxBotToken(tokenInput);
+    if (!code) return true;
+    setError(t(code));
+    return false;
+  }
+
   async function handleSave() {
     setSaving(true);
     setError("");
     setSuccess("");
+    if (!assertMaxTokenInput()) {
+      setSaving(false);
+      return;
+    }
     try {
       const data = await updateAdminMaxSettings({
         settings,
@@ -118,6 +130,10 @@ export function AdminMaxEditor() {
     setTesting(true);
     setTestMessage("");
     setError("");
+    if (!assertMaxTokenInput()) {
+      setTesting(false);
+      return;
+    }
     try {
       if (tokenInput.trim()) {
         const saved = await updateAdminMaxSettings({
@@ -209,7 +225,10 @@ export function AdminMaxEditor() {
           <div className="relative">
             <input
               type={showToken ? "text" : "password"}
-              autoComplete="off"
+              autoComplete="new-password"
+              name="erman-max-bot-token"
+              data-1p-ignore
+              data-lpignore="true"
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder={
