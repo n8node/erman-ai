@@ -126,6 +126,9 @@ func (s *TelegramService) pollLoop(stopCh <-chan struct{}) {
 
 		updates, err := s.fetchUpdates(cfg)
 		if err != nil {
+			if isTelegramUpdatesBlocked(err) {
+				s.clearTelegramWebhook(cfg)
+			}
 			s.logger.Warn("telegram getUpdates failed", "err", err)
 			time.Sleep(5 * time.Second)
 			continue
@@ -151,13 +154,15 @@ func (s *TelegramService) dispatchUpdate(cfg model.TelegramSettings, upd telegra
 
 	if isStartCommand(upd.Message) {
 		chatID := formatChatID(upd.Message.Chat.ID)
-		s.logger.Info("telegram /start received", "chat_id", chatID)
-		if cfg.StartEnabled {
-			if err := s.sendStartReply(ctx, cfg, chatID); err != nil {
-				s.logger.Warn("telegram /start reply failed", "chat_id", chatID, "err", err)
-			} else {
-				s.logger.Info("telegram /start reply sent", "chat_id", chatID)
-			}
+		s.logger.Info("telegram /start received", "chat_id", chatID, "start_enabled", cfg.StartEnabled)
+		if !cfg.StartEnabled {
+			s.logger.Warn("telegram /start ignored: enable start handler in admin settings", "chat_id", chatID)
+			return
+		}
+		if err := s.sendStartReply(ctx, cfg, chatID); err != nil {
+			s.logger.Warn("telegram /start reply failed", "chat_id", chatID, "err", err)
+		} else {
+			s.logger.Info("telegram /start reply sent", "chat_id", chatID)
 		}
 		return
 	}
@@ -259,4 +264,28 @@ func isStartCommand(msg *telegramMessage) bool {
 
 func formatChatID(id int64) string {
 	return strconv.FormatInt(id, 10)
+}
+
+func isTelegramUpdatesBlocked(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "webhook") ||
+		strings.Contains(msg, "conflict") ||
+		strings.Contains(msg, "getupdates")
+}
+
+func (s *TelegramService) clearTelegramWebhook(cfg model.TelegramSettings) {
+	token := strings.TrimSpace(cfg.BotToken)
+	if token == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if _, err := s.telegramAPI(ctx, token, "deleteWebhook", map[string]any{"drop_pending_updates": false}); err != nil {
+		s.logger.Warn("telegram deleteWebhook failed", "err", err)
+		return
+	}
+	s.logger.Info("telegram webhook cleared for polling")
 }

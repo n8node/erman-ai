@@ -784,6 +784,8 @@
       "imageUploadFailed": "Failed to upload image",
       "imageRemoved": "Image removed",
       "startPollingActive": "Listening for /start (long polling)",
+      "startPollingInactive": "Polling is not running — /start will not be handled. Check bot status above and click Restart bot.",
+      "startDisabledWarning": "/start replies are disabled. Enable the toggle above, set welcome text or image, and save settings.",
       "startButtonsHint": "Welcome message includes Consultation and Tools buttons (dashboard link).",
       "supportSection": "Consultation via forum group",
       "supportEnabled": "Enable Consultation button and topic relay",

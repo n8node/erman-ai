@@ -230,7 +230,12 @@ func (s *TelegramService) shouldRunPolling(cfg model.TelegramSettings, st model.
 	if !s.botNeedsPolling(cfg) {
 		return false
 	}
-	return st.Status == model.TelegramBotStatusOnline
+	switch st.Status {
+	case model.TelegramBotStatusOnline, model.TelegramBotStatusDegraded:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *TelegramService) checkHealth(ctx context.Context) model.TelegramBotRuntimeStatus {
