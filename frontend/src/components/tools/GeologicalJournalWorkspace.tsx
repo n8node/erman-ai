@@ -62,7 +62,9 @@ import {
 } from "@/lib/api-geological-journal";
 import {
   exportGeologicalJournalCSV,
+  exportGeologicalJournalJSON,
   exportGeologicalJournalXLSX,
+  exportGeologicalJournalXML,
 } from "@/lib/geological-journal-export";
 
 type View = "upload" | "library" | "examples";
@@ -151,7 +153,7 @@ export function GeologicalJournalWorkspace() {
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | "json" | "xml" | null>(null);
   const [previewExample, setPreviewExample] = useState<GeologicalJournalExample | null>(
     null
   );
@@ -445,14 +447,18 @@ export function GeologicalJournalWorkspace() {
     }
   }
 
-  function handleExport(format: "csv" | "xlsx") {
+  function handleExport(format: "csv" | "xlsx" | "json" | "xml") {
     if (rows.length === 0 || recognizing) return;
     setExporting(format);
     try {
       if (format === "csv") {
         exportGeologicalJournalCSV(rows);
-      } else {
+      } else if (format === "xlsx") {
         exportGeologicalJournalXLSX(rows);
+      } else if (format === "json") {
+        exportGeologicalJournalJSON(rows);
+      } else {
+        exportGeologicalJournalXML(rows);
       }
     } finally {
       window.setTimeout(() => setExporting(null), 250);
@@ -556,6 +562,24 @@ export function GeologicalJournalWorkspace() {
             >
               <Download size={15} />
               {exporting === "csv" ? t("exporting") : t("exportCsv")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("json")}
+              disabled={rows.length === 0 || recognizing || exporting !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download size={15} />
+              {exporting === "json" ? t("exporting") : t("exportJson")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("xml")}
+              disabled={rows.length === 0 || recognizing || exporting !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download size={15} />
+              {exporting === "xml" ? t("exporting") : t("exportXml")}
             </button>
             <button
               type="button"

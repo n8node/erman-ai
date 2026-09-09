@@ -2235,6 +2235,8 @@
     "newPage": "Новая страница",
     "exportXlsx": "Скачать XLSX",
     "exportCsv": "Скачать CSV",
+    "exportJson": "Скачать JSON",
+    "exportXml": "Скачать XML",
     "exporting": "Подготовка…",
     "loading": "Загрузка…",
     "tabs": {

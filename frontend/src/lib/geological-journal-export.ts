@@ -99,3 +99,47 @@ export function exportGeologicalJournalXLSX(rows: GeologicalJournalRow[], filena
   XLSX.utils.book_append_sheet(workbook, worksheet, "Геологический журнал");
   XLSX.writeFile(workbook, filename ?? `geological-journal-${exportDate()}.xlsx`);
 }
+
+export function exportGeologicalJournalJSON(rows: GeologicalJournalRow[], filename?: string) {
+  const payload = JSON.stringify({ rows }, null, 2);
+  const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+  downloadBlob(blob, filename ?? `geological-journal-${exportDate()}.json`);
+}
+
+export function exportGeologicalJournalXML(rows: GeologicalJournalRow[], filename?: string) {
+  const escapeXml = (value: string | number | null | undefined) =>
+    String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&apos;");
+  const tag = (name: string, value: string | number | null | undefined) =>
+    `    <${name}>${escapeXml(value)}</${name}>`;
+  const xmlRows = rows
+    .map((row, index) => {
+      const uncertainties = row.uncertainties ?? [];
+      return [
+        `  <row number="${index + 1}">`,
+        tag("date", row.date),
+        tag("drilling_diameter_mm", row.drilling_diameter_mm),
+        tag("depth_from_m", row.depth_from_m),
+        tag("depth_to_m", row.depth_to_m),
+        tag("drilling_run_m", row.drilling_run_m),
+        tag("core_recovery_m", row.core_recovery_m),
+        tag("core_recovery_pct", row.core_recovery_pct),
+        tag("rock_description", row.rock_description),
+        tag("sampling_interval", row.sampling_interval),
+        tag("sample_number", row.sample_number),
+        tag("notes", row.notes),
+        "    <uncertainties>",
+        ...uncertainties.map((item) => tag("item", item)),
+        "    </uncertainties>",
+        "  </row>",
+      ].join("\n");
+    })
+    .join("\n");
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<geological_journal>\n${xmlRows}\n</geological_journal>\n`;
+  const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
+  downloadBlob(blob, filename ?? `geological-journal-${exportDate()}.xml`);
+}
