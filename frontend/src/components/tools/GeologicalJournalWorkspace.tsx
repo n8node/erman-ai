@@ -15,6 +15,7 @@ import {
   RefreshCw,
   RotateCcw,
   Save,
+  Download,
   Trash2,
   Upload,
   X,
@@ -59,6 +60,10 @@ import {
   type GeologicalJournalRun,
   type GeologicalJournalRunInput,
 } from "@/lib/api-geological-journal";
+import {
+  exportGeologicalJournalCSV,
+  exportGeologicalJournalXLSX,
+} from "@/lib/geological-journal-export";
 
 type View = "upload" | "library" | "examples";
 
@@ -146,6 +151,7 @@ export function GeologicalJournalWorkspace() {
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
   const [previewExample, setPreviewExample] = useState<GeologicalJournalExample | null>(
     null
   );
@@ -439,6 +445,20 @@ export function GeologicalJournalWorkspace() {
     }
   }
 
+  function handleExport(format: "csv" | "xlsx") {
+    if (rows.length === 0 || recognizing) return;
+    setExporting(format);
+    try {
+      if (format === "csv") {
+        exportGeologicalJournalCSV(rows);
+      } else {
+        exportGeologicalJournalXLSX(rows);
+      }
+    } finally {
+      window.setTimeout(() => setExporting(null), 250);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!window.confirm(t("library.deleteConfirm"))) return;
     setDeleting(true);
@@ -518,14 +538,34 @@ export function GeologicalJournalWorkspace() {
           <p className="mt-1 max-w-2xl text-sm text-text2">{t("subtitle")}</p>
         </div>
         {page && (
-          <button
-            type="button"
-            onClick={resetWorkspace}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text"
-          >
-            <Plus size={15} />
-            {t("newPage")}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => handleExport("xlsx")}
+              disabled={rows.length === 0 || recognizing || exporting !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download size={15} />
+              {exporting === "xlsx" ? t("exporting") : t("exportXlsx")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExport("csv")}
+              disabled={rows.length === 0 || recognizing || exporting !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download size={15} />
+              {exporting === "csv" ? t("exporting") : t("exportCsv")}
+            </button>
+            <button
+              type="button"
+              onClick={resetWorkspace}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm text-text2 transition-colors duration-150 hover:bg-bg2 hover:text-text"
+            >
+              <Plus size={15} />
+              {t("newPage")}
+            </button>
+          </div>
         )}
       </header>
 

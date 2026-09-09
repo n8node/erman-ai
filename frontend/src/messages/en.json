@@ -2233,6 +2233,9 @@
     "title": "Geological journal recognizer",
     "subtitle": "Upload a scan or photo of a field journal page, review the recognized table, and save corrections.",
     "newPage": "New page",
+    "exportXlsx": "Download XLSX",
+    "exportCsv": "Download CSV",
+    "exporting": "Preparing…",
     "loading": "Loading…",
     "tabs": {
       "upload": "Recognition",
