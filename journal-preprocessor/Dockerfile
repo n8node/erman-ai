@@ -16,7 +16,11 @@ COPY --chown=app:app app.py /app/app.py
 
 VOLUME ["/app/data/geological-journal"]
 
-USER app
+# The backend and preprocessor share page artifacts in a Docker volume. Backend
+# creates document directories as root, so running this internal worker as the
+# unprivileged app user prevents traversal of existing page directories. The
+# HTTP service is not published outside the Compose network.
+USER root
 
 EXPOSE 8090
 
