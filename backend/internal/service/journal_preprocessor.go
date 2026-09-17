@@ -15,7 +15,10 @@ import (
 	"github.com/erman-ai/erman-ai/internal/model"
 )
 
-const maxPreprocessedImageBytes = 30 * 1024 * 1024
+const (
+	maxPreprocessedImageBytes = 30 * 1024 * 1024
+	maxPDFBytes               = 250 * 1024 * 1024
+)
 
 type JournalPreprocessResult struct {
 	Image       []byte
@@ -194,7 +197,7 @@ func (p *JournalImagePreprocessor) postPDF(ctx context.Context, endpoint string,
 		return fmt.Errorf("preprocessor request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxPreprocessedImageBytes))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxPDFBytes))
 	if err != nil {
 		return err
 	}

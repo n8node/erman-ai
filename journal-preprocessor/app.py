@@ -16,6 +16,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
+MAX_PDF_BODY_BYTES = 250 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_OUTPUT_DIMENSION = 6000
 PORT = int(os.getenv("PORT", "8090"))
@@ -411,7 +412,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_pdf_info(self) -> None:
         try:
             if self.headers.get("Content-Type", "").lower().startswith("application/pdf"):
-                raw = self._read_body(MAX_BODY_BYTES)
+                raw = self._read_body(MAX_PDF_BODY_BYTES)
                 with fitz.open(stream=raw, filetype="pdf") as document:
                     self._json(HTTPStatus.OK, {"page_count": document.page_count})
                 return
@@ -425,7 +426,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_analyze_page(self) -> None:
         try:
             if self.headers.get("Content-Type", "").lower().startswith("application/pdf"):
-                raw = self._read_body(MAX_BODY_BYTES)
+                raw = self._read_body(MAX_PDF_BODY_BYTES)
                 page_number = int(self.headers.get("X-Page-Number", "0"))
                 output_dir = self.headers.get("X-Output-Dir", "")
                 result = analyze_pdf_page_bytes(raw, page_number, output_dir)
