@@ -5,6 +5,7 @@ import math
 import os
 from pathlib import Path
 import tempfile
+import gc
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -20,7 +21,7 @@ MAX_PDF_BODY_BYTES = 250 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_OUTPUT_DIMENSION = 4500
 PORT = int(os.getenv("PORT", "8090"))
-OCR_DPI = int(os.getenv("OCR_DPI", "160"))
+OCR_DPI = int(os.getenv("OCR_DPI", "120"))
 ORIENTATION_DPI = int(os.getenv("ORIENTATION_DPI", "96"))
 TESSERACT_LANG = os.getenv("TESSERACT_LANG", "rus+eng")
 
@@ -295,6 +296,9 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     oriented_path = target / "oriented.png"
     oriented.save(oriented_path)
     preprocessed, metadata = preprocess_image(oriented_path.read_bytes())
+    original.close()
+    oriented.close()
+    gc.collect()
     preprocessed_path = target / "preprocessed.png"
     preprocessed_path.write_bytes(preprocessed)
     processed_image = Image.open(preprocessed_path).convert("RGB")

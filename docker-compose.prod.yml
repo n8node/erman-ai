@@ -35,7 +35,7 @@ services:
       resources:
         limits:
           cpus: "1"
-          memory: 768M
+          memory: 1536M
 
   frontend:
     logging:
