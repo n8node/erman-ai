@@ -83,15 +83,19 @@ func (r *GeologicalJournalRepository) MarkDocumentQueued(ctx context.Context, id
 
 func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, documentID string, number int) (*model.GeologicalJournalDocumentPage, error) {
 	var item model.GeologicalJournalDocumentPage
+	var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO geological_journal_document_pages(document_id,page_number)
 		VALUES($1,$2) ON CONFLICT(document_id,page_number) DO UPDATE SET updated_at=NOW()
 		RETURNING id,document_id,page_number,status,original_asset_path,oriented_asset_path,preprocessed_asset_path,ocr_text,analysis,content_type,orientation_degrees,orientation_confidence,table_count,text_char_count,error_msg,created_at,updated_at`, documentID, number).Scan(
 		&item.ID, &item.DocumentID, &item.PageNumber, &item.Status,
-		&item.OriginalAssetPath, &item.OrientedAssetPath, &item.PreprocessedAssetPath,
+		&originalAssetPath, &orientedAssetPath, &preprocessedAssetPath,
 		&item.OCRText, &item.Analysis,
 		&item.ContentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 		&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt)
+	item.OriginalAssetPath = derefString(originalAssetPath)
+	item.OrientedAssetPath = derefString(orientedAssetPath)
+	item.PreprocessedAssetPath = derefString(preprocessedAssetPath)
 	return &item, err
 }
 
@@ -106,11 +110,15 @@ func (r *GeologicalJournalRepository) ListDocumentPages(ctx context.Context, doc
 	var out []model.GeologicalJournalDocumentPage
 	for rows.Next() {
 		var item model.GeologicalJournalDocumentPage
-		if err := rows.Scan(&item.ID, &item.DocumentID, &item.PageNumber, &item.Status, &item.OriginalAssetPath, &item.OrientedAssetPath, &item.PreprocessedAssetPath, &item.OCRText, &item.Analysis,
+		var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
+		if err := rows.Scan(&item.ID, &item.DocumentID, &item.PageNumber, &item.Status, &originalAssetPath, &orientedAssetPath, &preprocessedAssetPath, &item.OCRText, &item.Analysis,
 			&item.ContentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 			&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, err
 		}
+		item.OriginalAssetPath = derefString(originalAssetPath)
+		item.OrientedAssetPath = derefString(orientedAssetPath)
+		item.PreprocessedAssetPath = derefString(preprocessedAssetPath)
 		out = append(out, item)
 	}
 	return out, rows.Err()
