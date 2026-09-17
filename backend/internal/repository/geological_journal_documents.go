@@ -84,6 +84,7 @@ func (r *GeologicalJournalRepository) MarkDocumentQueued(ctx context.Context, id
 func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, documentID string, number int) (*model.GeologicalJournalDocumentPage, error) {
 	var item model.GeologicalJournalDocumentPage
 	var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
+	var contentType *string
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO geological_journal_document_pages(document_id,page_number)
 		VALUES($1,$2) ON CONFLICT(document_id,page_number) DO UPDATE SET updated_at=NOW()
@@ -91,11 +92,12 @@ func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, do
 		&item.ID, &item.DocumentID, &item.PageNumber, &item.Status,
 		&originalAssetPath, &orientedAssetPath, &preprocessedAssetPath,
 		&item.OCRText, &item.Analysis,
-		&item.ContentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
+		&contentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 		&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt)
 	item.OriginalAssetPath = derefString(originalAssetPath)
 	item.OrientedAssetPath = derefString(orientedAssetPath)
 	item.PreprocessedAssetPath = derefString(preprocessedAssetPath)
+	item.ContentType = derefString(contentType)
 	return &item, err
 }
 
@@ -111,14 +113,16 @@ func (r *GeologicalJournalRepository) ListDocumentPages(ctx context.Context, doc
 	for rows.Next() {
 		var item model.GeologicalJournalDocumentPage
 		var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
+		var contentType *string
 		if err := rows.Scan(&item.ID, &item.DocumentID, &item.PageNumber, &item.Status, &originalAssetPath, &orientedAssetPath, &preprocessedAssetPath, &item.OCRText, &item.Analysis,
-			&item.ContentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
+			&contentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 			&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, err
 		}
 		item.OriginalAssetPath = derefString(originalAssetPath)
 		item.OrientedAssetPath = derefString(orientedAssetPath)
 		item.PreprocessedAssetPath = derefString(preprocessedAssetPath)
+		item.ContentType = derefString(contentType)
 		out = append(out, item)
 	}
 	return out, rows.Err()
