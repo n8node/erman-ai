@@ -25,6 +25,7 @@ services:
       AUDIO_TRANSCRIPTION_ASSETS_DIR: /app/data/audio-transcription
       VIDEO_TRANSCRIPTION_ASSETS_DIR: /app/data/video-transcription
       JOURNAL_PREPROCESSOR_URL: http://journal-preprocessor:8090
+      GEOLOGICAL_JOURNAL_WORKER_CONCURRENCY: ${GEOLOGICAL_JOURNAL_WORKER_CONCURRENCY:-1}
     volumes:
       - telegram_assets:/app/data/telegram
       - geological_journal_assets:/app/data/geological-journal

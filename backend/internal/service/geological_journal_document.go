@@ -311,6 +311,9 @@ func (s *GeologicalJournalDocumentService) workerLoop(ctx context.Context) {
 			}
 			_ = s.journal.repo.FailDocumentJob(context.Background(), job.ID, job.PageID, message)
 			s.logger.Error("journal document page failed", "job_id", job.ID, "error", err)
+			// Avoid hammering a restarting preprocessor after an OOM or connection
+			// failure. The job remains retryable on the next explicit analysis run.
+			time.Sleep(2 * time.Second)
 			continue
 		}
 		_ = s.journal.repo.CompleteDocumentJob(context.Background(), job.ID, job.PageID, "done", "done")

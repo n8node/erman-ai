@@ -45,20 +45,21 @@ type Config struct {
 
 	AutomationSavingsRate float64 `env:"AUTOMATION_SAVINGS_RATE" envDefault:"0.7"`
 
-	WorkerStrategyConcurrency int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`
-	WorkerProposalConcurrency int `env:"WORKER_PROPOSAL_CONCURRENCY" envDefault:"3"`
+	WorkerStrategyConcurrency          int `env:"WORKER_STRATEGY_CONCURRENCY" envDefault:"3"`
+	WorkerProposalConcurrency          int `env:"WORKER_PROPOSAL_CONCURRENCY" envDefault:"3"`
+	GeologicalJournalWorkerConcurrency int `env:"GEOLOGICAL_JOURNAL_WORKER_CONCURRENCY" envDefault:"1"`
 
-	StorageBackend             string `env:"STORAGE_BACKEND" envDefault:"local"`
-	TelegramAssetsDir          string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
-	TelegramProxyEnabled       bool   `env:"TELEGRAM_PROXY_ENABLED" envDefault:"false"`
-	TelegramProxyURLs          string `env:"TELEGRAM_PROXY_URLS"`
-	TelegramProxyActiveURL     string `env:"TELEGRAM_PROXY_ACTIVE_URL"`
-	TelegramProxyAutoFailover  bool   `env:"TELEGRAM_PROXY_AUTO_FAILOVER" envDefault:"true"`
-	GeologicalJournalAssetsDir    string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
-	AudioTranscriptionAssetsDir   string `env:"AUDIO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/audio-transcription"`
-	VideoTranscriptionAssetsDir   string `env:"VIDEO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/video-transcription"`
-	JournalPreprocessorURL        string `env:"JOURNAL_PREPROCESSOR_URL"`
-	Domain                     string `env:"DOMAIN" envDefault:"erman.ai"`
+	StorageBackend              string `env:"STORAGE_BACKEND" envDefault:"local"`
+	TelegramAssetsDir           string `env:"TELEGRAM_ASSETS_DIR" envDefault:"/app/data/telegram"`
+	TelegramProxyEnabled        bool   `env:"TELEGRAM_PROXY_ENABLED" envDefault:"false"`
+	TelegramProxyURLs           string `env:"TELEGRAM_PROXY_URLS"`
+	TelegramProxyActiveURL      string `env:"TELEGRAM_PROXY_ACTIVE_URL"`
+	TelegramProxyAutoFailover   bool   `env:"TELEGRAM_PROXY_AUTO_FAILOVER" envDefault:"true"`
+	GeologicalJournalAssetsDir  string `env:"GEOLOGICAL_JOURNAL_ASSETS_DIR" envDefault:"/app/data/geological-journal"`
+	AudioTranscriptionAssetsDir string `env:"AUDIO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/audio-transcription"`
+	VideoTranscriptionAssetsDir string `env:"VIDEO_TRANSCRIPTION_ASSETS_DIR" envDefault:"/app/data/video-transcription"`
+	JournalPreprocessorURL      string `env:"JOURNAL_PREPROCESSOR_URL"`
+	Domain                      string `env:"DOMAIN" envDefault:"erman.ai"`
 
 	WorkspaceOIDCClientID      string `env:"WORKSPACE_OIDC_CLIENT_ID" envDefault:"erman-affine"`
 	WorkspaceOIDCClientSecret  string `env:"WORKSPACE_OIDC_CLIENT_SECRET"`

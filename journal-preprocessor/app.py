@@ -18,9 +18,10 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 MAX_BODY_BYTES = 10 * 1024 * 1024
 MAX_PDF_BODY_BYTES = 250 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000
-MAX_OUTPUT_DIMENSION = 6000
+MAX_OUTPUT_DIMENSION = 4500
 PORT = int(os.getenv("PORT", "8090"))
-OCR_DPI = int(os.getenv("OCR_DPI", "220"))
+OCR_DPI = int(os.getenv("OCR_DPI", "160"))
+ORIENTATION_DPI = int(os.getenv("ORIENTATION_DPI", "96"))
 TESSERACT_LANG = os.getenv("TESSERACT_LANG", "rus+eng")
 
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
@@ -275,13 +276,17 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
         original_path = target / "original.png"
         pixmap.save(str(original_path))
     original = Image.open(original_path).convert("RGB")
+    orientation_image = original.copy()
+    orientation_image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
     candidates = []
     candidate_texts = {}
     for degrees in (0, 90, 180, 270):
-        candidate = _rotate_pil(original, degrees)
+        candidate = _rotate_pil(orientation_image, degrees)
         text = pytesseract.image_to_string(candidate, lang=TESSERACT_LANG, config="--psm 3")
         candidate_texts[degrees] = text.strip()
         candidates.append((degrees, _orientation_score(text, candidate)))
+        candidate.close()
+    orientation_image.close()
     candidates.sort(key=lambda item: item[1], reverse=True)
     selected_degrees, score = candidates[0]
     second_score = candidates[1][1] if len(candidates) > 1 else 0.0

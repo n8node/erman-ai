@@ -175,7 +175,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 	workspaceOIDCHandler := handler.NewWorkspaceOIDCHandler(userRepo, cfg)
 	geologicalJournalHandler := handler.NewGeologicalJournalHandler(geologicalJournalSvc)
 	geologicalJournalDocumentSvc := service.NewGeologicalJournalDocumentService(cfg.GeologicalJournalAssetsDir, geologicalJournalSvc, logger)
-	geologicalJournalDocumentSvc.StartWorker(context.Background(), 2)
+	geologicalJournalDocumentSvc.StartWorker(context.Background(), cfg.GeologicalJournalWorkerConcurrency)
 	geologicalJournalDocumentHandler := handler.NewGeologicalJournalDocumentHandler(geologicalJournalDocumentSvc)
 	audioTranscriptionHandler := handler.NewAudioTranscriptionHandler(audioTranscriptionSvc)
 	videoTranscriptionHandler := handler.NewVideoTranscriptionHandler(videoTranscriptionSvc)
