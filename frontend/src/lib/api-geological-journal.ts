@@ -154,6 +154,41 @@ export type GeologicalJournalExampleMetadata = Pick<
   "title" | "description" | "sort_order" | "is_published"
 >;
 
+export type GeologicalJournalDocument = {
+  id: string;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  page_count: number;
+  status: string;
+  is_shared: boolean;
+  error_msg?: string;
+  created_at: string;
+  updated_at: string;
+  analysis_started_at?: string;
+  analysis_completed_at?: string;
+};
+
+export type GeologicalJournalDocumentPage = {
+  id: string;
+  document_id: string;
+  page_number: number;
+  status: string;
+  ocr_text?: string;
+  analysis?: Record<string, unknown>;
+  content_type?: string;
+  orientation_degrees: number;
+  orientation_confidence: number;
+  table_count: number;
+  text_char_count: number;
+  error_msg?: string;
+};
+
+export type GeologicalJournalDocumentDetail = {
+  document: GeologicalJournalDocument;
+  pages: GeologicalJournalDocumentPage[];
+};
+
 const apiBase = () =>
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "/api/v1";
 
@@ -302,6 +337,58 @@ export function listGeologicalJournalPages() {
     "/tools/geological-journal/pages",
     { cache: "no-store" }
   );
+}
+
+export async function uploadGeologicalJournalDocument(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`${apiBase()}/tools/geological-journal/documents`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(typeof data.error === "string" ? data.error : "upload failed", response.status);
+  }
+  return data as GeologicalJournalDocument;
+}
+
+export function listGeologicalJournalDocuments() {
+  return apiFetch<{ items: GeologicalJournalDocument[] }>("/tools/geological-journal/documents", { cache: "no-store" });
+}
+
+export function getGeologicalJournalDocument(id: string) {
+  return apiFetch<GeologicalJournalDocumentDetail>(`/tools/geological-journal/documents/${id}`, { cache: "no-store" });
+}
+
+export function startGeologicalJournalDocumentAnalysis(id: string) {
+  return apiFetch<{ status: string }>(`/tools/geological-journal/documents/${id}/analyze`, { method: "POST" });
+}
+
+export function setGeologicalJournalDocumentSharing(id: string, shared: boolean) {
+  return apiFetch<{ shared: boolean }>(`/tools/geological-journal/documents/${id}/sharing`, {
+    method: "PUT",
+    body: JSON.stringify({ shared }),
+  });
+}
+
+export function processGeologicalJournalDocumentLLM(id: string, pageNumbers: number[], mode = "summary", includeNeighbors = false) {
+  return apiFetch<{ items: Array<Record<string, unknown>> }>(`/tools/geological-journal/documents/${id}/llm`, {
+    method: "POST",
+    body: JSON.stringify({ page_numbers: pageNumbers, mode, include_neighbors: includeNeighbors }),
+  });
+}
+
+export function chatGeologicalJournalDocument(id: string, pageNumbers: number[], message: string, sessionId?: string, includeNeighbors = false) {
+  return apiFetch<{ content: string; sources: unknown; confidence?: string }>(`/tools/geological-journal/documents/${id}/chat`, {
+    method: "POST",
+    body: JSON.stringify({ page_numbers: pageNumbers, message, session_id: sessionId, include_neighbors: includeNeighbors }),
+  });
+}
+
+export function geologicalJournalDocumentPageAssetUrl(documentId: string, pageId: string, kind: "original" | "oriented" | "preprocessed") {
+  return `${apiBase()}/tools/geological-journal/documents/${documentId}/pages/${pageId}/assets/${kind}`;
 }
 
 export function getGeologicalJournalPage(id: string) {

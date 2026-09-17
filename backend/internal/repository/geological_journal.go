@@ -27,6 +27,19 @@ func (r *GeologicalJournalRepository) HasExplicitAccess(ctx context.Context, use
 	return enabled, err
 }
 
+func (r *GeologicalJournalRepository) HasDocumentAccess(ctx context.Context, documentID, userID string, role string) (bool, error) {
+	if role == "superadmin" {
+		return true, nil
+	}
+	var allowed bool
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM geological_journal_documents d
+			WHERE d.id=$1 AND (d.owner_id=$2 OR d.is_shared)
+		)`, documentID, userID).Scan(&allowed)
+	return allowed, err
+}
+
 func (r *GeologicalJournalRepository) SetAccess(ctx context.Context, userID string, enabled bool) error {
 	tag, err := r.pool.Exec(ctx, `
 		INSERT INTO geological_journal_access(user_id, enabled) VALUES($1,$2)

@@ -3,11 +3,14 @@ import json
 import logging
 import math
 import os
+from pathlib import Path
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import cv2
 import numpy as np
+import fitz
+import pytesseract
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 
@@ -15,6 +18,8 @@ MAX_BODY_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_OUTPUT_DIMENSION = 6000
 PORT = int(os.getenv("PORT", "8090"))
+OCR_DPI = int(os.getenv("OCR_DPI", "220"))
+TESSERACT_LANG = os.getenv("TESSERACT_LANG", "rus+eng")
 
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 logging.basicConfig(
@@ -197,6 +202,130 @@ def preprocess_image(raw: bytes) -> tuple[bytes, dict[str, object]]:
     return output.tobytes(), metadata
 
 
+def _rotate_pil(image: Image.Image, degrees: int) -> Image.Image:
+    return image.rotate(degrees, expand=True, fillcolor="white")
+
+
+def _orientation_score(text: str, image: Image.Image) -> float:
+    normalized = text.lower()
+    if not normalized:
+        return 0.0
+    words = len([word for word in normalized.split() if len(word) >= 2])
+    terms = sum(normalized.count(term) for term in (
+        "скваж", "керн", "пород", "глуб", "руд", "мед", "геолог",
+        "depth", "core", "rock", "drill", "ore", "copper",
+    ))
+    digits = sum(character.isdigit() for character in normalized)
+    lines = len([line for line in text.splitlines() if line.strip()])
+    width, height = image.size
+    return round(min(1.0, 0.15 * min(words / 40, 1) +
+                     0.25 * min(terms / 3, 1) +
+                     0.25 * min(digits / 20, 1) +
+                     0.2 * min(lines / 20, 1) +
+                     (0.15 if width >= height else 0.0)), 4)
+
+
+def _table_regions(image: Image.Image) -> list[dict[str, object]]:
+    array = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2GRAY)
+    threshold = cv2.adaptiveThreshold(
+        array, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15
+    )
+    horizontal_kernel = cv2.getStructuringElement(
+        cv2.MORPH_RECT, (max(20, image.width // 30), 1)
+    )
+    vertical_kernel = cv2.getStructuringElement(
+        cv2.MORPH_RECT, (1, max(20, image.height // 30))
+    )
+    horizontal = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, horizontal_kernel)
+    vertical = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, vertical_kernel)
+    grid = cv2.add(horizontal, vertical)
+    contours, _ = cv2.findContours(grid, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    page_area = image.width * image.height
+    regions = []
+    for contour in contours:
+        x, y, width, height = cv2.boundingRect(contour)
+        area = width * height
+        if area < page_area * 0.015 or width < 120 or height < 80:
+            continue
+        line_pixels = int(cv2.countNonZero(grid[y:y + height, x:x + width]))
+        if line_pixels < 100:
+            continue
+        regions.append({
+            "bbox_px": [int(x), int(y), int(x + width), int(y + height)],
+            "line_pixels": line_pixels,
+            "area_ratio": round(area / page_area, 5),
+        })
+    regions.sort(key=lambda item: item["area_ratio"], reverse=True)
+    return regions[:20]
+
+
+def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[str, object]:
+    source = Path(pdf_path)
+    if not source.is_file():
+        raise ValueError("pdf file not found")
+    target = Path(output_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    with fitz.open(str(source)) as document:
+        if page_number < 1 or page_number > document.page_count:
+            raise ValueError("page number outside document")
+        page = document.load_page(page_number - 1)
+        pixmap = page.get_pixmap(matrix=fitz.Matrix(OCR_DPI / 72, OCR_DPI / 72), alpha=False)
+        original_path = target / "original.png"
+        pixmap.save(str(original_path))
+    original = Image.open(original_path).convert("RGB")
+    candidates = []
+    candidate_texts = {}
+    for degrees in (0, 90, 180, 270):
+        candidate = _rotate_pil(original, degrees)
+        text = pytesseract.image_to_string(candidate, lang=TESSERACT_LANG, config="--psm 3")
+        candidate_texts[degrees] = text.strip()
+        candidates.append((degrees, _orientation_score(text, candidate)))
+    candidates.sort(key=lambda item: item[1], reverse=True)
+    selected_degrees, score = candidates[0]
+    second_score = candidates[1][1] if len(candidates) > 1 else 0.0
+    confidence = round(min(1.0, max(0.0, score + score - second_score)), 4)
+    oriented = _rotate_pil(original, selected_degrees)
+    oriented_path = target / "oriented.png"
+    oriented.save(oriented_path)
+    preprocessed, metadata = preprocess_image(oriented_path.read_bytes())
+    preprocessed_path = target / "preprocessed.png"
+    preprocessed_path.write_bytes(preprocessed)
+    processed_image = Image.open(preprocessed_path).convert("RGB")
+    text = pytesseract.image_to_string(processed_image, lang=TESSERACT_LANG, config="--psm 3").strip()
+    tsv = pytesseract.image_to_data(processed_image, lang=TESSERACT_LANG, config="--psm 3")
+    (target / "ocr.txt").write_text(text + "\n", encoding="utf-8")
+    (target / "ocr.tsv").write_text(tsv, encoding="utf-8")
+    tables = _table_regions(processed_image)
+    content_type = "mixed" if tables and len(text) >= 500 else "table" if tables else "free_text" if text else "unknown"
+    analysis = {
+        "page_number": page_number,
+        "orientation_degrees": selected_degrees,
+        "orientation_confidence": confidence,
+        "orientation_candidates": {str(degrees): value for degrees, value in candidates},
+        "content_type": content_type,
+        "text_char_count": len(text),
+        "word_count": len(text.split()),
+        "tables": tables,
+        "preprocessing": metadata,
+    }
+    (target / "analysis.json").write_text(json.dumps(analysis, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {
+        "status": "needs_review" if confidence < 0.55 or not text else "done",
+        "phase": "done",
+        "orientation_degrees": selected_degrees,
+        "orientation_confidence": confidence,
+        "content_type": content_type,
+        "text_char_count": len(text),
+        "table_count": len(tables),
+        "ocr_text": text,
+        "ocr_tsv": tsv,
+        "analysis": analysis,
+        "original_asset_path": str(original_path),
+        "oriented_asset_path": str(oriented_path),
+        "preprocessed_asset_path": str(preprocessed_path),
+    }
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "ErmanJournalPreprocessor/0.1"
 
@@ -215,6 +344,12 @@ class Handler(BaseHTTPRequestHandler):
         self._json(HTTPStatus.OK, {"status": "ok"})
 
     def do_POST(self) -> None:
+        if self.path == "/pdf-info":
+            self._handle_pdf_info()
+            return
+        if self.path == "/analyze-page":
+            self._handle_analyze_page()
+            return
         if self.path != "/preprocess":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return
@@ -252,6 +387,34 @@ class Handler(BaseHTTPRequestHandler):
         )
         self.end_headers()
         self.wfile.write(output)
+
+    def _read_json(self) -> dict[str, object]:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > 1024 * 1024:
+            raise ValueError("json request is too large")
+        return json.loads(self.rfile.read(length))
+
+    def _handle_pdf_info(self) -> None:
+        try:
+            payload = self._read_json()
+            path = str(payload.get("pdf_path", ""))
+            with fitz.open(path) as document:
+                self._json(HTTPStatus.OK, {"page_count": document.page_count})
+        except Exception as exc:
+            self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+
+    def _handle_analyze_page(self) -> None:
+        try:
+            payload = self._read_json()
+            result = analyze_pdf_page(
+                str(payload.get("pdf_path", "")),
+                int(payload.get("page_number", 0)),
+                str(payload.get("output_dir", "")),
+            )
+            self._json(HTTPStatus.OK, result)
+        except Exception as exc:
+            logger.exception("pdf page analysis failed")
+            self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
 
     def log_message(self, format: str, *args: object) -> None:
         logger.info("%s - %s", self.address_string(), format % args)

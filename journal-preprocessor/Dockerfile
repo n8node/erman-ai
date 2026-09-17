@@ -6,10 +6,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir opencv-python-headless pillow \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-rus tesseract-ocr-eng \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip install --no-cache-dir opencv-python-headless pillow PyMuPDF pytesseract \
  && useradd --create-home --uid 10001 app
 
 COPY --chown=app:app app.py /app/app.py
+
+VOLUME ["/app/data/geological-journal"]
 
 USER app
 

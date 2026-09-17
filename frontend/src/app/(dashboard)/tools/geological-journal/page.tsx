@@ -1,5 +1,5 @@
-import { GeologicalJournalWorkspace } from "@/components/tools/GeologicalJournalWorkspace";
+import { GeologicalJournalDocumentsWorkspace } from "@/components/tools/GeologicalJournalDocumentsWorkspace";
 
 export default function GeologicalJournalPage() {
-  return <GeologicalJournalWorkspace />;
+  return <GeologicalJournalDocumentsWorkspace />;
 }

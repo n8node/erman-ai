@@ -7,11 +7,31 @@
 /backend/tmp/
 /backend/server
 /backend/bin/
+/backend/server.exe
 
 # Node
 /frontend/node_modules/
 /frontend/.next/
 /frontend/out/
+/frontend/tsconfig.tsbuildinfo
+
+# Local experiments and generated scripts
+/scripts/.i18n-subtree-cache.json
+/scripts/.template-overlay-cache.json
+/scripts/.translation-cache.json
+/scripts/build-calculator-template-overlays.mjs
+/scripts/count-template-strings.mjs
+/scripts/extract-priority-template-strings.mjs
+/scripts/fill-fr-zh-overlays.mjs
+/scripts/generate-template-overlays.mjs
+/scripts/i18n-overlays/
+/scripts/i18n-tools-en-bundle.json
+/scripts/process_geological_pdf.py
+/scripts/sync-i18n-locales.mjs
+/scripts/template-priority-strings.json
+/scripts/translate-overlays-libre.mjs
+/scripts/wp-update-rocket.sh
+/landing-course-preview.html
 
 # Docker
 docker-compose.override.yml
@@ -37,6 +57,7 @@ wordpress/uploads/
 
 # Artifacts (PDF/DOCX — stored in MinIO)
 artifacts/
+*/__pycache__/
 
 certbot-webroot/*
 !certbot-webroot/.gitkeep

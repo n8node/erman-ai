@@ -374,6 +374,20 @@ func (s *GeologicalJournalService) CheckAccess(ctx context.Context, userID, role
 	return nil
 }
 
+func (s *GeologicalJournalService) CheckDocumentAccess(ctx context.Context, documentID, userID, role string) error {
+	if err := s.CheckAccess(ctx, userID, role); err != nil {
+		return err
+	}
+	ok, err := s.repo.HasDocumentAccess(ctx, documentID, userID, role)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrGeologicalJournalForbidden
+	}
+	return nil
+}
+
 func (s *GeologicalJournalService) CreatePage(ctx context.Context, userID, role, originalName, layoutMode string, image *ValidatedJournalImage) (*model.GeologicalJournalPage, *model.ToolRun, error) {
 	if err := s.CheckAccess(ctx, userID, role); err != nil {
 		return nil, nil, err
