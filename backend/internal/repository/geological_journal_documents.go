@@ -38,6 +38,20 @@ func (r *GeologicalJournalRepository) GetDocument(ctx context.Context, id string
 	return &item, err
 }
 
+func (r *GeologicalJournalRepository) DeleteDocument(ctx context.Context, id, ownerID string, superadmin bool) (string, error) {
+	var assetPath string
+	var err error
+	if superadmin {
+		err = r.pool.QueryRow(ctx, `DELETE FROM geological_journal_documents WHERE id=$1 RETURNING asset_path`, id).Scan(&assetPath)
+	} else {
+		err = r.pool.QueryRow(ctx, `DELETE FROM geological_journal_documents WHERE id=$1 AND owner_id=$2 RETURNING asset_path`, id, ownerID).Scan(&assetPath)
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return assetPath, err
+}
+
 func (r *GeologicalJournalRepository) ListDocuments(ctx context.Context, userID string, includeShared bool) ([]model.GeologicalJournalDocument, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT id,owner_id,original_name,asset_path,content_type,size_bytes,page_count,status,is_shared,error_msg,created_at,updated_at,analysis_started_at,analysis_completed_at
@@ -82,10 +96,13 @@ func (r *GeologicalJournalRepository) MarkDocumentQueued(ctx context.Context, id
 }
 
 func (r *GeologicalJournalRepository) ResetDocumentJobs(ctx context.Context, documentID string) error {
-	_, err := r.pool.Exec(ctx, `
+	if _, err := r.pool.Exec(ctx, `
 		UPDATE geological_journal_document_pages
 		SET status='queued',error_msg=NULL,updated_at=NOW()
-		WHERE document_id=$1 AND status <> 'done';
+		WHERE document_id=$1 AND status <> 'done'`, documentID); err != nil {
+		return err
+	}
+	_, err := r.pool.Exec(ctx, `
 		UPDATE geological_journal_document_jobs
 		SET status='queued',phase='queued',lease_until=NULL,error_msg=NULL,completed_at=NULL,updated_at=NOW()
 		WHERE document_id=$1 AND status <> 'done'`, documentID)

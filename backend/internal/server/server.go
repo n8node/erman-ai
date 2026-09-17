@@ -262,6 +262,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				journal.Post("/documents", geologicalJournalDocumentHandler.Create)
 				journal.Get("/documents", geologicalJournalDocumentHandler.List)
 				journal.Get("/documents/{id}", geologicalJournalDocumentHandler.Get)
+				journal.Delete("/documents/{id}", geologicalJournalDocumentHandler.Delete)
 				journal.Post("/documents/{id}/analyze", geologicalJournalDocumentHandler.StartAnalysis)
 				journal.Post("/documents/{id}/llm", geologicalJournalDocumentHandler.LLMProcess)
 				journal.Post("/documents/{id}/chat", geologicalJournalDocumentHandler.Chat)

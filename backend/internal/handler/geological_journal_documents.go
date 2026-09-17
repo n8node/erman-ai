@@ -75,6 +75,19 @@ func (h *GeologicalJournalDocumentHandler) Get(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, item)
 }
 
+func (h *GeologicalJournalDocumentHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	userID, role, ok := journalIdentity(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if err := h.svc.Delete(r.Context(), r.PathValue("id"), userID, role); err != nil {
+		writeError(w, http.StatusNotFound, "document not found")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *GeologicalJournalDocumentHandler) StartAnalysis(w http.ResponseWriter, r *http.Request) {
 	userID, role, ok := journalIdentity(r)
 	if !ok {

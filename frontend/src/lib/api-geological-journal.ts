@@ -339,19 +339,39 @@ export function listGeologicalJournalPages() {
   );
 }
 
-export async function uploadGeologicalJournalDocument(file: File) {
-  const form = new FormData();
-  form.append("file", file);
-  const response = await fetch(`${apiBase()}/tools/geological-journal/documents`, {
-    method: "POST",
-    credentials: "include",
-    body: form,
+export function uploadGeologicalJournalDocument(
+  file: File,
+  onProgress: (percent: number) => void
+): { promise: Promise<GeologicalJournalDocument>; abort: () => void } {
+  const xhr = new XMLHttpRequest();
+  const promise = new Promise<GeologicalJournalDocument>((resolve, reject) => {
+    xhr.open("POST", `${apiBase()}/tools/geological-journal/documents`);
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onerror = () => reject(new Error("upload failed"));
+    xhr.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
+    xhr.onload = () => {
+      let data: Record<string, unknown> = {};
+      try { data = JSON.parse(xhr.responseText) as Record<string, unknown>; } catch { /* fallback below */ }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new ApiError(typeof data.error === "string" ? data.error : "upload failed", xhr.status));
+        return;
+      }
+      resolve(data as unknown as GeologicalJournalDocument);
+    };
+    const form = new FormData();
+    form.append("file", file);
+    xhr.send(form);
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new ApiError(typeof data.error === "string" ? data.error : "upload failed", response.status);
-  }
-  return data as GeologicalJournalDocument;
+  return { promise, abort: () => xhr.abort() };
+}
+
+export function deleteGeologicalJournalDocument(id: string) {
+  return apiFetch<void>(`/tools/geological-journal/documents/${id}`, { method: "DELETE" });
 }
 
 export function listGeologicalJournalDocuments() {

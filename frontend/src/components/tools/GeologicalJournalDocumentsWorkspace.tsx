@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, LoaderCircle, Play, Upload, Users, RefreshCw } from "lucide-react";
+import { FileText, LoaderCircle, Play, Upload, Users, RefreshCw, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getGeologicalJournalDocument,
   chatGeologicalJournalDocument,
+  deleteGeologicalJournalDocument,
   listGeologicalJournalDocuments,
   processGeologicalJournalDocumentLLM,
   setGeologicalJournalDocumentSharing,
@@ -33,6 +34,8 @@ export function GeologicalJournalDocumentsWorkspace() {
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; confidence?: string }>>([]);
   const [chatBusy, setChatBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadAbort, setUploadAbort] = useState<(() => void) | null>(null);
   const activePages = useMemo(() => active?.pages ?? [], [active?.pages]);
 
   const loadDocuments = useCallback(async () => {
@@ -67,9 +70,19 @@ export function GeologicalJournalDocumentsWorkspace() {
 
   async function upload(file: File) {
     if (file.type !== "application/pdf") { setError("Выберите PDF-файл"); return; }
-    setBusy(true); setError("");
-    try { const document = await uploadGeologicalJournalDocument(file); await loadDocuments(); await loadActive(document.id); }
+    setBusy(true); setError(""); setUploadProgress(0);
+    const request = uploadGeologicalJournalDocument(file, setUploadProgress);
+    setUploadAbort(() => request.abort);
+    try { const document = await request.promise; setUploadProgress(100); await loadDocuments(); await loadActive(document.id); }
     catch (err) { setError(err instanceof Error ? err.message : "Не удалось загрузить PDF"); }
+    finally { setBusy(false); setUploadAbort(null); window.setTimeout(() => setUploadProgress(null), 500); }
+  }
+
+  async function removeDocument(document: GeologicalJournalDocument) {
+    if (!window.confirm(`Удалить документ «${document.original_name}» и всю историю его анализа?`)) return;
+    setBusy(true); setError("");
+    try { await deleteGeologicalJournalDocument(document.id); if (active?.document.id === document.id) setActive(null); await loadDocuments(); }
+    catch (err) { setError(err instanceof Error ? err.message : "Не удалось удалить документ"); }
     finally { setBusy(false); }
   }
 
@@ -129,11 +142,12 @@ export function GeologicalJournalDocumentsWorkspace() {
           <span className="mt-1 text-xs text-text3">До 250 МБ. После загрузки нажмите «Запустить анализ».</span>
           <input className="hidden" type="file" accept="application/pdf" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} />
         </label>
+        {uploadProgress !== null && <div className="mt-4 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between text-xs"><span>Загрузка PDF</span><span>{uploadProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><button type="button" onClick={() => uploadAbort?.()} className="mt-2 inline-flex items-center gap-1 text-xs text-text3 hover:text-error"><X size={13} /> Отменить загрузку</button></div>}
       </section>
       <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
         <section className="rounded-xl border border-border bg-bg p-3">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-medium">История документов</h2><button type="button" onClick={() => void loadDocuments()} className="rounded p-1.5 text-text3 hover:bg-bg2"><RefreshCw size={15} /></button></div>
-          {loading ? <LoaderCircle className="animate-spin text-text3" size={18} /> : documents.length === 0 ? <p className="text-xs text-text3">Документов пока нет.</p> : <div className="space-y-2">{documents.map((document) => <button key={document.id} type="button" onClick={() => { setSelectedPages([]); void loadActive(document.id); }} className={`w-full rounded-lg border p-3 text-left ${active?.document.id === document.id ? "border-accent bg-accent-bg" : "border-border2 hover:bg-bg2"}`}><div className="flex items-start gap-2"><FileText size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 flex-1 truncate text-xs font-medium">{document.original_name}</span></div><div className="mt-1 text-[11px] text-text3">{statusLabel(document.status)} · {document.page_count || "?"} стр.</div></button>)}</div>}
+          {loading ? <LoaderCircle className="animate-spin text-text3" size={18} /> : documents.length === 0 ? <p className="text-xs text-text3">Документов пока нет.</p> : <div className="space-y-2">{documents.map((document) => <div key={document.id} className={`flex items-start gap-1 rounded-lg border p-2 ${active?.document.id === document.id ? "border-accent bg-accent-bg" : "border-border2"}`}><button type="button" onClick={() => { setSelectedPages([]); void loadActive(document.id); }} className="min-w-0 flex-1 p-1 text-left hover:bg-bg2"><div className="flex items-start gap-2"><FileText size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 flex-1 truncate text-xs font-medium">{document.original_name}</span></div><div className="mt-1 text-[11px] text-text3">{statusLabel(document.status)} · {document.page_count || "?"} стр.</div></button><button type="button" aria-label="Удалить документ" onClick={() => void removeDocument(document)} disabled={busy} className="rounded p-1.5 text-text3 hover:bg-error-bg hover:text-error disabled:opacity-40"><Trash2 size={14} /></button></div>)}</div>}
         </section>
         <section className="min-w-0 rounded-xl border border-border bg-bg p-4">
           {!active ? <div className="flex min-h-[300px] items-center justify-center text-sm text-text3">Выберите документ из истории.</div> : <>

@@ -106,6 +106,26 @@ func (s *GeologicalJournalDocumentService) SetShared(ctx context.Context, id, us
 	return s.journal.repo.SetDocumentShared(ctx, id, shared)
 }
 
+func (s *GeologicalJournalDocumentService) Delete(ctx context.Context, id, userID, role string) error {
+	if err := s.CheckAccess(ctx, id, userID, role); err != nil {
+		return err
+	}
+	path, err := s.journal.repo.DeleteDocument(ctx, id, userID, role == "superadmin")
+	if err != nil {
+		return err
+	}
+	if path != "" {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			s.logger.Warn("geological journal document asset delete failed", "path", path, "error", err)
+		}
+	}
+	documentDir := filepath.Join(s.assetsDir, "documents", id)
+	if err := os.RemoveAll(documentDir); err != nil {
+		s.logger.Warn("geological journal document artifacts delete failed", "path", documentDir, "error", err)
+	}
+	return nil
+}
+
 func (s *GeologicalJournalDocumentService) PageAsset(ctx context.Context, documentID, pageID, kind string) (string, error) {
 	return s.journal.repo.GetDocumentPageAssetForDocument(ctx, documentID, pageID, kind)
 }
