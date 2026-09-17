@@ -331,6 +331,11 @@ func (s *GeologicalJournalService) EnsureAssetDirs() error {
 		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return err
 		}
+		// journal-preprocessor runs as a non-root user and reads/writes through
+		// the shared geological-journal Docker volume.
+		if err := os.Chmod(dir, 0o755); err != nil {
+			return err
+		}
 	}
 	return nil
 }

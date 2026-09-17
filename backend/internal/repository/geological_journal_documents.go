@@ -132,7 +132,7 @@ func (r *GeologicalJournalRepository) ClaimDocumentJob(ctx context.Context, leas
 		)
 		UPDATE geological_journal_document_jobs j
 		SET status='processing', phase='rendering', attempts=j.attempts+1,
-			lease_until=NOW() + ($1 || ' seconds')::interval, started_at=COALESCE(j.started_at,NOW()), updated_at=NOW()
+			lease_until=NOW() + ($1 * INTERVAL '1 second'), started_at=COALESCE(j.started_at,NOW()), updated_at=NOW()
 		FROM candidate c
 		WHERE j.id=c.id
 		RETURNING j.id,j.document_id,j.page_id,j.status,j.phase,j.attempts,

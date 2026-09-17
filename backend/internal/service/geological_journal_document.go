@@ -44,12 +44,14 @@ func (s *GeologicalJournalDocumentService) Create(ctx context.Context, userID, r
 		return nil, err
 	}
 	dir := filepath.Join(s.assetsDir, "documents")
-	if err := os.MkdirAll(dir, 0o750); err != nil {
+	// The PDF is read by the non-root journal-preprocessor container through the
+	// shared volume. The directory/file must be traversable/readable there.
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
 	}
 	fileName := randomAssetName(".pdf")
 	path := filepath.Join(dir, fileName)
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o640)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o644)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +292,11 @@ func (s *GeologicalJournalDocumentService) workerLoop(ctx context.Context) {
 
 func (s *GeologicalJournalDocumentService) processDocumentPage(ctx context.Context, job *model.GeologicalJournalDocumentJob) error {
 	pageDir := filepath.Join(s.assetsDir, "documents", job.DocumentID, fmt.Sprintf("page-%04d", job.PageNumber))
-	if err := os.MkdirAll(pageDir, 0o750); err != nil {
+	// The preprocessor writes page artifacts into the shared volume as uid 10001.
+	if err := os.MkdirAll(pageDir, 0o777); err != nil {
+		return err
+	}
+	if err := os.Chmod(pageDir, 0o777); err != nil {
 		return err
 	}
 	result, err := s.journal.preprocessor.AnalyzePDFPage(ctx, job.DocumentPath, job.PageNumber, pageDir)
