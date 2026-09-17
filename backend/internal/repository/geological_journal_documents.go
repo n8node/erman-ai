@@ -81,6 +81,17 @@ func (r *GeologicalJournalRepository) MarkDocumentQueued(ctx context.Context, id
 	return err
 }
 
+func (r *GeologicalJournalRepository) ResetDocumentJobs(ctx context.Context, documentID string) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE geological_journal_document_pages
+		SET status='queued',error_msg=NULL,updated_at=NOW()
+		WHERE document_id=$1 AND status <> 'done';
+		UPDATE geological_journal_document_jobs
+		SET status='queued',phase='queued',lease_until=NULL,error_msg=NULL,completed_at=NULL,updated_at=NOW()
+		WHERE document_id=$1 AND status <> 'done'`, documentID)
+	return err
+}
+
 func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, documentID string, number int) (*model.GeologicalJournalDocumentPage, error) {
 	var item model.GeologicalJournalDocumentPage
 	var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string

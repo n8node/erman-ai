@@ -243,6 +243,9 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := s.journal.repo.MarkDocumentQueued(ctx, id); err != nil {
 		return err
 	}
+	if err := s.journal.repo.ResetDocumentJobs(ctx, id); err != nil {
+		return err
+	}
 	for pageNumber := 1; pageNumber <= info.PageCount; pageNumber++ {
 		page, err := s.journal.repo.CreateDocumentPage(ctx, id, pageNumber)
 		if err != nil {
@@ -295,7 +298,13 @@ func (s *GeologicalJournalDocumentService) workerLoop(ctx context.Context) {
 }
 
 func (s *GeologicalJournalDocumentService) processDocumentPage(ctx context.Context, job *model.GeologicalJournalDocumentJob) error {
-	pageDir := filepath.Join(s.assetsDir, "documents", job.DocumentID, fmt.Sprintf("page-%04d", job.PageNumber))
+	documentDir := filepath.Join(s.assetsDir, "documents", job.DocumentID)
+	pageDir := filepath.Join(documentDir, fmt.Sprintf("page-%04d", job.PageNumber))
+	// Existing documents may have been created by an older image with mode 0750.
+	// The non-root preprocessor must be able to traverse the document directory.
+	if err := os.Chmod(documentDir, 0o777); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
 	// The preprocessor writes page artifacts into the shared volume as uid 10001.
 	if err := os.MkdirAll(pageDir, 0o777); err != nil {
 		return err
