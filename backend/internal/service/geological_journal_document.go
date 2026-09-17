@@ -153,12 +153,17 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
+	journalSettings, err := s.journal.repo.GetSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
 	creds := s.journal.llm.CredentialsFromStored(strategy.Config)
 	provider := model.LLMProviderYandex
 	apiKey := s.journal.llm.ResolveKey(provider, creds)
 	if apiKey == "" {
 		return nil, errors.New("yandex api key not configured")
 	}
+	ocrModel := NormalizeYandexOCRModel(journalSettings.Settings.OCRModel)
 	var results []model.GeologicalJournalDocumentLLMResult
 	for _, pageNumber := range req.PageNumbers {
 		page, ok := selected[pageNumber]
@@ -173,38 +178,49 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 		if err != nil {
 			return nil, fmt.Errorf("read oriented image for page %d: %w", pageNumber, err)
 		}
-		prompt := fmt.Sprintf(`Заново распознай всю страницу %d документа %q непосредственно по переданному изображению.
+		ocrText := strings.TrimSpace(page.OCRText)
+		visionText, visionErr := s.journal.llm.RecognizeYandexVisionText(ctx, YandexVisionRecognizeParams{
+			APIKey: apiKey, FolderID: creds.YandexFolderID, Image: image,
+			MIME: documentPageImageMIME(imagePath), Model: ocrModel,
+			Proxy: strategy.Config.ProxyForProvider(provider),
+		})
+		if visionErr == nil && strings.TrimSpace(visionText) != "" {
+			ocrText = strings.TrimSpace(visionText)
+			if err := s.journal.repo.UpdateDocumentPageOCRText(ctx, page.ID, ocrText); err != nil {
+				return nil, err
+			}
+		} else if ocrText == "" {
+			if visionErr != nil {
+				return nil, fmt.Errorf("vision ocr page %d: %w", pageNumber, visionErr)
+			}
+			return nil, fmt.Errorf("vision ocr page %d returned empty text", pageNumber)
+		} else if visionErr != nil {
+			s.logger.Warn("vision OCR failed; using existing document OCR text", "page", pageNumber, "error", visionErr)
+		}
+		prompt := fmt.Sprintf(`Проанализируй текст страницы %d документа %q, распознанный Yandex Vision OCR.
 
-Не используй существующий OCR-текст и не полагайся на него: он может быть ошибочным.
-Сохрани весь читаемый текст, порядок строк, структуру таблиц, даты, числа, единицы измерения,
-номера скважин и образцов, а также геологические обозначения. Если фрагмент невозможно
-уверенно прочитать, не придумывай его и укажи проблему в uncertainties.
+Выдели ключевые факты, числа, геологические объекты и сомнительные места.
+Не исправляй значения догадками. Если фрагмент невозможно уверенно прочитать,
+укажи его в uncertainties.
 
 Ответь только JSON-объектом со следующими ключами:
-- transcription: полная повторная расшифровка всей страницы;
 - summary: краткое содержание;
 - facts: массив важных фактов и чисел;
 - uncertainties: массив неразборчивых или сомнительных мест;
 - sources: массив с указанием страницы.
 
-Изображение уже повернуто так, чтобы текст читался нормально.`, pageNumber, doc.OriginalName)
-		completion, err := s.journal.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
-			LLMCompletionRequest: LLMCompletionRequest{
-				Provider: provider, Model: strategy.Config.YandexModel, SystemPrompt: "Ты аккуратный OCR-аналитик геологических документов. Сначала полностью распознай изображение, затем выдели факты. Не выдумывай неразборчивые значения.",
-				UserPrompt: prompt, Temperature: 0.1, MaxTokens: 8192, APIKey: apiKey, FolderID: creds.YandexFolderID,
-				Proxy: strategy.Config.ProxyForProvider(provider),
-			},
-			Image: image, ImageMIME: documentPageImageMIME(imagePath),
+		Текст страницы:
+%s`, pageNumber, doc.OriginalName, ocrText)
+		completion, err := s.journal.llm.Complete(ctx, LLMCompletionRequest{
+			Provider: provider, Model: strategy.Config.YandexModel,
+			SystemPrompt: "Ты аккуратный аналитик геологических документов. Работай только с переданным OCR-текстом. Не выдумывай неразборчивые значения.",
+			UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
+			Proxy: strategy.Config.ProxyForProvider(provider),
 		})
 		if err != nil {
 			return nil, err
 		}
-		transcription, resultJSON := parseDocumentLLMResponse(completion.Content)
-		if transcription != "" {
-			if err := s.journal.repo.UpdateDocumentPageOCRText(ctx, page.ID, transcription); err != nil {
-				return nil, err
-			}
-		}
+		_, resultJSON := parseDocumentLLMResponse(completion.Content)
 		result, err := s.journal.repo.SaveDocumentLLMResult(ctx, documentID, page.ID, userID, req.Mode, resultJSON, completion.Model)
 		if err != nil {
 			return nil, err
