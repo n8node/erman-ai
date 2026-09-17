@@ -359,7 +359,10 @@ export function listGeologicalJournalDocuments() {
 }
 
 export function getGeologicalJournalDocument(id: string) {
-  return apiFetch<GeologicalJournalDocumentDetail>(`/tools/geological-journal/documents/${id}`, { cache: "no-store" });
+  return apiFetch<GeologicalJournalDocumentDetail>(`/tools/geological-journal/documents/${id}`, { cache: "no-store" }).then((data) => ({
+    document: data?.document ?? ({} as GeologicalJournalDocument),
+    pages: Array.isArray(data?.pages) ? data.pages : [],
+  }));
 }
 
 export function startGeologicalJournalDocumentAnalysis(id: string) {
