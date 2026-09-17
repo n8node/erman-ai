@@ -214,6 +214,14 @@ func (r *GeologicalJournalRepository) UpdateDocumentPageAssets(ctx context.Conte
 	return err
 }
 
+func (r *GeologicalJournalRepository) UpdateDocumentPageOCRText(ctx context.Context, pageID, text string) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE geological_journal_document_pages
+		SET ocr_text=$2,text_char_count=char_length($2),updated_at=NOW()
+		WHERE id=$1`, pageID, text)
+	return err
+}
+
 func (r *GeologicalJournalRepository) RefreshDocumentStatus(ctx context.Context, documentID string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE geological_journal_documents d SET

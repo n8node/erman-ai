@@ -165,22 +165,94 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 		if !ok {
 			continue
 		}
-		prompt := fmt.Sprintf("Проанализируй страницу %d документа %q. Определи ключевые факты, числа, геологические объекты и сомнительные места. Ответь на русском JSON-объектом с ключами summary, facts, uncertainties, sources. OCR:\n%s", pageNumber, doc.OriginalName, page.OCRText)
-		completion, err := s.journal.llm.Complete(ctx, LLMCompletionRequest{
-			Provider: provider, Model: strategy.Config.YandexModel, SystemPrompt: "Ты аккуратный аналитик геологических документов. Не выдумывай факты. Всегда указывай номер страницы и uncertainty.",
-			UserPrompt: prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
-			Proxy: strategy.Config.ProxyForProvider(provider),
+		imagePath := documentPageOrientedAssetPath(page)
+		if imagePath == "" {
+			return nil, fmt.Errorf("oriented image is not available for page %d", pageNumber)
+		}
+		image, err := os.ReadFile(imagePath)
+		if err != nil {
+			return nil, fmt.Errorf("read oriented image for page %d: %w", pageNumber, err)
+		}
+		prompt := fmt.Sprintf(`Заново распознай всю страницу %d документа %q непосредственно по переданному изображению.
+
+Не используй существующий OCR-текст и не полагайся на него: он может быть ошибочным.
+Сохрани весь читаемый текст, порядок строк, структуру таблиц, даты, числа, единицы измерения,
+номера скважин и образцов, а также геологические обозначения. Если фрагмент невозможно
+уверенно прочитать, не придумывай его и укажи проблему в uncertainties.
+
+Ответь только JSON-объектом со следующими ключами:
+- transcription: полная повторная расшифровка всей страницы;
+- summary: краткое содержание;
+- facts: массив важных фактов и чисел;
+- uncertainties: массив неразборчивых или сомнительных мест;
+- sources: массив с указанием страницы.
+
+Изображение уже повернуто так, чтобы текст читался нормально.`, pageNumber, doc.OriginalName)
+		completion, err := s.journal.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
+			LLMCompletionRequest: LLMCompletionRequest{
+				Provider: provider, Model: strategy.Config.YandexModel, SystemPrompt: "Ты аккуратный OCR-аналитик геологических документов. Сначала полностью распознай изображение, затем выдели факты. Не выдумывай неразборчивые значения.",
+				UserPrompt: prompt, Temperature: 0.1, MaxTokens: 8192, APIKey: apiKey, FolderID: creds.YandexFolderID,
+				Proxy: strategy.Config.ProxyForProvider(provider),
+			},
+			Image: image, ImageMIME: documentPageImageMIME(imagePath),
 		})
 		if err != nil {
 			return nil, err
 		}
-		result, err := s.journal.repo.SaveDocumentLLMResult(ctx, documentID, page.ID, userID, req.Mode, json.RawMessage(completion.Content), completion.Model)
+		transcription, resultJSON := parseDocumentLLMResponse(completion.Content)
+		if transcription != "" {
+			if err := s.journal.repo.UpdateDocumentPageOCRText(ctx, page.ID, transcription); err != nil {
+				return nil, err
+			}
+		}
+		result, err := s.journal.repo.SaveDocumentLLMResult(ctx, documentID, page.ID, userID, req.Mode, resultJSON, completion.Model)
 		if err != nil {
 			return nil, err
 		}
 		results = append(results, *result)
 	}
 	return results, nil
+}
+
+func documentPageOrientedAssetPath(page model.GeologicalJournalDocumentPage) string {
+	if page.OrientedAssetPath != "" {
+		return page.OrientedAssetPath
+	}
+	// Preprocessed images are generated from oriented.png and keep the same
+	// readable orientation. Do not fall back to the original, potentially
+	// rotated PDF render.
+	return page.PreprocessedAssetPath
+}
+
+func documentPageImageMIME(path string) string {
+	if strings.EqualFold(filepath.Ext(path), ".jpg") || strings.EqualFold(filepath.Ext(path), ".jpeg") {
+		return "image/jpeg"
+	}
+	return "image/png"
+}
+
+func parseDocumentLLMResponse(content string) (string, json.RawMessage) {
+	content = strings.TrimSpace(content)
+	for _, candidate := range append([]string{trimGeologicalJournalFence(content)}, extractGeologicalJournalJSONObjects(content)...) {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		var payload struct {
+			Transcription string `json:"transcription"`
+		}
+		if err := json.Unmarshal([]byte(candidate), &payload); err != nil {
+			continue
+		}
+		if strings.TrimSpace(payload.Transcription) != "" {
+			return strings.TrimSpace(payload.Transcription), json.RawMessage(candidate)
+		}
+	}
+	if json.Valid([]byte(content)) {
+		return "", json.RawMessage(content)
+	}
+	raw, _ := json.Marshal(map[string]string{"raw_response": content})
+	return "", raw
 }
 
 func (s *GeologicalJournalDocumentService) Chat(ctx context.Context, documentID, userID, role string, req model.GeologicalJournalDocumentChatRequest) (*model.GeologicalJournalDocumentChatMessage, error) {

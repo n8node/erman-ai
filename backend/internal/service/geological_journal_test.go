@@ -67,6 +67,35 @@ func TestGeologicalJournalHasAccess(t *testing.T) {
 	require.False(t, GeologicalJournalHasAccess("user", false))
 }
 
+func TestParseDocumentLLMResponseExtractsTranscription(t *testing.T) {
+	content := "```json\n{\"transcription\":\"строка 1\\nстрока 2\",\"summary\":\"итог\",\"facts\":[],\"uncertainties\":[],\"sources\":[{\"page\":1}]}\n```"
+
+	transcription, raw := parseDocumentLLMResponse(content)
+	require.Equal(t, "строка 1\nстрока 2", transcription)
+	require.JSONEq(t, `{"transcription":"строка 1\nстрока 2","summary":"итог","facts":[],"uncertainties":[],"sources":[{"page":1}]}`, string(raw))
+}
+
+func TestParseDocumentLLMResponseFallsBackWithoutTranscription(t *testing.T) {
+	transcription, raw := parseDocumentLLMResponse(`{"summary":"только итог"}`)
+	require.Empty(t, transcription)
+	require.JSONEq(t, `{"summary":"только итог"}`, string(raw))
+
+	transcription, raw = parseDocumentLLMResponse("not json")
+	require.Empty(t, transcription)
+	require.JSONEq(t, `{"raw_response":"not json"}`, string(raw))
+}
+
+func TestDocumentPageOrientedAssetPathDoesNotUseOriginal(t *testing.T) {
+	page := model.GeologicalJournalDocumentPage{
+		OriginalAssetPath:     "/tmp/original.png",
+		PreprocessedAssetPath: "/tmp/preprocessed.png",
+	}
+	require.Equal(t, "/tmp/preprocessed.png", documentPageOrientedAssetPath(page))
+
+	page.OrientedAssetPath = "/tmp/oriented.png"
+	require.Equal(t, "/tmp/oriented.png", documentPageOrientedAssetPath(page))
+}
+
 func TestApplyGeologicalJournalModelDefaultsIncludesDeepSeek(t *testing.T) {
 	settings := model.GeologicalJournalSettings{}
 	applyGeologicalJournalModelDefaults(&settings, []model.LLMProviderStatus{
