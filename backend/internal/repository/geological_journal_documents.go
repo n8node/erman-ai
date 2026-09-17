@@ -103,9 +103,10 @@ func (r *GeologicalJournalRepository) ResetDocumentJobs(ctx context.Context, doc
 		return err
 	}
 	_, err := r.pool.Exec(ctx, `
-		UPDATE geological_journal_document_jobs
+		UPDATE geological_journal_document_jobs j
 		SET status='queued',phase='queued',lease_until=NULL,error_msg=NULL,completed_at=NULL,updated_at=NOW()
-		WHERE document_id=$1 AND status <> 'done'`, documentID)
+		FROM geological_journal_document_pages p
+		WHERE j.page_id=p.id AND j.document_id=$1 AND p.status <> 'done'`, documentID)
 	return err
 }
 
