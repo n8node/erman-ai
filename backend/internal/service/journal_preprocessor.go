@@ -144,6 +144,14 @@ func (p *JournalImagePreprocessor) PDFInfo(ctx context.Context, pdfPath string) 
 	return &out, nil
 }
 
+func (p *JournalImagePreprocessor) PDFInfoBytes(ctx context.Context, pdf []byte) (*JournalPDFInfo, error) {
+	var out JournalPDFInfo
+	if err := p.postPDF(ctx, "/pdf-info", pdf, nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (p *JournalImagePreprocessor) AnalyzePDFPage(ctx context.Context, pdfPath string, pageNumber int, outputDir string) (*JournalPDFPageAnalysis, error) {
 	var out JournalPDFPageAnalysis
 	err := p.postJSON(ctx, "/analyze-page", map[string]any{
@@ -153,6 +161,50 @@ func (p *JournalImagePreprocessor) AnalyzePDFPage(ctx context.Context, pdfPath s
 		return nil, err
 	}
 	return &out, nil
+}
+
+func (p *JournalImagePreprocessor) AnalyzePDFPageBytes(ctx context.Context, pdf []byte, pageNumber int, outputDir string) (*JournalPDFPageAnalysis, error) {
+	var out JournalPDFPageAnalysis
+	if err := p.postPDF(ctx, "/analyze-page", pdf, map[string]string{
+		"X-Page-Number": fmt.Sprintf("%d", pageNumber),
+		"X-Output-Dir":  outputDir,
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (p *JournalImagePreprocessor) postPDF(ctx context.Context, endpoint string, pdf []byte, headers map[string]string, result any) error {
+	if !p.Enabled() {
+		return errors.New("journal image preprocessor is disabled")
+	}
+	if len(pdf) == 0 {
+		return errors.New("pdf is empty")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.baseURL+endpoint, bytes.NewReader(pdf))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/pdf")
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("preprocessor request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxPreprocessedImageBytes))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("preprocessor returned %s: %s", resp.Status, strings.TrimSpace(string(raw)))
+	}
+	if err := json.Unmarshal(raw, result); err != nil {
+		return fmt.Errorf("preprocessor response parse failed: %w", err)
+	}
+	return nil
 }
 
 func (p *JournalImagePreprocessor) postJSON(ctx context.Context, endpoint string, payload any, result any) error {

@@ -4,6 +4,7 @@ import logging
 import math
 import os
 from pathlib import Path
+import tempfile
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -326,6 +327,19 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     }
 
 
+def analyze_pdf_page_bytes(raw: bytes, page_number: int, output_dir: str) -> dict[str, object]:
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as handle:
+        handle.write(raw)
+        temporary_path = handle.name
+    try:
+        return analyze_pdf_page(temporary_path, page_number, output_dir)
+    finally:
+        try:
+            os.unlink(temporary_path)
+        except OSError:
+            pass
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "ErmanJournalPreprocessor/0.1"
 
@@ -396,6 +410,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_pdf_info(self) -> None:
         try:
+            if self.headers.get("Content-Type", "").lower().startswith("application/pdf"):
+                raw = self._read_body(MAX_BODY_BYTES)
+                with fitz.open(stream=raw, filetype="pdf") as document:
+                    self._json(HTTPStatus.OK, {"page_count": document.page_count})
+                return
             payload = self._read_json()
             path = str(payload.get("pdf_path", ""))
             with fitz.open(path) as document:
@@ -405,6 +424,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_analyze_page(self) -> None:
         try:
+            if self.headers.get("Content-Type", "").lower().startswith("application/pdf"):
+                raw = self._read_body(MAX_BODY_BYTES)
+                page_number = int(self.headers.get("X-Page-Number", "0"))
+                output_dir = self.headers.get("X-Output-Dir", "")
+                result = analyze_pdf_page_bytes(raw, page_number, output_dir)
+                self._json(HTTPStatus.OK, result)
+                return
             payload = self._read_json()
             result = analyze_pdf_page(
                 str(payload.get("pdf_path", "")),
@@ -415,6 +441,15 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:
             logger.exception("pdf page analysis failed")
             self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+
+    def _read_body(self, maximum: int) -> bytes:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        if length <= 0 or length > maximum:
+            raise ValueError("request body must be between 1 byte and 250 MB")
+        return self.rfile.read(length)
 
     def log_message(self, format: str, *args: object) -> None:
         logger.info("%s - %s", self.address_string(), format % args)
