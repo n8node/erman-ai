@@ -10,6 +10,7 @@ import csv
 import statistics
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 
 import cv2
 import numpy as np
