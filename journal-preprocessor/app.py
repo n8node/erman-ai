@@ -33,8 +33,8 @@ PORT = int(os.getenv("PORT", "8090"))
 OCR_DPI = int(os.getenv("OCR_DPI", "300"))
 ORIENTATION_DPI = int(os.getenv("ORIENTATION_DPI", "150"))
 TESSERACT_LANG = os.getenv("TESSERACT_LANG", "rus+eng")
-OCR_ENGINE = os.getenv("OCR_ENGINE", "paddle").strip().lower()
-OCR_FALLBACK = os.getenv("OCR_FALLBACK", "rapid,tesseract").strip().lower().split(",")
+OCR_ENGINE = os.getenv("OCR_ENGINE", "rapid").strip().lower()
+OCR_FALLBACK = os.getenv("OCR_FALLBACK", "tesseract").strip().lower().split(",")
 OCR_TABLE_REGIONS = os.getenv("OCR_TABLE_REGIONS", "true").lower() not in {"0", "false", "no"}
 
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS

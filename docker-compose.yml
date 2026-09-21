@@ -46,8 +46,10 @@ services:
       PORT: "8090"
       LOG_LEVEL: info
       TESSERACT_LANG: rus+eng
-      OCR_ENGINE: ${OCR_ENGINE:-paddle}
-      OCR_FALLBACK: ${OCR_FALLBACK:-rapid,tesseract}
+      # PaddleOCR currently fails on the production CPU runtime during oneDNN/PIR
+      # execution. Use the CPU-safe ONNX engine by default; Paddle remains opt-in.
+      OCR_ENGINE: ${OCR_ENGINE:-rapid}
+      OCR_FALLBACK: ${OCR_FALLBACK:-tesseract}
       OCR_DPI: ${OCR_DPI:-300}
       ORIENTATION_DPI: ${ORIENTATION_DPI:-150}
       OCR_TABLE_REGIONS: ${OCR_TABLE_REGIONS:-true}

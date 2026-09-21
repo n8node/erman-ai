@@ -2,11 +2,11 @@
 
 ## Рекомендуемый режим
 
-По умолчанию preprocessor использует PaddleOCR:
+В production preprocessor по умолчанию использует RapidOCR:
 
 ```yaml
-OCR_ENGINE: paddle
-OCR_FALLBACK: rapid,tesseract
+OCR_ENGINE: rapid
+OCR_FALLBACK: tesseract
 OCR_DPI: 300
 ORIENTATION_DPI: 150
 OCR_TABLE_REGIONS: true
@@ -22,9 +22,11 @@ PaddleOCR распознаёт текст с координатами и confide
 
 ## Переключение движка
 
-`paddle` — основной вариант для русских сканов и таблиц.
+`rapid` — production-вариант для CPU через ONNX Runtime. Он используется по умолчанию.
 
-`rapid` — более лёгкий CPU-вариант через ONNX Runtime.
+`paddle` — экспериментальный вариант для серверов, где совместимы PaddlePaddle
+и CPU runtime. На текущем production CPU при запуске Paddle может выдавать ошибку
+`ConvertPirAttribute2RuntimeAttribute`, поэтому включать его нужно явно.
 
 `tesseract` — fallback/сравнение. Он запускается с `--oem 1 --psm 11`,
 что лучше подходит для разреженных блоков, чем прежний `--psm 3`.
