@@ -380,14 +380,24 @@ export function listGeologicalJournalDocuments() {
 }
 
 export function getGeologicalJournalDocument(id: string) {
-  return apiFetch<GeologicalJournalDocumentDetail>(`/tools/geological-journal/documents/${id}`, { cache: "no-store" }).then((data) => ({
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 10000);
+  return apiFetch<GeologicalJournalDocumentDetail>(`/tools/geological-journal/documents/${id}`, {
+    cache: "no-store",
+    signal: controller.signal,
+  }).finally(() => window.clearTimeout(timeout)).then((data) => ({
     document: data?.document ?? ({} as GeologicalJournalDocument),
     pages: Array.isArray(data?.pages) ? data.pages : [],
   }));
 }
 
 export function startGeologicalJournalDocumentAnalysis(id: string) {
-  return apiFetch<{ status: string }>(`/tools/geological-journal/documents/${id}/analyze`, { method: "POST" });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15000);
+  return apiFetch<{ status: string }>(`/tools/geological-journal/documents/${id}/analyze`, {
+    method: "POST",
+    signal: controller.signal,
+  }).finally(() => window.clearTimeout(timeout));
 }
 
 export function setGeologicalJournalDocumentSharing(id: string, shared: boolean) {

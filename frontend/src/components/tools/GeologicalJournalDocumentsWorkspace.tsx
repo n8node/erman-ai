@@ -105,9 +105,23 @@ export function GeologicalJournalDocumentsWorkspace() {
 
   async function startAnalysis() {
     if (!active) return;
+    const documentId = active.document.id;
     setBusy(true); setError("");
-    try { await startGeologicalJournalDocumentAnalysis(active.document.id); await loadActive(active.document.id); await loadDocuments(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось запустить анализ"); }
+    // The API returns 202 immediately. Do not make a second blocking GET here:
+    // the background preview may temporarily consume server resources.
+    setActive((current) => current && current.document.id === documentId
+      ? { ...current, document: { ...current.document, status: "queued" } }
+      : current);
+    try {
+      await startGeologicalJournalDocumentAnalysis(documentId);
+    } catch (err) {
+      setActive((current) => current && current.document.id === documentId
+        ? { ...current, document: { ...current.document, status: "error" } }
+        : current);
+      setError(err instanceof DOMException && err.name === "AbortError"
+        ? "Сервер не ответил за 15 секунд. Проверьте состояние backend и повторите попытку."
+        : err instanceof Error ? err.message : "Не удалось запустить предварительный анализ");
+    }
     finally { setBusy(false); }
   }
 
