@@ -434,19 +434,19 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := os.MkdirAll(previewRoot, 0o777); err != nil {
 		return err
 	}
-	documentPreview, err := s.journal.preprocessor.PreviewPDFDocumentPath(ctx, pdfPath, previewRoot)
-	if err != nil {
-		return err
-	}
 	for pageNumber := 1; pageNumber <= info.PageCount; pageNumber++ {
 		page, err := s.journal.repo.CreateDocumentPage(ctx, id, pageNumber)
 		if err != nil {
 			return err
 		}
-		if pageNumber > len(documentPreview.Pages) {
-			return fmt.Errorf("preview returned %d pages, expected %d", len(documentPreview.Pages), info.PageCount)
+		pageDir := filepath.Join(previewRoot, fmt.Sprintf("page-%04d", pageNumber))
+		if err := os.MkdirAll(pageDir, 0o777); err != nil {
+			return err
 		}
-		preview := &documentPreview.Pages[pageNumber-1]
+		preview, err := s.journal.preprocessor.PreviewPDFPage(ctx, pdfPath, pageNumber, pageDir)
+		if err != nil {
+			return err
+		}
 		raw, _ := json.Marshal(preview.Analysis)
 		if err := s.journal.repo.UpdateDocumentPageAnalysis(ctx, page.ID, preview.Status, preview.ContentType, preview.OrientationDegrees, preview.OrientationConfidence, preview.TableCount, preview.TextCharCount, preview.OCRText, raw, nil); err != nil {
 			return err
