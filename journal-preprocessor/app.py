@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import tempfile
 import gc
+import csv
+import statistics
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -15,15 +17,28 @@ import fitz
 import pytesseract
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+try:
+    from paddleocr import PaddleOCR  # type: ignore
+except ImportError:  # pragma: no cover - optional engine
+    PaddleOCR = None
+
+try:
+    from rapidocr_onnxruntime import RapidOCR  # type: ignore
+except ImportError:  # pragma: no cover - optional engine
+    RapidOCR = None
+
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
 MAX_PDF_BODY_BYTES = 250 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_OUTPUT_DIMENSION = 4500
 PORT = int(os.getenv("PORT", "8090"))
-OCR_DPI = int(os.getenv("OCR_DPI", "120"))
-ORIENTATION_DPI = int(os.getenv("ORIENTATION_DPI", "96"))
+OCR_DPI = int(os.getenv("OCR_DPI", "300"))
+ORIENTATION_DPI = int(os.getenv("ORIENTATION_DPI", "150"))
 TESSERACT_LANG = os.getenv("TESSERACT_LANG", "rus+eng")
+OCR_ENGINE = os.getenv("OCR_ENGINE", "paddle").strip().lower()
+OCR_FALLBACK = os.getenv("OCR_FALLBACK", "rapid,tesseract").strip().lower().split(",")
+OCR_TABLE_REGIONS = os.getenv("OCR_TABLE_REGIONS", "true").lower() not in {"0", "false", "no"}
 
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 logging.basicConfig(
@@ -210,6 +225,116 @@ def _rotate_pil(image: Image.Image, degrees: int) -> Image.Image:
     return image.rotate(degrees, expand=True, fillcolor="white")
 
 
+def _remove_table_lines(image: Image.Image) -> Image.Image:
+    """Return an OCR copy with long table rules removed, preserving characters."""
+    array = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2GRAY)
+    binary = cv2.threshold(array, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (max(30, image.width // 25), 1))
+    vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, max(30, image.height // 25)))
+    horizontal = cv2.morphologyEx(binary, cv2.MORPH_OPEN, horizontal_kernel)
+    vertical = cv2.morphologyEx(binary, cv2.MORPH_OPEN, vertical_kernel)
+    lines = cv2.bitwise_or(horizontal, vertical)
+    cleaned = cv2.bitwise_and(binary, cv2.bitwise_not(lines))
+    cleaned = cv2.bitwise_not(cleaned)
+    return Image.fromarray(cleaned).convert("RGB")
+
+
+def _normalise_ocr_result(result: list[dict[str, object]], engine: str) -> dict[str, object]:
+    words = [item for item in result if str(item.get("text", "")).strip()]
+    words.sort(key=lambda item: (float(item.get("top", 0)), float(item.get("left", 0))))
+    lines: list[str] = []
+    current_line_top: float | None = None
+    for word in words:
+        top = float(word.get("top", 0))
+        if current_line_top is None or abs(top - current_line_top) > max(8, float(word.get("height", 12)) * 0.7):
+            lines.append(str(word["text"]))
+            current_line_top = top
+        else:
+            lines[-1] += " " + str(word["text"])
+    confidence_values = [float(item["confidence"]) for item in words if item.get("confidence") is not None]
+    return {
+        "engine": engine,
+        "text": "\n".join(lines).strip(),
+        "words": words,
+        "mean_confidence": round(statistics.mean(confidence_values), 4) if confidence_values else 0.0,
+        "word_count": len(words),
+    }
+
+
+def _run_tesseract(image: Image.Image) -> dict[str, object]:
+    data = pytesseract.image_to_data(image, lang=TESSERACT_LANG, config="--oem 1 --psm 11", output_type=pytesseract.Output.DICT)
+    words = []
+    for index, text in enumerate(data.get("text", [])):
+        if not str(text).strip():
+            continue
+        confidence = float(data["conf"][index])
+        words.append({
+            "text": str(text), "left": int(data["left"][index]), "top": int(data["top"][index]),
+            "width": int(data["width"][index]), "height": int(data["height"][index]),
+            "confidence": max(0.0, confidence / 100.0),
+        })
+    return _normalise_ocr_result(words, "tesseract")
+
+
+def _run_paddle(image: Image.Image) -> dict[str, object]:
+    if PaddleOCR is None:
+        raise RuntimeError("PaddleOCR is not installed")
+    if not hasattr(_run_paddle, "engine"):
+        _run_paddle.engine = PaddleOCR(lang="ru", use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=True)
+    result = _run_paddle.engine.predict(np.asarray(image))
+    words = []
+    for page in result:
+        payload = page.json if hasattr(page, "json") else page
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        data = payload.get("res", payload) if isinstance(payload, dict) else {}
+        texts = data.get("rec_texts", [])
+        scores = data.get("rec_scores", [])
+        boxes = data.get("rec_boxes", data.get("dt_polys", []))
+        for text, score, box in zip(texts, scores, boxes):
+            points = np.asarray(box).reshape(-1, 2)
+            x, y = points.min(axis=0)
+            x2, y2 = points.max(axis=0)
+            words.append({"text": str(text), "left": int(x), "top": int(y), "width": int(x2 - x), "height": int(y2 - y), "confidence": float(score)})
+    return _normalise_ocr_result(words, "paddle")
+
+
+def _run_rapid(image: Image.Image) -> dict[str, object]:
+    if RapidOCR is None:
+        raise RuntimeError("RapidOCR is not installed")
+    if not hasattr(_run_rapid, "engine"):
+        _run_rapid.engine = RapidOCR()
+    result, _ = _run_rapid.engine(np.asarray(image))
+    words = []
+    for box, text, score in result or []:
+        points = np.asarray(box).reshape(-1, 2)
+        x, y = points.min(axis=0)
+        x2, y2 = points.max(axis=0)
+        words.append({"text": str(text), "left": int(x), "top": int(y), "width": int(x2 - x), "height": int(y2 - y), "confidence": float(score)})
+    return _normalise_ocr_result(words, "rapid")
+
+
+def run_ocr(image: Image.Image) -> dict[str, object]:
+    runners = {"paddle": _run_paddle, "rapid": _run_rapid, "tesseract": _run_tesseract}
+    attempts = [OCR_ENGINE] + [item for item in OCR_FALLBACK if item and item != OCR_ENGINE]
+    errors = []
+    for engine in attempts:
+        runner = runners.get(engine)
+        if runner is None:
+            errors.append(f"unknown engine: {engine}")
+            continue
+        try:
+            result = runner(image)
+            if result["word_count"]:
+                if errors:
+                    result["fallback_errors"] = errors
+                return result
+        except Exception as exc:  # pragma: no cover - depends on optional runtimes
+            logger.warning("OCR engine %s failed: %s", engine, exc)
+            errors.append(f"{engine}: {exc}")
+    return {"engine": "none", "text": "", "words": [], "mean_confidence": 0.0, "word_count": 0, "fallback_errors": errors}
+
+
 def _orientation_score(text: str, image: Image.Image) -> float:
     normalized = text.lower()
     if not normalized:
@@ -283,9 +408,10 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     candidate_texts = {}
     for degrees in (0, 90, 180, 270):
         candidate = _rotate_pil(orientation_image, degrees)
-        text = pytesseract.image_to_string(candidate, lang=TESSERACT_LANG, config="--psm 3")
-        candidate_texts[degrees] = text.strip()
-        candidates.append((degrees, _orientation_score(text, candidate)))
+        result = run_ocr(candidate)
+        text = str(result["text"])
+        candidate_texts[degrees] = text
+        candidates.append((degrees, _orientation_score(text, candidate) + float(result["mean_confidence"]) * 0.25))
         candidate.close()
     orientation_image.close()
     candidates.sort(key=lambda item: item[1], reverse=True)
@@ -302,10 +428,26 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     preprocessed_path = target / "preprocessed.png"
     preprocessed_path.write_bytes(preprocessed)
     processed_image = Image.open(preprocessed_path).convert("RGB")
-    text = pytesseract.image_to_string(processed_image, lang=TESSERACT_LANG, config="--psm 3").strip()
-    tsv = pytesseract.image_to_data(processed_image, lang=TESSERACT_LANG, config="--psm 3")
+    ocr_image = _remove_table_lines(processed_image)
+    result = run_ocr(ocr_image)
+    text = str(result["text"])
+    table_results = []
+    if OCR_TABLE_REGIONS:
+        for region in _table_regions(processed_image)[:8]:
+            x1, y1, x2, y2 = region["bbox_px"]
+            crop = _remove_table_lines(processed_image.crop((x1, y1, x2, y2)))
+            table_result = run_ocr(crop)
+            table_result["bbox_px"] = region["bbox_px"]
+            table_results.append(table_result)
+    tsv_buffer = io.StringIO()
+    writer = csv.DictWriter(tsv_buffer, fieldnames=["text", "left", "top", "width", "height", "confidence", "engine"], delimiter="\t", lineterminator="\n")
+    writer.writeheader()
+    for word in result["words"]:
+        writer.writerow({**word, "engine": result["engine"]})
+    tsv = tsv_buffer.getvalue()
     (target / "ocr.txt").write_text(text + "\n", encoding="utf-8")
     (target / "ocr.tsv").write_text(tsv, encoding="utf-8")
+    (target / "ocr.json").write_text(json.dumps({"page": result, "table_regions": table_results}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     tables = _table_regions(processed_image)
     content_type = "mixed" if tables and len(text) >= 500 else "table" if tables else "free_text" if text else "unknown"
     analysis = {
@@ -318,6 +460,7 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
         "word_count": len(text.split()),
         "tables": tables,
         "preprocessing": metadata,
+        "ocr": {"engine": result["engine"], "mean_confidence": result["mean_confidence"], "word_count": result["word_count"], "table_regions": len(table_results)},
     }
     (target / "analysis.json").write_text(json.dumps(analysis, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return {
@@ -330,6 +473,9 @@ def analyze_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
         "table_count": len(tables),
         "ocr_text": text,
         "ocr_tsv": tsv,
+        "ocr_engine": result["engine"],
+        "ocr_confidence": result["mean_confidence"],
+        "ocr_json": {"page": result, "table_regions": table_results},
         "analysis": analysis,
         "original_asset_path": str(original_path),
         "oriented_asset_path": str(oriented_path),
@@ -362,10 +508,13 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self) -> None:
+        if self.path == "/health":
+            available = [name for name, package in (("paddle", PaddleOCR), ("rapid", RapidOCR), ("tesseract", pytesseract)) if package is not None]
+            self._json(HTTPStatus.OK, {"status": "ok", "ocr_engine": OCR_ENGINE, "available_ocr_engines": available, "ocr_dpi": OCR_DPI})
+            return
         if self.path != "/health":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             return
-        self._json(HTTPStatus.OK, {"status": "ok"})
 
     def do_POST(self) -> None:
         if self.path == "/pdf-info":

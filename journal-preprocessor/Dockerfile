@@ -1,18 +1,21 @@
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
   PORT=8090 \
   OMP_THREAD_LIMIT=1 \
   OMP_NUM_THREADS=1 \
-  TESSERACT_NUM_THREADS=1
+  TESSERACT_NUM_THREADS=1 \
+  FLAGS_use_mkldnn=0 \
+  PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 
 WORKDIR /app
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-rus tesseract-ocr-eng \
+ && apt-get install -y --no-install-recommends libgl1 tesseract-ocr tesseract-ocr-rus tesseract-ocr-eng \
  && rm -rf /var/lib/apt/lists/* \
  && pip install --no-cache-dir opencv-python-headless pillow PyMuPDF pytesseract \
+      paddlepaddle paddleocr rapidocr_onnxruntime \
  && useradd --create-home --uid 10001 app
 
 COPY --chown=app:app app.py /app/app.py
