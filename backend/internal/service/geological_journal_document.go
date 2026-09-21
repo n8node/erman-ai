@@ -413,11 +413,8 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err != nil {
 		return err
 	}
-	pdf, err := os.ReadFile(docAssetPath(doc, s.assetsDir))
-	if err != nil {
-		return err
-	}
-	info, err := s.journal.preprocessor.PDFInfoBytes(ctx, pdf)
+	pdfPath := docAssetPath(doc, s.assetsDir)
+	info, err := s.journal.preprocessor.PDFInfo(ctx, pdfPath)
 	if err != nil {
 		return err
 	}
@@ -434,7 +431,7 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := os.MkdirAll(previewRoot, 0o777); err != nil {
 		return err
 	}
-	documentPreview, err := s.journal.preprocessor.PreviewPDFDocument(ctx, pdf, previewRoot)
+	documentPreview, err := s.journal.preprocessor.PreviewPDFDocumentPath(ctx, pdfPath, previewRoot)
 	if err != nil {
 		return err
 	}

@@ -66,6 +66,14 @@ func (p *JournalImagePreprocessor) PreviewPDFDocument(ctx context.Context, pdf [
 	return &out, nil
 }
 
+func (p *JournalImagePreprocessor) PreviewPDFDocumentPath(ctx context.Context, pdfPath, outputDir string) (*JournalPDFDocumentPreview, error) {
+	var out JournalPDFDocumentPreview
+	if err := p.postJSON(ctx, "/preview-document", map[string]any{"pdf_path": pdfPath, "output_dir": outputDir}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 type JournalImagePreprocessor struct {
 	baseURL string
 	client  *http.Client

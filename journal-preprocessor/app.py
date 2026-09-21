@@ -577,6 +577,21 @@ def preview_pdf_document(raw: bytes, output_dir: str) -> dict[str, object]:
     return {"pages": pages}
 
 
+def preview_pdf_document_path(pdf_path: str, output_dir: str) -> dict[str, object]:
+    with fitz.open(pdf_path) as document:
+        pages = []
+        for page_number in range(1, document.page_count + 1):
+            page_dir = Path(output_dir) / f"page-{page_number:04d}"
+            page_dir.mkdir(parents=True, exist_ok=True)
+            page_path = page_dir / "original.png"
+            page = document.load_page(page_number - 1)
+            dpi = min(150, max(96, ORIENTATION_DPI))
+            page_pixmap = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72), alpha=False)
+            page_pixmap.save(str(page_path))
+            pages.append(preview_pdf_page_from_render(page, page_path, page_number, page_dir))
+    return {"pages": pages}
+
+
 def preview_pdf_page_from_render(page: Any, original_path: Path, page_number: int, target: Path) -> dict[str, object]:
     original = Image.open(original_path).convert("RGB")
     source_rotation = int(page.rotation or 0)
@@ -734,9 +749,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_preview_document(self) -> None:
         try:
-            raw = self._read_body(MAX_PDF_BODY_BYTES)
-            output_dir = self.headers.get("X-Output-Dir", "")
-            self._json(HTTPStatus.OK, preview_pdf_document(raw, output_dir))
+            if self.headers.get("Content-Type", "").lower().startswith("application/pdf"):
+                raw = self._read_body(MAX_PDF_BODY_BYTES)
+                output_dir = self.headers.get("X-Output-Dir", "")
+                self._json(HTTPStatus.OK, preview_pdf_document(raw, output_dir))
+                return
+            payload = self._read_json()
+            self._json(HTTPStatus.OK, preview_pdf_document_path(str(payload.get("pdf_path", "")), str(payload.get("output_dir", ""))))
         except Exception as exc:
             logger.exception("pdf document preview failed")
             self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
