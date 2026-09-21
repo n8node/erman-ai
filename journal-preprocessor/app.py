@@ -17,15 +17,11 @@ import fitz
 import pytesseract
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-try:
-    from paddleocr import PaddleOCR  # type: ignore
-except Exception:  # pragma: no cover - optional engine may fail on CPU/runtime mismatch
-    PaddleOCR = None
-
-try:
-    from rapidocr_onnxruntime import RapidOCR  # type: ignore
-except Exception:  # pragma: no cover - optional engine may fail on native dependency mismatch
-    RapidOCR = None
+# OCR engines are loaded lazily. Importing PaddleOCR at process startup can take
+# minutes or block on native runtime initialization, which must not prevent the
+# HTTP health endpoint from becoming available.
+PaddleOCR = None
+RapidOCR = None
 
 
 MAX_BODY_BYTES = 10 * 1024 * 1024
@@ -277,6 +273,13 @@ def _run_tesseract(image: Image.Image) -> dict[str, object]:
 
 
 def _run_paddle(image: Image.Image) -> dict[str, object]:
+    global PaddleOCR
+    if PaddleOCR is None:
+        try:
+            from paddleocr import PaddleOCR as PaddleOCREngine  # type: ignore
+            PaddleOCR = PaddleOCREngine
+        except Exception as exc:  # pragma: no cover - optional runtime
+            raise RuntimeError(f"PaddleOCR import failed: {exc}") from exc
     if PaddleOCR is None:
         raise RuntimeError("PaddleOCR is not installed")
     if not hasattr(_run_paddle, "engine"):
@@ -300,6 +303,13 @@ def _run_paddle(image: Image.Image) -> dict[str, object]:
 
 
 def _run_rapid(image: Image.Image) -> dict[str, object]:
+    global RapidOCR
+    if RapidOCR is None:
+        try:
+            from rapidocr_onnxruntime import RapidOCR as RapidOCREngine  # type: ignore
+            RapidOCR = RapidOCREngine
+        except Exception as exc:  # pragma: no cover - optional runtime
+            raise RuntimeError(f"RapidOCR import failed: {exc}") from exc
     if RapidOCR is None:
         raise RuntimeError("RapidOCR is not installed")
     if not hasattr(_run_rapid, "engine"):
@@ -601,7 +611,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/health":
-            available = [name for name, package in (("paddle", PaddleOCR), ("rapid", RapidOCR), ("tesseract", pytesseract)) if package is not None]
+            # Paddle/Rapid are intentionally not imported for health checks.
+            available = ["paddle", "rapid", "tesseract"]
             self._json(HTTPStatus.OK, {"status": "ok", "ocr_engine": OCR_ENGINE, "available_ocr_engines": available, "ocr_dpi": OCR_DPI})
             return
         if self.path != "/health":
