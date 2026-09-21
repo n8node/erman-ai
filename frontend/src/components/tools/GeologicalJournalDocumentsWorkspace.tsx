@@ -71,7 +71,26 @@ export function GeologicalJournalDocumentsWorkspace() {
 
   useEffect(() => {
     if (!active || !["queued", "processing", "partially_done"].includes(active.document.status)) return;
-    const timer = window.setInterval(() => void loadActive(active.document.id), 3000);
+    let stopped = false;
+    let failures = 0;
+    const timer = window.setInterval(async () => {
+      if (stopped) return;
+      try {
+        const detail = await getGeologicalJournalDocument(active.document.id);
+        if (stopped) return;
+        failures = 0;
+        setActive(detail);
+      } catch (err) {
+        failures += 1;
+        if (failures >= 1) {
+          stopped = true;
+          window.clearInterval(timer);
+          setError(err instanceof Error
+            ? `Не удалось обновить статус анализа: ${err.message}`
+            : "Не удалось обновить статус анализа. Проверьте доступность сервера.");
+        }
+      }
+    }, 3000);
     return () => window.clearInterval(timer);
   }, [active, loadActive]);
 
