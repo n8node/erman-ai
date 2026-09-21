@@ -427,6 +427,9 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := s.journal.repo.CancelDocumentJobs(ctx, id); err != nil {
 		return err
 	}
+	if err := s.journal.repo.MarkDocumentProcessing(ctx, id); err != nil {
+		return err
+	}
 	previewRoot := filepath.Join(s.assetsDir, "documents", id)
 	if err := os.MkdirAll(previewRoot, 0o777); err != nil {
 		return err

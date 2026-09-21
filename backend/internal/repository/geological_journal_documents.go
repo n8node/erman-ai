@@ -95,6 +95,11 @@ func (r *GeologicalJournalRepository) MarkDocumentQueued(ctx context.Context, id
 	return err
 }
 
+func (r *GeologicalJournalRepository) MarkDocumentProcessing(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE geological_journal_documents SET status='processing',analysis_started_at=COALESCE(analysis_started_at,NOW()),updated_at=NOW() WHERE id=$1`, id)
+	return err
+}
+
 func (r *GeologicalJournalRepository) ResetDocumentJobs(ctx context.Context, documentID string) error {
 	if _, err := r.pool.Exec(ctx, `
 		UPDATE geological_journal_document_pages
