@@ -265,6 +265,7 @@ func New(cfg *config.Config, db *repository.Postgres, logger *slog.Logger) *Serv
 				journal.Delete("/documents/{id}", geologicalJournalDocumentHandler.Delete)
 				journal.Post("/documents/{id}/analyze", geologicalJournalDocumentHandler.StartAnalysis)
 				journal.Post("/documents/{id}/llm", geologicalJournalDocumentHandler.LLMProcess)
+				journal.Put("/documents/{document_id}/pages/{page_id}/result", geologicalJournalDocumentHandler.SavePageTableResult)
 				journal.Post("/documents/{id}/chat", geologicalJournalDocumentHandler.Chat)
 				journal.Put("/documents/{id}/sharing", geologicalJournalDocumentHandler.SetShared)
 				journal.Get("/documents/{document_id}/pages/{page_id}/assets/{kind}", geologicalJournalDocumentHandler.PageAsset)

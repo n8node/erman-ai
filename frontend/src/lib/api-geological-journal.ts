@@ -175,6 +175,7 @@ export type GeologicalJournalDocumentPage = {
   page_number: number;
   status: string;
   ocr_text?: string;
+  table_result?: GeologicalJournalOutput | null;
   analysis?: Record<string, unknown>;
   content_type?: string;
   orientation_degrees: number;
@@ -401,6 +402,18 @@ export function processGeologicalJournalDocumentLLM(id: string, pageNumbers: num
     method: "POST",
     body: JSON.stringify({ page_numbers: pageNumbers, mode, include_neighbors: includeNeighbors }),
   });
+}
+
+export function saveGeologicalJournalDocumentPageResult(
+  documentId: string,
+  pageId: string,
+  rows: GeologicalJournalRow[],
+  ocrText: string
+) {
+  return apiFetch<GeologicalJournalOutput>(
+    `/tools/geological-journal/documents/${documentId}/pages/${pageId}/result`,
+    { method: "PUT", body: JSON.stringify({ rows, ocr_text: ocrText }) }
+  );
 }
 
 export function chatGeologicalJournalDocument(id: string, pageNumbers: number[], message: string, sessionId?: string, includeNeighbors = false) {

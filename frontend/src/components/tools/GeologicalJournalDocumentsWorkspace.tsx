@@ -2,17 +2,20 @@
 
 import { FileText, LoaderCircle, Play, Upload, Users, RefreshCw, Trash2, X, Eye, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GeologicalJournalDocumentPageModal } from "./GeologicalJournalDocumentPageModal";
 import {
   getGeologicalJournalDocument,
   chatGeologicalJournalDocument,
   deleteGeologicalJournalDocument,
   listGeologicalJournalDocuments,
   processGeologicalJournalDocumentLLM,
+  saveGeologicalJournalDocumentPageResult,
   setGeologicalJournalDocumentSharing,
   startGeologicalJournalDocumentAnalysis,
   uploadGeologicalJournalDocument,
   type GeologicalJournalDocument,
   type GeologicalJournalDocumentDetail,
+  type GeologicalJournalRow,
 } from "@/lib/api-geological-journal";
 
 function formatBytes(value: number) {
@@ -36,6 +39,7 @@ export function GeologicalJournalDocumentsWorkspace() {
   const [chatBusy, setChatBusy] = useState(false);
   const [previewPage, setPreviewPage] = useState<GeologicalJournalDocumentDetail["pages"][number] | null>(null);
   const [ocrPage, setOcrPage] = useState<GeologicalJournalDocumentDetail["pages"][number] | null>(null);
+  const [editorPage, setEditorPage] = useState<GeologicalJournalDocumentDetail["pages"][number] | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadAbort, setUploadAbort] = useState<(() => void) | null>(null);
@@ -53,8 +57,13 @@ export function GeologicalJournalDocumentsWorkspace() {
   }, []);
 
   const loadActive = useCallback(async (id: string) => {
-    try { setActive(await getGeologicalJournalDocument(id)); }
+    try {
+      const detail = await getGeologicalJournalDocument(id);
+      setActive(detail);
+      return detail;
+    }
     catch (err) { setError(err instanceof Error ? err.message : "Не удалось загрузить документ"); }
+    return null;
   }, []);
 
   useEffect(() => { void loadDocuments(); }, [loadDocuments]);
@@ -133,6 +142,30 @@ export function GeologicalJournalDocumentsWorkspace() {
     }
   }
 
+  async function savePageResult(rows: GeologicalJournalRow[], ocrText: string) {
+    if (!active || !editorPage) return;
+    setBusy(true); setError("");
+    try {
+      await saveGeologicalJournalDocumentPageResult(active.document.id, editorPage.id, rows, ocrText);
+      const detail = await loadActive(active.document.id);
+      const refreshed = detail?.pages.find((page) => page.id === editorPage.id);
+      if (refreshed) setEditorPage(refreshed);
+    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось сохранить страницу"); }
+    finally { setBusy(false); }
+  }
+
+  async function reprocessEditorPage() {
+    if (!active || !editorPage) return;
+    setBusy(true); setError("");
+    try {
+      await processGeologicalJournalDocumentLLM(active.document.id, [editorPage.page_number]);
+      const detail = await loadActive(active.document.id);
+      const refreshed = detail?.pages.find((page) => page.id === editorPage.id);
+      if (refreshed) setEditorPage(refreshed);
+    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось распознать страницу заново"); }
+    finally { setBusy(false); }
+  }
+
   const progress = active?.document?.page_count ? Math.round((stats.done / active.document.page_count) * 100) : 0;
 
   return (
@@ -162,7 +195,7 @@ export function GeologicalJournalDocumentsWorkspace() {
             <div className="mt-5 rounded-lg bg-bg2 p-3"><div className="flex justify-between text-xs"><span>Прогресс страниц</span><span>{stats.done} / {active.document.page_count} · {progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress}%` }} /></div><div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-text3"><span>Таблицы: {stats.tables}</span><span>Текст: {stats.text}</span><span>Проверка: {stats.review}</span></div></div>
             <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setSelectedPages(activePages.map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">Выбрать все страницы</button><button type="button" onClick={() => setSelectedPages(activePages.filter((page) => page.content_type === "table" || page.content_type === "mixed").map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">Только таблицы</button><button type="button" onClick={() => void processWithLLM()} disabled={busy || selectedPages.length === 0} className="rounded bg-ai px-2 py-1 text-xs font-medium text-white disabled:opacity-40">Обработать выбранные через LLM</button><span className="self-center text-xs text-text3">Выбрано: {selectedPages.length}</span></div>
             <div className={`mt-4 grid gap-4 ${previewPage || ocrPage ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)]" : "grid-cols-1"}`}>
-              <div className="max-h-[520px] overflow-auto rounded-lg border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="w-10 px-3 py-2">✓</th><th className="px-3 py-2">Страница</th><th className="px-3 py-2">Тип</th><th className="px-3 py-2">Поворот</th><th className="px-3 py-2">Статус</th><th className="px-3 py-2">Уверенность</th><th className="w-20 px-2 py-2" /></tr></thead><tbody>{activePages.map((page) => <tr key={page.id} className={`border-t border-border ${previewPage?.id === page.id || ocrPage?.id === page.id ? "bg-accent-bg" : ""}`}><td className="px-3 py-2"><input type="checkbox" checked={selectedPages.includes(page.page_number)} onChange={(event) => setSelectedPages((current) => event.target.checked ? [...current, page.page_number].sort((a,b) => a-b) : current.filter((number) => number !== page.page_number))} /></td><td className="px-3 py-2 font-medium">{page.page_number}</td><td className="px-3 py-2">{page.content_type || "—"}</td><td className="px-3 py-2">{page.orientation_degrees}°</td><td className="px-3 py-2">{statusLabel(page.status)}</td><td className="px-3 py-2">{Math.round(page.orientation_confidence * 100)}%</td><td className="px-2 py-2"><button type="button" title="Показать страницу" onClick={() => { setPreviewPage(page); setOcrPage(null); setPreviewZoom(1); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><Eye size={15} /></button><button type="button" title="Показать OCR-текст" onClick={() => { setOcrPage(page); setPreviewPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><FileText size={15} /></button></td></tr>)}</tbody></table></div>
+              <div className="max-h-[520px] overflow-auto rounded-lg border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="w-10 px-3 py-2">✓</th><th className="px-3 py-2">Страница</th><th className="px-3 py-2">Тип</th><th className="px-3 py-2">Поворот</th><th className="px-3 py-2">Статус</th><th className="px-3 py-2">Уверенность</th><th className="w-20 px-2 py-2" /></tr></thead><tbody>{activePages.map((page) => <tr key={page.id} className={`border-t border-border ${previewPage?.id === page.id || ocrPage?.id === page.id || editorPage?.id === page.id ? "bg-accent-bg" : ""}`}><td className="px-3 py-2"><input type="checkbox" checked={selectedPages.includes(page.page_number)} onChange={(event) => setSelectedPages((current) => event.target.checked ? [...current, page.page_number].sort((a,b) => a-b) : current.filter((number) => number !== page.page_number))} /></td><td className="px-3 py-2 font-medium">{page.page_number}</td><td className="px-3 py-2">{page.content_type || "—"}</td><td className="px-3 py-2">{page.orientation_degrees}°</td><td className="px-3 py-2">{statusLabel(page.status)}</td><td className="px-3 py-2">{Math.round(page.orientation_confidence * 100)}%</td><td className="px-2 py-2"><button type="button" title="Открыть редактор страницы" onClick={() => { setEditorPage(page); setPreviewPage(null); setOcrPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><Eye size={15} /></button><button type="button" title="Показать OCR-текст" onClick={() => { setOcrPage(page); setPreviewPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><FileText size={15} /></button></td></tr>)}</tbody></table></div>
               {previewPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">Страница {previewPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusLabel(previewPage.status)} · поворот {previewPage.orientation_degrees}°</p></div><button type="button" onClick={() => setPreviewPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть превью"><X size={15} /></button></div><div className="mt-3 flex items-center justify-end gap-1"><button type="button" onClick={() => setPreviewZoom((value) => Math.max(0.5, value - 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomOut size={14} /></button><span className="min-w-12 text-center text-[11px] text-text3">{Math.round(previewZoom * 100)}%</span><button type="button" onClick={() => setPreviewZoom((value) => Math.min(2.5, value + 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomIn size={14} /></button></div><div className="mt-2 max-h-[430px] overflow-auto rounded border border-border bg-white p-2"><img src={previewImageUrl} alt={`Страница ${previewPage.page_number}`} className="h-auto max-w-none" style={{ width: `${previewZoom * 100}%` }} onError={(event) => { const image = event.currentTarget; if (!image.src.endsWith("/assets/preprocessed")) image.src = image.src.replace("/assets/oriented", "/assets/preprocessed"); else if (!image.src.endsWith("/assets/original")) image.src = image.src.replace("/assets/preprocessed", "/assets/original"); }} /></div></aside>}
               {ocrPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">OCR-текст · страница {ocrPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusLabel(ocrPage.status)} · символов: {ocrPage.text_char_count}</p></div><button type="button" onClick={() => setOcrPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть OCR"><X size={15} /></button></div>{ocrPage.ocr_text ? <pre className="mt-3 max-h-[470px] overflow-auto whitespace-pre-wrap rounded border border-border bg-bg p-3 text-xs leading-5 text-text">{ocrPage.ocr_text}</pre> : <div className="mt-3 rounded border border-border bg-bg p-4 text-xs text-text3">OCR-текст ещё не готов для этой страницы.</div>}</aside>}
             </div>
@@ -170,6 +203,15 @@ export function GeologicalJournalDocumentsWorkspace() {
           </>}
         </section>
       </div>
+      {editorPage && active && <GeologicalJournalDocumentPageModal
+        documentId={active.document.id}
+        page={editorPage}
+        imageUrl={`/api/v1/tools/geological-journal/documents/${active.document.id}/pages/${editorPage.id}/assets/oriented`}
+        busy={busy}
+        onClose={() => setEditorPage(null)}
+        onSave={savePageResult}
+        onReprocess={reprocessEditorPage}
+      />}
     </div>
   );
 }

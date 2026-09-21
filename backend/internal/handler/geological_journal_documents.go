@@ -140,6 +140,25 @@ func (h *GeologicalJournalDocumentHandler) LLMProcess(w http.ResponseWriter, r *
 	writeJSON(w, http.StatusOK, map[string]any{"items": results})
 }
 
+func (h *GeologicalJournalDocumentHandler) SavePageTableResult(w http.ResponseWriter, r *http.Request) {
+	userID, role, ok := journalIdentity(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	raw, err := io.ReadAll(io.LimitReader(r.Body, 2<<20))
+	if err != nil || len(raw) == 0 {
+		writeError(w, http.StatusBadRequest, "invalid result")
+		return
+	}
+	result, err := h.svc.SavePageTableResult(r.Context(), r.PathValue("document_id"), r.PathValue("page_id"), userID, role, raw)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
 func (h *GeologicalJournalDocumentHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	userID, role, ok := journalIdentity(r)
 	if !ok {

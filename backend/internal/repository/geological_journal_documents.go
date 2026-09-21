@@ -117,10 +117,10 @@ func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, do
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO geological_journal_document_pages(document_id,page_number)
 		VALUES($1,$2) ON CONFLICT(document_id,page_number) DO UPDATE SET updated_at=NOW()
-		RETURNING id,document_id,page_number,status,original_asset_path,oriented_asset_path,preprocessed_asset_path,ocr_text,analysis,content_type,orientation_degrees,orientation_confidence,table_count,text_char_count,error_msg,created_at,updated_at`, documentID, number).Scan(
+		RETURNING id,document_id,page_number,status,original_asset_path,oriented_asset_path,preprocessed_asset_path,ocr_text,table_result,analysis,content_type,orientation_degrees,orientation_confidence,table_count,text_char_count,error_msg,created_at,updated_at`, documentID, number).Scan(
 		&item.ID, &item.DocumentID, &item.PageNumber, &item.Status,
 		&originalAssetPath, &orientedAssetPath, &preprocessedAssetPath,
-		&item.OCRText, &item.Analysis,
+		&item.OCRText, &item.TableResult, &item.Analysis,
 		&contentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 		&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt)
 	item.OriginalAssetPath = derefString(originalAssetPath)
@@ -132,7 +132,7 @@ func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, do
 
 func (r *GeologicalJournalRepository) ListDocumentPages(ctx context.Context, documentID string) ([]model.GeologicalJournalDocumentPage, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT id,document_id,page_number,status,original_asset_path,oriented_asset_path,preprocessed_asset_path,ocr_text,analysis,content_type,orientation_degrees,orientation_confidence,table_count,text_char_count,error_msg,created_at,updated_at
+		SELECT id,document_id,page_number,status,original_asset_path,oriented_asset_path,preprocessed_asset_path,ocr_text,table_result,analysis,content_type,orientation_degrees,orientation_confidence,table_count,text_char_count,error_msg,created_at,updated_at
 		FROM geological_journal_document_pages WHERE document_id=$1 ORDER BY page_number`, documentID)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (r *GeologicalJournalRepository) ListDocumentPages(ctx context.Context, doc
 		var item model.GeologicalJournalDocumentPage
 		var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
 		var contentType *string
-		if err := rows.Scan(&item.ID, &item.DocumentID, &item.PageNumber, &item.Status, &originalAssetPath, &orientedAssetPath, &preprocessedAssetPath, &item.OCRText, &item.Analysis,
+		if err := rows.Scan(&item.ID, &item.DocumentID, &item.PageNumber, &item.Status, &originalAssetPath, &orientedAssetPath, &preprocessedAssetPath, &item.OCRText, &item.TableResult, &item.Analysis,
 			&contentType, &item.OrientationDegrees, &item.OrientationConfidence, &item.TableCount,
 			&item.TextCharCount, &item.ErrorMsg, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, err
@@ -219,6 +219,15 @@ func (r *GeologicalJournalRepository) UpdateDocumentPageOCRText(ctx context.Cont
 		UPDATE geological_journal_document_pages
 		SET ocr_text=$2,text_char_count=char_length($2),updated_at=NOW()
 		WHERE id=$1`, pageID, text)
+	return err
+}
+
+func (r *GeologicalJournalRepository) UpdateDocumentPageTableResult(ctx context.Context, pageID string, result *model.GeologicalJournalOutput) error {
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	_, err = r.pool.Exec(ctx, `UPDATE geological_journal_document_pages SET table_result=$2,updated_at=NOW() WHERE id=$1`, pageID, raw)
 	return err
 }
 

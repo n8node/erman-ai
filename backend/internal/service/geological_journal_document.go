@@ -204,6 +204,7 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 укажи его в uncertainties.
 
 Ответь только JSON-объектом со следующими ключами:
+- rows: массив строк таблицы с полями date, drilling_diameter_mm, depth_from_m, depth_to_m, drilling_run_m, core_recovery_m, core_recovery_pct, rock_description, sampling_interval, sample_number, notes, uncertainties;
 - summary: краткое содержание;
 - facts: массив важных фактов и чисел;
 - uncertainties: массив неразборчивых или сомнительных мест;
@@ -221,6 +222,11 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 			return nil, err
 		}
 		_, resultJSON := parseDocumentLLMResponse(completion.Content)
+		if tableResult, ok := parseDocumentLLMTableResult(completion.Content); ok {
+			if err := s.journal.repo.UpdateDocumentPageTableResult(ctx, page.ID, tableResult); err != nil {
+				return nil, err
+			}
+		}
 		result, err := s.journal.repo.SaveDocumentLLMResult(ctx, documentID, page.ID, userID, req.Mode, resultJSON, completion.Model)
 		if err != nil {
 			return nil, err
@@ -228,6 +234,68 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 		results = append(results, *result)
 	}
 	return results, nil
+}
+
+func parseDocumentLLMTableResult(content string) (*model.GeologicalJournalOutput, bool) {
+	content = strings.TrimSpace(trimGeologicalJournalFence(content))
+	for _, candidate := range append([]string{content}, extractGeologicalJournalJSONObjects(content)...) {
+		var envelope struct {
+			Rows json.RawMessage `json:"rows"`
+		}
+		if err := json.Unmarshal([]byte(candidate), &envelope); err != nil || len(envelope.Rows) == 0 {
+			continue
+		}
+		wrapped := append([]byte(`{"rows":`), envelope.Rows...)
+		wrapped = append(wrapped, '}')
+		result, err := ParseGeologicalJournalOutput(string(wrapped))
+		if err == nil {
+			return result, true
+		}
+	}
+	return nil, false
+}
+
+func (s *GeologicalJournalDocumentService) SavePageTableResult(ctx context.Context, documentID, pageID, userID, role string, raw json.RawMessage) (*model.GeologicalJournalOutput, error) {
+	if err := s.CheckAccess(ctx, documentID, userID, role); err != nil {
+		return nil, err
+	}
+	pages, err := s.journal.repo.ListDocumentPages(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+	var page *model.GeologicalJournalDocumentPage
+	for index := range pages {
+		if pages[index].ID == pageID {
+			page = &pages[index]
+			break
+		}
+	}
+	if page == nil {
+		return nil, fmt.Errorf("page not found")
+	}
+	var payload struct {
+		Rows    json.RawMessage `json:"rows"`
+		OCRText string          `json:"ocr_text"`
+	}
+	if err := json.Unmarshal(raw, &payload); err != nil || len(payload.Rows) == 0 {
+		return nil, fmt.Errorf("invalid result")
+	}
+	wrappedRows := append([]byte(`{"rows":`), payload.Rows...)
+	wrappedRows = append(wrappedRows, '}')
+	result, err := ParseGeologicalJournalOutput(string(wrappedRows))
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(payload.OCRText) != "" {
+		if err := s.journal.repo.UpdateDocumentPageOCRText(ctx, pageID, payload.OCRText); err != nil {
+			return nil, err
+		}
+	}
+	ValidateGeologicalJournalOutput(result)
+	if err := s.journal.repo.UpdateDocumentPageTableResult(ctx, pageID, result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func documentPageOrientedAssetPath(page model.GeologicalJournalDocumentPage) string {

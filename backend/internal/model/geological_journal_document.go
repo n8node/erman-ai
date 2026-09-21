@@ -65,6 +65,7 @@ type GeologicalJournalDocumentPage struct {
 	PageNumber            int                                 `json:"page_number"`
 	Status                GeologicalJournalDocumentPageStatus `json:"status"`
 	OCRText               string                              `json:"ocr_text,omitempty"`
+	TableResult           *GeologicalJournalOutput            `json:"table_result,omitempty"`
 	Analysis              json.RawMessage                     `json:"analysis,omitempty"`
 	ContentType           string                              `json:"content_type,omitempty"`
 	OrientationDegrees    int                                 `json:"orientation_degrees"`
