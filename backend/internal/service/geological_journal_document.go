@@ -397,7 +397,15 @@ func (s *GeologicalJournalDocumentService) Chat(ctx context.Context, documentID,
 	return s.journal.repo.AddChatMessage(ctx, req.SessionID, "assistant", completion.Content, json.RawMessage(fmt.Sprintf(`[{"pages":%v}]`, req.PageNumbers)), "medium")
 }
 
-func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id, userID, role string) error {
+func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id, userID, role string) (err error) {
+	defer func() {
+		if err != nil {
+			_ = s.journal.repo.MarkDocumentError(context.Background(), id, err.Error())
+		}
+		if recovered := recover(); recovered != nil {
+			_ = s.journal.repo.MarkDocumentError(context.Background(), id, fmt.Sprint(recovered))
+		}
+	}()
 	if err := s.CheckAccess(ctx, id, userID, role); err != nil {
 		return err
 	}
@@ -422,19 +430,23 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := s.journal.repo.CancelDocumentJobs(ctx, id); err != nil {
 		return err
 	}
+	previewRoot := filepath.Join(s.assetsDir, "documents", id)
+	if err := os.MkdirAll(previewRoot, 0o777); err != nil {
+		return err
+	}
+	documentPreview, err := s.journal.preprocessor.PreviewPDFDocument(ctx, pdf, previewRoot)
+	if err != nil {
+		return err
+	}
 	for pageNumber := 1; pageNumber <= info.PageCount; pageNumber++ {
 		page, err := s.journal.repo.CreateDocumentPage(ctx, id, pageNumber)
 		if err != nil {
 			return err
 		}
-		previewDir := filepath.Join(s.assetsDir, "documents", id, fmt.Sprintf("page-%04d", pageNumber))
-		if err := os.MkdirAll(previewDir, 0o777); err != nil {
-			return err
+		if pageNumber > len(documentPreview.Pages) {
+			return fmt.Errorf("preview returned %d pages, expected %d", len(documentPreview.Pages), info.PageCount)
 		}
-		preview, err := s.journal.preprocessor.PreviewPDFPage(ctx, docAssetPath(doc, s.assetsDir), pageNumber, previewDir)
-		if err != nil {
-			return err
-		}
+		preview := &documentPreview.Pages[pageNumber-1]
 		raw, _ := json.Marshal(preview.Analysis)
 		if err := s.journal.repo.UpdateDocumentPageAnalysis(ctx, page.ID, preview.Status, preview.ContentType, preview.OrientationDegrees, preview.OrientationConfidence, preview.TableCount, preview.TextCharCount, preview.OCRText, raw, nil); err != nil {
 			return err

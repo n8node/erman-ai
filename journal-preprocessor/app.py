@@ -551,6 +551,43 @@ def preview_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     }
 
 
+def preview_pdf_document(raw: bytes, output_dir: str) -> dict[str, object]:
+    """Render/classify every page in one request; never invokes OCR."""
+    with fitz.open(stream=raw, filetype="pdf") as document:
+        pages = []
+        for page_number in range(1, document.page_count + 1):
+            page_dir = Path(output_dir) / f"page-{page_number:04d}"
+            page_dir.mkdir(parents=True, exist_ok=True)
+            page_path = page_dir / "original.png"
+            page = document.load_page(page_number - 1)
+            page_pixmap = page.get_pixmap(matrix=fitz.Matrix(min(150, max(96, ORIENTATION_DPI)) / 72, min(150, max(96, ORIENTATION_DPI)) / 72), alpha=False)
+            page_pixmap.save(str(page_path))
+            pages.append(preview_pdf_page_from_render(page, page_path, page_number, page_dir))
+    return {"pages": pages}
+
+
+def preview_pdf_page_from_render(page: Any, original_path: Path, page_number: int, target: Path) -> dict[str, object]:
+    original = Image.open(original_path).convert("RGB")
+    source_rotation = int(page.rotation or 0)
+    oriented = _rotate_pil(original, source_rotation)
+    oriented_path = target / "oriented.png"
+    oriented.save(oriented_path)
+    array = cv2.cvtColor(np.asarray(oriented), cv2.COLOR_RGB2GRAY)
+    threshold = cv2.adaptiveThreshold(array, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
+    horizontal = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (max(20, oriented.width // 30), 1)))
+    vertical = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (1, max(20, oriented.height // 30))))
+    line_ratio = float(cv2.countNonZero(cv2.bitwise_or(horizontal, vertical))) / max(1, array.size)
+    tables = _table_regions(oriented)
+    embedded_text = page.get_text("text").strip()
+    dark_ratio = float(cv2.countNonZero(threshold)) / max(1, array.size)
+    content_type = "table" if tables or line_ratio > 0.012 else "free_text" if embedded_text or dark_ratio > 0.01 else "unknown"
+    analysis = {"mode": "preview", "page_number": page_number, "source_rotation": source_rotation, "orientation_degrees": source_rotation, "orientation_confidence": 0.7, "content_type": content_type, "text_char_count": len(embedded_text), "table_count": len(tables), "embedded_text_available": bool(embedded_text), "warnings": ["deep_analysis_required"]}
+    (target / "embedded-text.txt").write_text(embedded_text + "\n", encoding="utf-8")
+    (target / "analysis.json").write_text(json.dumps(analysis, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    original.close(); oriented.close()
+    return {"status": "needs_review", "phase": "preview", "orientation_degrees": source_rotation, "orientation_confidence": 0.7, "content_type": content_type, "text_char_count": len(embedded_text), "table_count": len(tables), "ocr_text": embedded_text, "analysis": analysis, "original_asset_path": str(original_path), "oriented_asset_path": str(oriented_path), "preprocessed_asset_path": ""}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "ErmanJournalPreprocessor/0.1"
 
@@ -580,6 +617,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/preview-page":
             self._handle_preview_page()
+            return
+        if self.path == "/preview-document":
+            self._handle_preview_document()
             return
         if self.path != "/preprocess":
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
@@ -678,6 +718,15 @@ class Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, preview_pdf_page(str(payload.get("pdf_path", "")), int(payload.get("page_number", 0)), str(payload.get("output_dir", ""))))
         except Exception as exc:
             logger.exception("pdf page preview failed")
+            self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+
+    def _handle_preview_document(self) -> None:
+        try:
+            raw = self._read_body(MAX_PDF_BODY_BYTES)
+            output_dir = self.headers.get("X-Output-Dir", "")
+            self._json(HTTPStatus.OK, preview_pdf_document(raw, output_dir))
+        except Exception as exc:
+            logger.exception("pdf document preview failed")
             self._json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
 
     def _read_body(self, maximum: int) -> bytes:

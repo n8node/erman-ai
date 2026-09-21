@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -94,10 +95,11 @@ func (h *GeologicalJournalDocumentHandler) StartAnalysis(w http.ResponseWriter, 
 		writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	if err := h.svc.StartAnalysis(r.Context(), r.PathValue("id"), userID, role); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	go func() {
+		if err := h.svc.StartAnalysis(context.Background(), r.PathValue("id"), userID, role); err != nil {
+			// The service records the error status; the client observes it on the next poll.
+		}
+	}()
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "queued"})
 }
 

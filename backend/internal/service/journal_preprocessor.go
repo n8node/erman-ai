@@ -30,6 +30,10 @@ type JournalPDFInfo struct {
 	PageCount int `json:"page_count"`
 }
 
+type JournalPDFDocumentPreview struct {
+	Pages []JournalPDFPageAnalysis `json:"pages"`
+}
+
 type JournalPDFPageAnalysis struct {
 	Status                string          `json:"status"`
 	Phase                 string          `json:"phase"`
@@ -49,6 +53,14 @@ type JournalPDFPageAnalysis struct {
 func (p *JournalImagePreprocessor) PreviewPDFPage(ctx context.Context, pdfPath string, pageNumber int, outputDir string) (*JournalPDFPageAnalysis, error) {
 	var out JournalPDFPageAnalysis
 	if err := p.postJSON(ctx, "/preview-page", map[string]any{"pdf_path": pdfPath, "page_number": pageNumber, "output_dir": outputDir}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (p *JournalImagePreprocessor) PreviewPDFDocument(ctx context.Context, pdf []byte, outputDir string) (*JournalPDFDocumentPreview, error) {
+	var out JournalPDFDocumentPreview
+	if err := p.postPDF(ctx, "/preview-document", pdf, map[string]string{"X-Output-Dir": outputDir}, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

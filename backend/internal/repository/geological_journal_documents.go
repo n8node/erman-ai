@@ -125,6 +125,11 @@ func (r *GeologicalJournalRepository) MarkDocumentPreviewReady(ctx context.Conte
 	return err
 }
 
+func (r *GeologicalJournalRepository) MarkDocumentError(ctx context.Context, documentID, message string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE geological_journal_documents SET status='error',error_msg=$2,analysis_completed_at=NOW(),updated_at=NOW() WHERE id=$1`, documentID, message)
+	return err
+}
+
 func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, documentID string, number int) (*model.GeologicalJournalDocumentPage, error) {
 	var item model.GeologicalJournalDocumentPage
 	var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string
