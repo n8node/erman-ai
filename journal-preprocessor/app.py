@@ -19,12 +19,12 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 try:
     from paddleocr import PaddleOCR  # type: ignore
-except ImportError:  # pragma: no cover - optional engine
+except Exception:  # pragma: no cover - optional engine may fail on CPU/runtime mismatch
     PaddleOCR = None
 
 try:
     from rapidocr_onnxruntime import RapidOCR  # type: ignore
-except ImportError:  # pragma: no cover - optional engine
+except Exception:  # pragma: no cover - optional engine may fail on native dependency mismatch
     RapidOCR = None
 
 

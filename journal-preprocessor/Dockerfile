@@ -30,7 +30,7 @@ USER root
 
 EXPOSE 8090
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
+HEALTHCHECK --interval=10s --timeout=10s --start-period=60s --retries=10 \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=2)"]
 
 CMD ["python", "/app/app.py"]
