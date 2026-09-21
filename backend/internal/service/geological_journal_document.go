@@ -419,7 +419,7 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 	if err := s.journal.repo.MarkDocumentQueued(ctx, id); err != nil {
 		return err
 	}
-	if err := s.journal.repo.ResetDocumentJobs(ctx, id); err != nil {
+	if err := s.journal.repo.CancelDocumentJobs(ctx, id); err != nil {
 		return err
 	}
 	for pageNumber := 1; pageNumber <= info.PageCount; pageNumber++ {
@@ -427,20 +427,75 @@ func (s *GeologicalJournalDocumentService) StartAnalysis(ctx context.Context, id
 		if err != nil {
 			return err
 		}
-		if err := s.journal.repo.CreateDocumentJob(ctx, id, page.ID); err != nil {
+		previewDir := filepath.Join(s.assetsDir, "documents", id, fmt.Sprintf("page-%04d", pageNumber))
+		if err := os.MkdirAll(previewDir, 0o777); err != nil {
 			return err
 		}
+		preview, err := s.journal.preprocessor.PreviewPDFPage(ctx, docAssetPath(doc, s.assetsDir), pageNumber, previewDir)
+		if err != nil {
+			return err
+		}
+		raw, _ := json.Marshal(preview.Analysis)
+		if err := s.journal.repo.UpdateDocumentPageAnalysis(ctx, page.ID, preview.Status, preview.ContentType, preview.OrientationDegrees, preview.OrientationConfidence, preview.TableCount, preview.TextCharCount, preview.OCRText, raw, nil); err != nil {
+			return err
+		}
+		if err := s.journal.repo.UpdateDocumentPageAssets(ctx, page.ID, preview.OriginalAssetPath, preview.OrientedAssetPath, ""); err != nil {
+			return err
+		}
+	}
+	if err := s.journal.repo.MarkDocumentPreviewReady(ctx, id); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (s *GeologicalJournalDocumentService) StartWorker(ctx context.Context, concurrency int) {
-	if concurrency < 1 {
-		concurrency = 1
+	// Deep page OCR is intentionally explicit now. The document button only
+	// performs a cheap preview and never enqueues jobs for every page.
+	if err := s.journal.repo.CancelAllDocumentJobs(ctx); err != nil {
+		s.logger.Error("failed to cancel legacy geological journal jobs", "error", err)
 	}
-	for i := 0; i < concurrency; i++ {
-		go s.workerLoop(ctx)
+}
+
+func (s *GeologicalJournalDocumentService) AnalyzeSelectedPageLocally(ctx context.Context, documentID, pageID, userID, role string) error {
+	if err := s.CheckAccess(ctx, documentID, userID, role); err != nil {
+		return err
 	}
+	doc, err := s.journal.repo.GetDocument(ctx, documentID)
+	if err != nil {
+		return err
+	}
+	pages, err := s.journal.repo.ListDocumentPages(ctx, documentID)
+	if err != nil {
+		return err
+	}
+	var page *model.GeologicalJournalDocumentPage
+	for index := range pages {
+		if pages[index].ID == pageID {
+			page = &pages[index]
+			break
+		}
+	}
+	if page == nil {
+		return fmt.Errorf("page not found")
+	}
+	pageDir := filepath.Join(s.assetsDir, "documents", documentID, fmt.Sprintf("page-%04d", page.PageNumber))
+	if err := os.MkdirAll(pageDir, 0o777); err != nil {
+		return err
+	}
+	pdf, err := os.ReadFile(docAssetPath(doc, s.assetsDir))
+	if err != nil {
+		return err
+	}
+	result, err := s.journal.preprocessor.AnalyzePDFPageBytes(ctx, pdf, page.PageNumber, pageDir)
+	if err != nil {
+		return err
+	}
+	raw, _ := json.Marshal(result.Analysis)
+	if err := s.journal.repo.UpdateDocumentPageAnalysis(ctx, page.ID, result.Status, result.ContentType, result.OrientationDegrees, result.OrientationConfidence, result.TableCount, result.TextCharCount, result.OCRText, raw, nil); err != nil {
+		return err
+	}
+	return s.journal.repo.UpdateDocumentPageAssets(ctx, page.ID, result.OriginalAssetPath, result.OrientedAssetPath, result.PreprocessedAssetPath)
 }
 
 func (s *GeologicalJournalDocumentService) workerLoop(ctx context.Context) {

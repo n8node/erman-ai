@@ -9,6 +9,7 @@ type GeologicalJournalDocumentStatus string
 
 const (
 	GeologicalJournalDocumentUploaded      GeologicalJournalDocumentStatus = "uploaded"
+	GeologicalJournalDocumentPreviewReady  GeologicalJournalDocumentStatus = "preview_ready"
 	GeologicalJournalDocumentQueued        GeologicalJournalDocumentStatus = "queued"
 	GeologicalJournalDocumentProcessing    GeologicalJournalDocumentStatus = "processing"
 	GeologicalJournalDocumentPartiallyDone GeologicalJournalDocumentStatus = "partially_done"
@@ -105,6 +106,10 @@ type GeologicalJournalDocumentLLMRequest struct {
 	PageNumbers      []int  `json:"page_numbers"`
 	IncludeNeighbors bool   `json:"include_neighbors"`
 	Mode             string `json:"mode"`
+}
+
+type GeologicalJournalDocumentPagesRequest struct {
+	PageNumbers []int `json:"page_numbers"`
 }
 
 type GeologicalJournalDocumentLLMResult struct {

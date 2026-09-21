@@ -159,6 +159,19 @@ func (h *GeologicalJournalDocumentHandler) SavePageTableResult(w http.ResponseWr
 	writeJSON(w, http.StatusOK, result)
 }
 
+func (h *GeologicalJournalDocumentHandler) AnalyzeSelectedPageLocally(w http.ResponseWriter, r *http.Request) {
+	userID, role, ok := journalIdentity(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if err := h.svc.AnalyzeSelectedPageLocally(r.Context(), r.PathValue("document_id"), r.PathValue("page_id"), userID, role); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "done"})
+}
+
 func (h *GeologicalJournalDocumentHandler) Chat(w http.ResponseWriter, r *http.Request) {
 	userID, role, ok := journalIdentity(r)
 	if !ok {

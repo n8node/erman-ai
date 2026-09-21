@@ -46,6 +46,14 @@ type JournalPDFPageAnalysis struct {
 	PreprocessedAssetPath string          `json:"preprocessed_asset_path"`
 }
 
+func (p *JournalImagePreprocessor) PreviewPDFPage(ctx context.Context, pdfPath string, pageNumber int, outputDir string) (*JournalPDFPageAnalysis, error) {
+	var out JournalPDFPageAnalysis
+	if err := p.postJSON(ctx, "/preview-page", map[string]any{"pdf_path": pdfPath, "page_number": pageNumber, "output_dir": outputDir}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 type JournalImagePreprocessor struct {
 	baseURL string
 	client  *http.Client

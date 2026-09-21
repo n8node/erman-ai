@@ -110,6 +110,21 @@ func (r *GeologicalJournalRepository) ResetDocumentJobs(ctx context.Context, doc
 	return err
 }
 
+func (r *GeologicalJournalRepository) CancelDocumentJobs(ctx context.Context, documentID string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE geological_journal_document_jobs SET status='cancelled',phase='cancelled',lease_until=NULL,completed_at=COALESCE(completed_at,NOW()),updated_at=NOW(),error_msg='deep analysis cancelled; choose pages explicitly' WHERE document_id=$1 AND status IN ('queued','processing')`, documentID)
+	return err
+}
+
+func (r *GeologicalJournalRepository) CancelAllDocumentJobs(ctx context.Context) error {
+	_, err := r.pool.Exec(ctx, `UPDATE geological_journal_document_jobs SET status='cancelled',phase='cancelled',lease_until=NULL,completed_at=COALESCE(completed_at,NOW()),updated_at=NOW(),error_msg='deep analysis cancelled; choose pages explicitly' WHERE status IN ('queued','processing')`)
+	return err
+}
+
+func (r *GeologicalJournalRepository) MarkDocumentPreviewReady(ctx context.Context, documentID string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE geological_journal_documents SET status='preview_ready',analysis_completed_at=NOW(),updated_at=NOW() WHERE id=$1`, documentID)
+	return err
+}
+
 func (r *GeologicalJournalRepository) CreateDocumentPage(ctx context.Context, documentID string, number int) (*model.GeologicalJournalDocumentPage, error) {
 	var item model.GeologicalJournalDocumentPage
 	var originalAssetPath, orientedAssetPath, preprocessedAssetPath *string

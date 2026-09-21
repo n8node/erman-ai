@@ -416,6 +416,10 @@ export function saveGeologicalJournalDocumentPageResult(
   );
 }
 
+export function analyzeGeologicalJournalDocumentPageLocally(documentId: string, pageId: string) {
+  return apiFetch<{ status: string }>(`/tools/geological-journal/documents/${documentId}/pages/${pageId}/local-analyze`, { method: "POST" });
+}
+
 export function chatGeologicalJournalDocument(id: string, pageNumbers: number[], message: string, sessionId?: string, includeNeighbors = false) {
   return apiFetch<{ content: string; sources: unknown; confidence?: string }>(`/tools/geological-journal/documents/${id}/chat`, {
     method: "POST",
