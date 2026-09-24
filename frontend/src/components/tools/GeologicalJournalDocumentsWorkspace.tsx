@@ -35,6 +35,10 @@ export function GeologicalJournalDocumentsWorkspace() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [llmProcessing, setLlmProcessing] = useState(false);
+  const [llmReady, setLlmReady] = useState(false);
+  const [llmResult, setLlmResult] = useState("");
+  const [llmModalOpen, setLlmModalOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; confidence?: string }>>([]);
   const [chatBusy, setChatBusy] = useState(false);
@@ -155,9 +159,18 @@ export function GeologicalJournalDocumentsWorkspace() {
   async function processWithLLM() {
     if (!active || selectedPages.length === 0) return;
     setBusy(true); setError("");
-    try { await processGeologicalJournalDocumentLLM(active.document.id, selectedPages); await loadActive(active.document.id); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось обработать выбранные страницы"); }
-    finally { setBusy(false); }
+    setLlmProcessing(true);
+    setLlmReady(false);
+    setLlmResult("");
+    setLlmModalOpen(false);
+    try {
+      const response = await processGeologicalJournalDocumentLLM(active.document.id, selectedPages);
+      await loadActive(active.document.id);
+      setLlmResult(JSON.stringify(response.items ?? [], null, 2));
+      setLlmReady(true);
+      setLlmModalOpen(true);
+    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось обработать выбранные страницы"); }
+    finally { setLlmProcessing(false); setBusy(false); }
   }
 
   async function askChat() {
@@ -209,6 +222,8 @@ export function GeologicalJournalDocumentsWorkspace() {
         <p className="mt-1 text-sm text-text2">Кнопка запускает только быстрый предварительный анализ страниц. Глубокий OCR и Yandex LLM запускаются только для выбранных страниц.</p>
       </header>
       {error && <div role="alert" className="rounded-lg border border-red-200 bg-error-bg px-3 py-2 text-sm text-error">{error}</div>}
+      {llmProcessing && <div role="status" className="flex items-center gap-2 rounded-lg border border-ai/30 bg-ai/5 px-3 py-2 text-sm text-ai"><LoaderCircle size={16} className="animate-spin" /> Yandex обрабатывает выбранные страницы: {selectedPages.length} стр. Ожидайте…</div>}
+      {llmReady && !llmProcessing && <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success-bg px-3 py-2 text-sm text-success"><span>Анализ Yandex готов для {selectedPages.length} стр.</span><button type="button" onClick={() => setLlmModalOpen(true)} className="font-medium underline underline-offset-2">Открыть результат</button></div>}
       <section className="rounded-xl border border-border bg-bg p-4">
         <label className="flex min-h-[130px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border2 bg-bg2/40 text-center hover:border-accent">
           <Upload size={22} className="text-text2" />
@@ -246,6 +261,15 @@ export function GeologicalJournalDocumentsWorkspace() {
         onSave={savePageResult}
         onReprocess={reprocessEditorPage}
       />}
+      {llmModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="yandex-result-title" onClick={() => setLlmModalOpen(false)}>
+        <div className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-border bg-bg shadow-xl" onClick={(event) => event.stopPropagation()}>
+          <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
+            <div><h2 id="yandex-result-title" className="text-base font-semibold">Результат анализа Yandex</h2><p className="mt-1 text-xs text-text3">Текстовый результат по выбранным страницам</p></div>
+            <button type="button" onClick={() => setLlmModalOpen(false)} className="rounded p-1.5 text-text3 hover:bg-bg2" aria-label="Закрыть результат"><X size={18} /></button>
+          </div>
+          <pre className="m-5 max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-border2 bg-bg2 p-4 text-xs leading-5 text-text">{llmResult || "Yandex не вернул текстовый результат."}</pre>
+        </div>
+      </div>}
     </div>
   );
 }
