@@ -886,7 +886,7 @@ func validateGeologicalJournalSettings(s model.GeologicalJournalSettings) error 
 	if s.Provider != model.LLMProviderOpenRouter && s.Provider != model.LLMProviderDeepSeek && s.Provider != model.LLMProviderYandex {
 		return fmt.Errorf("%w: provider must be openrouter, deepseek or yandex", ErrGeologicalJournalSettings)
 	}
-	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" || strings.TrimSpace(s.YandexModel) == "" {
+	if strings.TrimSpace(s.OpenRouterModel) == "" || strings.TrimSpace(s.DeepSeekModel) == "" || strings.TrimSpace(s.YandexModel) == "" || strings.TrimSpace(s.VisionModel) == "" {
 		return fmt.Errorf("%w: model names required", ErrGeologicalJournalSettings)
 	}
 	ocrModel := NormalizeYandexOCRModel(s.OCRModel)

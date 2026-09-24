@@ -48,6 +48,7 @@ const DEFAULT_SETTINGS: GeologicalJournalSettings = {
   openrouter_model: "",
   deepseek_model: "",
   yandex_model: "",
+  vision_model: "",
   ocr_model: "handwritten",
   system_prompt: "",
   temperature: 0.2,
@@ -411,6 +412,13 @@ function SettingsPanel({
               deepseek: "deepseek-chat",
               yandex: "yandexgpt/latest",
             }[settings.provider]}
+          />
+          <ModelPicker
+            label={t("settings.visionModel")}
+            value={settings.vision_model}
+            models={modelOptions}
+            onChange={(value) => patch({ vision_model: value })}
+            placeholder="vision model"
           />
           <Field label={t("settings.temperature")}>
             <input

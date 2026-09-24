@@ -291,6 +291,7 @@
         "openrouterModel": "Модель OpenRouter",
         "deepseekModel": "Модель DeepSeek",
         "yandexModel": "Модель Яндекса",
+        "visionModel": "Vision-модель для изображений",
         "refreshModels": "Обновить список",
         "refreshingModels": "Обновление…",
         "modelsLoaded": "Загружено моделей: {count}",

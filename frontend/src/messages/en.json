@@ -291,6 +291,7 @@
         "openrouterModel": "OpenRouter model",
         "deepseekModel": "DeepSeek model",
         "yandexModel": "Yandex model",
+        "visionModel": "Vision model for images",
         "refreshModels": "Refresh list",
         "refreshingModels": "Refreshing…",
         "modelsLoaded": "Models loaded: {count}",

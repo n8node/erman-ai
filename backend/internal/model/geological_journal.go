@@ -60,6 +60,7 @@ type GeologicalJournalSettings struct {
 	OpenRouterModel string      `json:"openrouter_model"`
 	DeepSeekModel   string      `json:"deepseek_model"`
 	YandexModel     string      `json:"yandex_model"`
+	VisionModel     string      `json:"vision_model"`
 	OCRModel        string      `json:"ocr_model"`
 	SystemPrompt    string      `json:"system_prompt"`
 	Temperature     float64     `json:"temperature"`

@@ -228,11 +228,15 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 Текст страницы:
 %s`, pageNumber, doc.OriginalName, ocrText)
 		}
+		visionModel := strings.TrimSpace(journalSettings.Settings.VisionModel)
+		if visionModel == "" {
+			return nil, errors.New("vision model is not configured in geological journal settings")
+		}
 		completion, err := s.journal.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
 			Image:     image,
 			ImageMIME: documentPageImageMIME(imagePath),
 			LLMCompletionRequest: LLMCompletionRequest{
-				Provider: provider, Model: strategy.Config.YandexModel,
+				Provider: provider, Model: visionModel,
 				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Возвращай только запрошенный JSON без рассуждений и дополнительных полей.",
 				UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
 				Proxy: strategy.Config.ProxyForProvider(provider),
