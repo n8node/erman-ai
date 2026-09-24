@@ -15,6 +15,7 @@ import {
   startGeologicalJournalDocumentAnalysis,
   uploadGeologicalJournalDocument,
   type GeologicalJournalDocument,
+  type GeologicalJournalDocumentLLMResult,
   type GeologicalJournalDocumentDetail,
   type GeologicalJournalRow,
 } from "@/lib/api-geological-journal";
@@ -28,6 +29,64 @@ function statusLabel(status: string) {
   return ({ uploaded: "Загружен", preview_ready: "Предварительный анализ готов", queued: "В очереди", processing: "Обрабатывается", partially_done: "Частично готов", done: "Готово", error: "Ошибка" } as Record<string, string>)[status] ?? status;
 }
 
+type LlmDisplayResult = {
+  pageNumber: number;
+  isTable: boolean;
+  rows: Array<Record<string, unknown>>;
+  text: string;
+};
+
+const tableFieldLabels: Record<string, string> = {
+  date: "Дата",
+  drilling_diameter_mm: "Диаметр бурения, мм",
+  depth_from_m: "Глубина от, м",
+  depth_to_m: "Глубина до, м",
+  drilling_run_m: "Проходка, м",
+  core_recovery_m: "Выход керна, м",
+  core_recovery_pct: "Выход керна, %",
+  rock_description: "Описание породы",
+  sampling_interval: "Интервал опробования",
+  sample_number: "Номер пробы",
+  notes: "Примечание",
+};
+
+function parseLlmResult(value: GeologicalJournalDocumentLLMResult["result"]): Record<string, unknown> {
+  if (value && typeof value === "object") return value;
+  if (typeof value !== "string") return {};
+  const candidates = [value.trim(), value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()];
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+      if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+    } catch { /* The page OCR text is used as a fallback below. */ }
+  }
+  return {};
+}
+
+function displayLlmResults(items: GeologicalJournalDocumentLLMResult[], detail: GeologicalJournalDocumentDetail | null): LlmDisplayResult[] {
+  return items.map((item) => {
+    const page = detail?.pages.find((candidate) => candidate.id === item.page_id);
+    const payload = parseLlmResult(item.result);
+    const rawResponse = typeof payload.raw_response === "string" ? parseLlmResult(payload.raw_response) : payload;
+    const rows = Array.isArray(rawResponse.rows)
+      ? rawResponse.rows.filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
+      : [];
+    return {
+      pageNumber: page?.page_number ?? 0,
+      isTable: (page?.content_type === "table" || page?.content_type === "mixed") && rows.length > 0,
+      rows,
+      text: page?.ocr_text?.trim() || (typeof rawResponse.transcription === "string" ? rawResponse.transcription : ""),
+    };
+  });
+}
+
+function formatTableValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 export function GeologicalJournalDocumentsWorkspace() {
   const [documents, setDocuments] = useState<GeologicalJournalDocument[]>([]);
   const [active, setActive] = useState<GeologicalJournalDocumentDetail | null>(null);
@@ -37,7 +96,7 @@ export function GeologicalJournalDocumentsWorkspace() {
   const [error, setError] = useState("");
   const [llmProcessing, setLlmProcessing] = useState(false);
   const [llmReady, setLlmReady] = useState(false);
-  const [llmResult, setLlmResult] = useState("");
+  const [llmResults, setLlmResults] = useState<LlmDisplayResult[]>([]);
   const [llmModalOpen, setLlmModalOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; confidence?: string }>>([]);
@@ -161,12 +220,12 @@ export function GeologicalJournalDocumentsWorkspace() {
     setBusy(true); setError("");
     setLlmProcessing(true);
     setLlmReady(false);
-    setLlmResult("");
+    setLlmResults([]);
     setLlmModalOpen(false);
     try {
       const response = await processGeologicalJournalDocumentLLM(active.document.id, selectedPages);
-      await loadActive(active.document.id);
-      setLlmResult(JSON.stringify(response.items ?? [], null, 2));
+      const detail = await loadActive(active.document.id);
+      setLlmResults(displayLlmResults(response.items ?? [], detail));
       setLlmReady(true);
       setLlmModalOpen(true);
     } catch (err) { setError(err instanceof Error ? err.message : "Не удалось обработать выбранные страницы"); }
@@ -267,7 +326,18 @@ export function GeologicalJournalDocumentsWorkspace() {
             <div><h2 id="yandex-result-title" className="text-base font-semibold">Результат анализа Yandex</h2><p className="mt-1 text-xs text-text3">Текстовый результат по выбранным страницам</p></div>
             <button type="button" onClick={() => setLlmModalOpen(false)} className="rounded p-1.5 text-text3 hover:bg-bg2" aria-label="Закрыть результат"><X size={18} /></button>
           </div>
-          <pre className="m-5 max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-border2 bg-bg2 p-4 text-xs leading-5 text-text">{llmResult || "Yandex не вернул текстовый результат."}</pre>
+          <div className="m-5 max-h-[65vh] space-y-5 overflow-auto">
+            {llmResults.length === 0 && <div className="rounded-lg border border-border2 bg-bg2 p-4 text-sm text-text3">Yandex не вернул распознанные данные.</div>}
+            {llmResults.map((result, index) => <section key={`${result.pageNumber}-${index}`} className="rounded-lg border border-border2 bg-bg2 p-4">
+              <h3 className="mb-3 text-sm font-medium">Страница {result.pageNumber || index + 1}</h3>
+              {result.isTable ? <div className="overflow-auto rounded border border-border">
+                <table className="w-full min-w-[900px] text-left text-xs">
+                  <thead className="bg-bg"><tr>{Object.keys(tableFieldLabels).map((field) => <th key={field} className="border-b border-border px-3 py-2 font-medium">{tableFieldLabels[field]}</th>)}</tr></thead>
+                  <tbody>{result.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-b-0">{Object.keys(tableFieldLabels).map((field) => <td key={field} className="px-3 py-2 align-top">{formatTableValue(row[field])}</td>)}</tr>)}</tbody>
+                </table>
+              </div> : <pre className="whitespace-pre-wrap text-xs leading-5 text-text">{result.text || "Распознанный текст отсутствует."}</pre>}
+            </section>)}
+          </div>
         </div>
       </div>}
     </div>

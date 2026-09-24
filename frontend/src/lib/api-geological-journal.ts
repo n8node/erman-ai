@@ -185,6 +185,16 @@ export type GeologicalJournalDocumentPage = {
   error_msg?: string;
 };
 
+export type GeologicalJournalDocumentLLMResult = {
+  id: string;
+  document_id: string;
+  page_id: string;
+  mode: string;
+  result: Record<string, unknown> | string | null;
+  model_used?: string;
+  created_at: string;
+};
+
 export type GeologicalJournalDocumentDetail = {
   document: GeologicalJournalDocument;
   pages: GeologicalJournalDocumentPage[];
@@ -408,7 +418,7 @@ export function setGeologicalJournalDocumentSharing(id: string, shared: boolean)
 }
 
 export function processGeologicalJournalDocumentLLM(id: string, pageNumbers: number[], mode = "summary", includeNeighbors = false) {
-  return apiFetch<{ items: Array<Record<string, unknown>> }>(`/tools/geological-journal/documents/${id}/llm`, {
+  return apiFetch<{ items: GeologicalJournalDocumentLLMResult[] }>(`/tools/geological-journal/documents/${id}/llm`, {
     method: "POST",
     body: JSON.stringify({ page_numbers: pageNumbers, mode, include_neighbors: includeNeighbors }),
   });
