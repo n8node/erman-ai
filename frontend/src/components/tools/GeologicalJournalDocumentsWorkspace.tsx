@@ -32,6 +32,7 @@ function statusLabel(status: string) {
 type LlmDisplayResult = {
   pageNumber: number;
   isTable: boolean;
+  columns: string[];
   rows: Array<Record<string, unknown>>;
   text: string;
 };
@@ -73,18 +74,39 @@ function parseLlmResult(value: GeologicalJournalDocumentLLMResult["result"]): Re
   return {};
 }
 
+function unwrapLlmPayload(value: Record<string, unknown>) {
+  let payload = value;
+  for (let index = 0; index < 3; index += 1) {
+    if (typeof payload.raw_response === "string") {
+      const parsed = parseLlmResult(payload.raw_response);
+      if (Object.keys(parsed).length === 0) break;
+      payload = parsed;
+      continue;
+    }
+    if (payload.result && typeof payload.result === "object" && !Array.isArray(payload.result)) {
+      payload = payload.result as Record<string, unknown>;
+      continue;
+    }
+    break;
+  }
+  return payload;
+}
+
 function displayLlmResults(items: GeologicalJournalDocumentLLMResult[], detail: GeologicalJournalDocumentDetail | null): LlmDisplayResult[] {
   return items.map((item) => {
     const page = detail?.pages.find((candidate) => candidate.id === item.page_id);
-    const payload = parseLlmResult(item.result);
-    const rawResponse = typeof payload.raw_response === "string" ? parseLlmResult(payload.raw_response) : payload;
+    const rawResponse = unwrapLlmPayload(parseLlmResult(item.result));
     const storedRows = page?.table_result?.rows ?? [];
     const rows = storedRows.length > 0 ? storedRows : Array.isArray(rawResponse.rows)
       ? rawResponse.rows.filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
       : [];
+    const columns = Array.isArray(rawResponse.columns)
+      ? rawResponse.columns.filter((column): column is string => typeof column === "string" && column.trim().length > 0)
+      : tableFields(rows);
     return {
       pageNumber: page?.page_number ?? 0,
       isTable: page?.content_type === "table" || page?.content_type === "mixed",
+      columns,
       rows,
       text: page?.ocr_text?.trim() || (typeof rawResponse.transcription === "string" ? rawResponse.transcription : ""),
     };
@@ -341,12 +363,12 @@ export function GeologicalJournalDocumentsWorkspace() {
             {llmResults.length === 0 && <div className="rounded-lg border border-border2 bg-bg2 p-4 text-sm text-text3">Распознанные данные отсутствуют.</div>}
             {llmResults.map((result, index) => <section key={`${result.pageNumber}-${index}`} className="rounded-lg border border-border2 bg-bg2 p-4">
               <h3 className="mb-3 text-sm font-medium">Страница {result.pageNumber || index + 1}</h3>
-              {result.isTable ? <div className="overflow-auto rounded border border-border">
+              {result.isTable && result.rows.length > 0 ? <div className="overflow-auto rounded border border-border">
                 <table className="w-full min-w-[900px] text-left text-xs">
-                  <thead className="bg-bg"><tr>{tableFields(result.rows).map((field) => <th key={field} className="border-b border-border px-3 py-2 font-medium">{tableFieldLabel(field)}</th>)}</tr></thead>
-                  <tbody>{result.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-b-0">{tableFields(result.rows).map((field) => <td key={field} className="px-3 py-2 align-top">{formatTableValue(row[field])}</td>)}</tr>)}</tbody>
+                  <thead className="bg-bg"><tr>{result.columns.map((field) => <th key={field} className="border-b border-border px-3 py-2 font-medium">{tableFieldLabel(field)}</th>)}</tr></thead>
+                  <tbody>{result.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-b-0">{result.columns.map((field) => <td key={field} className="px-3 py-2 align-top">{formatTableValue(row[field])}</td>)}</tr>)}</tbody>
                 </table>
-              </div> : <pre className="whitespace-pre-wrap text-xs leading-5 text-text">{result.text || "Распознанный текст отсутствует."}</pre>}
+              </div> : <pre className="whitespace-pre-wrap text-xs leading-5 text-text">{result.text || (result.isTable ? "Распознанные строки таблицы отсутствуют в ответе модели." : "Распознанный текст отсутствует.")}</pre>}
             </section>)}
           </div>
         </div>
