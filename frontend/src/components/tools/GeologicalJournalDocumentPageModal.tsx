@@ -10,19 +10,29 @@ import {
   exportGeologicalJournalXML,
 } from "@/lib/geological-journal-export";
 
-const fields: Array<{ key: keyof GeologicalJournalRow; label: string; numeric?: boolean }> = [
-  { key: "date", label: "Дата" },
-  { key: "drilling_diameter_mm", label: "Диаметр, мм", numeric: true },
-  { key: "depth_from_m", label: "Глубина от, м", numeric: true },
-  { key: "depth_to_m", label: "Глубина до, м", numeric: true },
-  { key: "drilling_run_m", label: "Проходка, м", numeric: true },
-  { key: "core_recovery_m", label: "Выход керна, м", numeric: true },
-  { key: "core_recovery_pct", label: "Выход керна, %", numeric: true },
-  { key: "rock_description", label: "Описание породы" },
-  { key: "sampling_interval", label: "Интервал опробования" },
-  { key: "sample_number", label: "Номер пробы" },
-  { key: "notes", label: "Примечания" },
-];
+const hiddenFields = new Set(["uncertainties", "field_issues"]);
+
+function fieldLabel(field: string) {
+  return field
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\bmm\b/gi, "мм")
+    .replace(/\bm\b/gi, "м")
+    .replace(/\bpct\b/gi, "%")
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
+function fieldsForRows(rows: GeologicalJournalRow[]) {
+  const fields: string[] = [];
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (hiddenFields.has(key) || fields.includes(key)) continue;
+      if (rows.every((candidate) => candidate[key as keyof GeologicalJournalRow] === null || candidate[key as keyof GeologicalJournalRow] === undefined || candidate[key as keyof GeologicalJournalRow] === "")) continue;
+      fields.push(key);
+    }
+  }
+  return fields as Array<keyof GeologicalJournalRow>;
+}
 
 function emptyRow(): GeologicalJournalRow {
   return {
@@ -78,11 +88,14 @@ export function GeologicalJournalDocumentPageModal({
 
   if (!page) return null;
 
+  const fields = fieldsForRows(rows);
+
   function updateCell(index: number, key: keyof GeologicalJournalRow, value: string) {
     setRows((current) => current.map((row, rowIndex) => {
       if (rowIndex !== index) return row;
-      const field = fields.find((item) => item.key === key);
-      return { ...row, [key]: field?.numeric && value !== "" ? Number(value) : field?.numeric ? null : value };
+      const currentValue = row[key];
+      const numeric = typeof currentValue === "number" || (currentValue === null && /(?:mm|_m|_pct)$/.test(String(key)));
+      return { ...row, [key]: numeric && value !== "" ? Number(value) : numeric ? null : value };
     }));
   }
 
@@ -129,7 +142,7 @@ export function GeologicalJournalDocumentPageModal({
           <section className="min-w-0 rounded-lg border border-border2">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2"><div className="flex gap-1"><button type="button" onClick={() => setActiveTab("table")} className={`rounded px-2.5 py-1.5 text-xs ${activeTab === "table" ? "bg-accent-bg font-medium text-accent" : "text-text3 hover:bg-bg2"}`}>Таблица ({rows.length})</button><button type="button" onClick={() => setActiveTab("ocr")} className={`rounded px-2.5 py-1.5 text-xs ${activeTab === "ocr" ? "bg-accent-bg font-medium text-accent" : "text-text3 hover:bg-bg2"}`}>Полный OCR</button></div><div className="flex flex-wrap gap-1"><button type="button" onClick={() => exportRows("xlsx")} disabled={!rows.length} className="inline-flex items-center gap-1 rounded border border-border2 px-2 py-1.5 text-[11px] disabled:opacity-40"><Download size={12} /> XLSX</button><button type="button" onClick={() => exportRows("csv")} disabled={!rows.length} className="inline-flex items-center gap-1 rounded border border-border2 px-2 py-1.5 text-[11px] disabled:opacity-40"><Download size={12} /> CSV</button><button type="button" onClick={() => exportRows("json")} disabled={!rows.length} className="inline-flex items-center gap-1 rounded border border-border2 px-2 py-1.5 text-[11px] disabled:opacity-40"><Download size={12} /> JSON</button><button type="button" onClick={() => exportRows("xml")} disabled={!rows.length} className="inline-flex items-center gap-1 rounded border border-border2 px-2 py-1.5 text-[11px] disabled:opacity-40"><Download size={12} /> XML</button></div></div>
             <div className="max-h-[calc(94vh-175px)] overflow-auto p-3">
-              {activeTab === "ocr" ? <textarea value={ocrText} onChange={(event) => setOcrText(event.target.value)} className="min-h-[520px] w-full resize-y rounded border border-border2 bg-bg2 p-3 font-mono text-xs leading-5 outline-none focus:border-accent" placeholder="OCR-текст страницы" /> : <div className="min-w-[980px] overflow-auto rounded border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="px-2 py-2">№</th>{fields.map((field) => <th key={field.key} className="min-w-[130px] px-2 py-2">{field.label}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-t border-border"><td className="px-2 py-1.5 text-text3">{index + 1}</td>{fields.map((field) => <td key={field.key} className="px-1 py-1"><input type={field.numeric ? "number" : "text"} value={displayValue(row[field.key] as string | number | null)} onChange={(event) => updateCell(index, field.key, event.target.value)} className="w-full rounded border border-transparent bg-transparent px-1.5 py-1.5 outline-none focus:border-accent focus:bg-bg2" /></td>)}</tr>)}</tbody></table><button type="button" onClick={() => setRows((current) => [...current, emptyRow()])} className="m-2 rounded border border-border2 px-2.5 py-1.5 text-xs text-text2 hover:bg-bg2">Добавить строку</button>{rows.length === 0 && <p className="p-4 text-xs text-text3">Табличный результат ещё не создан. Нажмите «Распознать заново».</p>}</div>}
+              {activeTab === "ocr" ? <textarea value={ocrText} onChange={(event) => setOcrText(event.target.value)} className="min-h-[520px] w-full resize-y rounded border border-border2 bg-bg2 p-3 font-mono text-xs leading-5 outline-none focus:border-accent" placeholder="OCR-текст страницы" /> : <div className="min-w-[980px] overflow-auto rounded border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="px-2 py-2">№</th>{fields.map((field) => <th key={field} className="min-w-[130px] px-2 py-2">{fieldLabel(field)}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="border-t border-border"><td className="px-2 py-1.5 text-text3">{index + 1}</td>{fields.map((field) => { const value = row[field]; const numeric = typeof value === "number" || (value === null && /(?:mm|_m|_pct)$/.test(String(field))); return <td key={field} className="px-1 py-1"><input type={numeric ? "number" : "text"} value={displayValue(value as string | number | null)} onChange={(event) => updateCell(index, field, event.target.value)} className="w-full rounded border border-transparent bg-transparent px-1.5 py-1.5 outline-none focus:border-accent focus:bg-bg2" /></td>; })}</tr>)}</tbody></table><button type="button" onClick={() => setRows((current) => [...current, emptyRow()])} className="m-2 rounded border border-border2 px-2.5 py-1.5 text-xs text-text2 hover:bg-bg2">Добавить строку</button>{rows.length === 0 && <p className="p-4 text-xs text-text3">Табличный результат ещё не создан. Нажмите «Распознать заново».</p>}</div>}
             </div>
           </section>
         </div>

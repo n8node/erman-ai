@@ -36,19 +36,29 @@ type LlmDisplayResult = {
   text: string;
 };
 
-const tableFieldLabels: Record<string, string> = {
-  date: "Дата",
-  drilling_diameter_mm: "Диаметр бурения, мм",
-  depth_from_m: "Глубина от, м",
-  depth_to_m: "Глубина до, м",
-  drilling_run_m: "Проходка, м",
-  core_recovery_m: "Выход керна, м",
-  core_recovery_pct: "Выход керна, %",
-  rock_description: "Описание породы",
-  sampling_interval: "Интервал опробования",
-  sample_number: "Номер пробы",
-  notes: "Примечание",
-};
+const hiddenTableFields = new Set(["uncertainties", "field_issues"]);
+
+function tableFieldLabel(field: string) {
+  return field
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\bmm\b/gi, "мм")
+    .replace(/\bm\b/gi, "м")
+    .replace(/\bpct\b/gi, "%")
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
+function tableFields(rows: Array<Record<string, unknown>>) {
+  const fields: string[] = [];
+  for (const row of rows) {
+    for (const field of Object.keys(row)) {
+      if (hiddenTableFields.has(field) || fields.includes(field)) continue;
+      if (rows.every((candidate) => candidate[field] === null || candidate[field] === undefined || candidate[field] === "")) continue;
+      fields.push(field);
+    }
+  }
+  return fields;
+}
 
 function parseLlmResult(value: GeologicalJournalDocumentLLMResult["result"]): Record<string, unknown> {
   if (value && typeof value === "object") return value;
@@ -333,8 +343,8 @@ export function GeologicalJournalDocumentsWorkspace() {
               <h3 className="mb-3 text-sm font-medium">Страница {result.pageNumber || index + 1}</h3>
               {result.isTable ? <div className="overflow-auto rounded border border-border">
                 <table className="w-full min-w-[900px] text-left text-xs">
-                  <thead className="bg-bg"><tr>{Object.keys(tableFieldLabels).map((field) => <th key={field} className="border-b border-border px-3 py-2 font-medium">{tableFieldLabels[field]}</th>)}</tr></thead>
-                  <tbody>{result.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-b-0">{Object.keys(tableFieldLabels).map((field) => <td key={field} className="px-3 py-2 align-top">{formatTableValue(row[field])}</td>)}</tr>)}</tbody>
+                  <thead className="bg-bg"><tr>{tableFields(result.rows).map((field) => <th key={field} className="border-b border-border px-3 py-2 font-medium">{tableFieldLabel(field)}</th>)}</tr></thead>
+                  <tbody>{result.rows.map((row, rowIndex) => <tr key={rowIndex} className="border-b border-border last:border-b-0">{tableFields(result.rows).map((field) => <td key={field} className="px-3 py-2 align-top">{formatTableValue(row[field])}</td>)}</tr>)}</tbody>
                 </table>
               </div> : <pre className="whitespace-pre-wrap text-xs leading-5 text-text">{result.text || "Распознанный текст отсутствует."}</pre>}
             </section>)}
