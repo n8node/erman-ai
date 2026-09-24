@@ -200,18 +200,21 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 		isTable := page.ContentType == "table" || page.ContentType == "mixed"
 		var prompt string
 		if isTable {
-			prompt = fmt.Sprintf(`Распознай табличные данные страницы %d документа %q.
-Предварительный анализ определил эту страницу как таблицу. Сохрани структуру таблицы,
-порядок строк и значения ячеек. Не добавляй выводы, объяснения, summary, facts,
-uncertainties, sources или исправления по догадке.
+			prompt = fmt.Sprintf(`Распознай таблицу непосредственно по изображению страницы %d документа %q.
+Предварительный анализ определил страницу как таблицу. Изображение является главным
+источником истины, OCR-текст ниже используй только как дополнительную подсказку.
+Определи реальные заголовки столбцов по изображению, не подставляй заранее заданную
+схему геологического журнала. Сохрани порядок столбцов и строк. Не добавляй выводы,
+объяснения, summary, facts, uncertainties, sources или рассуждения.
 
 Ответь только валидным JSON-объектом строго такого вида:
-{"rows":[{"date":null,"drilling_diameter_mm":null,"depth_from_m":null,"depth_to_m":null,"drilling_run_m":null,"core_recovery_m":null,"core_recovery_pct":null,"rock_description":"","sampling_interval":"","sample_number":"","notes":"","uncertainties":[]}]}
+{"columns":["№","Наименование"],"rows":[{"№":"8","Наименование":"..."}]}
 
-Для нечитаемой ячейки используй null или пустую строку. Поле uncertainties оставляй
-пустым и не добавляй в него рассуждения. Не оборачивай JSON в markdown.
+В columns перечисли только реально найденные заголовки. Ключи каждой строки должны
+совпадать с columns. Для нечитаемой ячейки используй null или пустую строку. Не
+оборачивай JSON в markdown.
 
-Текст страницы:
+Дополнительный OCR-текст:
 %s`, pageNumber, doc.OriginalName, ocrText)
 		} else {
 			prompt = fmt.Sprintf(`Точно перепиши распознанный текст страницы %d документа %q.
@@ -225,11 +228,15 @@ uncertainties, sources или исправления по догадке.
 Текст страницы:
 %s`, pageNumber, doc.OriginalName, ocrText)
 		}
-		completion, err := s.journal.llm.Complete(ctx, LLMCompletionRequest{
-			Provider: provider, Model: strategy.Config.YandexModel,
-			SystemPrompt: "Ты выполняешь точное распознавание данных геологического документа. Возвращай только запрошенный JSON без рассуждений и дополнительных полей.",
-			UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
-			Proxy: strategy.Config.ProxyForProvider(provider),
+		completion, err := s.journal.llm.CompleteWithImage(ctx, LLMImageCompletionRequest{
+			Image:     image,
+			ImageMIME: documentPageImageMIME(imagePath),
+			LLMCompletionRequest: LLMCompletionRequest{
+				Provider: provider, Model: strategy.Config.YandexModel,
+				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Возвращай только запрошенный JSON без рассуждений и дополнительных полей.",
+				UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
+				Proxy: strategy.Config.ProxyForProvider(provider),
+			},
 		})
 		if err != nil {
 			return nil, err
