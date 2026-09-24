@@ -197,24 +197,37 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 		} else if visionErr != nil {
 			s.logger.Warn("vision OCR failed; using existing document OCR text", "page", pageNumber, "error", visionErr)
 		}
-		prompt := fmt.Sprintf(`Проанализируй текст страницы %d документа %q, распознанный Yandex Vision OCR.
+		isTable := page.ContentType == "table" || page.ContentType == "mixed"
+		var prompt string
+		if isTable {
+			prompt = fmt.Sprintf(`Распознай табличные данные страницы %d документа %q.
+Предварительный анализ определил эту страницу как таблицу. Сохрани структуру таблицы,
+порядок строк и значения ячеек. Не добавляй выводы, объяснения, summary, facts,
+uncertainties, sources или исправления по догадке.
 
-Выдели ключевые факты, числа, геологические объекты и сомнительные места.
-Не исправляй значения догадками. Если фрагмент невозможно уверенно прочитать,
-укажи его в uncertainties.
+Ответь только валидным JSON-объектом строго такого вида:
+{"rows":[{"date":null,"drilling_diameter_mm":null,"depth_from_m":null,"depth_to_m":null,"drilling_run_m":null,"core_recovery_m":null,"core_recovery_pct":null,"rock_description":"","sampling_interval":"","sample_number":"","notes":"","uncertainties":[]}]}
 
-Ответь только JSON-объектом со следующими ключами:
-- rows: массив строк таблицы с полями date, drilling_diameter_mm, depth_from_m, depth_to_m, drilling_run_m, core_recovery_m, core_recovery_pct, rock_description, sampling_interval, sample_number, notes, uncertainties;
-- summary: краткое содержание;
-- facts: массив важных фактов и чисел;
-- uncertainties: массив неразборчивых или сомнительных мест;
-- sources: массив с указанием страницы.
+Для нечитаемой ячейки используй null или пустую строку. Поле uncertainties оставляй
+пустым и не добавляй в него рассуждения. Не оборачивай JSON в markdown.
 
-		Текст страницы:
+Текст страницы:
 %s`, pageNumber, doc.OriginalName, ocrText)
+		} else {
+			prompt = fmt.Sprintf(`Точно перепиши распознанный текст страницы %d документа %q.
+Не анализируй текст, не делай выводов, не исправляй значения и не добавляй объяснений.
+
+Ответь только валидным JSON-объектом строго такого вида:
+{"transcription":"полный распознанный текст страницы"}
+
+Не оборачивай JSON в markdown.
+
+Текст страницы:
+%s`, pageNumber, doc.OriginalName, ocrText)
+		}
 		completion, err := s.journal.llm.Complete(ctx, LLMCompletionRequest{
 			Provider: provider, Model: strategy.Config.YandexModel,
-			SystemPrompt: "Ты аккуратный аналитик геологических документов. Работай только с переданным OCR-текстом. Не выдумывай неразборчивые значения.",
+			SystemPrompt: "Ты выполняешь точное распознавание данных геологического документа. Возвращай только запрошенный JSON без рассуждений и дополнительных полей.",
 			UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
 			Proxy: strategy.Config.ProxyForProvider(provider),
 		})

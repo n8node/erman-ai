@@ -68,12 +68,13 @@ function displayLlmResults(items: GeologicalJournalDocumentLLMResult[], detail: 
     const page = detail?.pages.find((candidate) => candidate.id === item.page_id);
     const payload = parseLlmResult(item.result);
     const rawResponse = typeof payload.raw_response === "string" ? parseLlmResult(payload.raw_response) : payload;
-    const rows = Array.isArray(rawResponse.rows)
+    const storedRows = page?.table_result?.rows ?? [];
+    const rows = storedRows.length > 0 ? storedRows : Array.isArray(rawResponse.rows)
       ? rawResponse.rows.filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
       : [];
     return {
       pageNumber: page?.page_number ?? 0,
-      isTable: (page?.content_type === "table" || page?.content_type === "mixed") && rows.length > 0,
+      isTable: page?.content_type === "table" || page?.content_type === "mixed",
       rows,
       text: page?.ocr_text?.trim() || (typeof rawResponse.transcription === "string" ? rawResponse.transcription : ""),
     };
@@ -278,11 +279,11 @@ export function GeologicalJournalDocumentsWorkspace() {
     <div className="mx-auto max-w-[1500px] space-y-6">
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Геологические документы</h1>
-        <p className="mt-1 text-sm text-text2">Кнопка запускает только быстрый предварительный анализ страниц. Глубокий OCR и Yandex LLM запускаются только для выбранных страниц.</p>
+        <p className="mt-1 text-sm text-text2">Кнопка запускает только быстрый предварительный анализ страниц. Глубокое распознавание запускается только для выбранных страниц.</p>
       </header>
       {error && <div role="alert" className="rounded-lg border border-red-200 bg-error-bg px-3 py-2 text-sm text-error">{error}</div>}
-      {llmProcessing && <div role="status" className="flex items-center gap-2 rounded-lg border border-ai/30 bg-ai/5 px-3 py-2 text-sm text-ai"><LoaderCircle size={16} className="animate-spin" /> Yandex обрабатывает выбранные страницы: {selectedPages.length} стр. Ожидайте…</div>}
-      {llmReady && !llmProcessing && <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success-bg px-3 py-2 text-sm text-success"><span>Анализ Yandex готов для {selectedPages.length} стр.</span><button type="button" onClick={() => setLlmModalOpen(true)} className="font-medium underline underline-offset-2">Открыть результат</button></div>}
+      {llmProcessing && <div role="status" className="flex items-center gap-2 rounded-lg border border-ai/30 bg-ai/5 px-3 py-2 text-sm text-ai"><LoaderCircle size={16} className="animate-spin" /> Обрабатываются выбранные страницы: {selectedPages.length} стр. Ожидайте…</div>}
+      {llmReady && !llmProcessing && <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success-bg px-3 py-2 text-sm text-success"><span>Распознавание готово для {selectedPages.length} стр.</span><button type="button" onClick={() => setLlmModalOpen(true)} className="font-medium underline underline-offset-2">Открыть результат</button></div>}
       <section className="rounded-xl border border-border bg-bg p-4">
         <label className="flex min-h-[130px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border2 bg-bg2/40 text-center hover:border-accent">
           <Upload size={22} className="text-text2" />
@@ -320,14 +321,14 @@ export function GeologicalJournalDocumentsWorkspace() {
         onSave={savePageResult}
         onReprocess={reprocessEditorPage}
       />}
-      {llmModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="yandex-result-title" onClick={() => setLlmModalOpen(false)}>
+      {llmModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="recognition-result-title" onClick={() => setLlmModalOpen(false)}>
         <div className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-border bg-bg shadow-xl" onClick={(event) => event.stopPropagation()}>
           <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
-            <div><h2 id="yandex-result-title" className="text-base font-semibold">Результат анализа Yandex</h2><p className="mt-1 text-xs text-text3">Текстовый результат по выбранным страницам</p></div>
+            <div><h2 id="recognition-result-title" className="text-base font-semibold">Результат распознавания</h2><p className="mt-1 text-xs text-text3">Распознанные данные по выбранным страницам</p></div>
             <button type="button" onClick={() => setLlmModalOpen(false)} className="rounded p-1.5 text-text3 hover:bg-bg2" aria-label="Закрыть результат"><X size={18} /></button>
           </div>
           <div className="m-5 max-h-[65vh] space-y-5 overflow-auto">
-            {llmResults.length === 0 && <div className="rounded-lg border border-border2 bg-bg2 p-4 text-sm text-text3">Yandex не вернул распознанные данные.</div>}
+            {llmResults.length === 0 && <div className="rounded-lg border border-border2 bg-bg2 p-4 text-sm text-text3">Распознанные данные отсутствуют.</div>}
             {llmResults.map((result, index) => <section key={`${result.pageNumber}-${index}`} className="rounded-lg border border-border2 bg-bg2 p-4">
               <h3 className="mb-3 text-sm font-medium">Страница {result.pageNumber || index + 1}</h3>
               {result.isTable ? <div className="overflow-auto rounded border border-border">
