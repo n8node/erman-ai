@@ -207,7 +207,8 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 схему геологического журнала. Сохрани порядок столбцов и строк. Не добавляй выводы,
 объяснения, summary, facts, uncertainties, sources или рассуждения.
 
-Ответь только валидным JSON-объектом строго такого вида:
+Ответь только валидным JSON-объектом строго такого вида. Никогда не возвращай OCR-текст,
+список строк, markdown или обычный текст вместо этого JSON:
 {"columns":["№","Наименование"],"rows":[{"№":"8","Наименование":"..."}]}
 
 В columns перечисли только реально найденные заголовки. Ключи каждой строки должны
@@ -237,7 +238,7 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 			ImageMIME: documentPageImageMIME(imagePath),
 			LLMCompletionRequest: LLMCompletionRequest{
 				Provider: provider, Model: visionModel,
-				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Возвращай только запрошенный JSON без рассуждений и дополнительных полей.",
+				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Для табличной страницы всегда возвращай только JSON с columns и rows. Никогда не возвращай плоский OCR-текст, список строк, markdown или рассуждения.",
 				UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
 				Proxy: strategy.Config.ProxyForProvider(provider),
 			},
