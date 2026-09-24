@@ -247,7 +247,7 @@ func (r *GeologicalJournalRepository) UpdateDocumentPageOCRText(ctx context.Cont
 	return err
 }
 
-func (r *GeologicalJournalRepository) UpdateDocumentPageTableResult(ctx context.Context, pageID string, result *model.GeologicalJournalOutput) error {
+func (r *GeologicalJournalRepository) UpdateDocumentPageTableResult(ctx context.Context, pageID string, result *model.GeologicalJournalDocumentTableResult) error {
 	raw, err := json.Marshal(result)
 	if err != nil {
 		return err

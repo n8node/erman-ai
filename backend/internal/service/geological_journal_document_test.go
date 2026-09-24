@@ -18,5 +18,5 @@ func TestParseDocumentLLMTableResult(t *testing.T) {
 	result, ok := parseDocumentLLMTableResult(content)
 	require.True(t, ok)
 	require.Len(t, result.Rows, 1)
-	require.Equal(t, "сланец", result.Rows[0].RockDescription)
+	require.Equal(t, "сланец", result.Rows[0]["rock_description"])
 }

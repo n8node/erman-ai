@@ -100,7 +100,7 @@ function displayLlmResults(items: GeologicalJournalDocumentLLMResult[], detail: 
     const rows = storedRows.length > 0 ? storedRows : Array.isArray(rawResponse.rows)
       ? rawResponse.rows.filter((row): row is Record<string, unknown> => Boolean(row && typeof row === "object"))
       : [];
-    const columns = Array.isArray(rawResponse.columns)
+    const columns = page?.table_result?.columns?.length ? page.table_result.columns : Array.isArray(rawResponse.columns)
       ? rawResponse.columns.filter((column): column is string => typeof column === "string" && column.trim().length > 0)
       : tableFields(rows);
     return {
@@ -283,11 +283,11 @@ export function GeologicalJournalDocumentsWorkspace() {
     }
   }
 
-  async function savePageResult(rows: GeologicalJournalRow[], ocrText: string) {
+  async function savePageResult(rows: GeologicalJournalRow[], ocrText: string, columns: string[] = []) {
     if (!active || !editorPage) return;
     setBusy(true); setError("");
     try {
-      await saveGeologicalJournalDocumentPageResult(active.document.id, editorPage.id, rows, ocrText);
+      await saveGeologicalJournalDocumentPageResult(active.document.id, editorPage.id, rows, ocrText, columns);
       const detail = await loadActive(active.document.id);
       const refreshed = detail?.pages.find((page) => page.id === editorPage.id);
       if (refreshed) setEditorPage(refreshed);

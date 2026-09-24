@@ -61,24 +61,29 @@ type GeologicalJournalDocument struct {
 }
 
 type GeologicalJournalDocumentPage struct {
-	ID                    string                              `json:"id"`
-	DocumentID            string                              `json:"document_id"`
-	PageNumber            int                                 `json:"page_number"`
-	Status                GeologicalJournalDocumentPageStatus `json:"status"`
-	OCRText               string                              `json:"ocr_text,omitempty"`
-	TableResult           *GeologicalJournalOutput            `json:"table_result,omitempty"`
-	Analysis              json.RawMessage                     `json:"analysis,omitempty"`
-	ContentType           string                              `json:"content_type,omitempty"`
-	OrientationDegrees    int                                 `json:"orientation_degrees"`
-	OrientationConfidence float64                             `json:"orientation_confidence"`
-	TableCount            int                                 `json:"table_count"`
-	TextCharCount         int                                 `json:"text_char_count"`
-	ErrorMsg              *string                             `json:"error_msg,omitempty"`
-	OriginalAssetPath     string                              `json:"-"`
-	OrientedAssetPath     string                              `json:"-"`
-	PreprocessedAssetPath string                              `json:"-"`
-	CreatedAt             time.Time                           `json:"created_at"`
-	UpdatedAt             time.Time                           `json:"updated_at"`
+	ID                    string                                `json:"id"`
+	DocumentID            string                                `json:"document_id"`
+	PageNumber            int                                   `json:"page_number"`
+	Status                GeologicalJournalDocumentPageStatus   `json:"status"`
+	OCRText               string                                `json:"ocr_text,omitempty"`
+	TableResult           *GeologicalJournalDocumentTableResult `json:"table_result,omitempty"`
+	Analysis              json.RawMessage                       `json:"analysis,omitempty"`
+	ContentType           string                                `json:"content_type,omitempty"`
+	OrientationDegrees    int                                   `json:"orientation_degrees"`
+	OrientationConfidence float64                               `json:"orientation_confidence"`
+	TableCount            int                                   `json:"table_count"`
+	TextCharCount         int                                   `json:"text_char_count"`
+	ErrorMsg              *string                               `json:"error_msg,omitempty"`
+	OriginalAssetPath     string                                `json:"-"`
+	OrientedAssetPath     string                                `json:"-"`
+	PreprocessedAssetPath string                                `json:"-"`
+	CreatedAt             time.Time                             `json:"created_at"`
+	UpdatedAt             time.Time                             `json:"updated_at"`
+}
+
+type GeologicalJournalDocumentTableResult struct {
+	Columns []string                 `json:"columns"`
+	Rows    []map[string]interface{} `json:"rows"`
 }
 
 type GeologicalJournalDocumentDetail struct {

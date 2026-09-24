@@ -37,6 +37,11 @@ export type GeologicalJournalOutput = {
   rows: GeologicalJournalRow[];
 };
 
+export type GeologicalJournalDocumentTableResult = {
+  columns: string[];
+  rows: Array<Record<string, unknown>>;
+};
+
 export type GeologicalJournalPreprocessing = {
   applied: boolean;
   used_for_ocr: boolean;
@@ -176,7 +181,7 @@ export type GeologicalJournalDocumentPage = {
   page_number: number;
   status: string;
   ocr_text?: string;
-  table_result?: GeologicalJournalOutput | null;
+  table_result?: GeologicalJournalDocumentTableResult | null;
   analysis?: Record<string, unknown>;
   content_type?: string;
   orientation_degrees: number;
@@ -429,11 +434,12 @@ export function saveGeologicalJournalDocumentPageResult(
   documentId: string,
   pageId: string,
   rows: GeologicalJournalRow[],
-  ocrText: string
+  ocrText: string,
+  columns: string[] = []
 ) {
   return apiFetch<GeologicalJournalOutput>(
     `/tools/geological-journal/documents/${documentId}/pages/${pageId}/result`,
-    { method: "PUT", body: JSON.stringify({ rows, ocr_text: ocrText }) }
+    { method: "PUT", body: JSON.stringify({ rows, ocr_text: ocrText, columns }) }
   );
 }
 

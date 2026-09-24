@@ -61,7 +61,7 @@ type Props = {
   imageUrl: string;
   busy?: boolean;
   onClose: () => void;
-  onSave: (rows: GeologicalJournalRow[], ocrText: string) => Promise<void>;
+  onSave: (rows: GeologicalJournalRow[], ocrText: string, columns: string[]) => Promise<void>;
   onReprocess: () => Promise<void>;
 };
 
@@ -79,16 +79,17 @@ export function GeologicalJournalDocumentPageModal({
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<"table" | "ocr">("table");
+  const dynamicColumns = page?.table_result?.columns ?? [];
 
   useEffect(() => {
-    setRows(page?.table_result?.rows ?? []);
+    setRows((page?.table_result?.rows ?? []) as GeologicalJournalRow[]);
     setOcrText(page?.ocr_text ?? "");
     setActiveTab("table");
   }, [page]);
 
   if (!page) return null;
 
-  const fields = fieldsForRows(rows);
+  const fields = (dynamicColumns.length > 0 ? dynamicColumns : fieldsForRows(rows)) as Array<keyof GeologicalJournalRow>;
 
   function updateCell(index: number, key: keyof GeologicalJournalRow, value: string) {
     setRows((current) => current.map((row, rowIndex) => {
@@ -101,7 +102,7 @@ export function GeologicalJournalDocumentPageModal({
 
   async function save() {
     setSaving(true);
-    try { await onSave(rows, ocrText); } finally { setSaving(false); }
+    try { await onSave(rows, ocrText, fields.map(String)); } finally { setSaving(false); }
   }
 
   async function reprocess() {
