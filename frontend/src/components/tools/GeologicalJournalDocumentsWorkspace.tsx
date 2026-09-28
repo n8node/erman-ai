@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, LoaderCircle, Play, Upload, Users, RefreshCw, Trash2, X, Eye, ZoomIn, ZoomOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GeologicalJournalDocumentPageModal } from "./GeologicalJournalDocumentPageModal";
 import {
@@ -123,6 +124,7 @@ function formatTableValue(value: unknown) {
 }
 
 export function GeologicalJournalDocumentsWorkspace() {
+  const t = useTranslations("geologicalJournalDocuments");
   const [documents, setDocuments] = useState<GeologicalJournalDocument[]>([]);
   const [active, setActive] = useState<GeologicalJournalDocumentDetail | null>(null);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -312,17 +314,17 @@ export function GeologicalJournalDocumentsWorkspace() {
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Геологические документы</h1>
-        <p className="mt-1 text-sm text-text2">Кнопка запускает только быстрый предварительный анализ страниц. Глубокое распознавание запускается только для выбранных страниц.</p>
+        <h1 className="text-xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-sm text-text2">{t("subtitle")}</p>
       </header>
       {error && <div role="alert" className="rounded-lg border border-red-200 bg-error-bg px-3 py-2 text-sm text-error">{error}</div>}
-      {llmProcessing && <div role="status" className="flex items-center gap-2 rounded-lg border border-ai/30 bg-ai/5 px-3 py-2 text-sm text-ai"><LoaderCircle size={16} className="animate-spin" /> Обрабатываются выбранные страницы: {selectedPages.length} стр. Ожидайте…</div>}
-      {llmReady && !llmProcessing && <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success-bg px-3 py-2 text-sm text-success"><span>Распознавание готово для {selectedPages.length} стр.</span><button type="button" onClick={() => setLlmModalOpen(true)} className="font-medium underline underline-offset-2">Открыть результат</button></div>}
+      {llmProcessing && <div role="status" className="flex items-center gap-2 rounded-lg border border-ai/30 bg-ai/5 px-3 py-2 text-sm text-ai"><LoaderCircle size={16} className="animate-spin" /> {t("processing", { count: selectedPages.length })}</div>}
+      {llmReady && !llmProcessing && <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success-bg px-3 py-2 text-sm text-success"><span>{t("ready", { count: selectedPages.length })}</span><button type="button" onClick={() => setLlmModalOpen(true)} className="font-medium underline underline-offset-2">{t("openResult")}</button></div>}
       <section className="rounded-xl border border-border bg-bg p-4">
         <label className="flex min-h-[130px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border2 bg-bg2/40 text-center hover:border-accent">
           <Upload size={22} className="text-text2" />
-          <span className="mt-2 text-sm font-medium">Загрузить PDF-документ</span>
-          <span className="mt-1 text-xs text-text3">До 250 МБ. После загрузки нажмите «Предварительный анализ».</span>
+          <span className="mt-2 text-sm font-medium">{t("uploadPdf")}</span>
+          <span className="mt-1 text-xs text-text3">{t("uploadHint")}</span>
           <input className="hidden" type="file" accept="application/pdf" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} />
         </label>
         {uploadProgress !== null && <div className="mt-4 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between text-xs"><span>Загрузка PDF</span><span>{uploadProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><button type="button" onClick={() => uploadAbort?.()} className="mt-2 inline-flex items-center gap-1 text-xs text-text3 hover:text-error"><X size={13} /> Отменить загрузку</button></div>}

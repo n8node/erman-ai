@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, LoaderCircle, Save, Sparkles, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { GeologicalJournalDocumentDetail, GeologicalJournalRow } from "@/lib/api-geological-journal";
 import {
@@ -74,6 +75,7 @@ export function GeologicalJournalDocumentPageModal({
   onSave,
   onReprocess,
 }: Props) {
+  const t = useTranslations("geologicalJournalEditorModal");
   const [rows, setRows] = useState<GeologicalJournalRow[]>([]);
   const [ocrText, setOcrText] = useState("");
   const [saving, setSaving] = useState(false);
@@ -106,7 +108,7 @@ export function GeologicalJournalDocumentPageModal({
   }
 
   async function reprocess() {
-    if (!window.confirm("Повторное распознавание заменит текущий результат в редакторе. Продолжить?")) return;
+    if (!window.confirm(t("reprocessConfirm"))) return;
     setProcessing(true);
     try { await onReprocess(); } finally { setProcessing(false); }
   }
@@ -122,22 +124,22 @@ export function GeologicalJournalDocumentPageModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`Редактор страницы ${page.page_number}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={t("pageEditor", { page: page.page_number })}>
       <div className="flex max-h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-xl border border-border bg-bg shadow-2xl">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div>
-            <h2 className="text-base font-semibold">Страница {page.page_number}</h2>
+            <h2 className="text-base font-semibold">{t("page", { page: page.page_number })}</h2>
             <p className="mt-0.5 text-xs text-text3">{page.content_type || "Страница"} · поворот {page.orientation_degrees}° · уверенность {Math.round(page.orientation_confidence * 100)}%</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void reprocess()} disabled={processing || saving || busy} className="inline-flex items-center gap-1.5 rounded-lg border border-ai/40 px-2.5 py-2 text-xs font-medium text-ai hover:bg-ai/10 disabled:opacity-40"><Sparkles size={14} />{processing ? "Распознавание…" : "Распознать заново"}</button>
-            <button type="button" onClick={() => void save()} disabled={saving || processing || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-text px-2.5 py-2 text-xs font-medium text-white disabled:opacity-40"><Save size={14} />{saving ? "Сохранение…" : "Сохранить"}</button>
+            <button type="button" onClick={() => void reprocess()} disabled={processing || saving || busy} className="inline-flex items-center gap-1.5 rounded-lg border border-ai/40 px-2.5 py-2 text-xs font-medium text-ai hover:bg-ai/10 disabled:opacity-40"><Sparkles size={14} />{processing ? t("recognizing") : t("recognizeAgain")}</button>
+            <button type="button" onClick={() => void save()} disabled={saving || processing || busy} className="inline-flex items-center gap-1.5 rounded-lg bg-text px-2.5 py-2 text-xs font-medium text-white disabled:opacity-40"><Save size={14} />{saving ? t("saving") : t("save")}</button>
             <button type="button" onClick={onClose} className="rounded p-2 text-text3 hover:bg-bg2" aria-label="Закрыть"><X size={18} /></button>
           </div>
         </header>
         <div className="grid min-h-0 flex-1 gap-4 overflow-auto p-4 lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.4fr)]">
           <section className="min-h-[260px] rounded-lg border border-border2 bg-bg2 p-3">
-            <h3 className="text-sm font-medium">Изображение страницы</h3>
+            <h3 className="text-sm font-medium">{t("pageImage")}</h3>
             <div className="mt-3 max-h-[calc(94vh-170px)] overflow-auto rounded border border-border bg-white p-2"><img src={imageUrl} alt={`Страница ${page.page_number}`} className="h-auto w-full" /></div>
           </section>
           <section className="min-w-0 rounded-lg border border-border2">

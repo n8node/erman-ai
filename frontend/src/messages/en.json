@@ -2422,6 +2422,19 @@
       "delete": "Could not delete the page"
     }
   },
+  "geologicalJournalDocuments": {
+    "title": "Geological documents",
+    "subtitle": "The button starts only a quick preliminary page analysis. Deep recognition runs only for selected pages.",
+    "processing": "Processing selected pages: {count}. Please wait…",
+    "ready": "Recognition is ready for {count} pages.",
+    "openResult": "Open result",
+    "uploadPdf": "Upload PDF document",
+    "uploadHint": "Up to 250 MB. After uploading, click “Preliminary analysis”."
+  },
+  "geologicalJournalEditorModal": {
+    "reprocessConfirm": "Re-recognition will replace the current result in the editor. Continue?",
+    "pageEditor": "Page editor {page}", "page": "Page {page}", "recognizing": "Recognizing…", "recognizeAgain": "Recognize again", "saving": "Saving…", "save": "Save", "close": "Close", "pageImage": "Page image"
+  },
   "audioTranscription": {
     "title": "Audio transcription",
     "subtitle": "Upload an audio file — the service will transcribe speech and prepare a TXT download.",
