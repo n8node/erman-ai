@@ -196,7 +196,21 @@
       "telegram": "Telegram",
       "max": "MAX",
       "yandexMetrika": "Yandex Metrika",
-      "publicPages": "Public pages"
+      "publicPages": "Pages publiques",
+      "geologicalJournal": "Journal géologique"
+    },
+    "geologicalJournal": {
+      "title": "Journal géologique", "subtitle": "Configurer la reconnaissance, l’accès des utilisateurs et la galerie d’exemples", "loading": "Chargement…",
+      "tabs": { "settings": "Paramètres de reconnaissance", "access": "Accès", "examples": "Exemples" },
+      "settings": {
+        "providerSection": "Fournisseur", "providerHint": "Les clés API sont configurées dans les paramètres AI Strategy LLM. Sélectionnez ici le fournisseur qui structure le texte OCR en JSON.", "providers": { "openrouter": "OpenRouter", "deepseek": "DeepSeek", "yandex": "Yandex" },
+        "modelsSection": "Modèles et génération", "modelsHint": "Après Yandex Vision OCR, le texte est envoyé au modèle sélectionné. Un modèle de vision n’est pas requis.", "openrouterModel": "Modèle OpenRouter", "deepseekModel": "Modèle DeepSeek", "yandexModel": "Modèle Yandex", "visionModel": "Modèle de vision pour les images", "refreshModels": "Actualiser la liste", "refreshingModels": "Actualisation…", "modelsLoaded": "Modèles chargés : {count}",
+        "deepseekTextHint": "DeepSeek sert uniquement à structurer le texte OCR en JSON. La reconnaissance d’image est effectuée par Yandex Vision.", "deepseekVisionHint": "Le modèle DeepSeek sélectionné doit prendre en charge les images. Les modèles texte deepseek-chat et deepseek-reasoner ne reconnaissent pas une page de journal.", "ocrSection": "Yandex Vision OCR", "ocrHint": "La clé API et l’ID du dossier proviennent des paramètres AI Strategy LLM. OCR est une API gérée par Yandex Cloud.", "ocrManagedHint": "handwritten / table / page sont des paramètres de l’API Vision OCR, pas des modèles gpt://. Le compte de service nécessite le rôle ai.vision.user.",
+        "ocrModel": "Modèle OCR", "testOCR": "Tester Vision OCR", "testingOCR": "Test en cours…", "ocrTestOk": "Vision OCR est accessible", "ocrModels": { "handwritten": "handwritten — journaux manuscrits", "table": "table — formulaires tabulaires", "page": "page — pages imprimées" }, "temperature": "Température", "maxTokens": "Nombre maximal de tokens", "activeModel": "Modèle actif", "promptSection": "Prompt système de reconnaissance", "promptHint": "Prompt de l’étape LLM : l’entrée est du texte OCR, pas une image. N’utilisez pas de formulation comme \"from an image\".", "save": "Enregistrer les paramètres", "saving": "Enregistrement…", "saved": "Paramètres de reconnaissance enregistrés"
+      },
+      "access": { "title": "Accès des utilisateurs", "hint": "Activez l’outil pour des utilisateurs individuels.", "empty": "Aucun utilisateur disponible.", "email": "E-mail", "role": "Rôle", "permission": "Accès autorisé" },
+      "examples": { "addTitle": "Ajouter un exemple", "addHint": "Les exemples publiés apparaissent dans la galerie utilisateur.", "chooseImage": "Choisir une image", "formats": "JPEG, PNG, WebP ou GIF · 10 Mo maximum", "titleField": "Titre", "descriptionField": "Description", "orderField": "Ordre de tri", "published": "Publié", "add": "Ajouter l’exemple", "uploading": "Téléversement…", "created": "Exemple ajouté", "saved": "Exemple enregistré", "save": "Enregistrer", "delete": "Supprimer", "deleteConfirm": "Supprimer l’exemple « {title} » ?", "empty": "Aucun exemple pour le moment." },
+      "errors": { "load": "Impossible de charger le journal géologique", "save": "Impossible d’enregistrer les paramètres", "access": "Impossible de mettre à jour l’accès", "type": "Choisissez une image JPEG, PNG, WebP ou GIF.", "size": "L’image ne doit pas dépasser 10 Mo.", "exampleUpload": "Impossible de téléverser l’exemple", "exampleSave": "Impossible d’enregistrer l’exemple", "exampleDelete": "Impossible de supprimer l’exemple", "models": "Impossible de charger la liste des modèles", "ocrTest": "Le test Vision OCR a échoué" }
     },
     "users": {
       "title": "Utilisateurs",

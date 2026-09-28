@@ -196,7 +196,38 @@
       "max": "MAX",
       "yandexMetrika": "Yandex Metrika",
       "translations": "Translations",
-      "publicPages": "Public pages"
+      "publicPages": "Public pages",
+      "geologicalJournal": "Geologisches Journal"
+    },
+    "geologicalJournal": {
+      "title": "Geologisches Journal",
+      "subtitle": "Erkennung, Benutzerzugriff und Beispielgalerie konfigurieren",
+      "loading": "Wird geladen…",
+      "tabs": { "settings": "Erkennungseinstellungen", "access": "Zugriff", "examples": "Beispiele" },
+      "settings": {
+        "providerSection": "Anbieter",
+        "providerHint": "API-Schlüssel werden in den Einstellungen für AI Strategy LLM konfiguriert. Hier wird der Anbieter für die Strukturierung des OCR-Texts in JSON ausgewählt.",
+        "providers": { "openrouter": "OpenRouter", "deepseek": "DeepSeek", "yandex": "Yandex" },
+        "modelsSection": "Modelle und Generierung",
+        "modelsHint": "Nach Yandex Vision OCR wird der Seitentext an das ausgewählte Textmodell gesendet. Ein Vision-Modell ist nicht erforderlich.",
+        "openrouterModel": "OpenRouter-Modell", "deepseekModel": "DeepSeek-Modell", "yandexModel": "Yandex-Modell", "visionModel": "Vision-Modell für Bilder",
+        "refreshModels": "Liste aktualisieren", "refreshingModels": "Wird aktualisiert…", "modelsLoaded": "Geladene Modelle: {count}",
+        "deepseekTextHint": "DeepSeek wird nur verwendet, um OCR-Text in JSON zu strukturieren. Die Bilderkennung übernimmt Yandex Vision.",
+        "deepseekVisionHint": "Das ausgewählte DeepSeek-Modell muss Bildeingaben unterstützen. Textmodelle wie deepseek-chat und deepseek-reasoner können keine Journal-Seite erkennen.",
+        "ocrSection": "Yandex Vision OCR", "ocrHint": "API-Schlüssel und Ordner-ID stammen aus den Einstellungen für AI Strategy LLM. OCR ist eine verwaltete Yandex-Cloud-API und wird nicht separat bereitgestellt.",
+        "ocrManagedHint": "handwritten / table / page sind Parameter der Vision-OCR-API, keine gpt://-Modelle. Das Dienstkonto benötigt die Rolle ai.vision.user.",
+        "ocrModel": "OCR-Modell", "testOCR": "Vision OCR testen", "testingOCR": "Wird getestet…", "ocrTestOk": "Vision OCR ist erreichbar",
+        "ocrModels": { "handwritten": "handwritten — handschriftliche Journale", "table": "table — Tabellenformulare", "page": "page — gedruckte Seiten" },
+        "temperature": "Temperatur", "maxTokens": "Maximale Tokenzahl", "activeModel": "Aktives Modell", "promptSection": "System-Prompt für die Erkennung",
+        "promptHint": "Prompt für den LLM-Schritt: Eingabe ist OCR-Text, kein Bild. Verwenden Sie keine Formulierungen wie \"from an image\".",
+        "save": "Einstellungen speichern", "saving": "Wird gespeichert…", "saved": "Erkennungseinstellungen gespeichert"
+      },
+      "access": { "title": "Benutzerzugriff", "hint": "Aktivieren Sie das Tool für einzelne Benutzer.", "empty": "Keine Benutzer verfügbar.", "email": "E-Mail", "role": "Rolle", "permission": "Zugriff vorhanden" },
+      "examples": {
+        "addTitle": "Beispiel hinzufügen", "addHint": "Veröffentlichte Beispiele erscheinen in der Benutzergalerie.", "chooseImage": "Bild auswählen", "formats": "JPEG, PNG, WebP oder GIF · bis zu 10 MB",
+        "titleField": "Titel", "descriptionField": "Beschreibung", "orderField": "Sortierreihenfolge", "published": "Veröffentlicht", "add": "Beispiel hinzufügen", "uploading": "Wird hochgeladen…", "created": "Beispiel hinzugefügt", "saved": "Beispiel gespeichert", "save": "Speichern", "delete": "Löschen", "deleteConfirm": "Beispiel „{title}“ löschen?", "empty": "Noch keine Beispiele."
+      },
+      "errors": { "load": "Geologisches Journal konnte nicht geladen werden", "save": "Einstellungen konnten nicht gespeichert werden", "access": "Zugriff konnte nicht aktualisiert werden", "type": "Wählen Sie ein JPEG-, PNG-, WebP- oder GIF-Bild.", "size": "Das Bild darf 10 MB nicht überschreiten.", "exampleUpload": "Beispiel konnte nicht hochgeladen werden", "exampleSave": "Beispiel konnte nicht gespeichert werden", "exampleDelete": "Beispiel konnte nicht gelöscht werden", "models": "Modellliste konnte nicht geladen werden", "ocrTest": "Vision-OCR-Test fehlgeschlagen" }
     },
     "users": {
       "title": "Benutzer",

@@ -196,7 +196,24 @@
       "telegram": "Telegram",
       "max": "MAX",
       "yandexMetrika": "Yandex Metrika",
-      "publicPages": "Public pages"
+      "publicPages": "Páginas públicas",
+      "geologicalJournal": "Diario geológico"
+    },
+    "geologicalJournal": {
+      "title": "Diario geológico", "subtitle": "Configure el reconocimiento, el acceso de usuarios y la galería de ejemplos", "loading": "Cargando…",
+      "tabs": { "settings": "Configuración del reconocimiento", "access": "Acceso", "examples": "Ejemplos" },
+      "settings": {
+        "providerSection": "Proveedor", "providerHint": "Las claves API se configuran en los ajustes de AI Strategy LLM. Aquí se selecciona el proveedor para estructurar el texto OCR en JSON.",
+        "providers": { "openrouter": "OpenRouter", "deepseek": "DeepSeek", "yandex": "Yandex" }, "modelsSection": "Modelos y generación", "modelsHint": "Después de Yandex Vision OCR, el texto se envía al modelo seleccionado. No se requiere un modelo de visión.",
+        "openrouterModel": "Modelo de OpenRouter", "deepseekModel": "Modelo de DeepSeek", "yandexModel": "Modelo de Yandex", "visionModel": "Modelo de visión para imágenes", "refreshModels": "Actualizar lista", "refreshingModels": "Actualizando…", "modelsLoaded": "Modelos cargados: {count}",
+        "deepseekTextHint": "DeepSeek solo estructura el texto OCR en JSON. Yandex Vision realiza el reconocimiento de imágenes.", "deepseekVisionHint": "El modelo DeepSeek seleccionado debe admitir imágenes. Los modelos de texto deepseek-chat y deepseek-reasoner no reconocen páginas del diario.",
+        "ocrSection": "Yandex Vision OCR", "ocrHint": "La clave API y el ID de carpeta proceden de AI Strategy LLM. OCR es una API gestionada de Yandex Cloud.", "ocrManagedHint": "handwritten / table / page son parámetros de la API Vision OCR, no modelos gpt://. La cuenta de servicio necesita el rol ai.vision.user.",
+        "ocrModel": "Modelo OCR", "testOCR": "Probar Vision OCR", "testingOCR": "Probando…", "ocrTestOk": "Vision OCR está disponible", "ocrModels": { "handwritten": "handwritten — diarios manuscritos", "table": "table — formularios tabulares", "page": "page — páginas impresas" },
+        "temperature": "Temperatura", "maxTokens": "Máximo de tokens", "activeModel": "Modelo activo", "promptSection": "Prompt del sistema de reconocimiento", "promptHint": "Prompt de la etapa LLM: la entrada es texto OCR, no una imagen. No use expresiones como \"from an image\".", "save": "Guardar configuración", "saving": "Guardando…", "saved": "Configuración de reconocimiento guardada"
+      },
+      "access": { "title": "Acceso de usuarios", "hint": "Active la herramienta para usuarios individuales.", "empty": "No hay usuarios disponibles.", "email": "Correo electrónico", "role": "Rol", "permission": "Tiene acceso" },
+      "examples": { "addTitle": "Añadir ejemplo", "addHint": "Los ejemplos publicados aparecen en la galería de usuarios.", "chooseImage": "Elegir imagen", "formats": "JPEG, PNG, WebP o GIF · hasta 10 MB", "titleField": "Título", "descriptionField": "Descripción", "orderField": "Orden", "published": "Publicado", "add": "Añadir ejemplo", "uploading": "Subiendo…", "created": "Ejemplo añadido", "saved": "Ejemplo guardado", "save": "Guardar", "delete": "Eliminar", "deleteConfirm": "¿Eliminar el ejemplo «{title}»?", "empty": "Aún no hay ejemplos." },
+      "errors": { "load": "No se pudo cargar el diario geológico", "save": "No se pudo guardar la configuración", "access": "No se pudo actualizar el acceso", "type": "Elija una imagen JPEG, PNG, WebP o GIF.", "size": "La imagen no debe superar los 10 MB.", "exampleUpload": "No se pudo subir el ejemplo", "exampleSave": "No se pudo guardar el ejemplo", "exampleDelete": "No se pudo eliminar el ejemplo", "models": "No se pudo cargar la lista de modelos", "ocrTest": "La prueba de Vision OCR falló" }
     },
     "users": {
       "title": "Usuarios",

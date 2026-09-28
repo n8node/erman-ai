@@ -196,7 +196,21 @@
       "telegram": "Telegram",
       "max": "MAX",
       "yandexMetrika": "Yandex Metrika",
-      "publicPages": "Public pages"
+      "publicPages": "公开页面",
+      "geologicalJournal": "地质日志"
+    },
+    "geologicalJournal": {
+      "title": "地质日志", "subtitle": "配置识别、用户访问权限和示例图库", "loading": "加载中…",
+      "tabs": { "settings": "识别设置", "access": "访问权限", "examples": "示例" },
+      "settings": {
+        "providerSection": "服务提供商", "providerHint": "API 密钥在 AI Strategy LLM 设置中配置。此处选择将 OCR 文本结构化为 JSON 的服务提供商。", "providers": { "openrouter": "OpenRouter", "deepseek": "DeepSeek", "yandex": "Yandex" },
+        "modelsSection": "模型与生成", "modelsHint": "Yandex Vision OCR 完成后，页面文本会发送给所选文本模型。不需要视觉模型。", "openrouterModel": "OpenRouter 模型", "deepseekModel": "DeepSeek 模型", "yandexModel": "Yandex 模型", "visionModel": "图像视觉模型", "refreshModels": "刷新列表", "refreshingModels": "刷新中…", "modelsLoaded": "已加载模型：{count}",
+        "deepseekTextHint": "DeepSeek 仅用于将 OCR 文本结构化为 JSON，图像识别由 Yandex Vision 完成。", "deepseekVisionHint": "所选 DeepSeek 模型必须支持图像输入。纯文本模型 deepseek-chat 和 deepseek-reasoner 无法识别日志页面。", "ocrSection": "Yandex Vision OCR", "ocrHint": "API 密钥和文件夹 ID 来自 AI Strategy LLM 设置。OCR 是由 Yandex Cloud 托管的 API。", "ocrManagedHint": "handwritten / table / page 是 Vision OCR API 参数，而不是 gpt:// 模型。服务账户需要 ai.vision.user 角色。",
+        "ocrModel": "OCR 模型", "testOCR": "测试 Vision OCR", "testingOCR": "测试中…", "ocrTestOk": "Vision OCR 可用", "ocrModels": { "handwritten": "handwritten — 手写日志", "table": "table — 表格表单", "page": "page — 印刷页面" }, "temperature": "温度", "maxTokens": "最大令牌数", "activeModel": "当前模型", "promptSection": "识别系统提示词", "promptHint": "LLM 阶段提示词：输入是 OCR 文本，而不是图像。请勿使用 \"from an image\" 等措辞。", "save": "保存设置", "saving": "保存中…", "saved": "识别设置已保存"
+      },
+      "access": { "title": "用户访问权限", "hint": "为单个用户启用此工具。", "empty": "没有可用用户。", "email": "电子邮箱", "role": "角色", "permission": "拥有访问权限" },
+      "examples": { "addTitle": "添加示例", "addHint": "已发布的示例会显示在用户图库中。", "chooseImage": "选择图像", "formats": "JPEG、PNG、WebP 或 GIF · 最大 10 MB", "titleField": "标题", "descriptionField": "描述", "orderField": "排序", "published": "已发布", "add": "添加示例", "uploading": "上传中…", "created": "示例已添加", "saved": "示例已保存", "save": "保存", "delete": "删除", "deleteConfirm": "删除示例“{title}”？", "empty": "暂无示例。" },
+      "errors": { "load": "无法加载地质日志", "save": "无法保存设置", "access": "无法更新访问权限", "type": "请选择 JPEG、PNG、WebP 或 GIF 图像。", "size": "图像大小不能超过 10 MB。", "exampleUpload": "无法上传示例", "exampleSave": "无法保存示例", "exampleDelete": "无法删除示例", "models": "无法加载模型列表", "ocrTest": "Vision OCR 测试失败" }
     },
     "users": {
       "title": "用户",
