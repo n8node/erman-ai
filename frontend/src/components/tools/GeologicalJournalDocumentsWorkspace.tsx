@@ -26,8 +26,9 @@ function formatBytes(value: number) {
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function statusLabel(status: string) {
-  return ({ uploaded: "Загружен", preview_ready: "Предварительный анализ готов", queued: "В очереди", processing: "Обрабатывается", partially_done: "Частично готов", done: "Готово", error: "Ошибка" } as Record<string, string>)[status] ?? status;
+function statusLabel(status: string, t: (key: string) => string) {
+  const key = ({ uploaded: "uploaded", preview_ready: "previewReady", queued: "queued", processing: "processing", partially_done: "partiallyDone", done: "done", error: "error" } as Record<string, string>)[status];
+  return key ? t(`status.${key}`) : status;
 }
 
 type LlmDisplayResult = {
@@ -125,6 +126,7 @@ function formatTableValue(value: unknown) {
 
 export function GeologicalJournalDocumentsWorkspace() {
   const t = useTranslations("geologicalJournalDocuments");
+  const statusText = (status: string) => statusLabel(status, t);
   const [documents, setDocuments] = useState<GeologicalJournalDocument[]>([]);
   const [active, setActive] = useState<GeologicalJournalDocumentDetail | null>(null);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -153,7 +155,7 @@ export function GeologicalJournalDocumentsWorkspace() {
   const loadDocuments = useCallback(async () => {
     setLoading(true);
     try { setDocuments((await listGeologicalJournalDocuments()).items ?? []); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось загрузить документы"); }
+    catch (err) { setError(err instanceof Error ? err.message : t("errors.loadDocuments")); }
     finally { setLoading(false); }
   }, []);
 
@@ -163,7 +165,7 @@ export function GeologicalJournalDocumentsWorkspace() {
       setActive(detail);
       return detail;
     }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось загрузить документ"); }
+    catch (err) { setError(err instanceof Error ? err.message : t("errors.loadDocument")); }
     return null;
   }, []);
 
@@ -186,8 +188,8 @@ export function GeologicalJournalDocumentsWorkspace() {
           stopped = true;
           window.clearInterval(timer);
           setError(err instanceof Error
-            ? `Не удалось обновить статус анализа: ${err.message}`
-            : "Не удалось обновить статус анализа. Проверьте доступность сервера.");
+            ? t("errors.refreshStatusWithMessage", { message: err.message })
+            : t("errors.refreshStatus"));
         }
       }
     }, 3000);
@@ -205,20 +207,20 @@ export function GeologicalJournalDocumentsWorkspace() {
   }, [activePages]);
 
   async function upload(file: File) {
-    if (file.type !== "application/pdf") { setError("Выберите PDF-файл"); return; }
+    if (file.type !== "application/pdf") { setError(t("errors.pdfType")); return; }
     setBusy(true); setError(""); setUploadProgress(0);
     const request = uploadGeologicalJournalDocument(file, setUploadProgress);
     setUploadAbort(() => request.abort);
     try { const document = await request.promise; setUploadProgress(100); await loadDocuments(); await loadActive(document.id); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось загрузить PDF"); }
+    catch (err) { setError(err instanceof Error ? err.message : t("errors.uploadPdf")); }
     finally { setBusy(false); setUploadAbort(null); window.setTimeout(() => setUploadProgress(null), 500); }
   }
 
   async function removeDocument(document: GeologicalJournalDocument) {
-    if (!window.confirm(`Удалить документ «${document.original_name}» и всю историю его анализа?`)) return;
+    if (!window.confirm(t("confirmDelete", { name: document.original_name }))) return;
     setBusy(true); setError("");
     try { await deleteGeologicalJournalDocument(document.id); if (active?.document.id === document.id) setActive(null); await loadDocuments(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось удалить документ"); }
+    catch (err) { setError(err instanceof Error ? err.message : t("errors.deleteDocument")); }
     finally { setBusy(false); }
   }
 
@@ -238,8 +240,8 @@ export function GeologicalJournalDocumentsWorkspace() {
         ? { ...current, document: { ...current.document, status: "error" } }
         : current);
       setError(err instanceof DOMException && err.name === "AbortError"
-        ? "Сервер не ответил за 15 секунд. Проверьте состояние backend и повторите попытку."
-        : err instanceof Error ? err.message : "Не удалось запустить предварительный анализ");
+        ? t("errors.analysisTimeout")
+        : err instanceof Error ? err.message : t("errors.startAnalysis"));
     }
     finally { setBusy(false); }
   }
@@ -248,7 +250,7 @@ export function GeologicalJournalDocumentsWorkspace() {
     if (!active) return;
     setBusy(true);
     try { await setGeologicalJournalDocumentSharing(active.document.id, !active.document.is_shared); await loadActive(active.document.id); await loadDocuments(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Не удалось изменить доступ"); }
+    catch (err) { setError(err instanceof Error ? err.message : t("errors.sharing")); }
     finally { setBusy(false); }
   }
 
@@ -265,7 +267,7 @@ export function GeologicalJournalDocumentsWorkspace() {
       setLlmResults(displayLlmResults(response.items ?? [], detail));
       setLlmReady(true);
       setLlmModalOpen(true);
-    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось обработать выбранные страницы"); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("errors.processPages")); }
     finally { setLlmProcessing(false); setBusy(false); }
   }
 
@@ -279,7 +281,7 @@ export function GeologicalJournalDocumentsWorkspace() {
       const response = await chatGeologicalJournalDocument(active.document.id, selectedPages, question);
       setChatMessages((current) => [...current, { role: "assistant", content: response.content, confidence: response.confidence }]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось получить ответ чата");
+      setError(err instanceof Error ? err.message : t("errors.chat"));
     } finally {
       setChatBusy(false);
     }
@@ -293,7 +295,7 @@ export function GeologicalJournalDocumentsWorkspace() {
       const detail = await loadActive(active.document.id);
       const refreshed = detail?.pages.find((page) => page.id === editorPage.id);
       if (refreshed) setEditorPage(refreshed);
-    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось сохранить страницу"); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("errors.savePage")); }
     finally { setBusy(false); }
   }
 
@@ -305,7 +307,7 @@ export function GeologicalJournalDocumentsWorkspace() {
       const detail = await loadActive(active.document.id);
       const refreshed = detail?.pages.find((page) => page.id === editorPage.id);
       if (refreshed) setEditorPage(refreshed);
-    } catch (err) { setError(err instanceof Error ? err.message : "Не удалось распознать страницу заново"); }
+    } catch (err) { setError(err instanceof Error ? err.message : t("errors.reprocess")); }
     finally { setBusy(false); }
   }
 
@@ -327,22 +329,22 @@ export function GeologicalJournalDocumentsWorkspace() {
           <span className="mt-1 text-xs text-text3">{t("uploadHint")}</span>
           <input className="hidden" type="file" accept="application/pdf" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ""; }} />
         </label>
-        {uploadProgress !== null && <div className="mt-4 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between text-xs"><span>Загрузка PDF</span><span>{uploadProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><button type="button" onClick={() => uploadAbort?.()} className="mt-2 inline-flex items-center gap-1 text-xs text-text3 hover:text-error"><X size={13} /> Отменить загрузку</button></div>}
+        {uploadProgress !== null && <div className="mt-4 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between text-xs"><span>{t("uploadProgress")}</span><span>{uploadProgress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${uploadProgress}%` }} /></div><button type="button" onClick={() => uploadAbort?.()} className="mt-2 inline-flex items-center gap-1 text-xs text-text3 hover:text-error"><X size={13} /> {t("cancelUpload")}</button></div>}
       </section>
       <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
         <section className="rounded-xl border border-border bg-bg p-3">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-medium">История документов</h2><button type="button" onClick={() => void loadDocuments()} className="rounded p-1.5 text-text3 hover:bg-bg2"><RefreshCw size={15} /></button></div>
-          {loading ? <LoaderCircle className="animate-spin text-text3" size={18} /> : documents.length === 0 ? <p className="text-xs text-text3">Документов пока нет.</p> : <div className="space-y-2">{documents.map((document) => <div key={document.id} className={`flex items-start gap-1 rounded-lg border p-2 ${active?.document.id === document.id ? "border-accent bg-accent-bg" : "border-border2"}`}><button type="button" onClick={() => { setSelectedPages([]); void loadActive(document.id); }} className="min-w-0 flex-1 p-1 text-left hover:bg-bg2"><div className="flex items-start gap-2"><FileText size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 flex-1 truncate text-xs font-medium">{document.original_name}</span></div><div className="mt-1 text-[11px] text-text3">{statusLabel(document.status)} · {document.page_count || "?"} стр.</div></button><button type="button" aria-label="Удалить документ" onClick={() => void removeDocument(document)} disabled={busy} className="rounded p-1.5 text-text3 hover:bg-error-bg hover:text-error disabled:opacity-40"><Trash2 size={14} /></button></div>)}</div>}
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-medium">{t("historyTitle")}</h2><button type="button" onClick={() => void loadDocuments()} className="rounded p-1.5 text-text3 hover:bg-bg2" aria-label={t("refresh")}><RefreshCw size={15} /></button></div>
+          {loading ? <LoaderCircle className="animate-spin text-text3" size={18} /> : documents.length === 0 ? <p className="text-xs text-text3">{t("noDocuments")}</p> : <div className="space-y-2">{documents.map((document) => <div key={document.id} className={`flex items-start gap-1 rounded-lg border p-2 ${active?.document.id === document.id ? "border-accent bg-accent-bg" : "border-border2"}`}><button type="button" onClick={() => { setSelectedPages([]); void loadActive(document.id); }} className="min-w-0 flex-1 p-1 text-left hover:bg-bg2"><div className="flex items-start gap-2"><FileText size={16} className="mt-0.5 shrink-0" /><span className="min-w-0 flex-1 truncate text-xs font-medium">{document.original_name}</span></div><div className="mt-1 text-[11px] text-text3">{statusText(document.status)} · {document.page_count || "?"} {t("pagesShort")}</div></button><button type="button" aria-label={t("deleteDocument")} onClick={() => void removeDocument(document)} disabled={busy} className="rounded p-1.5 text-text3 hover:bg-error-bg hover:text-error disabled:opacity-40"><Trash2 size={14} /></button></div>)}</div>}
         </section>
         <section className="min-w-0 rounded-xl border border-border bg-bg p-4">
-          {!active ? <div className="flex min-h-[300px] items-center justify-center text-sm text-text3">Выберите документ из истории.</div> : <>
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-base font-semibold">{active.document.original_name}</h2><p className="mt-1 text-xs text-text3">{formatBytes(active.document.size_bytes)} · {statusLabel(active.document.status)}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void startAnalysis()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-text px-3 py-2 text-xs font-medium text-white disabled:opacity-40"><Play size={14} /> {active.document.status === "queued" || active.document.status === "processing" ? "Перезапустить предварительный анализ" : "Предварительный анализ"}</button><button type="button" onClick={() => void toggleSharing()} disabled={busy} className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium ${active.document.is_shared ? "border-success bg-success-bg text-success" : "border-border2 text-text2"}`}><Users size={14} /> {active.document.is_shared ? "Доступно команде журнала" : "Сделать доступным команде"}</button></div></div>
-            <div className="mt-5 rounded-lg bg-bg2 p-3"><div className="flex justify-between text-xs"><span>Прогресс страниц</span><span>{stats.done} / {active.document.page_count} · {progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress}%` }} /></div><div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-text3"><span>Таблицы: {stats.tables}</span><span>Текст: {stats.text}</span><span>Проверка: {stats.review}</span></div></div>
-             <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setSelectedPages(activePages.map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">Выбрать все страницы</button><button type="button" onClick={() => setSelectedPages(activePages.filter((page) => page.content_type === "table" || page.content_type === "mixed").map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">Только таблицы</button><button type="button" onClick={() => void processWithLLM()} disabled={busy || selectedPages.length === 0} className="rounded bg-ai px-2 py-1 text-xs font-medium text-white disabled:opacity-40">Обработать выбранные через LLM</button><span className="self-center text-xs text-text3">Выбрано: {selectedPages.length}</span></div>
+          {!active ? <div className="flex min-h-[300px] items-center justify-center text-sm text-text3">{t("selectDocument")}</div> : <>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-base font-semibold">{active.document.original_name}</h2><p className="mt-1 text-xs text-text3">{formatBytes(active.document.size_bytes)} · {statusText(active.document.status)}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void startAnalysis()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-text px-3 py-2 text-xs font-medium text-white disabled:opacity-40"><Play size={14} /> {t(active.document.status === "queued" || active.document.status === "processing" ? "restartAnalysis" : "preliminaryAnalysis")}</button><button type="button" onClick={() => void toggleSharing()} disabled={busy} className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium ${active.document.is_shared ? "border-success bg-success-bg text-success" : "border-border2 text-text2"}`}><Users size={14} /> {t(active.document.is_shared ? "sharedWithTeam" : "shareWithTeam")}</button></div></div>
+            <div className="mt-5 rounded-lg bg-bg2 p-3"><div className="flex justify-between text-xs"><span>{t("pageProgress")}</span><span>{stats.done} / {active.document.page_count} · {progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-border"><div className="h-full bg-accent transition-[width]" style={{ width: `${progress}%` }} /></div><div className="mt-2 grid grid-cols-3 gap-2 text-[11px] text-text3"><span>{t("tables", { count: stats.tables })}</span><span>{t("text", { count: stats.text })}</span><span>{t("review", { count: stats.review })}</span></div></div>
+             <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setSelectedPages(activePages.map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">{t("selectAllPages")}</button><button type="button" onClick={() => setSelectedPages(activePages.filter((page) => page.content_type === "table" || page.content_type === "mixed").map((page) => page.page_number))} className="rounded border border-border2 px-2 py-1 text-xs">{t("selectTables")}</button><button type="button" onClick={() => void processWithLLM()} disabled={busy || selectedPages.length === 0} className="rounded bg-ai px-2 py-1 text-xs font-medium text-white disabled:opacity-40">{t("processWithLlm")}</button><span className="self-center text-xs text-text3">{t("selected", { count: selectedPages.length })}</span></div>
             <div className={`mt-4 grid gap-4 ${previewPage || ocrPage ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.72fr)]" : "grid-cols-1"}`}>
-              <div className="max-h-[520px] overflow-auto rounded-lg border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="w-10 px-3 py-2">✓</th><th className="px-3 py-2">Страница</th><th className="px-3 py-2">Тип</th><th className="px-3 py-2">Поворот</th><th className="px-3 py-2">Статус</th><th className="px-3 py-2">Уверенность</th><th className="w-20 px-2 py-2" /></tr></thead><tbody>{activePages.map((page) => <tr key={page.id} className={`border-t border-border ${previewPage?.id === page.id || ocrPage?.id === page.id || editorPage?.id === page.id ? "bg-accent-bg" : ""}`}><td className="px-3 py-2"><input type="checkbox" checked={selectedPages.includes(page.page_number)} onChange={(event) => setSelectedPages((current) => event.target.checked ? [...current, page.page_number].sort((a,b) => a-b) : current.filter((number) => number !== page.page_number))} /></td><td className="px-3 py-2 font-medium">{page.page_number}</td><td className="px-3 py-2">{page.content_type || "—"}</td><td className="px-3 py-2">{page.orientation_degrees}°</td><td className="px-3 py-2">{statusLabel(page.status)}</td><td className="px-3 py-2">{Math.round(page.orientation_confidence * 100)}%</td><td className="px-2 py-2"><button type="button" title="Открыть редактор страницы" onClick={() => { setEditorPage(page); setPreviewPage(null); setOcrPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><Eye size={15} /></button><button type="button" title="Показать OCR-текст" onClick={() => { setOcrPage(page); setPreviewPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><FileText size={15} /></button></td></tr>)}</tbody></table></div>
-              {previewPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">Страница {previewPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusLabel(previewPage.status)} · поворот {previewPage.orientation_degrees}°</p></div><button type="button" onClick={() => setPreviewPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть превью"><X size={15} /></button></div><div className="mt-3 flex items-center justify-end gap-1"><button type="button" onClick={() => setPreviewZoom((value) => Math.max(0.5, value - 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomOut size={14} /></button><span className="min-w-12 text-center text-[11px] text-text3">{Math.round(previewZoom * 100)}%</span><button type="button" onClick={() => setPreviewZoom((value) => Math.min(2.5, value + 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomIn size={14} /></button></div><div className="mt-2 max-h-[430px] overflow-auto rounded border border-border bg-white p-2"><img src={previewImageUrl} alt={`Страница ${previewPage.page_number}`} className="h-auto max-w-none" style={{ width: `${previewZoom * 100}%` }} onError={(event) => { const image = event.currentTarget; if (!image.src.endsWith("/assets/preprocessed")) image.src = image.src.replace("/assets/oriented", "/assets/preprocessed"); else if (!image.src.endsWith("/assets/original")) image.src = image.src.replace("/assets/preprocessed", "/assets/original"); }} /></div></aside>}
-              {ocrPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">OCR-текст · страница {ocrPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusLabel(ocrPage.status)} · символов: {ocrPage.text_char_count}</p></div><button type="button" onClick={() => setOcrPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть OCR"><X size={15} /></button></div>{ocrPage.ocr_text ? <pre className="mt-3 max-h-[470px] overflow-auto whitespace-pre-wrap rounded border border-border bg-bg p-3 text-xs leading-5 text-text">{ocrPage.ocr_text}</pre> : <div className="mt-3 rounded border border-border bg-bg p-4 text-xs text-text3">OCR-текст ещё не готов для этой страницы.</div>}</aside>}
+              <div className="max-h-[520px] overflow-auto rounded-lg border border-border2"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-bg2"><tr><th className="w-10 px-3 py-2">✓</th><th className="px-3 py-2">Страница</th><th className="px-3 py-2">Тип</th><th className="px-3 py-2">Поворот</th><th className="px-3 py-2">Статус</th><th className="px-3 py-2">Уверенность</th><th className="w-20 px-2 py-2" /></tr></thead><tbody>{activePages.map((page) => <tr key={page.id} className={`border-t border-border ${previewPage?.id === page.id || ocrPage?.id === page.id || editorPage?.id === page.id ? "bg-accent-bg" : ""}`}><td className="px-3 py-2"><input type="checkbox" checked={selectedPages.includes(page.page_number)} onChange={(event) => setSelectedPages((current) => event.target.checked ? [...current, page.page_number].sort((a,b) => a-b) : current.filter((number) => number !== page.page_number))} /></td><td className="px-3 py-2 font-medium">{page.page_number}</td><td className="px-3 py-2">{page.content_type || "—"}</td><td className="px-3 py-2">{page.orientation_degrees}°</td><td className="px-3 py-2">{statusText(page.status)}</td><td className="px-3 py-2">{Math.round(page.orientation_confidence * 100)}%</td><td className="px-2 py-2"><button type="button" title="Открыть редактор страницы" onClick={() => { setEditorPage(page); setPreviewPage(null); setOcrPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><Eye size={15} /></button><button type="button" title="Показать OCR-текст" onClick={() => { setOcrPage(page); setPreviewPage(null); }} className="rounded p-1.5 text-text3 hover:bg-accent-bg hover:text-accent"><FileText size={15} /></button></td></tr>)}</tbody></table></div>
+              {previewPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">Страница {previewPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusText(previewPage.status)} · поворот {previewPage.orientation_degrees}°</p></div><button type="button" onClick={() => setPreviewPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть превью"><X size={15} /></button></div><div className="mt-3 flex items-center justify-end gap-1"><button type="button" onClick={() => setPreviewZoom((value) => Math.max(0.5, value - 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomOut size={14} /></button><span className="min-w-12 text-center text-[11px] text-text3">{Math.round(previewZoom * 100)}%</span><button type="button" onClick={() => setPreviewZoom((value) => Math.min(2.5, value + 0.25))} className="rounded border border-border2 p-1.5 text-text3 hover:bg-bg"><ZoomIn size={14} /></button></div><div className="mt-2 max-h-[430px] overflow-auto rounded border border-border bg-white p-2"><img src={previewImageUrl} alt={`Страница ${previewPage.page_number}`} className="h-auto max-w-none" style={{ width: `${previewZoom * 100}%` }} onError={(event) => { const image = event.currentTarget; if (!image.src.endsWith("/assets/preprocessed")) image.src = image.src.replace("/assets/oriented", "/assets/preprocessed"); else if (!image.src.endsWith("/assets/original")) image.src = image.src.replace("/assets/preprocessed", "/assets/original"); }} /></div></aside>}
+              {ocrPage && <aside className="min-w-0 rounded-lg border border-border2 bg-bg2 p-3"><div className="flex items-center justify-between gap-2"><div><h3 className="text-sm font-medium">OCR-текст · страница {ocrPage.page_number}</h3><p className="mt-0.5 text-[11px] text-text3">{statusText(ocrPage.status)} · символов: {ocrPage.text_char_count}</p></div><button type="button" onClick={() => setOcrPage(null)} className="rounded p-1.5 text-text3 hover:bg-bg hover:text-text" aria-label="Закрыть OCR"><X size={15} /></button></div>{ocrPage.ocr_text ? <pre className="mt-3 max-h-[470px] overflow-auto whitespace-pre-wrap rounded border border-border bg-bg p-3 text-xs leading-5 text-text">{ocrPage.ocr_text}</pre> : <div className="mt-3 rounded border border-border bg-bg p-4 text-xs text-text3">OCR-текст ещё не готов для этой страницы.</div>}</aside>}
             </div>
             <div className="mt-4 rounded-lg border border-border2 p-3"><div className="flex items-center justify-between"><h3 className="text-sm font-medium">Чат по выбранным страницам</h3><span className="text-xs text-text3">Источники: стр. {selectedPages.join(", ") || "—"}</span></div><div className="mt-3 max-h-56 space-y-2 overflow-auto">{chatMessages.length === 0 ? <p className="text-xs text-text3">Выберите страницы и задайте вопрос по распознанным данным.</p> : chatMessages.map((message, index) => <div key={`${message.role}-${index}`} className={`rounded-lg px-3 py-2 text-sm ${message.role === "user" ? "ml-8 bg-accent-bg" : "mr-8 bg-bg2"}`}><p className="whitespace-pre-wrap">{message.content}</p>{message.confidence && <p className="mt-1 text-[11px] text-text3">Уверенность: {message.confidence}</p>}</div>)}</div><div className="mt-3 flex gap-2"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void askChat(); } }} placeholder="Например: какие запасы меди указаны?" className="min-w-0 flex-1 rounded-lg border border-border2 bg-bg px-3 py-2 text-sm outline-none focus:border-accent" disabled={chatBusy || selectedPages.length === 0} /><button type="button" onClick={() => void askChat()} disabled={chatBusy || selectedPages.length === 0 || !chatInput.trim()} className="rounded-lg bg-text px-3 py-2 text-xs font-medium text-white disabled:opacity-40">{chatBusy ? "Ответ…" : "Спросить"}</button></div></div>
           </>}
