@@ -1,6 +1,8 @@
 import * as XLSX from "xlsx";
 import type { GeologicalJournalRow } from "./api-geological-journal";
 
+export type GeologicalJournalTableRow = Record<string, unknown>;
+
 export type GeologicalJournalExportColumn = {
   key: keyof Pick<
     GeologicalJournalRow,
@@ -35,18 +37,42 @@ const EXPORT_COLUMNS: GeologicalJournalExportColumn[] = [
   { key: "uncertainties", header: "Неопределённости" },
 ];
 
-function cellValue(row: GeologicalJournalRow, key: GeologicalJournalExportColumn["key"]): string | number {
+function cellValue(row: GeologicalJournalTableRow, key: GeologicalJournalExportColumn["key"]): string | number {
   const value = row[key];
   if (key === "uncertainties") return Array.isArray(value) ? value.join("; ") : "";
   return typeof value === "string" || typeof value === "number" ? value : "";
 }
 
-function rowsForExport(rows: GeologicalJournalRow[]) {
+function rowsForLegacyExport(rows: GeologicalJournalRow[]) {
   return rows.map((row, index) => {
     const values: Record<string, string | number> = { "№": index + 1 };
     for (const column of EXPORT_COLUMNS) values[column.header] = cellValue(row, column.key);
     return values;
   });
+}
+
+function exportCellValue(value: unknown): string | number {
+  if (Array.isArray(value)) return value.join("; ");
+  if (typeof value === "string" || typeof value === "number") return value;
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (value && typeof value === "object") return JSON.stringify(value);
+  return "";
+}
+
+function rowsForTableExport(rows: GeologicalJournalTableRow[], columns?: string[]) {
+  const keys = columns?.length ? columns : Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  return {
+    columns: keys,
+    rows: rows.map((row, index) => {
+      const values: Record<string, string | number> = { "№": index + 1 };
+      for (const key of keys) values[key] = exportCellValue(row[key]);
+      return values;
+    }),
+  };
+}
+
+function isDynamicTable(columns?: string[]): columns is string[] {
+  return Boolean(columns?.length);
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -62,9 +88,12 @@ function exportDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function exportGeologicalJournalCSV(rows: GeologicalJournalRow[], filename?: string) {
-  const headers = ["№", ...EXPORT_COLUMNS.map((column) => column.header)];
-  const data = rowsForExport(rows);
+export function exportGeologicalJournalCSV(rows: GeologicalJournalRow[] | GeologicalJournalTableRow[], filename?: string, columns?: string[]) {
+  const table = isDynamicTable(columns)
+    ? rowsForTableExport(rows as GeologicalJournalTableRow[], columns)
+    : { columns: EXPORT_COLUMNS.map((column) => column.header), rows: rowsForLegacyExport(rows as GeologicalJournalRow[]) };
+  const headers = ["№", ...table.columns];
+  const data = table.rows;
   const escape = (value: string | number) => {
     const text = String(value);
     return /[";\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
@@ -76,65 +105,47 @@ export function exportGeologicalJournalCSV(rows: GeologicalJournalRow[], filenam
   downloadBlob(blob, filename ?? `geological-journal-${exportDate()}.csv`);
 }
 
-export function exportGeologicalJournalXLSX(rows: GeologicalJournalRow[], filename?: string) {
-  const worksheet = XLSX.utils.json_to_sheet(rowsForExport(rows), { skipHeader: false });
+export function exportGeologicalJournalXLSX(rows: GeologicalJournalRow[] | GeologicalJournalTableRow[], filename?: string, columns?: string[]) {
+  const table = isDynamicTable(columns)
+    ? rowsForTableExport(rows as GeologicalJournalTableRow[], columns)
+    : { columns: EXPORT_COLUMNS.map((column) => column.header), rows: rowsForLegacyExport(rows as GeologicalJournalRow[]) };
+  const worksheet = XLSX.utils.json_to_sheet(table.rows, { header: ["№", ...table.columns], skipHeader: false });
   worksheet["!freeze"] = { xSplit: 0, ySplit: 1 };
   worksheet["!autofilter"] = { ref: worksheet["!ref"] ?? "A1:M1" };
-  worksheet["!cols"] = [
-    { wch: 5 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 13 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 38 },
-    { wch: 22 },
-    { wch: 16 },
-    { wch: 28 },
-    { wch: 32 },
-  ];
+  worksheet["!cols"] = [{ wch: 5 }, ...table.columns.map((column) => ({ wch: Math.min(Math.max(column.length + 2, 14), 38) }))];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Геологический журнал");
   XLSX.writeFile(workbook, filename ?? `geological-journal-${exportDate()}.xlsx`);
 }
 
-export function exportGeologicalJournalJSON(rows: GeologicalJournalRow[], filename?: string) {
-  const payload = JSON.stringify({ rows }, null, 2);
+export function exportGeologicalJournalJSON(rows: GeologicalJournalRow[] | GeologicalJournalTableRow[], filename?: string, columns?: string[]) {
+  const payload = JSON.stringify(isDynamicTable(columns) ? rowsForTableExport(rows as GeologicalJournalTableRow[], columns) : { rows }, null, 2);
   const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
   downloadBlob(blob, filename ?? `geological-journal-${exportDate()}.json`);
 }
 
-export function exportGeologicalJournalXML(rows: GeologicalJournalRow[], filename?: string) {
-  const escapeXml = (value: string | number | null | undefined) =>
+export function exportGeologicalJournalXML(rows: GeologicalJournalRow[] | GeologicalJournalTableRow[], filename?: string, columns?: string[]) {
+  const escapeXml = (value: unknown) =>
     String(value ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&apos;");
-  const tag = (name: string, value: string | number | null | undefined) =>
+  const tag = (name: string, value: unknown) =>
     `    <${name}>${escapeXml(value)}</${name}>`;
-  const xmlRows = rows
+  const table = isDynamicTable(columns)
+    ? rowsForTableExport(rows as GeologicalJournalTableRow[], columns)
+    : rowsForTableExport(rows as GeologicalJournalTableRow[], EXPORT_COLUMNS.map((column) => column.key));
+  const safeTagName = (name: string) => {
+    const normalized = name.trim().replace(/[^A-Za-z0-9_.-]+/g, "_");
+    return /^[A-Za-z_]/.test(normalized) ? normalized : `column_${normalized}`;
+  };
+  const xmlRows = table.rows
     .map((row, index) => {
-      const uncertainties = row.uncertainties ?? [];
       return [
         `  <row number="${index + 1}">`,
-        tag("date", row.date),
-        tag("drilling_diameter_mm", row.drilling_diameter_mm),
-        tag("depth_from_m", row.depth_from_m),
-        tag("depth_to_m", row.depth_to_m),
-        tag("drilling_run_m", row.drilling_run_m),
-        tag("core_recovery_m", row.core_recovery_m),
-        tag("core_recovery_pct", row.core_recovery_pct),
-        tag("rock_description", row.rock_description),
-        tag("sampling_interval", row.sampling_interval),
-        tag("sample_number", row.sample_number),
-        tag("notes", row.notes),
-        "    <uncertainties>",
-        ...uncertainties.map((item) => tag("item", item)),
-        "    </uncertainties>",
+        ...table.columns.map((column) => tag(safeTagName(column), row[column])),
         "  </row>",
       ].join("\n");
     })

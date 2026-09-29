@@ -117,10 +117,10 @@ export function GeologicalJournalDocumentPageModal({
     const currentPage = page;
     if (rows.length === 0 || !currentPage) return;
     const filename = `geological-journal-page-${currentPage.page_number}.${format}`;
-    if (format === "csv") exportGeologicalJournalCSV(rows, filename);
-    if (format === "xlsx") exportGeologicalJournalXLSX(rows, filename);
-    if (format === "json") exportGeologicalJournalJSON(rows, filename);
-    if (format === "xml") exportGeologicalJournalXML(rows, filename);
+    if (format === "csv") exportGeologicalJournalCSV(rows, filename, fields.map(String));
+    if (format === "xlsx") exportGeologicalJournalXLSX(rows, filename, fields.map(String));
+    if (format === "json") exportGeologicalJournalJSON(rows, filename, fields.map(String));
+    if (format === "xml") exportGeologicalJournalXML(rows, filename, fields.map(String));
   }
 
   return (
