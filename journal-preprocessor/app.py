@@ -534,7 +534,9 @@ def preview_pdf_page(pdf_path: str, page_number: int, output_dir: str) -> dict[s
     line_ratio = float(cv2.countNonZero(grid)) / max(1, array.size)
     tables = _table_regions(oriented)
     dark_ratio = float(cv2.countNonZero(threshold)) / max(1, array.size)
-    content_type = "table" if tables or line_ratio > 0.012 else "free_text" if embedded_text or dark_ratio > 0.01 else "unknown"
+    has_table = bool(tables or line_ratio > 0.012)
+    has_text = bool(embedded_text)
+    content_type = "mixed" if has_table and has_text else "table" if has_table else "free_text" if has_text or dark_ratio > 0.01 else "unknown"
     confidence = min(1.0, 0.45 + (0.25 if source_rotation in {0, 90, 180, 270} else 0) + min(0.3, line_ratio * 10 + dark_ratio))
     analysis = {
         "mode": "preview",
@@ -606,7 +608,9 @@ def preview_pdf_page_from_render(page: Any, original_path: Path, page_number: in
     tables = _table_regions(oriented)
     embedded_text = page.get_text("text").strip()
     dark_ratio = float(cv2.countNonZero(threshold)) / max(1, array.size)
-    content_type = "table" if tables or line_ratio > 0.012 else "free_text" if embedded_text or dark_ratio > 0.01 else "unknown"
+    has_table = bool(tables or line_ratio > 0.012)
+    has_text = bool(embedded_text)
+    content_type = "mixed" if has_table and has_text else "table" if has_table else "free_text" if has_text or dark_ratio > 0.01 else "unknown"
     analysis = {"mode": "preview", "page_number": page_number, "source_rotation": source_rotation, "orientation_degrees": source_rotation, "orientation_confidence": 0.7, "content_type": content_type, "text_char_count": len(embedded_text), "table_count": len(tables), "embedded_text_available": bool(embedded_text), "warnings": ["deep_analysis_required"]}
     (target / "embedded-text.txt").write_text(embedded_text + "\n", encoding="utf-8")
     (target / "analysis.json").write_text(json.dumps(analysis, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

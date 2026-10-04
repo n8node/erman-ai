@@ -115,9 +115,9 @@ function displayLlmResults(items: GeologicalJournalDocumentLLMResult[], detail: 
       isTable: page?.content_type === "table" || page?.content_type === "mixed",
       columns,
       rows,
-      text: page?.content_type === "table" || page?.content_type === "mixed"
-        ? ""
-        : (typeof rawResponse.transcription === "string" ? rawResponse.transcription : ""),
+      text: typeof rawResponse.transcription === "string"
+        ? rawResponse.transcription
+        : (page?.content_type === "table" ? "" : page?.ocr_text ?? ""),
     };
   });
 }

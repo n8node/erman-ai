@@ -198,8 +198,21 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 			s.logger.Warn("vision OCR failed; using existing document OCR text", "page", pageNumber, "error", visionErr)
 		}
 		isTable := page.ContentType == "table" || page.ContentType == "mixed"
+		isMixed := page.ContentType == "mixed"
 		var prompt string
-		if isTable {
+		if isMixed {
+			prompt = fmt.Sprintf(`Распознай страницу %d документа %q непосредственно по изображению. На странице могут одновременно находиться обычный текст и таблица. Верни обе части в одном JSON-объекте.
+Изображение является главным источником истины, а OCR-текст ниже используй только как дополнительную подсказку. Сохрани полный текст страницы в исходном порядке и отдельно восстанови таблицу с реальными заголовками, строками и значениями.
+Не добавляй выводы, объяснения, summary, facts, uncertainties, sources или рассуждения.
+
+Ответь только валидным JSON-объектом строго такого вида:
+{"transcription":"полный текст страницы без таблицы или с её текстовым содержимым в естественном порядке","columns":["Заголовок 1","Заголовок 2"],"rows":[{"Заголовок 1":"значение","Заголовок 2":"значение"}]}
+
+Если таблица отсутствует или не читается, верни пустые columns и rows, но не теряй transcription. Если обычного текста нет, верни пустую transcription, но сохрани таблицу. В columns перечисли только реально найденные заголовки. Ключи строк должны совпадать с columns. Для нечитаемой ячейки используй null или пустую строку. Не оборачивай JSON в markdown.
+
+Дополнительный OCR-текст:
+%s`, pageNumber, doc.OriginalName, ocrText)
+		} else if isTable {
 			prompt = fmt.Sprintf(`Распознай таблицу непосредственно по изображению страницы %d документа %q.
 Предварительный анализ определил страницу как таблицу. Изображение является главным
 источником истины, OCR-текст ниже используй только как дополнительную подсказку.
@@ -238,7 +251,7 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 			ImageMIME: documentPageImageMIME(imagePath),
 			LLMCompletionRequest: LLMCompletionRequest{
 				Provider: provider, Model: visionModel,
-				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Для табличной страницы всегда возвращай только JSON с columns и rows. Никогда не возвращай плоский OCR-текст, список строк, markdown или рассуждения.",
+				SystemPrompt: "Ты выполняешь точное распознавание данных с изображения документа. Для страницы с таблицей возвращай JSON с columns и rows. Для смешанной страницы обязательно возвращай одновременно transcription, columns и rows. Никогда не возвращай markdown или рассуждения.",
 				UserPrompt:   prompt, Temperature: 0.1, MaxTokens: 4096, APIKey: apiKey, FolderID: creds.YandexFolderID,
 				Proxy: strategy.Config.ProxyForProvider(provider),
 			},
@@ -247,6 +260,13 @@ func (s *GeologicalJournalDocumentService) SummarizeSelectedPages(ctx context.Co
 			return nil, err
 		}
 		_, resultJSON := parseDocumentLLMResponse(completion.Content)
+		if isMixed {
+			if transcription, ok := parseDocumentLLMTranscription(completion.Content); ok && transcription != ocrText {
+				if err := s.journal.repo.UpdateDocumentPageOCRText(ctx, page.ID, transcription); err != nil {
+					return nil, err
+				}
+			}
+		}
 		if tableResult, ok := parseDocumentLLMTableResult(completion.Content); ok {
 			if err := s.journal.repo.UpdateDocumentPageTableResult(ctx, page.ID, tableResult); err != nil {
 				return nil, err
@@ -286,6 +306,22 @@ func parseDocumentLLMTableResult(content string) (*model.GeologicalJournalDocume
 		return &model.GeologicalJournalDocumentTableResult{Columns: columns, Rows: envelope.Rows}, true
 	}
 	return nil, false
+}
+
+func parseDocumentLLMTranscription(content string) (string, bool) {
+	content = strings.TrimSpace(trimGeologicalJournalFence(content))
+	for _, candidate := range append([]string{content}, extractGeologicalJournalJSONObjects(content)...) {
+		var envelope struct {
+			Transcription string `json:"transcription"`
+		}
+		if err := json.Unmarshal([]byte(candidate), &envelope); err != nil {
+			continue
+		}
+		if strings.TrimSpace(envelope.Transcription) != "" {
+			return strings.TrimSpace(envelope.Transcription), true
+		}
+	}
+	return "", false
 }
 
 func (s *GeologicalJournalDocumentService) SavePageTableResult(ctx context.Context, documentID, pageID, userID, role string, raw json.RawMessage) (*model.GeologicalJournalOutput, error) {

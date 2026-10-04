@@ -20,3 +20,23 @@ func TestParseDocumentLLMTableResult(t *testing.T) {
 	require.Len(t, result.Rows, 1)
 	require.Equal(t, "сланец", result.Rows[0]["rock_description"])
 }
+
+func TestParseDocumentLLMMixedResultKeepsTextAndTable(t *testing.T) {
+	content := `{"transcription":"The ore in the upper levels was exceedingly rich.","columns":["Year","Production"],"rows":[{"Year":"1870","Production":"$15,000"}]}`
+
+	transcription, raw := parseDocumentLLMResponse(content)
+	table, ok := parseDocumentLLMTableResult(content)
+
+	require.Equal(t, "The ore in the upper levels was exceedingly rich.", transcription)
+	require.JSONEq(t, content, string(raw))
+	require.True(t, ok)
+	require.Equal(t, []string{"Year", "Production"}, table.Columns)
+	require.Equal(t, "1870", table.Rows[0]["Year"])
+}
+
+func TestParseDocumentLLMTranscription(t *testing.T) {
+	transcription, ok := parseDocumentLLMTranscription(`{"transcription":"paragraph text","columns":[],"rows":[]}`)
+
+	require.True(t, ok)
+	require.Equal(t, "paragraph text", transcription)
+}
