@@ -2451,6 +2451,7 @@
     "processWithLlm": "Process selected with LLM",
     "selected": "Selected: {count}",
     "status": {
+      "needsReview": "Needs review",
       "uploaded": "Uploaded",
       "previewReady": "Preliminary analysis ready",
       "queued": "Queued",
@@ -2488,7 +2489,23 @@
     "noRecognizedData": "No recognized data.",
     "page": "Page {page}",
     "noTableRows": "No recognized table rows in the model response.",
-    "noRecognizedText": "No recognized text."
+    "noRecognizedText": "No recognized text.",
+    "pageColumn": "Page",
+    "typeColumn": "Type",
+    "statusColumn": "Status",
+    "openPageEditor": "Open page editor",
+    "showOcrText": "Show OCR text",
+    "closePreview": "Close preview",
+    "ocrTitle": "OCR text ? page {page}",
+    "characters": "Characters: {count}",
+    "closeOcr": "Close OCR",
+    "ocrNotReady": "OCR text is not ready for this page.",
+    "contentType": {
+      "table": "Table",
+      "mixed": "Mixed",
+      "freeText": "Free text",
+      "unknown": "Unknown"
+    }
   },
   "geologicalJournalEditorModal": {
     "reprocessConfirm": "Re-recognition will replace the current result in the editor. Continue?",

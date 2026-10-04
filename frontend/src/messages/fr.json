@@ -203,13 +203,14 @@
     "processWithLlm": "Traiter les pages s?lectionn?es avec le LLM",
     "selected": "S?lectionn?es : {count}",
     "status": {
-      "uploaded": "Uploaded",
-      "previewReady": "Preliminary analysis ready",
-      "queued": "Queued",
-      "processing": "Processing",
-      "partiallyDone": "Partially complete",
-      "done": "Complete",
-      "error": "Error"
+      "needsReview": "? v?rifier",
+      "uploaded": "T?l?vers?",
+      "previewReady": "Analyse pr?liminaire pr?te",
+      "queued": "En attente",
+      "processing": "Traitement en cours",
+      "partiallyDone": "Partiellement termin?",
+      "done": "Termin?",
+      "error": "Erreur"
     },
     "confirmDelete": "Delete document ?{name}? and its entire analysis history?",
     "errors": {
@@ -240,7 +241,23 @@
     "noRecognizedData": "Aucune donn?e reconnue.",
     "page": "Page {page}",
     "noTableRows": "Aucune ligne de tableau reconnue dans la r?ponse du mod?le.",
-    "noRecognizedText": "Aucun texte reconnu."
+    "noRecognizedText": "Aucun texte reconnu.",
+    "pageColumn": "Page",
+    "typeColumn": "Type",
+    "statusColumn": "Statut",
+    "openPageEditor": "Ouvrir l??diteur de page",
+    "showOcrText": "Afficher le texte OCR",
+    "closePreview": "Fermer l?aper?u",
+    "ocrTitle": "Texte OCR ? page {page}",
+    "characters": "Caract?res : {count}",
+    "closeOcr": "Fermer OCR",
+    "ocrNotReady": "Le texte OCR n?est pas encore disponible pour cette page.",
+    "contentType": {
+      "table": "Tableau",
+      "mixed": "Mixte",
+      "freeText": "Texte libre",
+      "unknown": "Inconnu"
+    }
   },
   "geologicalJournalEditorModal": {
     "reprocessConfirm": "La nouvelle reconnaissance remplacera le résultat actuel dans l’éditeur. Continuer ?",

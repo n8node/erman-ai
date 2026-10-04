@@ -203,13 +203,14 @@
     "processWithLlm": "?? LLM ??????",
     "selected": "????{count}",
     "status": {
-      "uploaded": "Uploaded",
-      "previewReady": "Preliminary analysis ready",
-      "queued": "Queued",
-      "processing": "Processing",
-      "partiallyDone": "Partially complete",
-      "done": "Complete",
-      "error": "Error"
+      "needsReview": "需要审核",
+      "uploaded": "已上传",
+      "previewReady": "预分析已就绪",
+      "queued": "排队中",
+      "processing": "处理中",
+      "partiallyDone": "部分完成",
+      "done": "已完成",
+      "error": "错误"
     },
     "confirmDelete": "Delete document ?{name}? and its entire analysis history?",
     "errors": {
@@ -240,7 +241,23 @@
     "noRecognizedData": "???????",
     "page": "? {page} ?",
     "noTableRows": "???????????????",
-    "noRecognizedText": "?????????"
+    "noRecognizedText": "?????????",
+    "pageColumn": "页面",
+    "typeColumn": "类型",
+    "statusColumn": "状态",
+    "openPageEditor": "打开页面编辑器",
+    "showOcrText": "显示 OCR 文本",
+    "closePreview": "关闭预览",
+    "ocrTitle": "OCR 文本 · 第 {page} 页",
+    "characters": "字符数：{count}",
+    "closeOcr": "关闭 OCR",
+    "ocrNotReady": "此页面的 OCR 文本尚未准备好。",
+    "contentType": {
+      "table": "表格",
+      "mixed": "混合",
+      "freeText": "自由文本",
+      "unknown": "未知"
+    }
   },
   "geologicalJournalEditorModal": {
     "reprocessConfirm": "重新识别将替换编辑器中的当前结果。是否继续？",
