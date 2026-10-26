@@ -96,6 +96,11 @@ function isPublicApiPath(pathname: string) {
   return publicApiPaths.includes(p);
 }
 
+function isPublicDrillAiPath(pathname: string) {
+  const p = appPathname(pathname);
+  return p === "/drillai" || p.startsWith("/drillai/");
+}
+
 function isAccountPath(pathname: string) {
   const p = appPathname(pathname);
   return accountPrefixes.some(
@@ -173,6 +178,8 @@ export async function middleware(request: NextRequest) {
   let response: NextResponse;
 
   if (isSharePath(pathname)) {
+    response = NextResponse.next();
+  } else if (isPublicDrillAiPath(pathname)) {
     response = NextResponse.next();
   } else if (await isPublicContentPath(pathname)) {
     response = NextResponse.next();
