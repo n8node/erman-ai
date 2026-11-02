@@ -26,7 +26,7 @@ const FEATURE_KEYS = [
   "white_label",
 ] as const;
 
-const TOOL_KEYS = ["calculator", "strategy", "proposal", "legal-scan"] as const;
+const TOOL_KEYS = ["calculator", "strategy", "ai-assessment", "proposal", "legal-scan"] as const;
 
 function formatRub(n: number) {
   return new Intl.NumberFormat("ru-RU").format(n) + " ₽";

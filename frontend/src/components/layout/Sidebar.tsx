@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Calculator,
   Brain,
+  ScanSearch,
   FileText,
   ClipboardList,
   ShieldCheck,
@@ -101,6 +102,7 @@ export function Sidebar({ user, isOpen, onClose }: Props) {
   const toolLinks = [
     { href: "/tools/calculator", label: t("calculator"), icon: Calculator },
     { href: "/tools/strategy", label: t("strategy"), icon: Brain },
+    { href: "/tools/ai-assessment", label: t("aiAssessment"), icon: ScanSearch },
     { href: "/tools/proposal", label: t("proposal"), icon: FileText },
     { href: "/tools/audit", label: t("audit"), icon: ClipboardList },
     { href: "/tools/legal-scan", label: t("legalScan"), icon: ShieldCheck },

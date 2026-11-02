@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   BookOpen,
   Brain,
+  ScanSearch,
   Calculator,
   ClipboardList,
   FileText,
@@ -34,6 +35,12 @@ const TOOLS: {
     slug: "strategy",
     href: "/tools/strategy",
     icon: Brain,
+    badge: { text: "text-ai", bg: "bg-ai-bg" },
+  },
+  {
+    slug: "ai-assessment",
+    href: "/tools/ai-assessment",
+    icon: ScanSearch,
     badge: { text: "text-ai", bg: "bg-ai-bg" },
   },
   {

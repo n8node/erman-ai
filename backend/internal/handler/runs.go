@@ -101,6 +101,17 @@ func (h *RunsHandler) Get(w http.ResponseWriter, r *http.Request) {
 				resp["output"] = output
 			}
 		}
+	} else if run.ToolSlug == service.AIAssessmentToolSlug {
+		var input model.AIAssessmentInput
+		var output model.AIAssessmentOutput
+		if err := json.Unmarshal(run.Input, &input); err == nil {
+			resp["input"] = input
+		}
+		if len(run.Output) > 0 {
+			if err := json.Unmarshal(run.Output, &output); err == nil {
+				resp["output"] = output
+			}
+		}
 	} else if run.ToolSlug == model.GeologicalJournalToolSlug {
 		var input model.GeologicalJournalRunInput
 		if err := json.Unmarshal(run.Input, &input); err == nil {

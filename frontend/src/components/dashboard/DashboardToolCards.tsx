@@ -10,6 +10,7 @@ import { ToolLimitBadge } from "./ToolLimitBadge";
 const CARD_TOOLS = [
   { slug: "calculator", href: "/tools/calculator" },
   { slug: "strategy", href: "/tools/strategy" },
+  { slug: "ai-assessment", href: "/tools/ai-assessment" },
   { slug: "proposal", href: "/tools/proposal" },
   { slug: "audit", href: "/tools/audit" },
   { slug: "legal-scan", href: "/tools/legal-scan" },

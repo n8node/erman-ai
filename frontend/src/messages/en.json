@@ -105,6 +105,7 @@
     "account": "Account",
     "calculator": "Calculator",
     "strategy": "AI Strategy",
+    "aiAssessment": "AI Readiness Analysis",
     "proposal": "Proposal",
     "audit": "Automation Audit",
     "legalScan": "Legal Site Scan",
@@ -130,6 +131,11 @@
     "forWhom": "Who it's for",
     "openTool": "Open tool",
     "tools": {
+      "ai-assessment": {
+        "name": "AI Readiness Analysis",
+        "description": "Assess AI readiness, safe autonomy level, financial effect, and the right pilot for a business process.",
+        "audience": "Owners and teams selecting processes for AI adoption."
+      },
       "calculator": {
         "name": "Automation Calculator",
         "description": "Quickly estimate automation ROI: current costs, savings, payback period, and a clear recommendation.",
@@ -192,6 +198,10 @@
       "empty": "No calculations yet"
     },
     "tools": {
+      "ai-assessment": {
+        "name": "AI Readiness Analysis",
+        "description": "Assess process readiness, autonomy, and financial effect"
+      },
       "calculator": {
         "name": "Automation Calculator",
         "description": "ROI calculator for process automation"
@@ -1176,7 +1186,10 @@
     "limitReached": "Limit reached",
     "exceededTitle": "{tool} limit reached",
     "exceededBody": "You have used all runs this month. Upgrade to Pro or Business for a higher limit.",
-    "upgradeCta": "View plans"
+    "upgradeCta": "View plans",
+    "tools": {
+      "ai-assessment": "AI Readiness Analysis"
+    }
   },
   "billing": {
     "title": "Plans",
@@ -1211,6 +1224,7 @@
     "tools": {
       "calculator": "Automation Calculator",
       "strategy": "AI Strategy",
+    "ai-assessment": "AI Readiness Analysis",
       "proposal": "Proposal Generator",
       "legal-scan": "Legal Site Scan",
       "audio-transcription": "Audio transcription",
