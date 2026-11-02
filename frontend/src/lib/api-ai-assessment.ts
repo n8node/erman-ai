@@ -26,7 +26,7 @@ export type AIAssessmentOutput = {
 };
 
 export type AIAssessmentRunStart = { run_id: string; status: string };
-export type AIAssessmentRun = RunDetail & { input?: AIAssessmentInput; output?: AIAssessmentOutput };
+export type AIAssessmentRun = RunDetail & { input?: AIAssessmentInput; output?: AIAssessmentOutput; error_msg?: string };
 
 export async function runAIAssessment(input: AIAssessmentInput) {
   const res = await fetch("/api/v1/tools/ai-assessment/run", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });

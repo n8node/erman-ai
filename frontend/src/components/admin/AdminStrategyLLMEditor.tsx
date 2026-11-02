@@ -6,7 +6,6 @@ import { ModelPicker } from "@/components/admin/ModelPicker";
 import { AdminLLMProxyFields } from "@/components/admin/AdminLLMProxyFields";
 import {
   ModelPricingFields,
-  modelsCountLabel,
   resolveModelPricing,
 } from "@/components/admin/ModelPricingFields";
 import {
@@ -385,7 +384,7 @@ export function AdminStrategyLLMEditor() {
               placeholder={t("modelsEmpty")}
             />
             <p className="mt-1 text-[11px] text-text3">
-              {modelsCountLabel(yandexMeta?.models.length ?? 0, t("modelsAvailable"))}
+              {t("modelsAvailable", { count: yandexMeta?.models.length ?? 0 })}
             </p>
             <ModelPricingFields
               modelId={settings.yandex_model}
@@ -408,7 +407,7 @@ export function AdminStrategyLLMEditor() {
               placeholder={t("modelsEmpty")}
             />
             <p className="mt-1 text-[11px] text-text3">
-              {modelsCountLabel(openrouterMeta?.models.length ?? 0, t("modelsAvailable"))}
+              {t("modelsAvailable", { count: openrouterMeta?.models.length ?? 0 })}
             </p>
             <ModelPricingFields
               modelId={settings.openrouter_model}
@@ -431,7 +430,7 @@ export function AdminStrategyLLMEditor() {
               placeholder={t("modelsEmpty")}
             />
             <p className="mt-1 text-[11px] text-text3">
-              {modelsCountLabel(deepseekMeta?.models.length ?? 0, t("modelsAvailable"))}
+              {t("modelsAvailable", { count: deepseekMeta?.models.length ?? 0 })}
             </p>
             <ModelPricingFields
               modelId={settings.deepseek_model}
